@@ -1048,9 +1048,9 @@ export default function SlotDrawing() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="slot-drawing-title">
-                Draw Slot Regions
+                Template Design
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">Click to define slot boundaries on the rectified image</p>
+              <p className="text-sm text-muted-foreground mt-1">Design your tool layout - ArUco markers, templates, and QR codes on one sheet</p>
             </div>
             <Button variant="outline" size="sm" data-testid="button-close-slot-drawing">
               <X className="w-4 h-4" />
@@ -1142,82 +1142,29 @@ export default function SlotDrawing() {
                 />
               </div>
               
-              <div className="flex items-center gap-3">
-                <Button 
-                  className="flex-1"
-                  onClick={startNewSlot}
-                  disabled={isDrawing}
-                  data-testid="button-new-slot"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Slot
-                </Button>
-                
-                {isDrawing && currentRegion && currentRegion.points.length >= 3 && (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
                   <Button 
-                    onClick={finishCurrentRegion}
-                    data-testid="button-finish-region"
+                    variant="outline"
+                    onClick={handleZoomIn}
+                    data-testid="button-zoom-in"
                   >
-                    <Save className="w-4 h-4" />
+                    <ZoomIn className="w-4 h-4" />
                   </Button>
-                )}
-                
-                <Button 
-                  variant="outline"
-                  onClick={isDrawing ? cancelCurrentRegion : () => {}}
-                  disabled={!isDrawing && !selectedRegion}
-                  data-testid="button-undo"
-                >
-                  <Undo className="w-4 h-4" />
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={deleteSelectedRegion}
-                  disabled={!selectedRegion}
-                  data-testid="button-delete"
-                >
-                  <Trash className="w-4 h-4" />
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={handleZoomIn}
-                  data-testid="button-zoom-in"
-                >
-                  <ZoomIn className="w-4 h-4" />
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={handleZoomOut}
-                  data-testid="button-zoom-out"
-                >
-                  <ZoomOut className="w-4 h-4" />
-                </Button>
-                
-                <div className="px-3 py-1 bg-muted rounded text-sm font-mono">
-                  {Math.round(zoom * 100)}%
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={handleZoomOut}
+                    data-testid="button-zoom-out"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </Button>
+                  
+                  <div className="px-3 py-1 bg-muted rounded text-sm font-mono">
+                    {Math.round(zoom * 100)}%
+                  </div>
                 </div>
               </div>
-
-                {/* Drawing Instructions */}
-                {isDrawing && (
-                  <Card className="mt-4">
-                    <CardContent className="p-4">
-                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-                        <h4 className="text-sm font-medium text-blue-500 mb-2">Drawing Mode Active</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Click to add points to define the slot boundary. 
-                          {currentRegion && currentRegion.points.length >= 3 
-                            ? ' Click the save button to finish this region.' 
-                            : ` Need at least 3 points (${currentRegion?.points.length || 0}/3).`
-                          }
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
 
                 {/* Template Rectangles */}
                 <Card className="mt-4">
@@ -1473,131 +1420,6 @@ export default function SlotDrawing() {
                   </CardContent>
                 </Card>
             </div>
-            
-            {/* Slot Configuration */}
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {selectedRegion ? `Slot ${selectedRegion.slotId}` : 'Select a Slot'}
-                </CardTitle>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                {selectedRegion ? (
-                  <>
-                    <div>
-                      <Label htmlFor="slotId">Slot ID</Label>
-                      <Input 
-                        id="slotId"
-                        value={selectedRegion.slotId}
-                        onChange={(e) => updateSelectedRegion({ slotId: e.target.value })}
-                        data-testid="input-slot-id"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="toolName">Tool Name</Label>
-                      <Input 
-                        id="toolName"
-                        placeholder="e.g., Scissors"
-                        value={selectedRegion.toolName}
-                        onChange={(e) => updateSelectedRegion({ toolName: e.target.value })}
-                        data-testid="input-tool-name"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="expectedQrId">Expected QR ID</Label>
-                      <Input 
-                        id="expectedQrId"
-                        placeholder="e.g., S001"
-                        value={selectedRegion.expectedQrId}
-                        onChange={(e) => updateSelectedRegion({ expectedQrId: e.target.value })}
-                        data-testid="input-expected-qr"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="graceWindow">Grace Window</Label>
-                      <Input 
-                        id="graceWindow"
-                        value={selectedRegion.graceWindow}
-                        onChange={(e) => updateSelectedRegion({ graceWindow: e.target.value })}
-                        placeholder="e.g., 08:30-16:30"
-                        data-testid="input-grace-window"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Time range when slot is monitored (HH:MM-HH:MM format)
-                      </p>
-                    </div>
-                    
-                    <div className="pt-4 border-t border-border">
-                      <p className="text-xs text-muted-foreground">
-                        All slots set to: <span className="font-medium text-foreground">High Priority</span> • <span className="font-medium text-foreground">Checkout Allowed</span>
-                      </p>
-                    </div>
-                    
-                    <div className="flex gap-2 mt-6">
-                      <Button 
-                        className="flex-1"
-                        onClick={saveSlotConfiguration}
-                        disabled={!selectedRegion.toolName || createSlotMutation.isPending || updateSlotMutation.isPending}
-                        data-testid="button-save-slot"
-                      >
-                        {createSlotMutation.isPending || updateSlotMutation.isPending 
-                          ? 'Saving...' 
-                          : 'Save Slot Configuration'
-                        }
-                      </Button>
-                      
-                      {/* Show delete button only for existing saved slots */}
-                      {slots?.some((s: any) => s.id === selectedRegion.id) && (
-                        <Button 
-                          variant="destructive"
-                          onClick={() => deleteSlotMutation.mutate(selectedRegion.id)}
-                          disabled={deleteSlotMutation.isPending}
-                          data-testid="button-delete-slot"
-                        >
-                          <Trash className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      Click on a slot region to configure it, or create a new slot region.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Configured Slots List */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Configured Slots ({configuredSlotIds.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-                  {configuredSlotIds.map((slotId: string) => (
-                    <Badge 
-                      key={slotId}
-                      className="px-3 py-2 bg-green-500/20 border border-green-500/30 text-green-500 text-center justify-center"
-                      data-testid={`configured-slot-${slotId}`}
-                    >
-                      {slotId}
-                    </Badge>
-                  ))}
-                  
-                  {configuredSlotIds.length === 0 && (
-                    <p className="col-span-full text-muted-foreground text-sm text-center py-4">
-                      No slots configured yet. Draw slot regions on the camera image above.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </main>
