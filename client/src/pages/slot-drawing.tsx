@@ -57,12 +57,17 @@ export default function SlotDrawing() {
   
   // Paper size dimensions (width x height in pixels, landscape orientation)
   // ISO A-series aspect ratio is √2:1 (1.414:1)
-  const paperDimensions: Record<string, { width: number; height: number }> = {
-    'A5-landscape': { width: 600, height: 424 },        // 210×148mm (small)
-    'A4-landscape': { width: 800, height: 566 },        // 297×210mm (medium)
-    'A3-landscape': { width: 1131, height: 800 },       // 420×297mm (large, 1.41× A4)
-    '2xA5-landscape': { width: 1200, height: 424 },     // 2× A5 side by side
-    '3xA5-landscape': { width: 1800, height: 424 },     // 3× A5 side by side
+  const paperDimensions: Record<string, { 
+    width: number; 
+    height: number;
+    realWidthMm: number;
+    realHeightMm: number;
+  }> = {
+    'A5-landscape': { width: 600, height: 424, realWidthMm: 210, realHeightMm: 148 },
+    'A4-landscape': { width: 800, height: 566, realWidthMm: 297, realHeightMm: 210 },
+    'A3-landscape': { width: 1131, height: 800, realWidthMm: 420, realHeightMm: 297 },
+    '2xA5-landscape': { width: 1200, height: 424, realWidthMm: 420, realHeightMm: 148 },
+    '3xA5-landscape': { width: 1800, height: 424, realWidthMm: 630, realHeightMm: 148 },
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -194,15 +199,27 @@ export default function SlotDrawing() {
       ctx.stroke();
     }
 
-    // Draw ArUco corner markers outline (GridBoard reference)
-    // Scale marker positions based on canvas HEIGHT (not width) for consistent sizing
-    const margin = canvas.height * 0.15; // 15% margin from height
-    const markerSize = canvas.height * 0.12; // 12% of height for marker size
+    // Draw paper outline
+    ctx.strokeStyle = 'rgba(100, 116, 139, 0.5)'; // slate-500
+    ctx.lineWidth = 3 / zoom;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    
+    // Calculate 3cm border in pixels
+    const paperInfo = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
+    const pxPerMm = canvas.width / paperInfo.realWidthMm;
+    const borderMm = 30; // 3cm = 30mm
+    const borderPx = borderMm * pxPerMm;
+    
+    // ArUco marker size (typically 5cm = 50mm)
+    const markerSizeMm = 50;
+    const markerSize = markerSizeMm * pxPerMm;
+    
+    // Position markers 3cm from edges
     const markers = [
-      { x: margin, y: margin, id: '17' },  // Top-left
-      { x: canvas.width - margin - markerSize, y: margin, id: '18' },  // Top-right
-      { x: canvas.width - margin - markerSize, y: canvas.height - margin - markerSize, id: '19' },  // Bottom-right
-      { x: margin, y: canvas.height - margin - markerSize, id: '20' },  // Bottom-left
+      { x: borderPx, y: borderPx, id: '17' },  // Top-left
+      { x: canvas.width - borderPx - markerSize, y: borderPx, id: '18' },  // Top-right
+      { x: canvas.width - borderPx - markerSize, y: canvas.height - borderPx - markerSize, id: '19' },  // Bottom-right
+      { x: borderPx, y: canvas.height - borderPx - markerSize, id: '20' },  // Bottom-left
     ];
     
     markers.forEach(marker => {
@@ -219,15 +236,18 @@ export default function SlotDrawing() {
       ctx.fillText(marker.id, marker.x + markerSize / 2, marker.y + markerSize / 2);
     });
     
-    // Draw GridBoard outline (inner area between markers)
-    ctx.strokeStyle = 'rgba(34, 197, 94, 0.5)';
+    // Draw grid area outline (area between markers)
+    ctx.strokeStyle = 'rgba(34, 197, 94, 0.6)'; // green
     ctx.lineWidth = 2 / zoom;
     ctx.beginPath();
-    const gridMargin = margin + markerSize / 2;
-    ctx.moveTo(gridMargin, gridMargin);
-    ctx.lineTo(canvas.width - gridMargin, gridMargin);
-    ctx.lineTo(canvas.width - gridMargin, canvas.height - gridMargin);
-    ctx.lineTo(gridMargin, canvas.height - gridMargin);
+    const gridX1 = borderPx + markerSize;
+    const gridY1 = borderPx + markerSize;
+    const gridX2 = canvas.width - borderPx;
+    const gridY2 = canvas.height - borderPx;
+    ctx.moveTo(gridX1, gridY1);
+    ctx.lineTo(gridX2, gridY1);
+    ctx.lineTo(gridX2, gridY2);
+    ctx.lineTo(gridX1, gridY2);
     ctx.closePath();
     ctx.stroke();
 
