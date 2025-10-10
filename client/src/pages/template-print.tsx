@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Printer, ArrowLeft } from "lucide-react";
+import { Printer, ArrowLeft, Download } from "lucide-react";
 import type { TemplateRectangle, ToolCategory } from "@shared/schema";
 
 interface TemplateRectangleWithCategory extends TemplateRectangle {
@@ -235,6 +235,24 @@ export default function TemplatePrint() {
     window.print();
   };
 
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `template-${paperSize}-${new Date().toISOString().slice(0, 10)}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    });
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden print:block">
       <div className="print:hidden">
@@ -260,6 +278,10 @@ export default function TemplatePrint() {
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
+              </Button>
+              <Button variant="outline" onClick={handleDownload} data-testid="button-download">
+                <Download className="w-4 h-4 mr-2" />
+                Download
               </Button>
               <Button onClick={handlePrint} data-testid="button-print">
                 <Printer className="w-4 h-4 mr-2" />
