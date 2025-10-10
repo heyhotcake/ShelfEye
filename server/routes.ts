@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
+import QRCode from "qrcode";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -332,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { type, id, toolType, workerName, errorCorrection = 'H', moduleSize = 25, includeHmac = true } = req.body;
 
-      const payload = {
+      const payload: any = {
         type,
         id,
         tool_type: toolType || undefined,
@@ -347,54 +348,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payload.hmac = Buffer.from(JSON.stringify(payload)).toString('base64').substring(0, 8);
       }
 
-      // Call Python QR generator
-      const pythonProcess = spawn('python3', [
-        path.join(process.cwd(), 'python/qr_generator.py'),
-        '--payload', JSON.stringify(payload),
-        '--error-correction', errorCorrection,
-        '--module-size', moduleSize.toString()
-      ]);
+      // Generate QR code using Node.js library
+      const qrData = JSON.stringify(payload);
+      
+      // Map error correction levels
+      const errorCorrectionMap: Record<string, QRCode.QRCodeErrorCorrectionLevel> = {
+        'L': 'L',
+        'M': 'M',
+        'Q': 'Q',
+        'H': 'H'
+      };
 
-      let result = '';
-      let error = '';
-      let responseSent = false;
+      const qrOptions = {
+        errorCorrectionLevel: errorCorrectionMap[errorCorrection] || 'H',
+        type: 'image/png' as const,
+        quality: 1,
+        margin: 1,
+        width: moduleSize * 10, // Scale based on module size
+      };
 
-      pythonProcess.on('error', (err) => {
-        if (!responseSent) {
-          responseSent = true;
-          res.status(503).json({ 
-            message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
-            error: err.message 
-          });
-        }
-      });
+      // Generate QR code as base64
+      const qrCodeBase64 = await QRCode.toDataURL(qrData, qrOptions);
+      
+      // Extract base64 data without the data URL prefix
+      const base64Data = qrCodeBase64.split(',')[1];
 
-      pythonProcess.stdout.on('data', (data) => {
-        result += data.toString();
-      });
-
-      pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
-      });
-
-      pythonProcess.on('close', (code) => {
-        if (responseSent) return;
-        
-        if (code === 0) {
-          try {
-            const qrResult = JSON.parse(result);
-            res.json({
-              ok: true,
-              payload,
-              qrCode: qrResult.qr_code_base64,
-              dimensions: qrResult.dimensions
-            });
-          } catch (parseError) {
-            res.status(500).json({ message: "Failed to parse QR generation result", error: parseError });
-          }
-        } else {
-          res.status(500).json({ message: "QR generation failed", error });
-        }
+      res.json({
+        ok: true,
+        payload,
+        qrCode: base64Data,
+        dimensions: { width: qrOptions.width, height: qrOptions.width }
       });
 
     } catch (error) {
