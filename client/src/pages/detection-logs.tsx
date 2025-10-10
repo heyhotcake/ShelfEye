@@ -28,8 +28,8 @@ export default function DetectionLogs() {
   const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
-    slotId: '',
-    status: '',
+    slotId: 'all',
+    status: 'all',
     startDate: '',
     endDate: '',
   });
@@ -157,7 +157,7 @@ export default function DetectionLogs() {
                         <SelectValue placeholder="All Slots" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Slots</SelectItem>
+                        <SelectItem value="all">All Slots</SelectItem>
                         {slots?.map((slot: any) => (
                           <SelectItem key={slot.id} value={slot.slotId}>
                             {slot.slotId} - {slot.toolName}
@@ -176,7 +176,7 @@ export default function DetectionLogs() {
                         <SelectValue placeholder="All States" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All States</SelectItem>
+                        <SelectItem value="all">All States</SelectItem>
                         <SelectItem value="ITEM_PRESENT">Present</SelectItem>
                         <SelectItem value="EMPTY">Empty</SelectItem>
                         <SelectItem value="CHECKED_OUT">Checked Out</SelectItem>
@@ -189,7 +189,7 @@ export default function DetectionLogs() {
                     <Button 
                       variant="outline" 
                       className="w-full"
-                      onClick={() => setFilters({ slotId: '', status: '', startDate: '', endDate: '' })}
+                      onClick={() => setFilters({ slotId: 'all', status: 'all', startDate: '', endDate: '' })}
                       data-testid="button-clear-filters"
                     >
                       <Filter className="w-4 h-4 mr-2" />

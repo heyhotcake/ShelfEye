@@ -58,7 +58,6 @@ export default function Dashboard() {
   });
 
   const { data: recentLogs } = useQuery({
-    queryKey: ['/api/detection-logs'],
     queryKey: ['/api/detection-logs', { limit: 10 }],
   });
 
