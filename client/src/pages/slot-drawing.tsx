@@ -51,6 +51,20 @@ export default function SlotDrawing() {
     timestamp: string;
     regions: SlotRegion[];
   }>>([]);
+  
+  // Paper size configuration
+  const [paperSize, setPaperSize] = useState('A4-landscape');
+  
+  // Paper size dimensions (width x height in pixels, landscape orientation)
+  const paperDimensions: Record<string, { width: number; height: number }> = {
+    'A5-landscape': { width: 600, height: 424 },
+    'A4-landscape': { width: 800, height: 566 },
+    'A3-landscape': { width: 1131, height: 800 },
+    '2xA4-landscape': { width: 1600, height: 566 },
+    '3xA4-landscape': { width: 2400, height: 566 },
+  };
+  
+  const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
 
   const { data: cameras } = useQuery({
     queryKey: ['/api/cameras'],
@@ -180,12 +194,14 @@ export default function SlotDrawing() {
     }
 
     // Draw ArUco corner markers outline (GridBoard reference)
-    const markerSize = 50;
+    // Scale marker positions based on canvas size
+    const margin = canvas.width * 0.125; // 12.5% margin
+    const markerSize = canvas.width * 0.0625; // ~6.25% of width
     const markers = [
-      { x: 100, y: 100, id: '17' },  // Top-left
-      { x: 650, y: 100, id: '18' },  // Top-right
-      { x: 650, y: 450, id: '19' },  // Bottom-right
-      { x: 100, y: 450, id: '20' },  // Bottom-left
+      { x: margin, y: margin, id: '17' },  // Top-left
+      { x: canvas.width - margin - markerSize, y: margin, id: '18' },  // Top-right
+      { x: canvas.width - margin - markerSize, y: canvas.height - margin - markerSize, id: '19' },  // Bottom-right
+      { x: margin, y: canvas.height - margin - markerSize, id: '20' },  // Bottom-left
     ];
     
     markers.forEach(marker => {
@@ -202,14 +218,15 @@ export default function SlotDrawing() {
       ctx.fillText(marker.id, marker.x + markerSize / 2, marker.y + markerSize / 2);
     });
     
-    // Draw GridBoard outline
+    // Draw GridBoard outline (inner area between markers)
     ctx.strokeStyle = 'rgba(34, 197, 94, 0.5)';
     ctx.lineWidth = 2 / zoom;
     ctx.beginPath();
-    ctx.moveTo(125, 125);
-    ctx.lineTo(675, 125);
-    ctx.lineTo(675, 475);
-    ctx.lineTo(125, 475);
+    const gridMargin = margin + markerSize / 2;
+    ctx.moveTo(gridMargin, gridMargin);
+    ctx.lineTo(canvas.width - gridMargin, gridMargin);
+    ctx.lineTo(canvas.width - gridMargin, canvas.height - gridMargin);
+    ctx.lineTo(gridMargin, canvas.height - gridMargin);
     ctx.closePath();
     ctx.stroke();
 
@@ -267,7 +284,7 @@ export default function SlotDrawing() {
     
     // Restore context state
     ctx.restore();
-  }, [regions, currentRegion, selectedRegion, zoom, panOffset]);
+  }, [regions, currentRegion, selectedRegion, zoom, panOffset, canvasDimensions]);
 
   // Helper function to convert screen coordinates to canvas coordinates with zoom/pan
   const screenToCanvas = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -524,11 +541,31 @@ export default function SlotDrawing() {
             
             {/* Drawing Canvas */}
             <div>
+              {/* Paper Size Selector */}
+              <div className="mb-4 flex items-center gap-3">
+                <Label htmlFor="paper-size" className="text-sm font-medium">Paper Size:</Label>
+                <Select value={paperSize} onValueChange={setPaperSize}>
+                  <SelectTrigger className="w-48" id="paper-size" data-testid="select-paper-size">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A5-landscape">A5 Landscape (600×424)</SelectItem>
+                    <SelectItem value="A4-landscape">A4 Landscape (800×566)</SelectItem>
+                    <SelectItem value="A3-landscape">A3 Landscape (1131×800)</SelectItem>
+                    <SelectItem value="2xA4-landscape">2× A4 Landscape (1600×566)</SelectItem>
+                    <SelectItem value="3xA4-landscape">3× A4 Landscape (2400×566)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Match your ArUco grid paper size
+                </p>
+              </div>
+
               <div className="canvas-container mb-4">
                 <canvas 
                   ref={canvasRef}
-                  width={800}
-                  height={600}
+                  width={canvasDimensions.width}
+                  height={canvasDimensions.height}
                   className="w-full drawing-canvas rounded bg-muted"
                   style={{ cursor: isPanning ? 'grabbing' : isDrawing ? 'crosshair' : 'grab' }}
                   onClick={isDrawing ? handleCanvasClick : handleRegionClick}

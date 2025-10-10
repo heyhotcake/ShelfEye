@@ -24,6 +24,7 @@ Preferred communication style: Simple, everyday language.
 - Component-based architecture with separation between pages, layouts, and UI components
 - Modal-driven interactions for focused tasks (calibration, QR generation, configuration)
 - Canvas API for interactive slot drawing with zoom/pan controls and ArUco marker overlays
+- Configurable canvas aspect ratios for ISO A-series paper sizes (A5, A4, A3, multiple sheets)
 - Version management system for slot configurations using localStorage
 - Recharts for analytics visualization and time-series data
 - Real-time polling for live dashboard updates (30-second intervals)
