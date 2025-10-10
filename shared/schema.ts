@@ -95,11 +95,13 @@ export const toolCategories = pgTable("tool_categories", {
 export const templateRectangles = pgTable("template_rectangles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   categoryId: varchar("category_id").references(() => toolCategories.id).notNull(),
+  cameraId: varchar("camera_id").references(() => cameras.id).notNull(),
   paperSize: text("paper_size").notNull(), // A3, A4, A5, etc.
   xCm: real("x_cm").notNull(),
   yCm: real("y_cm").notNull(),
   rotation: integer("rotation").notNull().default(0), // 0, 45, 90, 135, 180, 225, 270, 315
   autoQrId: text("auto_qr_id"),
+  slotId: varchar("slot_id").references(() => slots.id), // Auto-generated slot
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
