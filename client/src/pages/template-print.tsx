@@ -205,15 +205,11 @@ export default function TemplatePrint() {
         ctx.lineWidth = 2;
         ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
 
-        ctx.fillStyle = '#000000';
-        ctx.font = '12px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(rect.category.name, 0, 0);
-
+        // Draw QR code centered within the rectangle (3x3 cm)
         if (rect.autoQrId && qrImageCache[rect.autoQrId]) {
-          const qrSize = Math.min(widthPx, heightPx) * 0.6;
-          ctx.drawImage(qrImageCache[rect.autoQrId], -qrSize / 2, heightPx / 4, qrSize, qrSize);
+          const qrSizeCm = 3;
+          const qrSizePx = cmToPixels(qrSizeCm, true);
+          ctx.drawImage(qrImageCache[rect.autoQrId], -qrSizePx / 2, -qrSizePx / 2, qrSizePx, qrSizePx);
         }
 
         ctx.restore();
