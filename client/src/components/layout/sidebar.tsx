@@ -12,7 +12,8 @@ import {
   Database,
   Bolt,
   LogOut,
-  User
+  User,
+  Printer
 } from "lucide-react";
 
 const navigation = [
@@ -30,6 +31,11 @@ const navigation = [
     name: "Slot Drawing",
     href: "/slot-drawing", 
     icon: SquareFunction,
+  },
+  {
+    name: "Print Preview",
+    href: "/template-print",
+    icon: Printer,
   },
   {
     name: "Configuration",
