@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Printer, ArrowLeft, Download } from "lucide-react";
 import type { TemplateRectangle, ToolCategory } from "@shared/schema";
+import { jsPDF } from "jspdf";
 
 interface TemplateRectangleWithCategory extends TemplateRectangle {
   category: ToolCategory;
@@ -237,21 +238,109 @@ export default function TemplatePrint() {
   };
 
   const handleDownload = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!arucoMarkers || !qrCodes) return;
 
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `template-${paperSize}-${new Date().toISOString().slice(0, 10)}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+    // Create PDF with exact physical dimensions in mm
+    const { realWidthMm, realHeightMm } = canvasDimensions;
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: [realWidthMm, realHeightMm],
     });
+
+    // Helper to convert cm to mm
+    const cmToMm = (cm: number) => cm * 10;
+
+    // Draw ArUco corner markers (5cm × 5cm at 0cm from edges)
+    const markerSizeMm = 50; // 5cm
+    const cornerPositions = [
+      { x: 0, y: 0 }, // Top-left (ID 17)
+      { x: realWidthMm - markerSizeMm, y: 0 }, // Top-right (ID 18)
+      { x: realWidthMm - markerSizeMm, y: realHeightMm - markerSizeMm }, // Bottom-right (ID 19)
+      { x: 0, y: realHeightMm - markerSizeMm }, // Bottom-left (ID 20)
+    ];
+
+    arucoMarkers.markers.forEach((marker: any, index: number) => {
+      const pos = cornerPositions[index];
+      if (marker.image) {
+        pdf.addImage(marker.image, 'PNG', pos.x, pos.y, markerSizeMm, markerSizeMm);
+      }
+    });
+
+    // Draw template rectangles and QR codes
+    templatesWithCategories.forEach((rect) => {
+      const xMm = cmToMm(rect.xCm);
+      const yMm = cmToMm(rect.yCm);
+      const widthMm = cmToMm(rect.category.widthCm);
+      const heightMm = cmToMm(rect.category.heightCm);
+
+      const centerX = xMm;
+      const centerY = yMm;
+
+      // Save state and apply rotation
+      pdf.saveGraphicsState();
+      
+      // Draw rectangle outline (black, 0.5mm line width)
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.5);
+      
+      if (rect.rotation !== 0) {
+        // For rotated rectangles, we need to transform
+        const angleRad = (rect.rotation * Math.PI) / 180;
+        
+        // Calculate corners relative to center
+        const halfW = widthMm / 2;
+        const halfH = heightMm / 2;
+        const corners = [
+          { x: -halfW, y: -halfH },
+          { x: halfW, y: -halfH },
+          { x: halfW, y: halfH },
+          { x: -halfW, y: halfH },
+        ];
+        
+        // Rotate corners and translate to position
+        const rotatedCorners = corners.map(c => ({
+          x: centerX + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
+          y: centerY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
+        }));
+        
+        // Draw polygon
+        pdf.lines(
+          rotatedCorners.map((c, i) => [
+            rotatedCorners[(i + 1) % 4].x - c.x,
+            rotatedCorners[(i + 1) % 4].y - c.y,
+          ]),
+          rotatedCorners[0].x,
+          rotatedCorners[0].y,
+          [1, 1],
+          'S'
+        );
+        
+        // Draw QR code at center (3cm × 3cm)
+        if (rect.autoQrId && qrCodes[rect.autoQrId]) {
+          const qrSizeMm = 30; // 3cm
+          const qrX = centerX - qrSizeMm / 2;
+          const qrY = centerY - qrSizeMm / 2;
+          pdf.addImage(qrCodes[rect.autoQrId], 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
+        }
+      } else {
+        // Non-rotated rectangle (simpler)
+        pdf.rect(centerX - widthMm / 2, centerY - heightMm / 2, widthMm, heightMm);
+        
+        // Draw QR code centered
+        if (rect.autoQrId && qrCodes[rect.autoQrId]) {
+          const qrSizeMm = 30; // 3cm
+          const qrX = centerX - qrSizeMm / 2;
+          const qrY = centerY - qrSizeMm / 2;
+          pdf.addImage(qrCodes[rect.autoQrId], 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
+        }
+      }
+      
+      pdf.restoreGraphicsState();
+    });
+
+    // Save PDF
+    pdf.save(`template-${paperSize}-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
