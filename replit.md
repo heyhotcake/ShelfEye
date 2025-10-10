@@ -71,6 +71,7 @@ Preferred communication style: Simple, everyday language.
 - PostgreSQL via Neon serverless (configured in drizzle.config.ts)
 - Drizzle ORM for type-safe database queries
 - Schema-first approach with TypeScript types generated from schema
+- Persistent storage - tool categories, template rectangles, and all data survives app restarts
 
 **Schema Design:**
 ```

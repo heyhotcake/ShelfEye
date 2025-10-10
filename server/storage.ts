@@ -449,4 +449,288 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from './db';
+import * as schema from '@shared/schema';
+import { eq, desc, and, gte, lte } from 'drizzle-orm';
+
+export class DbStorage implements IStorage {
+  constructor() {
+    this.initializeDefaults();
+  }
+
+  private async initializeDefaults() {
+    const existingCameras = await this.getCameras();
+    
+    if (existingCameras.length === 0) {
+      await this.createCamera({
+        name: "Camera Station A",
+        deviceIndex: 0,
+        resolution: [1920, 1080],
+        isActive: true,
+      });
+
+      await this.createAlertRule({
+        name: "Tool Missing Alert",
+        ruleType: "TOOL_MISSING",
+        isEnabled: true,
+        verificationWindow: 5,
+        businessHoursOnly: true,
+        priority: "high",
+        conditions: { emptyDurationMinutes: 5 },
+      });
+
+      await this.createAlertRule({
+        name: "QR Detection Failure",
+        ruleType: "QR_FAILURE",
+        isEnabled: true,
+        verificationWindow: 3,
+        businessHoursOnly: false,
+        priority: "medium",
+        conditions: { consecutiveFailures: 3 },
+      });
+
+      await this.createAlertRule({
+        name: "Camera Health Alert",
+        ruleType: "CAMERA_HEALTH",
+        isEnabled: true,
+        verificationWindow: 1,
+        businessHoursOnly: false,
+        priority: "high",
+        conditions: { maxReprojectionError: 2.5 },
+      });
+
+      await this.setConfig("smtp_host", "smtp.gmail.com", "SMTP server host");
+      await this.setConfig("smtp_port", 587, "SMTP server port");
+      await this.setConfig("smtp_user", "", "SMTP username");
+      await this.setConfig("smtp_pass", "", "SMTP password");
+      await this.setConfig("smtp_from", "alerts@example.com", "Alert email sender");
+      await this.setConfig("alert_email", "", "Alert recipient email");
+      await this.setConfig("google_sheets_url", "", "Google Sheets logging URL");
+      await this.setConfig("buzzer_gpio_pin", 17, "Buzzer GPIO pin");
+      await this.setConfig("led_gpio_pin", 27, "LED GPIO pin");
+    }
+  }
+
+  async getCameras(): Promise<Camera[]> {
+    return await db.select().from(schema.cameras);
+  }
+
+  async getCamera(id: string): Promise<Camera | undefined> {
+    const result = await db.select().from(schema.cameras).where(eq(schema.cameras.id, id));
+    return result[0];
+  }
+
+  async createCamera(camera: InsertCamera): Promise<Camera> {
+    const result = await db.insert(schema.cameras).values(camera).returning();
+    return result[0];
+  }
+
+  async updateCamera(id: string, updates: Partial<InsertCamera>): Promise<Camera | undefined> {
+    const result = await db.update(schema.cameras).set(updates).where(eq(schema.cameras.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteCamera(id: string): Promise<boolean> {
+    const result = await db.delete(schema.cameras).where(eq(schema.cameras.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getSlots(): Promise<Slot[]> {
+    return await db.select().from(schema.slots);
+  }
+
+  async getSlotsByCamera(cameraId: string): Promise<Slot[]> {
+    return await db.select().from(schema.slots).where(eq(schema.slots.cameraId, cameraId));
+  }
+
+  async getSlot(id: string): Promise<Slot | undefined> {
+    const result = await db.select().from(schema.slots).where(eq(schema.slots.id, id));
+    return result[0];
+  }
+
+  async getSlotBySlotId(slotId: string): Promise<Slot | undefined> {
+    const result = await db.select().from(schema.slots).where(eq(schema.slots.slotId, slotId));
+    return result[0];
+  }
+
+  async createSlot(slot: InsertSlot): Promise<Slot> {
+    const result = await db.insert(schema.slots).values(slot).returning();
+    return result[0];
+  }
+
+  async updateSlot(id: string, updates: Partial<InsertSlot>): Promise<Slot | undefined> {
+    const result = await db.update(schema.slots).set(updates).where(eq(schema.slots.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteSlot(id: string): Promise<boolean> {
+    const result = await db.delete(schema.slots).where(eq(schema.slots.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getDetectionLogs(limit: number = 100, offset: number = 0): Promise<DetectionLog[]> {
+    return await db.select().from(schema.detectionLogs).orderBy(desc(schema.detectionLogs.timestamp)).limit(limit).offset(offset);
+  }
+
+  async getDetectionLogsBySlot(slotId: string, limit: number = 100): Promise<DetectionLog[]> {
+    return await db.select().from(schema.detectionLogs).where(eq(schema.detectionLogs.slotId, slotId)).orderBy(desc(schema.detectionLogs.timestamp)).limit(limit);
+  }
+
+  async getDetectionLogsByDateRange(startDate: Date, endDate: Date): Promise<DetectionLog[]> {
+    return await db.select().from(schema.detectionLogs).where(and(gte(schema.detectionLogs.timestamp, startDate), lte(schema.detectionLogs.timestamp, endDate))).orderBy(desc(schema.detectionLogs.timestamp));
+  }
+
+  async createDetectionLog(log: InsertDetectionLog): Promise<DetectionLog> {
+    const result = await db.insert(schema.detectionLogs).values(log).returning();
+    return result[0];
+  }
+
+  async getAlertRules(): Promise<AlertRule[]> {
+    return await db.select().from(schema.alertRules);
+  }
+
+  async getActiveAlertRules(): Promise<AlertRule[]> {
+    return await db.select().from(schema.alertRules).where(eq(schema.alertRules.isEnabled, true));
+  }
+
+  async getAlertRule(id: string): Promise<AlertRule | undefined> {
+    const result = await db.select().from(schema.alertRules).where(eq(schema.alertRules.id, id));
+    return result[0];
+  }
+
+  async createAlertRule(rule: InsertAlertRule): Promise<AlertRule> {
+    const result = await db.insert(schema.alertRules).values(rule).returning();
+    return result[0];
+  }
+
+  async updateAlertRule(id: string, updates: Partial<InsertAlertRule>): Promise<AlertRule | undefined> {
+    const result = await db.update(schema.alertRules).set(updates).where(eq(schema.alertRules.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteAlertRule(id: string): Promise<boolean> {
+    const result = await db.delete(schema.alertRules).where(eq(schema.alertRules.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getAlertQueue(): Promise<AlertQueue[]> {
+    return await db.select().from(schema.alertQueue).orderBy(desc(schema.alertQueue.scheduledAt));
+  }
+
+  async getPendingAlerts(): Promise<AlertQueue[]> {
+    return await db.select().from(schema.alertQueue).where(eq(schema.alertQueue.status, 'pending')).orderBy(desc(schema.alertQueue.scheduledAt));
+  }
+
+  async getFailedAlerts(): Promise<AlertQueue[]> {
+    return await db.select().from(schema.alertQueue).where(eq(schema.alertQueue.status, 'failed')).orderBy(desc(schema.alertQueue.scheduledAt));
+  }
+
+  async createAlert(alert: InsertAlertQueue): Promise<AlertQueue> {
+    const result = await db.insert(schema.alertQueue).values(alert).returning();
+    return result[0];
+  }
+
+  async updateAlertStatus(id: string, status: string, sentAt?: Date): Promise<AlertQueue | undefined> {
+    const result = await db.update(schema.alertQueue).set({ status, sentAt }).where(eq(schema.alertQueue.id, id)).returning();
+    return result[0];
+  }
+
+  async getSystemConfig(): Promise<SystemConfig[]> {
+    return await db.select().from(schema.systemConfig);
+  }
+
+  async getConfigByKey(key: string): Promise<SystemConfig | undefined> {
+    const result = await db.select().from(schema.systemConfig).where(eq(schema.systemConfig.key, key));
+    return result[0];
+  }
+
+  async setConfig(key: string, value: any, description?: string): Promise<SystemConfig> {
+    const existing = await this.getConfigByKey(key);
+    if (existing) {
+      const result = await db.update(schema.systemConfig).set({ value, description, updatedAt: new Date() }).where(eq(schema.systemConfig.key, key)).returning();
+      return result[0];
+    } else {
+      const result = await db.insert(schema.systemConfig).values({ key, value, description }).returning();
+      return result[0];
+    }
+  }
+
+  async updateConfig(key: string, value: any): Promise<SystemConfig | undefined> {
+    const result = await db.update(schema.systemConfig).set({ value, updatedAt: new Date() }).where(eq(schema.systemConfig.key, key)).returning();
+    return result[0];
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await db.select().from(schema.users).where(eq(schema.users.id, id));
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await db.select().from(schema.users).where(eq(schema.users.username, username));
+    return result[0];
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(schema.users).where(eq(schema.users.email, email));
+    return result[0];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await db.insert(schema.users).values(user).returning();
+    return result[0];
+  }
+
+  async getToolCategories(): Promise<ToolCategory[]> {
+    return await db.select().from(schema.toolCategories);
+  }
+
+  async getToolCategory(id: string): Promise<ToolCategory | undefined> {
+    const result = await db.select().from(schema.toolCategories).where(eq(schema.toolCategories.id, id));
+    return result[0];
+  }
+
+  async createToolCategory(category: InsertToolCategory): Promise<ToolCategory> {
+    const result = await db.insert(schema.toolCategories).values(category).returning();
+    return result[0];
+  }
+
+  async updateToolCategory(id: string, updates: Partial<InsertToolCategory>): Promise<ToolCategory | undefined> {
+    const result = await db.update(schema.toolCategories).set(updates).where(eq(schema.toolCategories.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteToolCategory(id: string): Promise<boolean> {
+    const result = await db.delete(schema.toolCategories).where(eq(schema.toolCategories.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getTemplateRectangles(): Promise<TemplateRectangle[]> {
+    return await db.select().from(schema.templateRectangles);
+  }
+
+  async getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]> {
+    return await db.select().from(schema.templateRectangles).where(eq(schema.templateRectangles.paperSize, paperSize));
+  }
+
+  async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {
+    const result = await db.select().from(schema.templateRectangles).where(eq(schema.templateRectangles.id, id));
+    return result[0];
+  }
+
+  async createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle> {
+    const result = await db.insert(schema.templateRectangles).values(rectangle).returning();
+    return result[0];
+  }
+
+  async updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined> {
+    const result = await db.update(schema.templateRectangles).set(updates).where(eq(schema.templateRectangles.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteTemplateRectangle(id: string): Promise<boolean> {
+    const result = await db.delete(schema.templateRectangles).where(eq(schema.templateRectangles.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+}
+
+export const storage = new DbStorage();
