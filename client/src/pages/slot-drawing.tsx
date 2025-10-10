@@ -45,6 +45,23 @@ export default function SlotDrawing() {
     queryKey: ['/api/slots'],
   });
 
+  // Load existing slots as regions when slots data changes
+  useEffect(() => {
+    if (slots && slots.length > 0 && regions.length === 0) {
+      const loadedRegions: SlotRegion[] = slots.map((slot: any) => ({
+        id: slot.id,
+        slotId: slot.slotId,
+        points: slot.regionCoords.map((coord: number[]) => ({ x: coord[0], y: coord[1] })),
+        toolName: slot.toolName,
+        expectedQrId: slot.expectedQrId || '',
+        priority: slot.priority || 'high',
+        allowCheckout: slot.allowCheckout !== false,
+        graceWindow: slot.graceWindow || '08:30-16:30',
+      }));
+      setRegions(loadedRegions);
+    }
+  }, [slots]);
+
   const createSlotMutation = useMutation({
     mutationFn: (slotData: any) => apiRequest('POST', '/api/slots', slotData),
     onSuccess: () => {
@@ -76,6 +93,26 @@ export default function SlotDrawing() {
     onError: (error) => {
       toast({
         title: "Failed to Update Slot",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteSlotMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/slots/${id}`),
+    onSuccess: () => {
+      toast({
+        title: "Slot Deleted",
+        description: "Slot removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/slots'] });
+      setSelectedRegion(null);
+      setRegions(prev => prev.filter(r => r.id !== selectedRegion?.id));
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Delete Slot",
         description: error.message,
         variant: "destructive",
       });
@@ -182,7 +219,7 @@ export default function SlotDrawing() {
         points: [{ x, y }],
         toolName: '',
         expectedQrId: '',
-        priority: 'medium',
+        priority: 'high',
         allowCheckout: true,
         graceWindow: '08:30-16:30',
       };
@@ -451,61 +488,50 @@ export default function SlotDrawing() {
                         </div>
                         
                         <div>
-                          <Label htmlFor="priority">Priority</Label>
-                          <Select 
-                            value={selectedRegion.priority} 
-                            onValueChange={(value) => updateSelectedRegion({ priority: value as any })}
-                          >
-                            <SelectTrigger data-testid="select-priority">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="high">High</SelectItem>
-                              <SelectItem value="medium">Medium</SelectItem>
-                              <SelectItem value="low">Low</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Label htmlFor="graceWindow">Grace Window</Label>
+                          <Input 
+                            id="graceWindow"
+                            value={selectedRegion.graceWindow}
+                            onChange={(e) => updateSelectedRegion({ graceWindow: e.target.value })}
+                            placeholder="e.g., 08:30-16:30"
+                            data-testid="input-grace-window"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Time range when slot is monitored (HH:MM-HH:MM format)
+                          </p>
                         </div>
                         
                         <div className="pt-4 border-t border-border">
-                          <h4 className="text-sm font-semibold text-foreground mb-3">Business Rules</h4>
-                          
-                          <div className="space-y-3">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id="allowCheckout"
-                                checked={selectedRegion.allowCheckout}
-                                onCheckedChange={(checked) => updateSelectedRegion({ allowCheckout: !!checked })}
-                                data-testid="checkbox-allow-checkout"
-                              />
-                              <Label htmlFor="allowCheckout" className="text-sm text-foreground">
-                                Allow checkout
-                              </Label>
-                            </div>
-                            
-                            <div>
-                              <Label htmlFor="graceWindow">Grace Window</Label>
-                              <Input 
-                                id="graceWindow"
-                                value={selectedRegion.graceWindow}
-                                onChange={(e) => updateSelectedRegion({ graceWindow: e.target.value })}
-                                data-testid="input-grace-window"
-                              />
-                            </div>
-                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            All slots set to: <span className="font-medium text-foreground">High Priority</span> • <span className="font-medium text-foreground">Checkout Allowed</span>
+                          </p>
                         </div>
                         
-                        <Button 
-                          className="w-full mt-6"
-                          onClick={saveSlotConfiguration}
-                          disabled={!selectedRegion.toolName || createSlotMutation.isPending || updateSlotMutation.isPending}
-                          data-testid="button-save-slot"
-                        >
-                          {createSlotMutation.isPending || updateSlotMutation.isPending 
-                            ? 'Saving...' 
-                            : 'Save Slot Configuration'
-                          }
-                        </Button>
+                        <div className="flex gap-2 mt-6">
+                          <Button 
+                            className="flex-1"
+                            onClick={saveSlotConfiguration}
+                            disabled={!selectedRegion.toolName || createSlotMutation.isPending || updateSlotMutation.isPending}
+                            data-testid="button-save-slot"
+                          >
+                            {createSlotMutation.isPending || updateSlotMutation.isPending 
+                              ? 'Saving...' 
+                              : 'Save Slot Configuration'
+                            }
+                          </Button>
+                          
+                          {/* Show delete button only for existing saved slots */}
+                          {slots?.some((s: any) => s.id === selectedRegion.id) && (
+                            <Button 
+                              variant="destructive"
+                              onClick={() => deleteSlotMutation.mutate(selectedRegion.id)}
+                              disabled={deleteSlotMutation.isPending}
+                              data-testid="button-delete-slot"
+                            >
+                              <Trash className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </>
                     ) : (
                       <div className="text-center py-8">
