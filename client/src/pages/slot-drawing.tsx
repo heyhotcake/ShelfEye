@@ -56,12 +56,13 @@ export default function SlotDrawing() {
   const [paperSize, setPaperSize] = useState('A4-landscape');
   
   // Paper size dimensions (width x height in pixels, landscape orientation)
+  // ISO A-series aspect ratio is √2:1 (1.414:1)
   const paperDimensions: Record<string, { width: number; height: number }> = {
-    'A5-landscape': { width: 600, height: 424 },
-    'A4-landscape': { width: 800, height: 566 },
-    'A3-landscape': { width: 1131, height: 800 },
-    '2xA4-landscape': { width: 1600, height: 566 },
-    '3xA4-landscape': { width: 2400, height: 566 },
+    'A5-landscape': { width: 600, height: 424 },        // 210×148mm (small)
+    'A4-landscape': { width: 800, height: 566 },        // 297×210mm (medium)
+    'A3-landscape': { width: 1131, height: 800 },       // 420×297mm (large, 1.41× A4)
+    '2xA5-landscape': { width: 1200, height: 424 },     // 2× A5 side by side
+    '3xA5-landscape': { width: 1800, height: 424 },     // 3× A5 side by side
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -549,11 +550,11 @@ export default function SlotDrawing() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="A5-landscape">A5 Landscape (600×424)</SelectItem>
-                    <SelectItem value="A4-landscape">A4 Landscape (800×566)</SelectItem>
-                    <SelectItem value="A3-landscape">A3 Landscape (1131×800)</SelectItem>
-                    <SelectItem value="2xA4-landscape">2× A4 Landscape (1600×566)</SelectItem>
-                    <SelectItem value="3xA4-landscape">3× A4 Landscape (2400×566)</SelectItem>
+                    <SelectItem value="A5-landscape">A5 Landscape</SelectItem>
+                    <SelectItem value="A4-landscape">A4 Landscape</SelectItem>
+                    <SelectItem value="A3-landscape">A3 Landscape</SelectItem>
+                    <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
+                    <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
@@ -561,13 +562,17 @@ export default function SlotDrawing() {
                 </p>
               </div>
 
-              <div className="canvas-container mb-4">
+              <div className="canvas-container mb-4 flex justify-center">
                 <canvas 
                   ref={canvasRef}
                   width={canvasDimensions.width}
                   height={canvasDimensions.height}
-                  className="w-full drawing-canvas rounded bg-muted"
-                  style={{ cursor: isPanning ? 'grabbing' : isDrawing ? 'crosshair' : 'grab' }}
+                  className="drawing-canvas rounded bg-muted"
+                  style={{ 
+                    cursor: isPanning ? 'grabbing' : isDrawing ? 'crosshair' : 'grab',
+                    maxWidth: '100%',
+                    height: 'auto'
+                  }}
                   onClick={isDrawing ? handleCanvasClick : handleRegionClick}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
