@@ -1,0 +1,107 @@
+# Tool Tracking System Configuration
+
+# Camera capture settings
+capture:
+  device_index: 0           # USB camera index
+  resolution: [1920, 1080]  # width, height
+  interval_seconds: 300     # schedule used by external cron or orchestrator
+
+# Slot definitions
+slots:
+  - id: "A1"
+    # ArUco IDs ordered [TL, TR, BR, BL]
+    aruco_ids: [17, 18, 20, 19]
+    rectified_size: [200, 200]        # ROI size after perspective warp (w,h)
+    thresholds:
+      empty_on: 0.55                  # SSIM-to-EMPTY is inverted as "difference"; see logic
+      empty_off: 0.40                 # lower to keep ON (hysteresis)
+      full_on_ssim: 0.80              # SSIM(current, FULL) to assert correct_item
+      full_off_ssim: 0.70             # lower to keep ON (hysteresis)
+    debounce:
+      window: 5                       # evaluate last N captures
+      k_required: 3                   # require >=K votes to flip state
+
+  - id: "A2"
+    aruco_ids: [21, 22, 24, 23]
+    rectified_size: [200, 200]
+    thresholds:
+      empty_on: 0.55
+      empty_off: 0.40
+      full_on_ssim: 0.80
+      full_off_ssim: 0.70
+    debounce:
+      window: 5
+      k_required: 3
+
+  - id: "A3"
+    aruco_ids: [25, 26, 28, 27]
+    rectified_size: [200, 200]
+    thresholds:
+      empty_on: 0.55
+      empty_off: 0.40
+      full_on_ssim: 0.80
+      full_off_ssim: 0.70
+    debounce:
+      window: 5
+      k_required: 3
+
+# Data storage paths
+paths:
+  data_dir: "data"
+  logs_dir: "logs"
+
+# Application settings
+app:
+  timezone: "Asia/Tokyo"
+  business_hours: "08:00-20:00"       # alerts suppressed outside, but data still logged
+
+# Alert configuration
+alerts:
+  email:
+    enabled: true
+    recipients:
+      - "manager@factory.com"
+      - "supervisor@factory.com"
+    smtp:
+      host: "smtp.gmail.com"
+      port: 587
+      username: "${SMTP_USERNAME}"
+      password: "${SMTP_PASSWORD}"
+  
+  sheets:
+    enabled: true
+    sheet_id: "${GOOGLE_SHEETS_ID}"
+    credentials_path: "credentials/google-sheets.json"
+  
+  sound:
+    enabled: true
+    tone: "alert1"
+
+# Business rules
+business_rules:
+  strict_hours: "08:00-17:00"         # Strict monitoring hours
+  lenient_hours: "11:00-14:00"        # Lenient monitoring hours
+  grace_period_minutes: 5             # Grace period for missing tools
+  retry_attempts: 3                   # Number of retry attempts for failed captures
+
+# Camera calibration
+calibration:
+  aruco_dict: "DICT_4X4_50"
+  marker_length: 0.05                 # meters
+  marker_separation: 0.01             # meters
+  grid_size: [6, 10]                  # markers in x, y
+  error_threshold: 2.5                # max reprojection error in pixels
+
+# QR code settings
+qr_codes:
+  secret_key: "${QR_SECRET_KEY}"
+  error_correction: "H"
+  module_size: 25                     # mm
+  require_signature: true
+
+# System monitoring
+monitoring:
+  health_check_interval: 60           # seconds
+  log_retention_days: 30
+  backup_interval_hours: 24
+  max_log_file_size: "100MB"

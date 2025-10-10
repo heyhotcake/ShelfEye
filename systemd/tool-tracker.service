@@ -1,0 +1,43 @@
+[Unit]
+Description=Tool Tracking System
+Documentation=https://github.com/your-org/tool-tracker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/tool-tracker
+Environment=NODE_ENV=production
+Environment=PORT=5000
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tool-tracker
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/tool-tracker/data /opt/tool-tracker/logs
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryAccounting=true
+MemoryMax=1G
+CPUAccounting=true
+CPUQuota=200%
+
+# Environment files
+EnvironmentFile=-/opt/tool-tracker/.env
+
+[Install]
+WantedBy=multi-user.target

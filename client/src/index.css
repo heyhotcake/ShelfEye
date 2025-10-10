@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(222, 47%, 11%);
+  --foreground: hsl(210, 40%, 98%);
+  --card: hsl(222, 47%, 15%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --popover: hsl(222, 47%, 15%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --primary: hsl(217, 91%, 60%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(222, 47%, 20%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --muted: hsl(223, 47%, 25%);
+  --muted-foreground: hsl(215, 20%, 65%);
+  --accent: hsl(217, 91%, 60%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(223, 47%, 25%);
+  --input: hsl(223, 47%, 25%);
+  --ring: hsl(217, 91%, 60%);
+  --chart-1: hsl(217, 91%, 60%);
+  --chart-2: hsl(142, 76%, 45%);
+  --chart-3: hsl(38, 92%, 50%);
+  --chart-4: hsl(280, 89%, 65%);
+  --chart-5: hsl(215, 20%, 45%);
+  --sidebar: hsl(222, 47%, 15%);
+  --sidebar-foreground: hsl(210, 40%, 98%);
+  --sidebar-primary: hsl(217, 91%, 60%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(217, 91%, 60%);
+  --sidebar-accent-foreground: hsl(0, 0%, 100%);
+  --sidebar-border: hsl(223, 47%, 25%);
+  --sidebar-ring: hsl(217, 91%, 60%);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 0.5rem;
+  --status-empty: hsl(0, 84%, 60%);
+  --status-present: hsl(142, 76%, 45%);
+  --status-checked-out: hsl(217, 91%, 60%);
+  --status-occupied: hsl(215, 20%, 45%);
+  --status-wrong: hsl(38, 92%, 50%);
+  --status-error: hsl(280, 89%, 65%);
+}
+
+.dark {
+  --background: hsl(222, 47%, 11%);
+  --foreground: hsl(210, 40%, 98%);
+  --card: hsl(222, 47%, 15%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --popover: hsl(222, 47%, 15%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --primary: hsl(217, 91%, 60%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(222, 47%, 20%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --muted: hsl(223, 47%, 25%);
+  --muted-foreground: hsl(215, 20%, 65%);
+  --accent: hsl(217, 91%, 60%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(223, 47%, 25%);
+  --input: hsl(223, 47%, 25%);
+  --ring: hsl(217, 91%, 60%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: var(--font-sans);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer components {
+  .status-empty {
+    background-color: var(--status-empty);
+  }
+  
+  .status-present {
+    background-color: var(--status-present);
+  }
+  
+  .status-checked-out {
+    background-color: var(--status-checked-out);
+  }
+  
+  .status-occupied {
+    background-color: var(--status-occupied);
+  }
+  
+  .status-wrong {
+    background-color: var(--status-wrong);
+  }
+  
+  .status-error {
+    background-color: var(--status-error);
+  }
+
+  .grid-slot {
+    @apply transition-all duration-200 cursor-pointer;
+  }
+  
+  .grid-slot:hover {
+    @apply -translate-y-1 shadow-2xl;
+  }
+
+  .canvas-container {
+    @apply relative bg-card border-2 border-border rounded;
+  }
+
+  .drawing-canvas {
+    @apply cursor-crosshair;
+  }
+
+  .alert-badge {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .notification-toast {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+}
