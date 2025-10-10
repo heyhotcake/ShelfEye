@@ -174,18 +174,17 @@ export default function TemplatePrint() {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Render 4 corner ArUco markers (3cm from edges, 5cm size)
+      // Render 4 corner ArUco markers at the exact corners (5cm size)
       if (arucoMarkers?.ok && arucoMarkers.markers) {
-        const borderCm = 3;
         const markerSizeCm = 5;
         const paperWidthCm = canvasDimensions.realWidthMm / 10;
         const paperHeightCm = canvasDimensions.realHeightMm / 10;
         
         const cornerPositions = [
-          { id: 17, xCm: borderCm, yCm: borderCm }, // Top-left
-          { id: 18, xCm: paperWidthCm - borderCm - markerSizeCm, yCm: borderCm }, // Top-right
-          { id: 19, xCm: paperWidthCm - borderCm - markerSizeCm, yCm: paperHeightCm - borderCm - markerSizeCm }, // Bottom-right
-          { id: 20, xCm: borderCm, yCm: paperHeightCm - borderCm - markerSizeCm }, // Bottom-left
+          { id: 17, xCm: 0, yCm: 0 }, // Top-left
+          { id: 18, xCm: paperWidthCm - markerSizeCm, yCm: 0 }, // Top-right
+          { id: 19, xCm: paperWidthCm - markerSizeCm, yCm: paperHeightCm - markerSizeCm }, // Bottom-right
+          { id: 20, xCm: 0, yCm: paperHeightCm - markerSizeCm }, // Bottom-left
         ];
 
         cornerPositions.forEach((pos) => {
