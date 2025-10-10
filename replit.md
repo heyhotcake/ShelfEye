@@ -23,7 +23,8 @@ Preferred communication style: Simple, everyday language.
 **Key Design Patterns:**
 - Component-based architecture with separation between pages, layouts, and UI components
 - Modal-driven interactions for focused tasks (calibration, QR generation, configuration)
-- Canvas API for interactive slot drawing with real-time preview
+- Canvas API for interactive slot drawing with zoom/pan controls and ArUco marker overlays
+- Version management system for slot configurations using localStorage
 - Recharts for analytics visualization and time-series data
 - Real-time polling for live dashboard updates (30-second intervals)
 

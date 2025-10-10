@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save } from "lucide-react";
+import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock } from "lucide-react";
 
 interface Point {
   x: number;
@@ -42,6 +42,15 @@ export default function SlotDrawing() {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  
+  // Version management
+  const [showVersions, setShowVersions] = useState(false);
+  const [versionName, setVersionName] = useState('');
+  const [savedVersions, setSavedVersions] = useState<Array<{
+    name: string;
+    timestamp: string;
+    regions: SlotRegion[];
+  }>>([]);
 
   const { data: cameras } = useQuery({
     queryKey: ['/api/cameras'],
@@ -50,6 +59,18 @@ export default function SlotDrawing() {
   const { data: slots } = useQuery({
     queryKey: ['/api/slots'],
   });
+
+  // Load saved versions from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('slotConfigVersions');
+    if (saved) {
+      try {
+        setSavedVersions(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load saved versions:', e);
+      }
+    }
+  }, []);
 
   // Load existing slots as regions when slots data changes
   useEffect(() => {
@@ -157,6 +178,40 @@ export default function SlotDrawing() {
       ctx.lineTo(canvas.width, y);
       ctx.stroke();
     }
+
+    // Draw ArUco corner markers outline (GridBoard reference)
+    const markerSize = 50;
+    const markers = [
+      { x: 100, y: 100, id: '17' },  // Top-left
+      { x: 650, y: 100, id: '18' },  // Top-right
+      { x: 650, y: 450, id: '19' },  // Bottom-right
+      { x: 100, y: 450, id: '20' },  // Bottom-left
+    ];
+    
+    markers.forEach(marker => {
+      // Draw marker outline
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
+      ctx.lineWidth = 2 / zoom;
+      ctx.strokeRect(marker.x, marker.y, markerSize, markerSize);
+      
+      // Draw marker ID
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
+      ctx.font = `${14 / zoom}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(marker.id, marker.x + markerSize / 2, marker.y + markerSize / 2);
+    });
+    
+    // Draw GridBoard outline
+    ctx.strokeStyle = 'rgba(34, 197, 94, 0.5)';
+    ctx.lineWidth = 2 / zoom;
+    ctx.beginPath();
+    ctx.moveTo(125, 125);
+    ctx.lineTo(675, 125);
+    ctx.lineTo(675, 475);
+    ctx.lineTo(125, 475);
+    ctx.closePath();
+    ctx.stroke();
 
     // Draw existing regions
     regions.forEach((region, index) => {
@@ -395,6 +450,54 @@ export default function SlotDrawing() {
     setIsPanning(false);
   };
 
+  // Version save/load handlers
+  const saveVersion = () => {
+    if (!versionName.trim()) {
+      toast({
+        title: "Version Name Required",
+        description: "Please enter a name for this version",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newVersion = {
+      name: versionName,
+      timestamp: new Date().toISOString(),
+      regions: regions,
+    };
+
+    const updated = [...savedVersions, newVersion];
+    setSavedVersions(updated);
+    localStorage.setItem('slotConfigVersions', JSON.stringify(updated));
+    
+    toast({
+      title: "Version Saved",
+      description: `Configuration saved as "${versionName}"`,
+    });
+    
+    setVersionName('');
+  };
+
+  const loadVersion = (version: typeof savedVersions[0]) => {
+    setRegions(version.regions);
+    setSelectedRegion(null);
+    toast({
+      title: "Version Loaded",
+      description: `Loaded configuration "${version.name}"`,
+    });
+  };
+
+  const deleteVersion = (timestamp: string) => {
+    const updated = savedVersions.filter(v => v.timestamp !== timestamp);
+    setSavedVersions(updated);
+    localStorage.setItem('slotConfigVersions', JSON.stringify(updated));
+    toast({
+      title: "Version Deleted",
+      description: "Configuration version removed",
+    });
+  };
+
   const configuredSlotIds = slots?.map((s: any) => s.slotId) || [];
 
   return (
@@ -514,6 +617,73 @@ export default function SlotDrawing() {
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Version Management */}
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Clock className="w-4 h-4" />
+                      Configuration Versions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {/* Save Version */}
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Version name (e.g., Workshop Layout v1)"
+                          value={versionName}
+                          onChange={(e) => setVersionName(e.target.value)}
+                          data-testid="input-version-name"
+                        />
+                        <Button onClick={saveVersion} data-testid="button-save-version">
+                          <Save className="w-4 h-4 mr-2" />
+                          Save
+                        </Button>
+                      </div>
+
+                      {/* Saved Versions List */}
+                      {savedVersions.length > 0 && (
+                        <div className="border rounded-lg p-3 space-y-2">
+                          <p className="text-sm font-medium">Saved Versions ({savedVersions.length})</p>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {savedVersions.map((version) => (
+                              <div
+                                key={version.timestamp}
+                                className="flex items-center justify-between p-2 bg-muted rounded text-sm"
+                              >
+                                <div className="flex-1">
+                                  <p className="font-medium">{version.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(version.timestamp).toLocaleString()} • {version.regions.length} regions
+                                  </p>
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => loadVersion(version)}
+                                    data-testid={`button-load-version-${version.timestamp}`}
+                                  >
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => deleteVersion(version.timestamp)}
+                                    data-testid={`button-delete-version-${version.timestamp}`}
+                                  >
+                                    <Trash className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
             </div>
             
             {/* Slot Configuration */}
