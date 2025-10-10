@@ -40,6 +40,7 @@ interface TemplateRectangle {
   heightCm: number;
   categoryName: string;
   toolType: string;
+  autoQrId?: string;
 }
 
 export default function SlotDrawing() {
@@ -962,6 +963,7 @@ export default function SlotDrawing() {
 
       createTemplateRectMutation.mutate({
         categoryId: categoryId,
+        cameraId: selectedCameraId,
         paperSize: paperSize,
         xCm: centerXCm,
         yCm: centerYCm,

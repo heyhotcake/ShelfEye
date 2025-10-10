@@ -5,6 +5,7 @@ import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
 import QRCode from "qrcode";
+import { z } from "zod";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -552,25 +553,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/template-rectangles", async (req, res) => {
+    let createdSlotId: string | null = null;
+    
     try {
       const rectangleData = insertTemplateRectangleSchema.parse(req.body);
-      const rectangle = await storage.createTemplateRectangle(rectangleData);
+      
+      const camera = await storage.getCamera(rectangleData.cameraId);
+      if (!camera) {
+        return res.status(400).json({ message: "Camera not found" });
+      }
+      
+      if (!camera.homographyMatrix) {
+        return res.status(400).json({ message: "Camera not calibrated. Please calibrate the camera first." });
+      }
+      
+      const category = await storage.getToolCategory(rectangleData.categoryId);
+      if (!category) {
+        return res.status(400).json({ message: "Tool category not found" });
+      }
+      
+      const { transformTemplateToPixels } = await import('./utils/coordinate-transform.js');
+      const regionCoords = transformTemplateToPixels(
+        {
+          xCm: rectangleData.xCm,
+          yCm: rectangleData.yCm,
+          widthCm: category.widthCm,
+          heightCm: category.heightCm,
+          rotation: rectangleData.rotation || 0,
+        },
+        camera.homographyMatrix as number[]
+      );
+      
+      const qrId = `QR-${category.name.toUpperCase().replace(/\s+/g, '-')}-${Date.now()}`;
+      
+      const slot = await storage.createSlot({
+        slotId: qrId,
+        cameraId: rectangleData.cameraId,
+        toolName: category.name,
+        expectedQrId: qrId,
+        priority: 'medium',
+        regionCoords,
+        allowCheckout: true,
+        graceWindow: '08:30-16:30',
+      });
+      
+      createdSlotId = slot.id;
+      
+      const rectangleWithSlot = {
+        ...rectangleData,
+        autoQrId: qrId,
+        slotId: slot.id,
+      };
+      
+      const rectangle = await storage.createTemplateRectangle(rectangleWithSlot);
       res.json(rectangle);
     } catch (error) {
-      res.status(400).json({ message: "Invalid template rectangle data", error });
+      if (createdSlotId) {
+        try {
+          await storage.deleteSlot(createdSlotId);
+        } catch (rollbackError) {
+          console.warn(`Failed to rollback slot ${createdSlotId}. Manual cleanup may be required:`, rollbackError);
+        }
+      }
+      
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid template rectangle data", errors: error.errors });
+      }
+      
+      console.error('Error creating template rectangle:', error);
+      res.status(500).json({ message: "Failed to create template rectangle. Please try again." });
     }
   });
 
   app.put("/api/template-rectangles/:id", async (req, res) => {
     try {
       const updates = insertTemplateRectangleSchema.partial().parse(req.body);
+      const existingRect = await storage.getTemplateRectangle(req.params.id);
+      
+      if (!existingRect) {
+        return res.status(404).json({ message: "Template rectangle not found" });
+      }
+      
+      if (existingRect.slotId && (updates.xCm !== undefined || updates.yCm !== undefined || updates.rotation !== undefined)) {
+        const camera = await storage.getCamera(existingRect.cameraId);
+        if (!camera) {
+          return res.status(400).json({ message: "Camera not found. Cannot update slot region." });
+        }
+        
+        if (!camera.homographyMatrix) {
+          return res.status(400).json({ message: "Camera not calibrated. Cannot update slot region." });
+        }
+        
+        const category = await storage.getToolCategory(existingRect.categoryId);
+        if (!category) {
+          return res.status(400).json({ message: "Tool category not found. Cannot update slot region." });
+        }
+        
+        const { transformTemplateToPixels } = await import('./utils/coordinate-transform.js');
+        const regionCoords = transformTemplateToPixels(
+          {
+            xCm: updates.xCm ?? existingRect.xCm,
+            yCm: updates.yCm ?? existingRect.yCm,
+            widthCm: category.widthCm,
+            heightCm: category.heightCm,
+            rotation: updates.rotation ?? existingRect.rotation,
+          },
+          camera.homographyMatrix as number[]
+        );
+        
+        await storage.updateSlot(existingRect.slotId, { regionCoords });
+      }
+      
       const rectangle = await storage.updateTemplateRectangle(req.params.id, updates);
       if (!rectangle) {
         return res.status(404).json({ message: "Template rectangle not found" });
       }
       res.json(rectangle);
     } catch (error) {
-      res.status(400).json({ message: "Invalid update data", error });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid update data", errors: error.errors });
+      }
+      
+      console.error('Error updating template rectangle:', error);
+      res.status(500).json({ message: "Failed to update template rectangle. Please try again." });
     }
   });
 
@@ -607,7 +712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       error: 0
     };
 
-    for (const status of slotStatuses.values()) {
+    for (const status of Array.from(slotStatuses.values())) {
       switch (status) {
         case 'ITEM_PRESENT':
           statusCounts.present++;
