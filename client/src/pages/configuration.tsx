@@ -27,7 +27,7 @@ export default function Configuration() {
     queryKey: ['/api/config'],
   });
 
-  const { data: slots } = useQuery({
+  const { data: slots } = useQuery<any[]>({
     queryKey: ['/api/slots'],
   });
 
@@ -62,19 +62,21 @@ export default function Configuration() {
   const toggleCameraMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       apiRequest('PUT', `/api/cameras/${id}`, { isActive }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/cameras'] });
     },
   });
 
   const deleteCameraMutation = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/cameras/${id}`),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Camera Deleted",
         description: "Camera removed successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/cameras'] });
     },
     onError: (error) => {
       toast({

@@ -67,11 +67,11 @@ export default function SlotDrawing() {
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
 
-  const { data: cameras } = useQuery({
+  const { data: cameras } = useQuery<any[]>({
     queryKey: ['/api/cameras'],
   });
 
-  const { data: slots } = useQuery({
+  const { data: slots } = useQuery<any[]>({
     queryKey: ['/api/slots'],
   });
 
