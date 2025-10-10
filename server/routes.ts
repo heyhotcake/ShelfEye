@@ -40,6 +40,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/cameras/:id", async (req, res) => {
+    try {
+      const updates = insertCameraSchema.partial().parse(req.body);
+      const camera = await storage.updateCamera(req.params.id, updates);
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      res.json(camera);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid camera data", error });
+    }
+  });
+
+  app.delete("/api/cameras/:id", async (req, res) => {
+    const deleted = await storage.deleteCamera(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Camera not found" });
+    }
+    res.json({ ok: true });
+  });
+
   // Calibration routes
   app.post("/api/calibrate/:cameraId", async (req, res) => {
     try {
