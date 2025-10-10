@@ -81,6 +81,29 @@ export default function TemplatePrint() {
     enabled: templateRectangles.length > 0,
   });
 
+  const { data: arucoGrid } = useQuery<any>({
+    queryKey: ['/api/aruco-grid'],
+    queryFn: async () => {
+      const response = await fetch('/api/aruco-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'grid',
+          markersX: 6,
+          markersY: 10,
+          markerLengthCm: 5.0,
+          markerSeparationCm: 1.0,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate ArUco grid');
+      }
+      
+      return response.json();
+    },
+  });
+
   const templatesWithCategories: TemplateRectangleWithCategory[] = templateRectangles
     .map(rect => {
       const category = categories.find(c => c.id === rect.categoryId);
@@ -107,6 +130,7 @@ export default function TemplatePrint() {
 
     const renderCanvas = async () => {
       const qrImageCache: { [key: string]: HTMLImageElement } = {};
+      const arucoImageCache: { [key: number]: HTMLImageElement } = {};
 
       const loadImage = (src: string): Promise<HTMLImageElement> => {
         return new Promise((resolve, reject) => {
@@ -117,12 +141,24 @@ export default function TemplatePrint() {
         });
       };
 
+      // Load QR codes
       for (const rect of templatesWithCategories) {
         if (rect.autoQrId && qrCodes[rect.autoQrId]) {
           try {
             qrImageCache[rect.autoQrId] = await loadImage(qrCodes[rect.autoQrId]);
           } catch (error) {
             console.error(`Failed to load QR code for ${rect.autoQrId}:`, error);
+          }
+        }
+      }
+
+      // Load ArUco markers
+      if (arucoGrid?.ok && arucoGrid.markers) {
+        for (const marker of arucoGrid.markers) {
+          try {
+            arucoImageCache[marker.id] = await loadImage(`data:image/png;base64,${marker.image}`);
+          } catch (error) {
+            console.error(`Failed to load ArUco marker ${marker.id}:`, error);
           }
         }
       }
@@ -136,6 +172,22 @@ export default function TemplatePrint() {
       ctx.lineWidth = 1;
       ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
+      // Render ArUco markers with 3cm border offset
+      if (arucoGrid?.ok && arucoGrid.markers) {
+        const borderCm = 3;
+        
+        arucoGrid.markers.forEach((marker: any) => {
+          if (arucoImageCache[marker.id]) {
+            const xPx = cmToPixels(marker.xCm + borderCm, true);
+            const yPx = cmToPixels(marker.yCm + borderCm, false);
+            const sizePx = cmToPixels(marker.sizeCm, true);
+            
+            ctx.drawImage(arucoImageCache[marker.id], xPx, yPx, sizePx, sizePx);
+          }
+        });
+      }
+
+      // Render template rectangles
       templatesWithCategories.forEach((rect) => {
         const widthPx = cmToPixels(rect.category.widthCm, true);
         const heightPx = cmToPixels(rect.category.heightCm, false);
@@ -169,7 +221,7 @@ export default function TemplatePrint() {
     };
 
     renderCanvas();
-  }, [templatesWithCategories, qrCodes, canvasDimensions, paperSize]);
+  }, [templatesWithCategories, qrCodes, arucoGrid, canvasDimensions, paperSize]);
 
   const handlePrint = () => {
     window.print();

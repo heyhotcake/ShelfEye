@@ -385,6 +385,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ArUco marker generation route
+  app.post("/api/aruco-generate", async (req, res) => {
+    try {
+      const { 
+        mode = 'grid', 
+        markerId = 0, 
+        markersX = 6, 
+        markersY = 10,
+        markerLengthCm = 5.0,
+        markerSeparationCm = 1.0
+      } = req.body;
+
+      const pythonScript = path.join(process.cwd(), 'python', 'aruco_generator.py');
+      const args = [
+        pythonScript,
+        '--mode', mode,
+        '--markers-x', markersX.toString(),
+        '--markers-y', markersY.toString(),
+        '--marker-length-cm', markerLengthCm.toString(),
+        '--marker-separation-cm', markerSeparationCm.toString()
+      ];
+
+      if (mode === 'single') {
+        args.push('--marker-id', markerId.toString());
+      }
+
+      const result = await new Promise((resolve, reject) => {
+        const process = spawn('python', args);
+        let output = '';
+        let errorOutput = '';
+
+        process.stdout.on('data', (data: Buffer) => {
+          output += data.toString();
+        });
+
+        process.stderr.on('data', (data: Buffer) => {
+          errorOutput += data.toString();
+        });
+
+        process.on('close', (code: number) => {
+          if (code === 0) {
+            try {
+              resolve(JSON.parse(output));
+            } catch (e) {
+              reject(new Error(`Failed to parse Python output: ${output}`));
+            }
+          } else {
+            reject(new Error(`Python process failed: ${errorOutput}`));
+          }
+        });
+
+        process.on('error', (error: Error) => {
+          reject(error);
+        });
+      });
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ 
+        ok: false, 
+        message: "ArUco generation error", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
   // System configuration routes
   app.get("/api/config", async (_req, res) => {
     const config = await storage.getSystemConfig();

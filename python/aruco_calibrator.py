@@ -20,7 +20,7 @@ class ArucoCalibrator:
                  markers_y: int = 10, 
                  marker_length: float = 0.05, 
                  marker_separation: float = 0.01,
-                 dictionary_type = cv2.aruco.DICT_4X4_50):
+                 dictionary_type = cv2.aruco.DICT_4X4_100):
         """
         Initialize ArUco calibrator
         
