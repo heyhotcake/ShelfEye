@@ -58,13 +58,23 @@ export default function SlotDrawing() {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   
-  // Version management
+  // Slot version management
   const [showVersions, setShowVersions] = useState(false);
   const [versionName, setVersionName] = useState('');
   const [savedVersions, setSavedVersions] = useState<Array<{
     name: string;
     timestamp: string;
     regions: SlotRegion[];
+  }>>([]);
+  
+  // Template version management
+  const [templateVersionName, setTemplateVersionName] = useState('');
+  const [savedTemplateVersions, setSavedTemplateVersions] = useState<Array<{
+    name: string;
+    timestamp: string;
+    templateRectangles: TemplateRectangle[];
+    categories: any[];
+    paperSize: string;
   }>>([]);
   
   // Category manager
@@ -117,14 +127,26 @@ export default function SlotDrawing() {
     },
   });
 
-  // Load saved versions from localStorage on mount
+  // Load saved slot versions from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('slotConfigVersions');
     if (saved) {
       try {
         setSavedVersions(JSON.parse(saved));
       } catch (e) {
-        console.error('Failed to load saved versions:', e);
+        console.error('Failed to load saved slot versions:', e);
+      }
+    }
+  }, []);
+
+  // Load saved template versions from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('templateConfigVersions');
+    if (saved) {
+      try {
+        setSavedTemplateVersions(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load saved template versions:', e);
       }
     }
   }, []);
@@ -792,6 +814,103 @@ export default function SlotDrawing() {
     });
   };
 
+  // Template version save/load handlers
+  const saveTemplateVersion = () => {
+    if (!templateVersionName.trim()) {
+      toast({
+        title: "Version Name Required",
+        description: "Please enter a name for this template version",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newVersion = {
+      name: templateVersionName,
+      timestamp: new Date().toISOString(),
+      templateRectangles: templateRectangles,
+      categories: toolCategories,
+      paperSize: paperSize,
+    };
+
+    const updated = [...savedTemplateVersions, newVersion];
+    setSavedTemplateVersions(updated);
+    localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
+    
+    toast({
+      title: "Template Version Saved",
+      description: `Template configuration saved as "${templateVersionName}"`,
+    });
+    
+    setTemplateVersionName('');
+  };
+
+  const loadTemplateVersion = async (version: typeof savedTemplateVersions[0]) => {
+    try {
+      // First, we need to ensure categories exist in the database
+      for (const category of version.categories) {
+        // Check if category exists, if not create it
+        const existingCategory = toolCategories.find((c: any) => c.name === category.name);
+        if (!existingCategory) {
+          await apiRequest('POST', '/api/tool-categories', {
+            name: category.name,
+            toolType: category.toolType,
+            widthCm: category.widthCm,
+            heightCm: category.heightCm,
+          });
+        }
+      }
+
+      // Refresh categories
+      await queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
+
+      // Delete existing template rectangles for this paper size
+      for (const rect of templateRectangles) {
+        await apiRequest('DELETE', `/api/template-rectangles/${rect.id}`);
+      }
+
+      // Create new template rectangles
+      for (const rect of version.templateRectangles) {
+        await apiRequest('POST', '/api/template-rectangles', {
+          categoryId: rect.categoryId,
+          paperSize: version.paperSize,
+          xCm: rect.xCm,
+          yCm: rect.yCm,
+          rotation: rect.rotation,
+          autoQrId: rect.autoQrId,
+        });
+      }
+
+      // Refresh template rectangles
+      await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
+
+      // Set paper size
+      setPaperSize(version.paperSize);
+      setSelectedTemplateRect(null);
+
+      toast({
+        title: "Template Version Loaded",
+        description: `Loaded template configuration "${version.name}"`,
+      });
+    } catch (error) {
+      toast({
+        title: "Load Failed",
+        description: "Failed to load template version",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteTemplateVersion = (timestamp: string) => {
+    const updated = savedTemplateVersions.filter(v => v.timestamp !== timestamp);
+    setSavedTemplateVersions(updated);
+    localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
+    toast({
+      title: "Template Version Deleted",
+      description: "Template configuration version removed",
+    });
+  };
+
   const addTemplateRectangle = async (categoryId: string) => {
     const category = toolCategories.find((c: any) => c.id === categoryId);
     if (!category) return;
@@ -1191,12 +1310,79 @@ export default function SlotDrawing() {
                   </CardContent>
                 </Card>
 
-                {/* Version Management */}
+                {/* Template Version Management */}
                 <Card className="mt-4">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Clock className="w-4 h-4" />
-                      Configuration Versions
+                      Template Versions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {/* Save Template Version */}
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Template version name (e.g., Pen Layout v1)"
+                          value={templateVersionName}
+                          onChange={(e) => setTemplateVersionName(e.target.value)}
+                          data-testid="input-template-version-name"
+                        />
+                        <Button onClick={saveTemplateVersion} data-testid="button-save-template-version">
+                          <Save className="w-4 h-4 mr-2" />
+                          Save
+                        </Button>
+                      </div>
+
+                      {/* Saved Template Versions List */}
+                      {savedTemplateVersions.length > 0 && (
+                        <div className="border rounded-lg p-3 space-y-2">
+                          <p className="text-sm font-medium">Saved Template Versions ({savedTemplateVersions.length})</p>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {savedTemplateVersions.map((version) => (
+                              <div
+                                key={version.timestamp}
+                                className="flex items-center justify-between p-2 bg-muted rounded text-sm"
+                              >
+                                <div className="flex-1">
+                                  <p className="font-medium">{version.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(version.timestamp).toLocaleString()} • {version.templateRectangles.length} templates • {version.categories.length} categories
+                                  </p>
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => loadTemplateVersion(version)}
+                                    data-testid={`button-load-template-version-${version.timestamp}`}
+                                  >
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => deleteTemplateVersion(version.timestamp)}
+                                    data-testid={`button-delete-template-version-${version.timestamp}`}
+                                  >
+                                    <Trash className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Slot Version Management */}
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Clock className="w-4 h-4" />
+                      Slot Configuration Versions
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

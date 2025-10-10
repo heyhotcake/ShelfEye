@@ -25,7 +25,9 @@ Preferred communication style: Simple, everyday language.
 - Modal-driven interactions for focused tasks (calibration, QR generation, configuration)
 - Canvas API for interactive slot drawing with zoom/pan controls and ArUco marker overlays
 - Configurable canvas aspect ratios for ISO A-series paper sizes (A5, A4, A3, multiple sheets)
-- Version management system for slot configurations using localStorage
+- Dual version management system using localStorage:
+  - Template versions: Saves rectangles, categories, and paper size configurations
+  - Slot versions: Saves slot region configurations for camera overlays
 - Recharts for analytics visualization and time-series data
 - Real-time polling for live dashboard updates (30-second intervals)
 
