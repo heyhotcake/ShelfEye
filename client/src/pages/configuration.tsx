@@ -27,6 +27,14 @@ export default function Configuration() {
     queryKey: ['/api/config'],
   });
 
+  const { data: slots } = useQuery({
+    queryKey: ['/api/slots'],
+  });
+
+  const { data: cameras } = useQuery({
+    queryKey: ['/api/cameras'],
+  });
+
   const updateConfigMutation = useMutation({
     mutationFn: ({ key, value, description }: { key: string; value: any; description?: string }) =>
       apiRequest('POST', '/api/config', { key, value, description }),
@@ -159,11 +167,11 @@ export default function Configuration() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground mb-1">Configured Slots</p>
-                    <p className="font-mono font-medium text-foreground" data-testid="text-configured-slots">60</p>
+                    <p className="font-mono font-medium text-foreground" data-testid="text-configured-slots">{slots?.length || 0}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground mb-1">Active Cameras</p>
-                    <p className="font-mono font-medium text-foreground" data-testid="text-active-cameras">1</p>
+                    <p className="font-mono font-medium text-foreground" data-testid="text-active-cameras">{cameras?.filter((c: any) => c.isActive).length || 0}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground mb-1">Capture Schedule</p>

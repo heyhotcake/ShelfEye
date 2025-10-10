@@ -1,6 +1,6 @@
 # Tool Tracking System
 
-A Raspberry Pi-based automated tool monitoring system using QR codes, ArUco grid calibration, and computer vision to track 60 tools across multiple cameras with email alerts and comprehensive logging.
+A Raspberry Pi-based automated tool monitoring system using QR codes, ArUco grid calibration, and computer vision to track tools across multiple cameras with email alerts and comprehensive logging.
 
 ## Features
 
@@ -8,7 +8,7 @@ A Raspberry Pi-based automated tool monitoring system using QR codes, ArUco grid
 - **Camera-based Tool Detection**: OpenCV-powered computer vision for real-time tool presence detection
 - **QR Code Recognition**: Secure QR code detection with HMAC signature verification
 - **ArUco GridBoard Calibration**: Precise perspective correction using ArUco markers
-- **Multi-slot Monitoring**: Support for 60+ tool slots with configurable grid layouts
+- **Multi-slot Monitoring**: Support for any number of tool slots with configurable grid layouts
 - **Real-time Analytics**: Live dashboard with detection statistics and trends
 
 ### Detection States

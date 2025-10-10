@@ -530,16 +530,11 @@ export default function SlotDrawing() {
                     </Badge>
                   ))}
                   
-                  {/* Show placeholder badges for remaining slots */}
-                  {Array.from({ length: Math.max(0, 60 - configuredSlotIds.length) }, (_, i) => (
-                    <Badge 
-                      key={`empty-${i}`}
-                      variant="outline" 
-                      className="px-3 py-2 text-center justify-center opacity-30"
-                    >
-                      ---
-                    </Badge>
-                  ))}
+                  {configuredSlotIds.length === 0 && (
+                    <p className="col-span-full text-muted-foreground text-sm text-center py-4">
+                      No slots configured yet. Draw slot regions on the camera image above.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
