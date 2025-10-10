@@ -331,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QR code generation route
   app.post("/api/qr-generate", async (req, res) => {
     try {
-      const { type, id, toolType, workerName, errorCorrection = 'H', moduleSize = 25, includeHmac = true } = req.body;
+      const { type, id, toolType, workerName, errorCorrection = 'L', moduleSize = 25, includeHmac = true } = req.body;
 
       const payload: any = {
         type,
@@ -360,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const qrOptions = {
-        errorCorrectionLevel: errorCorrectionMap[errorCorrection] || 'H',
+        errorCorrectionLevel: errorCorrectionMap[errorCorrection] || 'L',
         type: 'image/png' as const,
         quality: 1,
         margin: 1,

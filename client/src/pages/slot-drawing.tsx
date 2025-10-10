@@ -813,7 +813,7 @@ export default function SlotDrawing() {
         type: 'slot',
         id: qrId,
         toolType: category.toolType,
-        errorCorrection: 'H',
+        errorCorrection: 'L',
         moduleSize: 25,
         includeHmac: true,
       });

@@ -40,7 +40,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
     id: '',
     toolType: '',
     workerName: '',
-    errorCorrection: 'H',
+    errorCorrection: 'L',
     moduleSize: 25,
     includeHmac: true,
   });

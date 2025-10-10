@@ -60,7 +60,7 @@ export default function TemplatePrint() {
               body: JSON.stringify({
                 type: 'slot',
                 id: rect.autoQrId,
-                errorCorrection: 'H',
+                errorCorrection: 'L',
                 moduleSize: 15,
                 includeHmac: true,
               }),
