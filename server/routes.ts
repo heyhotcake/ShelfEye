@@ -5,7 +5,7 @@ import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
 import QRCode from "qrcode";
-import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema } from "@shared/schema";
+import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check
@@ -419,6 +419,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(404).json({ message: "ROI image not found" });
     }
+  });
+
+  // Tool category routes
+  app.get("/api/tool-categories", async (_req, res) => {
+    const categories = await storage.getToolCategories();
+    res.json(categories);
+  });
+
+  app.get("/api/tool-categories/:id", async (req, res) => {
+    const category = await storage.getToolCategory(req.params.id);
+    if (!category) {
+      return res.status(404).json({ message: "Tool category not found" });
+    }
+    res.json(category);
+  });
+
+  app.post("/api/tool-categories", async (req, res) => {
+    try {
+      const categoryData = insertToolCategorySchema.parse(req.body);
+      const category = await storage.createToolCategory(categoryData);
+      res.json(category);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid tool category data", error });
+    }
+  });
+
+  app.put("/api/tool-categories/:id", async (req, res) => {
+    try {
+      const updates = insertToolCategorySchema.partial().parse(req.body);
+      const category = await storage.updateToolCategory(req.params.id, updates);
+      if (!category) {
+        return res.status(404).json({ message: "Tool category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid update data", error });
+    }
+  });
+
+  app.delete("/api/tool-categories/:id", async (req, res) => {
+    const deleted = await storage.deleteToolCategory(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Tool category not found" });
+    }
+    res.json({ success: true });
+  });
+
+  // Template rectangle routes
+  app.get("/api/template-rectangles", async (req, res) => {
+    const { paperSize } = req.query;
+    if (paperSize && typeof paperSize === 'string') {
+      const rectangles = await storage.getTemplateRectanglesByPaperSize(paperSize);
+      return res.json(rectangles);
+    }
+    const rectangles = await storage.getTemplateRectangles();
+    res.json(rectangles);
+  });
+
+  app.get("/api/template-rectangles/:id", async (req, res) => {
+    const rectangle = await storage.getTemplateRectangle(req.params.id);
+    if (!rectangle) {
+      return res.status(404).json({ message: "Template rectangle not found" });
+    }
+    res.json(rectangle);
+  });
+
+  app.post("/api/template-rectangles", async (req, res) => {
+    try {
+      const rectangleData = insertTemplateRectangleSchema.parse(req.body);
+      const rectangle = await storage.createTemplateRectangle(rectangleData);
+      res.json(rectangle);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid template rectangle data", error });
+    }
+  });
+
+  app.put("/api/template-rectangles/:id", async (req, res) => {
+    try {
+      const updates = insertTemplateRectangleSchema.partial().parse(req.body);
+      const rectangle = await storage.updateTemplateRectangle(req.params.id, updates);
+      if (!rectangle) {
+        return res.status(404).json({ message: "Template rectangle not found" });
+      }
+      res.json(rectangle);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid update data", error });
+    }
+  });
+
+  app.delete("/api/template-rectangles/:id", async (req, res) => {
+    const deleted = await storage.deleteTemplateRectangle(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Template rectangle not found" });
+    }
+    res.json({ success: true });
   });
 
   // Analytics routes

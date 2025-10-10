@@ -1,4 +1,4 @@
-import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser } from "@shared/schema";
+import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -50,6 +50,21 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+
+  // Tool category methods
+  getToolCategories(): Promise<ToolCategory[]>;
+  getToolCategory(id: string): Promise<ToolCategory | undefined>;
+  createToolCategory(category: InsertToolCategory): Promise<ToolCategory>;
+  updateToolCategory(id: string, updates: Partial<InsertToolCategory>): Promise<ToolCategory | undefined>;
+  deleteToolCategory(id: string): Promise<boolean>;
+
+  // Template rectangle methods
+  getTemplateRectangles(): Promise<TemplateRectangle[]>;
+  getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]>;
+  getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined>;
+  createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle>;
+  updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined>;
+  deleteTemplateRectangle(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -60,6 +75,8 @@ export class MemStorage implements IStorage {
   private alertQueue: Map<string, AlertQueue> = new Map();
   private systemConfig: Map<string, SystemConfig> = new Map();
   private users: Map<string, User> = new Map();
+  private toolCategories: Map<string, ToolCategory> = new Map();
+  private templateRectangles: Map<string, TemplateRectangle> = new Map();
 
   constructor() {
     // Initialize with default camera and slots
@@ -358,6 +375,77 @@ export class MemStorage implements IStorage {
     const newUser: User = { ...user, id };
     this.users.set(id, newUser);
     return newUser;
+  }
+
+  // Tool category methods
+  async getToolCategories(): Promise<ToolCategory[]> {
+    return Array.from(this.toolCategories.values());
+  }
+
+  async getToolCategory(id: string): Promise<ToolCategory | undefined> {
+    return this.toolCategories.get(id);
+  }
+
+  async createToolCategory(category: InsertToolCategory): Promise<ToolCategory> {
+    const id = randomUUID();
+    const newCategory: ToolCategory = {
+      ...category,
+      id,
+      createdAt: new Date(),
+    };
+    this.toolCategories.set(id, newCategory);
+    return newCategory;
+  }
+
+  async updateToolCategory(id: string, updates: Partial<InsertToolCategory>): Promise<ToolCategory | undefined> {
+    const category = this.toolCategories.get(id);
+    if (!category) return undefined;
+
+    const updated = { ...category, ...updates };
+    this.toolCategories.set(id, updated);
+    return updated;
+  }
+
+  async deleteToolCategory(id: string): Promise<boolean> {
+    return this.toolCategories.delete(id);
+  }
+
+  // Template rectangle methods
+  async getTemplateRectangles(): Promise<TemplateRectangle[]> {
+    return Array.from(this.templateRectangles.values());
+  }
+
+  async getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]> {
+    return Array.from(this.templateRectangles.values())
+      .filter(rect => rect.paperSize === paperSize);
+  }
+
+  async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {
+    return this.templateRectangles.get(id);
+  }
+
+  async createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle> {
+    const id = randomUUID();
+    const newRectangle: TemplateRectangle = {
+      ...rectangle,
+      id,
+      createdAt: new Date(),
+    };
+    this.templateRectangles.set(id, newRectangle);
+    return newRectangle;
+  }
+
+  async updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined> {
+    const rectangle = this.templateRectangles.get(id);
+    if (!rectangle) return undefined;
+
+    const updated = { ...rectangle, ...updates };
+    this.templateRectangles.set(id, updated);
+    return updated;
+  }
+
+  async deleteTemplateRectangle(id: string): Promise<boolean> {
+    return this.templateRectangles.delete(id);
   }
 }
 

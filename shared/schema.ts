@@ -83,6 +83,26 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+export const toolCategories = pgTable("tool_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  toolType: text("tool_type").notNull(),
+  widthCm: real("width_cm").notNull(),
+  heightCm: real("height_cm").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const templateRectangles = pgTable("template_rectangles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  categoryId: varchar("category_id").references(() => toolCategories.id).notNull(),
+  paperSize: text("paper_size").notNull(), // A3, A4, A5, etc.
+  xCm: real("x_cm").notNull(),
+  yCm: real("y_cm").notNull(),
+  rotation: integer("rotation").notNull().default(0), // 0, 45, 90, 135, 180, 225, 270, 315
+  autoQrId: text("auto_qr_id"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 // Insert schemas
 export const insertCameraSchema = createInsertSchema(cameras).omit({ id: true, createdAt: true });
 export const insertSlotSchema = createInsertSchema(slots).omit({ id: true, createdAt: true });
@@ -91,6 +111,8 @@ export const insertAlertRuleSchema = createInsertSchema(alertRules).omit({ id: t
 export const insertAlertQueueSchema = createInsertSchema(alertQueue).omit({ id: true, createdAt: true });
 export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({ id: true, updatedAt: true });
 export const insertUserSchema = createInsertSchema(users).pick({ username: true, password: true, email: true, role: true });
+export const insertToolCategorySchema = createInsertSchema(toolCategories).omit({ id: true, createdAt: true });
+export const insertTemplateRectangleSchema = createInsertSchema(templateRectangles).omit({ id: true, createdAt: true });
 
 // Types
 export type InsertCamera = z.infer<typeof insertCameraSchema>;
@@ -100,6 +122,8 @@ export type InsertAlertRule = z.infer<typeof insertAlertRuleSchema>;
 export type InsertAlertQueue = z.infer<typeof insertAlertQueueSchema>;
 export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertToolCategory = z.infer<typeof insertToolCategorySchema>;
+export type InsertTemplateRectangle = z.infer<typeof insertTemplateRectangleSchema>;
 
 export type Camera = typeof cameras.$inferSelect;
 export type Slot = typeof slots.$inferSelect;
@@ -108,3 +132,5 @@ export type AlertRule = typeof alertRules.$inferSelect;
 export type AlertQueue = typeof alertQueue.$inferSelect;
 export type SystemConfig = typeof systemConfig.$inferSelect;
 export type User = typeof users.$inferSelect;
+export type ToolCategory = typeof toolCategories.$inferSelect;
+export type TemplateRectangle = typeof templateRectangles.$inferSelect;

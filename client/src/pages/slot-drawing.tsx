@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock } from "lucide-react";
+import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers } from "lucide-react";
+import { CategoryManager } from "@/components/modals/category-manager";
 
 interface Point {
   x: number;
@@ -51,6 +52,9 @@ export default function SlotDrawing() {
     timestamp: string;
     regions: SlotRegion[];
   }>>([]);
+  
+  // Category manager
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
   
   // Paper size configuration
   const [paperSize, setPaperSize] = useState('A4-landscape');
@@ -568,23 +572,33 @@ export default function SlotDrawing() {
             {/* Drawing Canvas */}
             <div>
               {/* Paper Size Selector */}
-              <div className="mb-4 flex items-center gap-3">
-                <Label htmlFor="paper-size" className="text-sm font-medium">Paper Size:</Label>
-                <Select value={paperSize} onValueChange={setPaperSize}>
-                  <SelectTrigger className="w-48" id="paper-size" data-testid="select-paper-size">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A5-landscape">A5 Landscape</SelectItem>
-                    <SelectItem value="A4-landscape">A4 Landscape</SelectItem>
-                    <SelectItem value="A3-landscape">A3 Landscape</SelectItem>
-                    <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
-                    <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Match your ArUco grid paper size
-                </p>
+              <div className="mb-4 flex items-center gap-3 justify-between">
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="paper-size" className="text-sm font-medium">Paper Size:</Label>
+                  <Select value={paperSize} onValueChange={setPaperSize}>
+                    <SelectTrigger className="w-48" id="paper-size" data-testid="select-paper-size">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A5-landscape">A5 Landscape</SelectItem>
+                      <SelectItem value="A4-landscape">A4 Landscape</SelectItem>
+                      <SelectItem value="A3-landscape">A3 Landscape</SelectItem>
+                      <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
+                      <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Match your ArUco grid paper size
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCategoryManager(true)}
+                  data-testid="button-category-manager"
+                >
+                  <Layers className="w-4 h-4 mr-2" />
+                  Tool Categories
+                </Button>
               </div>
 
               <div className="canvas-container mb-4 flex justify-center">
@@ -880,6 +894,11 @@ export default function SlotDrawing() {
           </div>
         </div>
       </main>
+      
+      <CategoryManager
+        open={showCategoryManager}
+        onOpenChange={setShowCategoryManager}
+      />
     </div>
   );
 }
