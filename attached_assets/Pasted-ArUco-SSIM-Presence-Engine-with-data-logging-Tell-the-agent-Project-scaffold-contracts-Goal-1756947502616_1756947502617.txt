@@ -1,0 +1,310 @@
+ArUco + SSIM Presence Engine (with data logging)
+Tell the agent — Project scaffold & contracts
+
+Goal: Camera-only, slot-aware presence detection. Rectify each slot using 4 ArUco corners, then decide:
+
+present (is something in the slot?) via SSIM vs EMPTY baseline.
+
+correct_item (is it the intended tool?) via SSIM vs FULL baseline.
+
+Debounce with k-of-n voting and hysteresis thresholds.
+
+Log every rectified ROI and metrics to build the training set.
+
+Create these files (content per contracts below):
+
+requirements.txt — include: opencv-contrib-python-headless, numpy, Flask, scikit-image, Pillow, pyyaml, waitress.
+
+config.yaml — configuration schema below.
+
+main.py — implement API per endpoints below (no business logic deviations).
+
+README.md — include run, calibrate, capture steps from this spec.
+
+Create directories at runtime: data/, logs/, data/rois/.
+
+Directory policy:
+
+Baselines: data/<slot_id>_EMPTY.png, data/<slot_id>_FULL.png
+
+Last ROI preview (per slot): data/<slot_id>_last.png
+
+ROI archive: data/rois/<slot_id>/<YYYY-MM>/<YYYYMMDD_HHMMSS>_<slot_id>.png
+
+Manifest CSV (append-only): data/manifest.csv
+
+config.yaml schema (authoritative):
+
+capture:
+  device_index: 0           # USB camera index
+  resolution: [1920, 1080]  # width, height
+  interval_seconds: 300     # schedule used by external cron or orchestrator
+
+slots:
+  - id: "A1"
+    # ArUco IDs ordered [TL, TR, BR, BL]
+    aruco_ids: [17, 18, 20, 19]
+    rectified_size: [200, 200]        # ROI size after perspective warp (w,h)
+    thresholds:
+      empty_on: 0.55                  # SSIM-to-EMPTY is inverted as “difference”; see logic
+      empty_off: 0.40                 # lower to keep ON (hysteresis)
+      full_on_ssim: 0.80              # SSIM(current, FULL) to assert correct_item
+      full_off_ssim: 0.70             # lower to keep ON (hysteresis)
+    debounce:
+      window: 5                       # evaluate last N captures
+      k_required: 3                   # require >=K votes to flip state
+  # Add A2, B1, ... with their own IDs and thresholds
+
+paths:
+  data_dir: "data"
+  logs_dir: "logs"
+
+app:
+  timezone: "Asia/Tokyo"
+  business_hours: "08:00-20:00"       # alerts suppressed outside, but data still logged
+
+
+Detection & state machine (behavioral contract):
+
+Per capture:
+
+Detect ArUco markers; if any of a slot’s four IDs missing → slot state = UNCERTAIN for this tick (still log).
+
+Rectify to rectified_size via perspective transform.
+
+Compute:
+
+s_empty = SSIM(current_roi, EMPTY_baseline) → lower implies presence.
+
+s_full = SSIM(current_roi, FULL_baseline) → higher implies correct item.
+
+Decisions:
+
+present_vote = (s_empty < empty_on) OR if previously present, keep present_vote = (s_empty < empty_off) (hysteresis).
+
+correct_vote = (s_full >= full_on_ssim) OR if previously correct, keep (s_full >= full_off_ssim).
+
+Debounce: maintain a sliding window of the last window votes; flip present/correct_item only if each has ≥ k_required votes.
+
+Health metrics:
+
+Compute pose_quality (simple geometric proxy; larger = closer/clearer markers).
+
+If ArUco fails or the image is too dark/blurred, set state="UNCERTAIN" but still archive ROI and write manifest row.
+
+API (must expose exactly):
+
+GET /api/health → { ok: true, time, version? }
+
+POST /api/calibrate/empty
+Behavior: capture once, rectify each slot, save *_EMPTY.png.
+Response: { ok: true, saved: [slot_ids...] }
+
+POST /api/calibrate/full
+Behavior: capture once with correct tools placed, save *_FULL.png.
+Response: { ok: true, saved: [slot_ids...] }
+
+POST /api/capture
+Behavior: one capture; process all slots; update states; log ROI PNGs + manifest row.
+Response (example):
+
+{
+  "ok": true,
+  "time": "2025-09-04T09:12:00+09:00",
+  "statuses": {
+    "A1": {
+      "state": "OK",                 // OK | UNCERTAIN | UNCALIBRATED_EMPTY | UNCALIBRATED_FULL
+      "present": true,
+      "correct_item": false,
+      "scores": { "s_empty": 0.42, "s_full": 0.61 },
+      "pose_quality": 128.4,
+      "roi_png": "/api/roi/A1.png"
+    }
+  }
+}
+
+
+GET /api/roi/<slot_id>.png → latest rectified ROI PNG for quick visual QA.
+
+Logging/manifest contract (append one row per slot per capture):
+CSV headers (fixed order):
+
+timestamp,slot_id,state,present,correct_item,s_empty,s_full,pose_quality,roi_path
+
+
+Non-functional constraints:
+
+Headless OpenCV; no GUI windows.
+
+Fail safe: if EMPTY baseline missing → return UNCALIBRATED_EMPTY. If FULL missing, allow present but force correct_item=false and mark UNCALIBRATED_FULL.
+
+Never delete old data automatically. Retention is a separate task.
+
+You run — Phase-1 acceptance tests (no code edits)
+
+Install & start
+
+pip install -r requirements.txt
+
+python main.py
+
+curl http://localhost:8000/api/health
+
+Calibrate EMPTY (shelf cleared)
+
+curl -X POST http://localhost:8000/api/calibrate/empty
+
+Expect ok:true and files data/<slot>_EMPTY.png.
+
+Calibrate FULL (place correct tools)
+
+curl -X POST http://localhost:8000/api/calibrate/full
+
+Expect ok:true and files data/<slot>_FULL.png.
+
+Capture
+
+curl -X POST http://localhost:8000/api/capture | jq
+
+Verify statuses[*].state and present/correct_item look reasonable.
+
+ls data/rois/<slot_id>/<YYYY-MM>/ shows new ROI PNGs.
+
+tail -n1 data/manifest.csv has a row with s_empty/s_full.
+
+Success criteria:
+
+Camera bumps still produce valid ROIs (ArUco present).
+
+Empty slot yields present=false with s_empty high (~0.9+).
+
+Correctly filled slot yields present=true and s_full high (≥ full_on_ssim).
+
+Manifest grows with each capture; ROI images are visually correct.
+
+PHASE 2 — Tiny Classifier (train & integrate)
+Tell the agent — Classifier training & runtime fusion (no code, contracts only)
+
+Goal: Train a lightweight empty/correct/wrong classifier from Phase-1 ROIs. Deploy as a third signal to reduce edge cases. Keep SSIM as guardrail until the model proves superior for ≥2 weeks.
+
+New files to add:
+
+train_classifier.py — offline script (can run in Replit) that:
+
+Reads data/manifest.csv + ROI PNGs.
+
+Builds a dataset with labels: empty, correct, wrong.
+
+Seed labels:
+
+empty if present=false consistently for that ROI file.
+
+correct if present=true AND correct_item=true.
+
+wrong if present=true AND correct_item=false.
+
+Allow a CSV override data/labels_override.csv with columns file_path, human_label to correct seeds.
+
+Model spec (authoritative):
+
+Input: grayscale 128×128.
+
+Architecture: MobileNetV3-Small (or equivalent small CNN).
+
+Train/val split: time-aware (older → train, newer → val).
+
+Augmentations: brightness ±10%, rotation ±3°, slight Gaussian blur. No heavy color aug (grayscale).
+
+Export: models/model.tflite + models/labels.json (class order).
+
+Emit metrics JSON models/metrics.json with per-class F1 and confusion matrix.
+
+infer_classifier.py — runtime shim that:
+
+Loads models/model.tflite.
+
+Provides predict(roi) -> {empty: p, correct: p, wrong: p}.
+
+Returns { "available": false } if model files missing; Phase-1 logic continues unaffected.
+
+Fusion policy (runtime, config-driven):
+Add to config.yaml:
+
+classifier:
+  enabled: true
+  duty_cycle: "borderline"   # "always" | "borderline"
+  borderline_range: [0.45, 0.60]   # apply classifier only if s_empty in this band
+  weights:
+    present: { ssim_present: 0.6, clf_present: 0.4 }
+    correct: { ssim_correct: 0.5, clf_correct: 0.5 }
+  acceptance_gate:
+    min_val_f1: 0.90        # require this before enabling "always"
+    grace_days: 14          # keep SSIM primary for N days post-deploy
+
+
+Classifier signal definitions:
+
+clf_present = 1 - p(empty)
+
+clf_correct = p(correct) (conditioned on present)
+
+Fusion decision (conceptual, not code):
+
+If classifier.enabled=false or no model present → fall back to pure SSIM logic.
+
+If duty_cycle="borderline" → run classifier only when s_empty ∈ borderline_range.
+
+Compute fused scores using weights above; apply same hysteresis + k-of-n state machine as Phase-1.
+
+Record classifier outputs to manifest.csv new columns:
+
+clf_p_empty,clf_p_correct,clf_p_wrong
+
+
+New/extended endpoints:
+
+GET /api/model/status → { available: true|false, metrics?: { ... }, version?: "model_YYYYMMDD" }
+
+POST /api/model/reload → hot-reload TFLite model.
+
+Extend POST /api/capture response with classifier_used: true|false per slot and clf_probs when used.
+
+Ops & governance:
+
+Store every exported model under models/ with semantic version (e.g., model_2025-09-18_f1-0.962.tflite).
+
+Only set classifier.enabled=true and duty_cycle="always" after metrics.json shows val F1 ≥ min_val_f1 and after grace_days of shadow testing.
+
+Keep Phase-1 SSIM code path as a feature flag forever (rollback safety).
+
+You run — Phase-2 acceptance tests
+
+Data present: Ensure data/rois/ and data/manifest.csv have at least a few hundred ROIs.
+
+Train model: Run the training script; expect outputs:
+
+models/model.tflite
+
+models/labels.json
+
+models/metrics.json (reports per-class precision/recall/F1, confusion matrix)
+
+Enable fusion: Set in config.yaml:
+
+classifier.enabled: true
+
+duty_cycle: "borderline"
+
+Reload & capture:
+
+curl http://localhost:8000/api/model/status
+
+curl -X POST http://localhost:8000/api/model/reload
+
+curl -X POST http://localhost:8000/api/capture | jq
+
+Verify classifier_used toggles only on borderline s_empty; verify clf_probs appear.
+
+Promote to always (later):
+
+After grace period and metrics gate pass, set duty_cycle: "always". Confirm captures show classifier_used: true consistently and that false alerts decreased vs. SSIM-only baseline.

@@ -1,0 +1,107 @@
+Solid baseline. Gaps and fixes:
+
+Architecture
+
+Use ArUco GridBoard (cv2.aruco.GridBoard) not loose single markers. Compute homography H, store reprojection error; fall back only if error < threshold. Persist H per camera with timestamp and lens temp.
+
+Picamera2 on Pi. Lock exposure, gain, white balance. CRI>90 LED strips, constant-current driver, PWM off during capture to avoid flicker.
+
+Local-first. Write slot states + images to SQLite (WAL) on Pi. Sync to Neon via queued jobs. Replit UI reads Neon. Systemd services + watchdog for camera/LED faults.
+
+Image pipeline
+
+Pre-capture dark-frame subtraction optional. Fixed ROI mask to exclude borders/glare.
+
+After warp, precompute slot ROIs once from board geometry, not by dividing image dimensions every cycle.
+
+Add adaptive threshold and morphology before QR decode. Try scales: {0.75×, 1.0×, 1.5×}.
+
+Prefer zxing-cpp or OpenCV QRCodeDetector.detectAndDecodeMulti for speed. Keep pyzbar as fallback. Run decoders in a ThreadPool; ROIs are independent.
+
+If no QR: also run simple presence detection (background model per slot) to distinguish “truly empty” vs “QR occluded but object present”.
+
+QR design
+
+Encode JSON with fields: {type, id, tool_type, version, ts, nonce}. Add HMAC-SHA256 signature. Reject unsigned. Prevent spoofing.
+
+Use error correction level H. Print matte, 25–30 mm modules, quiet zone ≥4 modules. Place tags front-facing in a consistent quadrant.
+
+State machine
+
+Add temporal smoothing: require K consecutive frames or a dwell time to switch state. Reduce flapping.
+
+Distinguish “OCCUPIED_NO_QR” vs “EMPTY”. Treat the former as maintenance/label issue, not missing tool.
+
+Handle MULTIPLE_TOOL_QR with tool priority rules per slot.
+
+Business rules
+
+Calendar-aware schedules: weekdays vs weekends/holidays. Cron or systemd timers at 08:00, 11:00, 14:00, 17:00 local. JL holidays via CSV.
+
+Per-slot exceptions and grace windows. Example: CHECKED_OUT allowed 08:30–16:30 for certain tools.
+
+Deduplicate alerts. Rate limit emails. Always write an immutable audit row with {slot_id, prev_state, new_state, evidence_id, decision_reason}.
+
+Performance
+
+60 ROIs in 10–15 s is fine. Optimize:
+
+Parallel decode across 4–8 threads.
+
+Avoid re-warping if homography drift < ε. Cache corrected image if camera unchanged.
+
+Pre-allocate buffers, reuse Mats/ndarrays.
+
+Target cycle <4 s on Pi 4/5.
+
+Reliability
+
+Health checks: camera read FPS, LED current, QR detection yield %, homography error. Trip alarms if drift.
+
+Store exemplar debug crops on transitions only, not every cycle. Ring buffer size N with auto-prune.
+
+Data model
+
+GRID_CONFIG in versioned YAML. Fields: {slot_id, expected_tool_type, camera_id, roi_poly, ruleset_id}.
+
+Evidence table for images with SHA-256 and storage path. Option to offload to S3-compatible store.
+
+Security
+
+Sign outbound alerts. HTTPS with client cert or token rotation. No credentials on Replit client; Pi posts to an ingest endpoint.
+
+UI
+
+Dashboard per camera with 5×6 grid. States: GREEN TOOL_PRESENT, BLUE CHECKED_OUT (with worker), GREY OCCUPIED_NO_QR, RED EMPTY, AMBER WRONG_SECTION, PURPLE ERROR. Click opens last evidence crop and decision log.
+
+Filters: by priority, by slot, by time window.
+
+Edge cases to test
+
+Glare, partial QR, skewed tags, occlusion by hand, wrong tool in right slot, right tool with wrong QR, worker badge left in slot, LED failure, camera bump moving H > ε.
+
+Cold start without prior H; board not visible; fallback to previous H should be blocked if error grows.
+
+Code-level corrections
+
+cv2.aruco.detectMarkers returns corners, ids. Use estimatePoseBoard + getPerspectiveTransform on detected board corners mapped to board object points. Validate with mean reprojection error < 1.5 px.
+
+Replace per-cycle ROI math with precomputed polygons transformed by H.
+
+Add try/except around pyzbar.decode. Enforce per-slot max QR count. Normalize strings, strip BOMs.
+
+Time rules: do not compare string times. Use aware datetimes in Asia/Tokyo.
+
+Ops
+
+Versioned config repo. Migrations for DB. Structured logs (pino or stdlib logging JSON). Unique request_id per cycle.
+
+Benchmark and record per-step timings. Alert if any step exceeds SLA.
+
+Physical mitigations
+
+Add shallow lips/dividers so items sit within ROI. Place QR at fixed front-right. Use anti-glare laminates.
+
+Conclusion
+
+Keep the flow. Swap to GridBoard calibration, signed QR payloads, presence fallback, temporal smoothing, parallel decoding, and local-first persistence. This will cut false positives, speed cycles, and harden the system.
