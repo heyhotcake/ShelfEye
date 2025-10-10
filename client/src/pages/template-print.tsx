@@ -18,17 +18,18 @@ export default function TemplatePrint() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [paperSize, setPaperSize] = useState('A4-landscape');
 
+  // Canvas dimensions at 300 DPI for accurate printing (1mm = 11.811 pixels at 300 DPI)
   const paperDimensions: Record<string, { 
     width: number; 
     height: number;
     realWidthMm: number;
     realHeightMm: number;
   }> = {
-    'A5-landscape': { width: 600, height: 424, realWidthMm: 210, realHeightMm: 148 },
-    'A4-landscape': { width: 800, height: 566, realWidthMm: 297, realHeightMm: 210 },
-    'A3-landscape': { width: 1131, height: 800, realWidthMm: 420, realHeightMm: 297 },
-    '2xA5-landscape': { width: 1200, height: 424, realWidthMm: 420, realHeightMm: 148 },
-    '3xA5-landscape': { width: 1800, height: 424, realWidthMm: 630, realHeightMm: 148 },
+    'A5-landscape': { width: 2480, height: 1748, realWidthMm: 210, realHeightMm: 148 },
+    'A4-landscape': { width: 3508, height: 2480, realWidthMm: 297, realHeightMm: 210 },
+    'A3-landscape': { width: 4961, height: 3508, realWidthMm: 420, realHeightMm: 297 },
+    '2xA5-landscape': { width: 4961, height: 1748, realWidthMm: 420, realHeightMm: 148 },
+    '3xA5-landscape': { width: 7441, height: 1748, realWidthMm: 630, realHeightMm: 148 },
   };
 
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
