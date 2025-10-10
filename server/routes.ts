@@ -107,15 +107,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (code === 0) {
           try {
             const calibrationData = JSON.parse(result);
+            const homographyMatrix = calibrationData.homography_matrix;
+            
             await storage.updateCamera(cameraId, {
-              homographyMatrix: calibrationData.homography_matrix,
+              homographyMatrix: homographyMatrix,
               calibrationTimestamp: new Date(),
             });
+
+            const templateRectangles = await storage.getTemplateRectanglesByCamera(cameraId);
+            const createdSlots: any[] = [];
+
+            const { transformTemplateToPixels } = await import('./utils/coordinate-transform.js');
+
+            for (const template of templateRectangles) {
+              try {
+                const category = await storage.getToolCategory(template.categoryId);
+                if (!category) {
+                  console.warn(`Tool category ${template.categoryId} not found for template ${template.id}`);
+                  continue;
+                }
+
+                const pixelCoords = transformTemplateToPixels({
+                  xCm: template.xCm,
+                  yCm: template.yCm,
+                  widthCm: category.widthCm,
+                  heightCm: category.heightCm,
+                  rotation: template.rotation,
+                }, homographyMatrix);
+
+                const slot = await storage.createSlot({
+                  slotId: template.autoQrId || `${category.name}_${template.id.slice(0, 4)}`,
+                  cameraId: cameraId,
+                  toolName: category.name,
+                  expectedQrId: template.autoQrId || '',
+                  priority: 'high',
+                  regionCoords: pixelCoords,
+                  allowCheckout: true,
+                  graceWindow: '08:00-17:00',
+                });
+
+                await storage.updateTemplateRectangle(template.id, {
+                  slotId: slot.id,
+                });
+
+                createdSlots.push(slot);
+              } catch (slotError) {
+                console.warn(`Failed to create slot for template ${template.id}:`, slotError);
+              }
+            }
+
             res.json({
               ok: true,
-              homographyMatrix: calibrationData.homography_matrix,
+              homographyMatrix: homographyMatrix,
               reprojectionError: calibrationData.reprojection_error,
               markersDetected: calibrationData.markers_detected,
+              slotsCreated: createdSlots.length,
             });
           } catch (parseError) {
             res.status(500).json({ message: "Failed to parse calibration result", error: parseError });

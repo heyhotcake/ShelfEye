@@ -61,6 +61,7 @@ export interface IStorage {
   // Template rectangle methods
   getTemplateRectangles(): Promise<TemplateRectangle[]>;
   getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]>;
+  getTemplateRectanglesByCamera(cameraId: string): Promise<TemplateRectangle[]>;
   getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined>;
   createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle>;
   updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined>;
@@ -420,6 +421,11 @@ export class MemStorage implements IStorage {
       .filter(rect => rect.paperSize === paperSize);
   }
 
+  async getTemplateRectanglesByCamera(cameraId: string): Promise<TemplateRectangle[]> {
+    return Array.from(this.templateRectangles.values())
+      .filter(rect => rect.cameraId === cameraId);
+  }
+
   async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {
     return this.templateRectangles.get(id);
   }
@@ -710,6 +716,10 @@ export class DbStorage implements IStorage {
 
   async getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]> {
     return await db.select().from(schema.templateRectangles).where(eq(schema.templateRectangles.paperSize, paperSize));
+  }
+
+  async getTemplateRectanglesByCamera(cameraId: string): Promise<TemplateRectangle[]> {
+    return await db.select().from(schema.templateRectangles).where(eq(schema.templateRectangles.cameraId, cameraId));
   }
 
   async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {
