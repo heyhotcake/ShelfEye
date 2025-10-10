@@ -84,21 +84,29 @@ export default function TemplatePrint() {
   const { data: arucoMarkers } = useQuery<any>({
     queryKey: ['/api/aruco-corner-markers'],
     queryFn: async () => {
-      const response = await fetch('/api/aruco-generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'single',
-          markerIds: [17, 18, 19, 20],
-          markerLengthCm: 5.0,
-        }),
-      });
+      const markerIds = [17, 18, 19, 20];
+      const markerPromises = markerIds.map(id =>
+        fetch('/api/aruco-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'single',
+            markerId: id,
+            markerLengthCm: 5.0,
+          }),
+        }).then(res => res.json())
+      );
       
-      if (!response.ok) {
-        throw new Error('Failed to generate ArUco markers');
-      }
+      const results = await Promise.all(markerPromises);
       
-      return response.json();
+      return {
+        ok: true,
+        markers: results.map((result, index) => ({
+          id: markerIds[index],
+          image: result.image,
+          sizeCm: 5.0,
+        }))
+      };
     },
   });
 
