@@ -195,9 +195,9 @@ export default function SlotDrawing() {
     }
 
     // Draw ArUco corner markers outline (GridBoard reference)
-    // Scale marker positions based on canvas size
-    const margin = canvas.width * 0.125; // 12.5% margin
-    const markerSize = canvas.width * 0.0625; // ~6.25% of width
+    // Scale marker positions based on canvas HEIGHT (not width) for consistent sizing
+    const margin = canvas.height * 0.15; // 15% margin from height
+    const markerSize = canvas.height * 0.12; // 12% of height for marker size
     const markers = [
       { x: margin, y: margin, id: '17' },  // Top-left
       { x: canvas.width - margin - markerSize, y: margin, id: '18' },  // Top-right
