@@ -11,6 +11,7 @@ import QRGenerator from "@/pages/qr-generator";
 import Alerts from "@/pages/alerts";
 import Analytics from "@/pages/analytics";
 import DetectionLogs from "@/pages/detection-logs";
+import TemplatePrint from "@/pages/template-print";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/calibration" component={Calibration} />
       <Route path="/slot-drawing" component={SlotDrawing} />
+      <Route path="/template-print" component={TemplatePrint} />
       <Route path="/configuration" component={Configuration} />
       <Route path="/qr-generator" component={QRGenerator} />
       <Route path="/alerts" component={Alerts} />

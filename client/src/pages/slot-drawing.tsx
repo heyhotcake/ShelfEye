@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/api";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw } from "lucide-react";
+import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
 
 interface Point {
@@ -44,6 +45,7 @@ interface TemplateRectangle {
 export default function SlotDrawing() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentRegion, setCurrentRegion] = useState<SlotRegion | null>(null);
@@ -790,28 +792,66 @@ export default function SlotDrawing() {
     });
   };
 
-  const addTemplateRectangle = (categoryId: string) => {
+  const addTemplateRectangle = async (categoryId: string) => {
     const category = toolCategories.find((c: any) => c.id === categoryId);
     if (!category) return;
 
-    // Place at center of canvas
-    const canvasMargin = 40;
-    const paperWidth = canvasDimensions.width - (canvasMargin * 2);
-    const paperHeight = canvasDimensions.height - (canvasMargin * 2);
-    
-    const centerXPixels = paperWidth / 2;
-    const centerYPixels = paperHeight / 2;
-    
-    const centerXCm = snapToGrid(pixelsToCm(centerXPixels, true));
-    const centerYCm = snapToGrid(pixelsToCm(centerYPixels, false));
+    // Generate unique QR ID
+    const categoryRects = templateRectangles.filter(r => r.categoryId === categoryId);
+    const nextIndex = categoryRects.length + 1;
+    const qrId = `${category.name}-${String(nextIndex).padStart(3, '0')}`;
 
-    createTemplateRectMutation.mutate({
-      categoryId: categoryId,
-      paperSize: paperSize,
-      xCm: centerXCm,
-      yCm: centerYCm,
-      rotation: 0,
-    });
+    try {
+      // Show loading toast
+      toast({
+        title: "Generating QR Code",
+        description: `Creating QR code for ${qrId}...`,
+      });
+
+      // Call QR generation API
+      const qrResponse = await apiRequest('POST', '/api/qr-generate', {
+        type: 'slot',
+        id: qrId,
+        toolType: category.toolType,
+        errorCorrection: 'H',
+        moduleSize: 25,
+        includeHmac: true,
+      });
+
+      const qrData = await qrResponse.json();
+
+      // Place at center of canvas
+      const canvasMargin = 40;
+      const paperWidth = canvasDimensions.width - (canvasMargin * 2);
+      const paperHeight = canvasDimensions.height - (canvasMargin * 2);
+      
+      const centerXPixels = paperWidth / 2;
+      const centerYPixels = paperHeight / 2;
+      
+      const centerXCm = snapToGrid(pixelsToCm(centerXPixels, true));
+      const centerYCm = snapToGrid(pixelsToCm(centerYPixels, false));
+
+      createTemplateRectMutation.mutate({
+        categoryId: categoryId,
+        paperSize: paperSize,
+        xCm: centerXCm,
+        yCm: centerYCm,
+        rotation: 0,
+        autoQrId: qrId,
+      });
+
+      // Show success toast
+      toast({
+        title: "QR Code Generated",
+        description: `Successfully created QR code: ${qrId}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Generate QR",
+        description: error instanceof Error ? error.message : "Failed to generate QR code",
+        variant: "destructive",
+      });
+    }
   };
 
   const deleteSelectedTemplateRect = () => {
@@ -912,14 +952,25 @@ export default function SlotDrawing() {
                     Match your ArUco grid paper size
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCategoryManager(true)}
-                  data-testid="button-category-manager"
-                >
-                  <Layers className="w-4 h-4 mr-2" />
-                  Tool Categories
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCategoryManager(true)}
+                    data-testid="button-category-manager"
+                  >
+                    <Layers className="w-4 h-4 mr-2" />
+                    Tool Categories
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setLocation('/template-print')}
+                    data-testid="button-print-preview"
+                    disabled={templateRectangles.length === 0}
+                  >
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print Preview
+                  </Button>
+                </div>
               </div>
 
               <div className="canvas-container mb-4 flex justify-center">
