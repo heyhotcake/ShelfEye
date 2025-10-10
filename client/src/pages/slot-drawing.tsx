@@ -83,6 +83,9 @@ export default function SlotDrawing() {
   // Paper size configuration
   const [paperSize, setPaperSize] = useState('A4-landscape');
   
+  // Camera selection
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
+  
   // Template rectangle state
   const [templateRectangles, setTemplateRectangles] = useState<TemplateRectangle[]>([]);
   const [draggingRectId, setDraggingRectId] = useState<string | null>(null);
@@ -167,6 +170,13 @@ export default function SlotDrawing() {
       setRegions(loadedRegions);
     }
   }, [slots]);
+
+  // Set default camera when cameras load
+  useEffect(() => {
+    if (cameras && cameras.length > 0 && !selectedCameraId) {
+      setSelectedCameraId(cameras[0].id);
+    }
+  }, [cameras, selectedCameraId]);
 
   // Load template rectangles when data changes
   useEffect(() => {
@@ -1051,25 +1061,42 @@ export default function SlotDrawing() {
             
             {/* Drawing Canvas */}
             <div>
-              {/* Paper Size Selector */}
+              {/* Paper Size & Camera Selector */}
               <div className="mb-4 flex items-center gap-3 justify-between">
-                <div className="flex items-center gap-3">
-                  <Label htmlFor="paper-size" className="text-sm font-medium">Paper Size:</Label>
-                  <Select value={paperSize} onValueChange={setPaperSize}>
-                    <SelectTrigger className="w-48" id="paper-size" data-testid="select-paper-size">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="A5-landscape">A5 Landscape</SelectItem>
-                      <SelectItem value="A4-landscape">A4 Landscape</SelectItem>
-                      <SelectItem value="A3-landscape">A3 Landscape</SelectItem>
-                      <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
-                      <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Match your ArUco grid paper size
-                  </p>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="camera-select" className="text-sm font-medium">Camera:</Label>
+                    <Select value={selectedCameraId} onValueChange={setSelectedCameraId}>
+                      <SelectTrigger className="w-48" id="camera-select" data-testid="select-camera">
+                        <SelectValue placeholder="Select camera" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cameras?.map((camera: any) => (
+                          <SelectItem key={camera.id} value={camera.id}>
+                            {camera.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="paper-size" className="text-sm font-medium">Paper Size:</Label>
+                    <Select value={paperSize} onValueChange={setPaperSize}>
+                      <SelectTrigger className="w-48" id="paper-size" data-testid="select-paper-size">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A5-landscape">A5 Landscape</SelectItem>
+                        <SelectItem value="A4-landscape">A4 Landscape</SelectItem>
+                        <SelectItem value="A3-landscape">A3 Landscape</SelectItem>
+                        <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
+                        <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Match your ArUco grid paper size
+                    </p>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
