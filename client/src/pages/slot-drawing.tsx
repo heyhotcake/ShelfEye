@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers } from "lucide-react";
+import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
 
 interface Point {
@@ -27,6 +27,18 @@ interface SlotRegion {
   priority: 'high' | 'medium' | 'low';
   allowCheckout: boolean;
   graceWindow: string;
+}
+
+interface TemplateRectangle {
+  id: string;
+  categoryId: string;
+  xCm: number;
+  yCm: number;
+  rotation: number;
+  widthCm: number;
+  heightCm: number;
+  categoryName: string;
+  toolType: string;
 }
 
 export default function SlotDrawing() {
@@ -59,6 +71,12 @@ export default function SlotDrawing() {
   // Paper size configuration
   const [paperSize, setPaperSize] = useState('A4-landscape');
   
+  // Template rectangle state
+  const [templateRectangles, setTemplateRectangles] = useState<TemplateRectangle[]>([]);
+  const [draggingRectId, setDraggingRectId] = useState<string | null>(null);
+  const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [selectedTemplateRect, setSelectedTemplateRect] = useState<TemplateRectangle | null>(null);
+  
   // Paper size dimensions (width x height in pixels, landscape orientation)
   // ISO A-series aspect ratio is √2:1 (1.414:1)
   const paperDimensions: Record<string, { 
@@ -82,6 +100,19 @@ export default function SlotDrawing() {
 
   const { data: slots } = useQuery<any[]>({
     queryKey: ['/api/slots'],
+  });
+
+  const { data: toolCategories = [] } = useQuery<any[]>({
+    queryKey: ['/api/tool-categories'],
+  });
+
+  const { data: templateRects = [] } = useQuery<any[]>({
+    queryKey: ['/api/template-rectangles', paperSize],
+    queryFn: async () => {
+      const response = await fetch(`/api/template-rectangles?paperSize=${paperSize}`);
+      if (!response.ok) throw new Error('Failed to fetch template rectangles');
+      return response.json();
+    },
   });
 
   // Load saved versions from localStorage on mount
@@ -112,6 +143,29 @@ export default function SlotDrawing() {
       setRegions(loadedRegions);
     }
   }, [slots]);
+
+  // Load template rectangles when data changes
+  useEffect(() => {
+    if (templateRects && templateRects.length > 0) {
+      const loadedRects: TemplateRectangle[] = templateRects.map((rect: any) => {
+        const category = toolCategories.find((c: any) => c.id === rect.categoryId);
+        return {
+          id: rect.id,
+          categoryId: rect.categoryId,
+          xCm: rect.xCm,
+          yCm: rect.yCm,
+          rotation: rect.rotation,
+          widthCm: category?.widthCm || 0,
+          heightCm: category?.heightCm || 0,
+          categoryName: category?.name || '',
+          toolType: category?.toolType || '',
+        };
+      });
+      setTemplateRectangles(loadedRects);
+    } else {
+      setTemplateRectangles([]);
+    }
+  }, [templateRects, toolCategories]);
 
   const createSlotMutation = useMutation({
     mutationFn: (slotData: any) => apiRequest('POST', '/api/slots', slotData),
@@ -169,6 +223,80 @@ export default function SlotDrawing() {
       });
     },
   });
+
+  const createTemplateRectMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('POST', '/api/template-rectangles', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Create Template",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateTemplateRectMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: any }) => 
+      apiRequest('PUT', `/api/template-rectangles/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Update Template",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteTemplateRectMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/template-rectangles/${id}`),
+    onSuccess: () => {
+      toast({
+        title: "Template Deleted",
+        description: "Template rectangle removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
+      setSelectedTemplateRect(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Delete Template",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Helper functions for cm to pixels conversion
+  const cmToPixels = (cm: number, isWidth = true): number => {
+    const canvasMargin = 40;
+    const paperWidth = canvasDimensions.width - (canvasMargin * 2);
+    const paperHeight = canvasDimensions.height - (canvasMargin * 2);
+    const pxPerMm = isWidth 
+      ? paperWidth / canvasDimensions.realWidthMm 
+      : paperHeight / canvasDimensions.realHeightMm;
+    return cm * 10 * pxPerMm; // cm to mm, then to pixels
+  };
+
+  const pixelsToCm = (pixels: number, isWidth = true): number => {
+    const canvasMargin = 40;
+    const paperWidth = canvasDimensions.width - (canvasMargin * 2);
+    const paperHeight = canvasDimensions.height - (canvasMargin * 2);
+    const pxPerMm = isWidth 
+      ? paperWidth / canvasDimensions.realWidthMm 
+      : paperHeight / canvasDimensions.realHeightMm;
+    return pixels / pxPerMm / 10; // pixels to mm, then to cm
+  };
+
+  const snapToGrid = (cm: number): number => {
+    const gridSize = 0.5; // 0.5cm grid
+    return Math.round(cm / gridSize) * gridSize;
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -260,6 +388,34 @@ export default function SlotDrawing() {
     ctx.closePath();
     ctx.stroke();
 
+    // Draw template rectangles (black outlines)
+    templateRectangles.forEach((rect) => {
+      const x = canvasMargin + cmToPixels(rect.xCm, true);
+      const y = canvasMargin + cmToPixels(rect.yCm, false);
+      const width = cmToPixels(rect.widthCm, true);
+      const height = cmToPixels(rect.heightCm, false);
+
+      ctx.save();
+      ctx.translate(x + width / 2, y + height / 2);
+      ctx.rotate((rect.rotation * Math.PI) / 180);
+      ctx.translate(-(x + width / 2), -(y + height / 2));
+
+      // Draw rectangle
+      const isSelected = selectedTemplateRect?.id === rect.id;
+      ctx.strokeStyle = isSelected ? 'rgb(59, 130, 246)' : 'rgb(0, 0, 0)';
+      ctx.lineWidth = isSelected ? 3 / zoom : 2 / zoom;
+      ctx.strokeRect(x, y, width, height);
+
+      // Draw category name label
+      ctx.fillStyle = isSelected ? 'rgb(59, 130, 246)' : 'rgb(0, 0, 0)';
+      ctx.font = `${10 / zoom}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(rect.categoryName, x + width / 2, y + height / 2);
+
+      ctx.restore();
+    });
+
     // Draw existing regions
     regions.forEach((region, index) => {
       if (region.points.length > 2) {
@@ -314,7 +470,7 @@ export default function SlotDrawing() {
     
     // Restore context state
     ctx.restore();
-  }, [regions, currentRegion, selectedRegion, zoom, panOffset, canvasDimensions]);
+  }, [regions, currentRegion, selectedRegion, zoom, panOffset, canvasDimensions, templateRectangles, selectedTemplateRect]);
 
   // Helper function to convert screen coordinates to canvas coordinates with zoom/pan
   const screenToCanvas = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -367,15 +523,26 @@ export default function SlotDrawing() {
 
     const { x, y } = screenToCanvas(event);
 
-    // Check if click is inside any region
+    // Check if click is inside any template rectangle first (using rotation-aware hit-testing)
+    for (const rect of templateRectangles) {
+      if (isPointInRotatedRect(x, y, rect)) {
+        setSelectedTemplateRect(rect);
+        setSelectedRegion(null);
+        return;
+      }
+    }
+
+    // Check if click is inside any slot region
     for (const region of regions) {
       if (isPointInPolygon({ x, y }, region.points)) {
         setSelectedRegion(region);
+        setSelectedTemplateRect(null);
         return;
       }
     }
     
     setSelectedRegion(null);
+    setSelectedTemplateRect(null);
   };
 
   const isPointInPolygon = (point: Point, polygon: Point[]): boolean => {
@@ -389,6 +556,26 @@ export default function SlotDrawing() {
       }
     }
     return inside;
+  };
+
+  const isPointInRotatedRect = (px: number, py: number, rect: TemplateRectangle): boolean => {
+    const canvasMargin = 40;
+    const rectX = canvasMargin + cmToPixels(rect.xCm, true);
+    const rectY = canvasMargin + cmToPixels(rect.yCm, false);
+    const rectWidth = cmToPixels(rect.widthCm, true);
+    const rectHeight = cmToPixels(rect.heightCm, false);
+
+    const centerX = rectX + rectWidth / 2;
+    const centerY = rectY + rectHeight / 2;
+
+    const dx = px - centerX;
+    const dy = py - centerY;
+
+    const angleRad = (rect.rotation * Math.PI) / 180;
+    const rotatedX = dx * Math.cos(-angleRad) - dy * Math.sin(-angleRad);
+    const rotatedY = dx * Math.sin(-angleRad) + dy * Math.cos(-angleRad);
+
+    return Math.abs(rotatedX) <= rectWidth / 2 && Math.abs(rotatedY) <= rectHeight / 2;
   };
 
   const startNewSlot = () => {
@@ -481,6 +668,21 @@ export default function SlotDrawing() {
       setIsPanning(true);
       setPanStart({ x: event.clientX - panOffset.x, y: event.clientY - panOffset.y });
       event.preventDefault();
+      return;
+    }
+
+    // Check if clicking on a template rectangle to start dragging (using rotation-aware hit-testing)
+    if (event.button === 0 && !isDrawing) {
+      const { x, y } = screenToCanvas(event);
+
+      for (const rect of templateRectangles) {
+        if (isPointInRotatedRect(x, y, rect)) {
+          setDraggingRectId(rect.id);
+          setDragStartPos({ x, y });
+          event.preventDefault();
+          return;
+        }
+      }
     }
   };
 
@@ -490,10 +692,53 @@ export default function SlotDrawing() {
         x: event.clientX - panStart.x,
         y: event.clientY - panStart.y,
       });
+      return;
+    }
+
+    // Handle template rectangle dragging
+    if (draggingRectId && dragStartPos) {
+      const { x, y } = screenToCanvas(event);
+      const canvasMargin = 40;
+      
+      const rect = templateRectangles.find(r => r.id === draggingRectId);
+      if (!rect) return;
+
+      const deltaX = x - dragStartPos.x;
+      const deltaY = y - dragStartPos.y;
+
+      const newXPixels = canvasMargin + cmToPixels(rect.xCm, true) + deltaX;
+      const newYPixels = canvasMargin + cmToPixels(rect.yCm, false) + deltaY;
+
+      const newXCm = snapToGrid(pixelsToCm(newXPixels - canvasMargin, true));
+      const newYCm = snapToGrid(pixelsToCm(newYPixels - canvasMargin, false));
+
+      // Update local state immediately for smooth dragging
+      setTemplateRectangles(prev => prev.map(r => 
+        r.id === draggingRectId ? { ...r, xCm: newXCm, yCm: newYCm } : r
+      ));
+      setDragStartPos({ x, y });
     }
   };
 
   const handleMouseUp = () => {
+    if (draggingRectId) {
+      // Save the new position to database
+      const rect = templateRectangles.find(r => r.id === draggingRectId);
+      if (rect) {
+        updateTemplateRectMutation.mutate({
+          id: rect.id,
+          data: {
+            categoryId: rect.categoryId,
+            paperSize: paperSize,
+            xCm: rect.xCm,
+            yCm: rect.yCm,
+            rotation: rect.rotation,
+          }
+        });
+      }
+      setDraggingRectId(null);
+      setDragStartPos(null);
+    }
     setIsPanning(false);
   };
 
@@ -542,6 +787,82 @@ export default function SlotDrawing() {
     toast({
       title: "Version Deleted",
       description: "Configuration version removed",
+    });
+  };
+
+  const addTemplateRectangle = (categoryId: string) => {
+    const category = toolCategories.find((c: any) => c.id === categoryId);
+    if (!category) return;
+
+    // Place at center of canvas
+    const canvasMargin = 40;
+    const paperWidth = canvasDimensions.width - (canvasMargin * 2);
+    const paperHeight = canvasDimensions.height - (canvasMargin * 2);
+    
+    const centerXPixels = paperWidth / 2;
+    const centerYPixels = paperHeight / 2;
+    
+    const centerXCm = snapToGrid(pixelsToCm(centerXPixels, true));
+    const centerYCm = snapToGrid(pixelsToCm(centerYPixels, false));
+
+    createTemplateRectMutation.mutate({
+      categoryId: categoryId,
+      paperSize: paperSize,
+      xCm: centerXCm,
+      yCm: centerYCm,
+      rotation: 0,
+    });
+  };
+
+  const deleteSelectedTemplateRect = () => {
+    if (selectedTemplateRect) {
+      deleteTemplateRectMutation.mutate(selectedTemplateRect.id);
+    }
+  };
+
+  const rotateTemplateLeft = () => {
+    if (!selectedTemplateRect) return;
+    
+    const currentRotation = selectedTemplateRect.rotation || 0;
+    const newRotation = currentRotation - 45 < 0 ? 315 : currentRotation - 45;
+    
+    setTemplateRectangles(prev => prev.map(r => 
+      r.id === selectedTemplateRect.id ? { ...r, rotation: newRotation } : r
+    ));
+    setSelectedTemplateRect({ ...selectedTemplateRect, rotation: newRotation });
+    
+    updateTemplateRectMutation.mutate({
+      id: selectedTemplateRect.id,
+      data: {
+        categoryId: selectedTemplateRect.categoryId,
+        paperSize: paperSize,
+        xCm: selectedTemplateRect.xCm,
+        yCm: selectedTemplateRect.yCm,
+        rotation: newRotation,
+      }
+    });
+  };
+
+  const rotateTemplateRight = () => {
+    if (!selectedTemplateRect) return;
+    
+    const currentRotation = selectedTemplateRect.rotation || 0;
+    const newRotation = currentRotation + 45 >= 360 ? 0 : currentRotation + 45;
+    
+    setTemplateRectangles(prev => prev.map(r => 
+      r.id === selectedTemplateRect.id ? { ...r, rotation: newRotation } : r
+    ));
+    setSelectedTemplateRect({ ...selectedTemplateRect, rotation: newRotation });
+    
+    updateTemplateRectMutation.mutate({
+      id: selectedTemplateRect.id,
+      data: {
+        categoryId: selectedTemplateRect.categoryId,
+        paperSize: paperSize,
+        xCm: selectedTemplateRect.xCm,
+        yCm: selectedTemplateRect.yCm,
+        rotation: newRotation,
+      }
     });
   };
 
@@ -698,6 +1019,126 @@ export default function SlotDrawing() {
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Template Rectangles */}
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Layers className="w-4 h-4" />
+                      Template Tool Outlines
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {toolCategories && toolCategories.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-2">
+                        {toolCategories.map((category: any) => (
+                          <div
+                            key={category.id}
+                            className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{category.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {category.toolType} • {category.widthCm}×{category.heightCm} cm
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => addTemplateRectangle(category.id)}
+                              disabled={createTemplateRectMutation.isPending}
+                              data-testid={`button-add-template-${category.id}`}
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">
+                          No tool categories defined. Create categories to add template rectangles.
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2"
+                          onClick={() => setShowCategoryManager(true)}
+                          data-testid="button-manage-categories"
+                        >
+                          Manage Categories
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Selected Template Rectangle Info */}
+                    {selectedTemplateRect && (
+                      <div className="border-t pt-3 mt-3">
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-medium text-blue-500">Selected Template</h4>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={deleteSelectedTemplateRect}
+                              disabled={deleteTemplateRectMutation.isPending}
+                              data-testid="button-delete-template"
+                            >
+                              <Trash className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            <p><span className="font-medium">Category:</span> {selectedTemplateRect.categoryName}</p>
+                            <p><span className="font-medium">Size:</span> {selectedTemplateRect.widthCm}×{selectedTemplateRect.heightCm} cm</p>
+                            <p><span className="font-medium">Position:</span> ({selectedTemplateRect.xCm.toFixed(1)}, {selectedTemplateRect.yCm.toFixed(1)}) cm</p>
+                            <p><span className="font-medium">Rotation:</span> {selectedTemplateRect.rotation || 0}°</p>
+                          </div>
+                          
+                          <div className="mt-3 pt-3 border-t border-blue-500/20">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={rotateTemplateLeft}
+                                disabled={updateTemplateRectMutation.isPending}
+                                data-testid="button-rotate-left"
+                                className="flex-1"
+                              >
+                                <RotateCcw className="w-4 h-4 mr-1" />
+                                Rotate Left
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={rotateTemplateRight}
+                                disabled={updateTemplateRectMutation.isPending}
+                                data-testid="button-rotate-right"
+                                className="flex-1"
+                              >
+                                <RotateCw className="w-4 h-4 mr-1" />
+                                Rotate Right
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center mt-2">
+                              Rotate by 45° increments
+                            </p>
+                          </div>
+                          
+                          <p className="text-xs text-muted-foreground mt-2 italic">
+                            Drag to reposition (snaps to 0.5cm grid)
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Template Rectangles Count */}
+                    {templateRectangles.length > 0 && (
+                      <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+                        {templateRectangles.length} template{templateRectangles.length !== 1 ? 's' : ''} placed
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 {/* Version Management */}
                 <Card className="mt-4">
