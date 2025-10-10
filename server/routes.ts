@@ -58,12 +58,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let result = '';
       let error = '';
+      let responseSent = false;
 
       pythonProcess.on('error', (err) => {
-        res.status(503).json({ 
-          message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
-          error: err.message 
-        });
+        if (!responseSent) {
+          responseSent = true;
+          res.status(503).json({ 
+            message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
+            error: err.message 
+          });
+        }
       });
 
       pythonProcess.stdout.on('data', (data) => {
@@ -75,6 +79,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       pythonProcess.on('close', async (code) => {
+        if (responseSent) return;
+        
         if (code === 0) {
           try {
             const calibrationData = JSON.parse(result);
@@ -127,12 +133,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let result = '';
       let error = '';
+      let responseSent = false;
 
       pythonProcess.on('error', (err) => {
-        res.status(503).json({ 
-          message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
-          error: err.message 
-        });
+        if (!responseSent) {
+          responseSent = true;
+          res.status(503).json({ 
+            message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
+            error: err.message 
+          });
+        }
       });
 
       pythonProcess.stdout.on('data', (data) => {
@@ -144,6 +154,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       pythonProcess.on('close', async (code) => {
+        if (responseSent) return;
+        
         if (code === 0) {
           try {
             const captureResults = JSON.parse(result);
@@ -324,12 +336,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let result = '';
       let error = '';
+      let responseSent = false;
 
       pythonProcess.on('error', (err) => {
-        res.status(503).json({ 
-          message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
-          error: err.message 
-        });
+        if (!responseSent) {
+          responseSent = true;
+          res.status(503).json({ 
+            message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
+            error: err.message 
+          });
+        }
       });
 
       pythonProcess.stdout.on('data', (data) => {
@@ -341,6 +357,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       pythonProcess.on('close', (code) => {
+        if (responseSent) return;
+        
         if (code === 0) {
           try {
             const qrResult = JSON.parse(result);
