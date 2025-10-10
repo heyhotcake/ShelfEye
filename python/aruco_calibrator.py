@@ -243,13 +243,13 @@ class ArucoCalibrator:
             )
             board_corners_2d = board_corners_2d.reshape(-1, 2)
             
-            # Define destination corners (rectified coordinates)
+            # Define destination corners (rectified coordinates at extreme corners)
             h, w = gray.shape
             dst_corners = np.array([
-                [50, 50],
-                [w-50, 50],
-                [w-50, h-50],
-                [50, h-50]
+                [0, 0],
+                [w, 0],
+                [w, h],
+                [0, h]
             ], dtype=np.float32)
             
             # Calculate homography
