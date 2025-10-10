@@ -81,23 +81,21 @@ export default function TemplatePrint() {
     enabled: templateRectangles.length > 0,
   });
 
-  const { data: arucoGrid } = useQuery<any>({
-    queryKey: ['/api/aruco-grid'],
+  const { data: arucoMarkers } = useQuery<any>({
+    queryKey: ['/api/aruco-corner-markers'],
     queryFn: async () => {
       const response = await fetch('/api/aruco-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mode: 'grid',
-          markersX: 6,
-          markersY: 10,
+          mode: 'single',
+          markerIds: [17, 18, 19, 20],
           markerLengthCm: 5.0,
-          markerSeparationCm: 1.0,
         }),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to generate ArUco grid');
+        throw new Error('Failed to generate ArUco markers');
       }
       
       return response.json();
@@ -152,9 +150,9 @@ export default function TemplatePrint() {
         }
       }
 
-      // Load ArUco markers
-      if (arucoGrid?.ok && arucoGrid.markers) {
-        for (const marker of arucoGrid.markers) {
+      // Load ArUco corner markers
+      if (arucoMarkers?.ok && arucoMarkers.markers) {
+        for (const marker of arucoMarkers.markers) {
           try {
             arucoImageCache[marker.id] = await loadImage(`data:image/png;base64,${marker.image}`);
           } catch (error) {
@@ -172,15 +170,26 @@ export default function TemplatePrint() {
       ctx.lineWidth = 1;
       ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
-      // Render ArUco markers with 3cm border offset
-      if (arucoGrid?.ok && arucoGrid.markers) {
+      // Render 4 corner ArUco markers (3cm from edges, 5cm size)
+      if (arucoMarkers?.ok && arucoMarkers.markers) {
         const borderCm = 3;
+        const markerSizeCm = 5;
+        const paperWidthCm = canvasDimensions.realWidthMm / 10;
+        const paperHeightCm = canvasDimensions.realHeightMm / 10;
         
-        arucoGrid.markers.forEach((marker: any) => {
-          if (arucoImageCache[marker.id]) {
-            const xPx = cmToPixels(marker.xCm + borderCm, true);
-            const yPx = cmToPixels(marker.yCm + borderCm, false);
-            const sizePx = cmToPixels(marker.sizeCm, true);
+        const cornerPositions = [
+          { id: 17, xCm: borderCm, yCm: borderCm }, // Top-left
+          { id: 18, xCm: paperWidthCm - borderCm - markerSizeCm, yCm: borderCm }, // Top-right
+          { id: 19, xCm: paperWidthCm - borderCm - markerSizeCm, yCm: paperHeightCm - borderCm - markerSizeCm }, // Bottom-right
+          { id: 20, xCm: borderCm, yCm: paperHeightCm - borderCm - markerSizeCm }, // Bottom-left
+        ];
+
+        cornerPositions.forEach((pos) => {
+          const marker = arucoMarkers.markers.find((m: any) => m.id === pos.id);
+          if (marker && arucoImageCache[marker.id]) {
+            const xPx = cmToPixels(pos.xCm, true);
+            const yPx = cmToPixels(pos.yCm, false);
+            const sizePx = cmToPixels(markerSizeCm, true);
             
             ctx.drawImage(arucoImageCache[marker.id], xPx, yPx, sizePx, sizePx);
           }
@@ -217,7 +226,7 @@ export default function TemplatePrint() {
     };
 
     renderCanvas();
-  }, [templatesWithCategories, qrCodes, arucoGrid, canvasDimensions, paperSize]);
+  }, [templatesWithCategories, qrCodes, arucoMarkers, canvasDimensions, paperSize]);
 
   const handlePrint = () => {
     window.print();

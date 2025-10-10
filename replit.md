@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Raspberry Pi-based automated tool monitoring system that uses computer vision, QR codes, and ArUco grid calibration to track tools across multiple cameras. The system provides real-time detection, HMAC-signed QR validation, temporal smoothing for presence detection, and multi-channel alerting (email, Google Sheets, sound). Features a React-based web dashboard for calibration, slot configuration, analytics, and system management. The number of tool slots is fully configurable based on your workshop needs.
+A Raspberry Pi-based automated tool monitoring system that uses computer vision, QR codes, and ArUco marker calibration (4 corner markers) to track tools across multiple cameras. The system provides real-time detection, HMAC-signed QR validation, temporal smoothing for presence detection, and multi-channel alerting (email, Google Sheets, sound). Features a React-based web dashboard for calibration, slot configuration, analytics, and system management. The number of tool slots is fully configurable based on your workshop needs.
 
 ## User Preferences
 
