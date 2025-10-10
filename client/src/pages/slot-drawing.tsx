@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Undo, Trash, ZoomIn, X, Save } from "lucide-react";
+import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save } from "lucide-react";
 
 interface Point {
   x: number;
@@ -36,6 +36,12 @@ export default function SlotDrawing() {
   const [currentRegion, setCurrentRegion] = useState<SlotRegion | null>(null);
   const [regions, setRegions] = useState<SlotRegion[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<SlotRegion | null>(null);
+  
+  // Zoom and pan state
+  const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
   const { data: cameras } = useQuery({
     queryKey: ['/api/cameras'],
@@ -129,9 +135,16 @@ export default function SlotDrawing() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Save context state
+    ctx.save();
+    
+    // Apply zoom and pan transforms
+    ctx.translate(panOffset.x, panOffset.y);
+    ctx.scale(zoom, zoom);
+
     // Draw background grid pattern
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1 / zoom;
     for (let x = 0; x <= canvas.width; x += 20) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -162,7 +175,7 @@ export default function SlotDrawing() {
         ctx.strokeStyle = isSelected 
           ? 'rgb(59, 130, 246)' 
           : 'rgb(34, 197, 94)';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 / zoom;
         ctx.stroke();
 
         // Draw label
@@ -170,7 +183,7 @@ export default function SlotDrawing() {
         const centerY = region.points.reduce((sum, p) => sum + p.y, 0) / region.points.length;
         
         ctx.fillStyle = 'white';
-        ctx.font = '12px monospace';
+        ctx.font = `${12 / zoom}px monospace`;
         ctx.textAlign = 'center';
         ctx.fillText(region.slotId, centerX, centerY);
       }
@@ -179,7 +192,7 @@ export default function SlotDrawing() {
     // Draw current region being drawn
     if (currentRegion && currentRegion.points.length > 0) {
       ctx.strokeStyle = 'rgb(239, 68, 68)';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 / zoom;
       ctx.beginPath();
       ctx.moveTo(currentRegion.points[0].x, currentRegion.points[0].y);
       currentRegion.points.forEach(point => ctx.lineTo(point.x, point.y));
@@ -191,25 +204,38 @@ export default function SlotDrawing() {
       // Draw points
       currentRegion.points.forEach(point => {
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+        ctx.arc(point.x, point.y, 4 / zoom, 0, 2 * Math.PI);
         ctx.fillStyle = 'rgb(239, 68, 68)';
         ctx.fill();
       });
     }
-  }, [regions, currentRegion, selectedRegion]);
+    
+    // Restore context state
+    ctx.restore();
+  }, [regions, currentRegion, selectedRegion, zoom, panOffset]);
 
-  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
-
+  // Helper function to convert screen coordinates to canvas coordinates with zoom/pan
+  const screenToCanvas = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    // Scale coordinates from display size to canvas size
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const x = (event.clientX - rect.left) * scaleX;
-    const y = (event.clientY - rect.top) * scaleY;
+    const screenX = (event.clientX - rect.left) * scaleX;
+    const screenY = (event.clientY - rect.top) * scaleY;
+    
+    // Apply inverse zoom and pan
+    const x = (screenX - panOffset.x) / zoom;
+    const y = (screenY - panOffset.y) / zoom;
+    
+    return { x, y };
+  };
+
+  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || isPanning) return;
+
+    const { x, y } = screenToCanvas(event);
 
     if (!currentRegion) {
       // Start new region
@@ -235,17 +261,9 @@ export default function SlotDrawing() {
   };
 
   const handleRegionClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDrawing) return;
+    if (isDrawing || isPanning) return;
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    // Scale coordinates from display size to canvas size
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (event.clientX - rect.left) * scaleX;
-    const y = (event.clientY - rect.top) * scaleY;
+    const { x, y } = screenToCanvas(event);
 
     // Check if click is inside any region
     for (const region of regions) {
@@ -340,6 +358,43 @@ export default function SlotDrawing() {
     setRegions(regions.map(r => r.id === selectedRegion.id ? updated : r));
   };
 
+  // Zoom handlers
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev * 1.2, 5));
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev / 1.2, 0.5));
+  };
+
+  const handleWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? 0.9 : 1.1;
+    setZoom(prev => Math.min(Math.max(prev * delta, 0.5), 5));
+  };
+
+  // Pan handlers
+  const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (event.button === 1 || (event.button === 0 && event.shiftKey)) {
+      setIsPanning(true);
+      setPanStart({ x: event.clientX - panOffset.x, y: event.clientY - panOffset.y });
+      event.preventDefault();
+    }
+  };
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isPanning) {
+      setPanOffset({
+        x: event.clientX - panStart.x,
+        y: event.clientY - panStart.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
   const configuredSlotIds = slots?.map((s: any) => s.slotId) || [];
 
   return (
@@ -362,67 +417,85 @@ export default function SlotDrawing() {
         </header>
         
         <div className="flex-1 overflow-auto p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+            
+            {/* Drawing Canvas */}
+            <div>
+              <div className="canvas-container mb-4">
+                <canvas 
+                  ref={canvasRef}
+                  width={800}
+                  height={600}
+                  className="w-full drawing-canvas rounded bg-muted"
+                  style={{ cursor: isPanning ? 'grabbing' : isDrawing ? 'crosshair' : 'grab' }}
+                  onClick={isDrawing ? handleCanvasClick : handleRegionClick}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  onWheel={handleWheel}
+                  data-testid="slot-canvas"
+                />
+              </div>
               
-              {/* Drawing Canvas */}
-              <div className="lg:col-span-2">
-                <div className="canvas-container mb-4">
-                  <canvas 
-                    ref={canvasRef}
-                    width={800}
-                    height={600}
-                    className="w-full drawing-canvas rounded bg-muted cursor-crosshair"
-                    onClick={isDrawing ? handleCanvasClick : handleRegionClick}
-                    data-testid="slot-canvas"
-                  />
-                </div>
+              <div className="flex items-center gap-3">
+                <Button 
+                  className="flex-1"
+                  onClick={startNewSlot}
+                  disabled={isDrawing}
+                  data-testid="button-new-slot"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Slot
+                </Button>
                 
-                <div className="flex items-center gap-3">
+                {isDrawing && currentRegion && currentRegion.points.length >= 3 && (
                   <Button 
-                    className="flex-1"
-                    onClick={startNewSlot}
-                    disabled={isDrawing}
-                    data-testid="button-new-slot"
+                    onClick={finishCurrentRegion}
+                    data-testid="button-finish-region"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Slot
+                    <Save className="w-4 h-4" />
                   </Button>
-                  
-                  {isDrawing && currentRegion && currentRegion.points.length >= 3 && (
-                    <Button 
-                      onClick={finishCurrentRegion}
-                      data-testid="button-finish-region"
-                    >
-                      <Save className="w-4 h-4" />
-                    </Button>
-                  )}
-                  
-                  <Button 
-                    variant="outline"
-                    onClick={isDrawing ? cancelCurrentRegion : () => {}}
-                    disabled={!isDrawing && !selectedRegion}
-                    data-testid="button-undo"
-                  >
-                    <Undo className="w-4 h-4" />
-                  </Button>
-                  
-                  <Button 
-                    variant="outline"
-                    onClick={deleteSelectedRegion}
-                    disabled={!selectedRegion}
-                    data-testid="button-delete"
-                  >
-                    <Trash className="w-4 h-4" />
-                  </Button>
-                  
-                  <Button 
-                    variant="outline"
-                    data-testid="button-zoom"
-                  >
-                    <ZoomIn className="w-4 h-4" />
-                  </Button>
+                )}
+                
+                <Button 
+                  variant="outline"
+                  onClick={isDrawing ? cancelCurrentRegion : () => {}}
+                  disabled={!isDrawing && !selectedRegion}
+                  data-testid="button-undo"
+                >
+                  <Undo className="w-4 h-4" />
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={deleteSelectedRegion}
+                  disabled={!selectedRegion}
+                  data-testid="button-delete"
+                >
+                  <Trash className="w-4 h-4" />
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={handleZoomIn}
+                  data-testid="button-zoom-in"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={handleZoomOut}
+                  data-testid="button-zoom-out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </Button>
+                
+                <div className="px-3 py-1 bg-muted rounded text-sm font-mono">
+                  {Math.round(zoom * 100)}%
                 </div>
+              </div>
 
                 {/* Drawing Instructions */}
                 {isDrawing && (
@@ -441,109 +514,106 @@ export default function SlotDrawing() {
                     </CardContent>
                   </Card>
                 )}
-              </div>
-              
-              {/* Slot Configuration */}
-              <div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>
-                      {selectedRegion ? `Slot ${selectedRegion.slotId}` : 'Select a Slot'}
-                    </CardTitle>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    {selectedRegion ? (
-                      <>
-                        <div>
-                          <Label htmlFor="slotId">Slot ID</Label>
-                          <Input 
-                            id="slotId"
-                            value={selectedRegion.slotId}
-                            onChange={(e) => updateSelectedRegion({ slotId: e.target.value })}
-                            data-testid="input-slot-id"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="toolName">Tool Name</Label>
-                          <Input 
-                            id="toolName"
-                            placeholder="e.g., Scissors"
-                            value={selectedRegion.toolName}
-                            onChange={(e) => updateSelectedRegion({ toolName: e.target.value })}
-                            data-testid="input-tool-name"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="expectedQrId">Expected QR ID</Label>
-                          <Input 
-                            id="expectedQrId"
-                            placeholder="e.g., S001"
-                            value={selectedRegion.expectedQrId}
-                            onChange={(e) => updateSelectedRegion({ expectedQrId: e.target.value })}
-                            data-testid="input-expected-qr"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="graceWindow">Grace Window</Label>
-                          <Input 
-                            id="graceWindow"
-                            value={selectedRegion.graceWindow}
-                            onChange={(e) => updateSelectedRegion({ graceWindow: e.target.value })}
-                            placeholder="e.g., 08:30-16:30"
-                            data-testid="input-grace-window"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Time range when slot is monitored (HH:MM-HH:MM format)
-                          </p>
-                        </div>
-                        
-                        <div className="pt-4 border-t border-border">
-                          <p className="text-xs text-muted-foreground">
-                            All slots set to: <span className="font-medium text-foreground">High Priority</span> • <span className="font-medium text-foreground">Checkout Allowed</span>
-                          </p>
-                        </div>
-                        
-                        <div className="flex gap-2 mt-6">
-                          <Button 
-                            className="flex-1"
-                            onClick={saveSlotConfiguration}
-                            disabled={!selectedRegion.toolName || createSlotMutation.isPending || updateSlotMutation.isPending}
-                            data-testid="button-save-slot"
-                          >
-                            {createSlotMutation.isPending || updateSlotMutation.isPending 
-                              ? 'Saving...' 
-                              : 'Save Slot Configuration'
-                            }
-                          </Button>
-                          
-                          {/* Show delete button only for existing saved slots */}
-                          {slots?.some((s: any) => s.id === selectedRegion.id) && (
-                            <Button 
-                              variant="destructive"
-                              onClick={() => deleteSlotMutation.mutate(selectedRegion.id)}
-                              disabled={deleteSlotMutation.isPending}
-                              data-testid="button-delete-slot"
-                            >
-                              <Trash className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">
-                          Click on a slot region to configure it, or create a new slot region.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
             </div>
+            
+            {/* Slot Configuration */}
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {selectedRegion ? `Slot ${selectedRegion.slotId}` : 'Select a Slot'}
+                </CardTitle>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                {selectedRegion ? (
+                  <>
+                    <div>
+                      <Label htmlFor="slotId">Slot ID</Label>
+                      <Input 
+                        id="slotId"
+                        value={selectedRegion.slotId}
+                        onChange={(e) => updateSelectedRegion({ slotId: e.target.value })}
+                        data-testid="input-slot-id"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="toolName">Tool Name</Label>
+                      <Input 
+                        id="toolName"
+                        placeholder="e.g., Scissors"
+                        value={selectedRegion.toolName}
+                        onChange={(e) => updateSelectedRegion({ toolName: e.target.value })}
+                        data-testid="input-tool-name"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="expectedQrId">Expected QR ID</Label>
+                      <Input 
+                        id="expectedQrId"
+                        placeholder="e.g., S001"
+                        value={selectedRegion.expectedQrId}
+                        onChange={(e) => updateSelectedRegion({ expectedQrId: e.target.value })}
+                        data-testid="input-expected-qr"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="graceWindow">Grace Window</Label>
+                      <Input 
+                        id="graceWindow"
+                        value={selectedRegion.graceWindow}
+                        onChange={(e) => updateSelectedRegion({ graceWindow: e.target.value })}
+                        placeholder="e.g., 08:30-16:30"
+                        data-testid="input-grace-window"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Time range when slot is monitored (HH:MM-HH:MM format)
+                      </p>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-border">
+                      <p className="text-xs text-muted-foreground">
+                        All slots set to: <span className="font-medium text-foreground">High Priority</span> • <span className="font-medium text-foreground">Checkout Allowed</span>
+                      </p>
+                    </div>
+                    
+                    <div className="flex gap-2 mt-6">
+                      <Button 
+                        className="flex-1"
+                        onClick={saveSlotConfiguration}
+                        disabled={!selectedRegion.toolName || createSlotMutation.isPending || updateSlotMutation.isPending}
+                        data-testid="button-save-slot"
+                      >
+                        {createSlotMutation.isPending || updateSlotMutation.isPending 
+                          ? 'Saving...' 
+                          : 'Save Slot Configuration'
+                        }
+                      </Button>
+                      
+                      {/* Show delete button only for existing saved slots */}
+                      {slots?.some((s: any) => s.id === selectedRegion.id) && (
+                        <Button 
+                          variant="destructive"
+                          onClick={() => deleteSlotMutation.mutate(selectedRegion.id)}
+                          disabled={deleteSlotMutation.isPending}
+                          data-testid="button-delete-slot"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      Click on a slot region to configure it, or create a new slot region.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
             
             {/* Configured Slots List */}
             <Card className="mt-6">
