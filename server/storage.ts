@@ -75,37 +75,7 @@ export class MemStorage implements IStorage {
       isActive: true,
     });
 
-    // Create sample slots for the 6x10 grid
-    const slotIds = [];
-    for (let row = 0; row < 10; row++) {
-      const rowLetter = String.fromCharCode(65 + row); // A-J
-      for (let col = 1; col <= 6; col++) {
-        slotIds.push(`${rowLetter}${col}`);
-      }
-    }
-
-    const toolNames = [
-      "Scissors", "Tape Cutter", "Pliers", "Wire Cutters", "Measure Tape", "Utility Knife",
-      "Screwdriver", "Allen Keys", "Box Cutter", "Wrench 10mm", "Marker Set", "Hammer",
-    ];
-
-    // Create first 24 slots with actual data, rest as placeholders
-    for (let i = 0; i < slotIds.length; i++) {
-      const slotId = slotIds[i];
-      const toolName = toolNames[i % toolNames.length] + (i >= toolNames.length ? ` ${Math.floor(i / toolNames.length) + 1}` : "");
-      
-      await this.createSlot({
-        slotId,
-        cameraId: defaultCamera.id,
-        toolName,
-        expectedQrId: `${slotId.charAt(0)}${String(i + 1).padStart(3, "0")}`,
-        priority: i < 8 ? "high" : i < 24 ? "medium" : "low",
-        regionCoords: this.generateSlotCoords(i % 6, Math.floor(i / 6)),
-        allowCheckout: true,
-        graceWindow: "08:30-16:30",
-        isActive: true,
-      });
-    }
+    // No default slots - user will create their own via the slot drawing UI
 
     // Create default alert rules
     await this.createAlertRule({
@@ -157,24 +127,6 @@ export class MemStorage implements IStorage {
       role: "admin",
       password: "admin123", // In real app, this would be hashed
     });
-  }
-
-  private generateSlotCoords(col: number, row: number): number[][] {
-    const slotWidth = 110;
-    const slotHeight = 110;
-    const marginX = 70;
-    const marginY = 70;
-    const spacing = 20;
-
-    const x = marginX + col * (slotWidth + spacing);
-    const y = marginY + row * (slotHeight + spacing);
-
-    return [
-      [x, y],
-      [x + slotWidth, y],
-      [x + slotWidth, y + slotHeight],
-      [x, y + slotHeight],
-    ];
   }
 
   // Camera methods
