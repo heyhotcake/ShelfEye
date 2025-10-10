@@ -199,14 +199,19 @@ export default function SlotDrawing() {
       ctx.stroke();
     }
 
-    // Draw paper outline
+    // Add canvas margins (40px from edges)
+    const canvasMargin = 40;
+    const paperWidth = canvas.width - (canvasMargin * 2);
+    const paperHeight = canvas.height - (canvasMargin * 2);
+    
+    // Draw paper outline with margins
     ctx.strokeStyle = 'rgba(100, 116, 139, 0.5)'; // slate-500
     ctx.lineWidth = 3 / zoom;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeRect(canvasMargin, canvasMargin, paperWidth, paperHeight);
     
-    // Calculate 3cm border in pixels
+    // Calculate 3cm border in pixels (relative to paper size)
     const paperInfo = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
-    const pxPerMm = canvas.width / paperInfo.realWidthMm;
+    const pxPerMm = paperWidth / paperInfo.realWidthMm;
     const borderMm = 30; // 3cm = 30mm
     const borderPx = borderMm * pxPerMm;
     
@@ -214,12 +219,12 @@ export default function SlotDrawing() {
     const markerSizeMm = 50;
     const markerSize = markerSizeMm * pxPerMm;
     
-    // Position markers 3cm from edges
+    // Position markers 3cm from paper edges
     const markers = [
-      { x: borderPx, y: borderPx, id: '17' },  // Top-left
-      { x: canvas.width - borderPx - markerSize, y: borderPx, id: '18' },  // Top-right
-      { x: canvas.width - borderPx - markerSize, y: canvas.height - borderPx - markerSize, id: '19' },  // Bottom-right
-      { x: borderPx, y: canvas.height - borderPx - markerSize, id: '20' },  // Bottom-left
+      { x: canvasMargin + borderPx, y: canvasMargin + borderPx, id: '17' },  // Top-left
+      { x: canvasMargin + paperWidth - borderPx - markerSize, y: canvasMargin + borderPx, id: '18' },  // Top-right
+      { x: canvasMargin + paperWidth - borderPx - markerSize, y: canvasMargin + paperHeight - borderPx - markerSize, id: '19' },  // Bottom-right
+      { x: canvasMargin + borderPx, y: canvasMargin + paperHeight - borderPx - markerSize, id: '20' },  // Bottom-left
     ];
     
     markers.forEach(marker => {
@@ -240,10 +245,10 @@ export default function SlotDrawing() {
     ctx.strokeStyle = 'rgba(34, 197, 94, 0.6)'; // green
     ctx.lineWidth = 2 / zoom;
     ctx.beginPath();
-    const gridX1 = borderPx + markerSize;
-    const gridY1 = borderPx + markerSize;
-    const gridX2 = canvas.width - borderPx;
-    const gridY2 = canvas.height - borderPx;
+    const gridX1 = canvasMargin + borderPx + markerSize;
+    const gridY1 = canvasMargin + borderPx + markerSize;
+    const gridX2 = canvasMargin + paperWidth - borderPx;
+    const gridY2 = canvasMargin + paperHeight - borderPx;
     ctx.moveTo(gridX1, gridY1);
     ctx.lineTo(gridX2, gridY1);
     ctx.lineTo(gridX2, gridY2);
