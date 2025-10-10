@@ -59,6 +59,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let result = '';
       let error = '';
 
+      pythonProcess.on('error', (err) => {
+        res.status(503).json({ 
+          message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
+          error: err.message 
+        });
+      });
+
       pythonProcess.stdout.on('data', (data) => {
         result += data.toString();
       });
@@ -120,6 +127,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let result = '';
       let error = '';
+
+      pythonProcess.on('error', (err) => {
+        res.status(503).json({ 
+          message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
+          error: err.message 
+        });
+      });
 
       pythonProcess.stdout.on('data', (data) => {
         result += data.toString();
@@ -310,6 +324,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let result = '';
       let error = '';
+
+      pythonProcess.on('error', (err) => {
+        res.status(503).json({ 
+          message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
+          error: err.message 
+        });
+      });
 
       pythonProcess.stdout.on('data', (data) => {
         result += data.toString();
