@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Download, FileCode, FileText, RotateCcw, X } from "lucide-react";
+import { Upload, Download, FileCode, FileText, RotateCcw, X, Plus, Camera, Trash, Power } from "lucide-react";
 
 interface SystemConfig {
   key: string;
@@ -31,8 +31,58 @@ export default function Configuration() {
     queryKey: ['/api/slots'],
   });
 
-  const { data: cameras } = useQuery({
+  const { data: cameras } = useQuery<any[]>({
     queryKey: ['/api/cameras'],
+  });
+
+  const [newCameraName, setNewCameraName] = useState("");
+  const [newCameraDevice, setNewCameraDevice] = useState("0");
+
+  const createCameraMutation = useMutation({
+    mutationFn: (cameraData: { name: string; deviceIndex: number }) =>
+      apiRequest('POST', '/api/cameras', cameraData),
+    onSuccess: () => {
+      toast({
+        title: "Camera Added",
+        description: "New camera added successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+      setNewCameraName("");
+      setNewCameraDevice("0");
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Add Camera",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleCameraMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      apiRequest('PUT', `/api/cameras/${id}`, { isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+    },
+  });
+
+  const deleteCameraMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/cameras/${id}`),
+    onSuccess: () => {
+      toast({
+        title: "Camera Deleted",
+        description: "Camera removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Delete Camera",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const updateConfigMutation = useMutation({
@@ -181,6 +231,117 @@ export default function Configuration() {
                     <p className="text-muted-foreground mb-1">Alert Recipients</p>
                     <p className="font-mono font-medium text-foreground" data-testid="text-alert-recipients">3 emails</p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Camera Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="w-5 h-5" />
+                  Camera Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Existing Cameras */}
+                {cameras && cameras.length > 0 ? (
+                  <div className="space-y-2">
+                    {cameras.map((camera: any) => (
+                      <div
+                        key={camera.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Camera className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium text-foreground">{camera.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Device {camera.deviceIndex} • {camera.resolution || '1920x1080'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={
+                              camera.isActive
+                                ? "bg-green-500/20 text-green-500 border-green-500/30"
+                                : "bg-muted text-muted-foreground border-border"
+                            }
+                          >
+                            {camera.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              toggleCameraMutation.mutate({
+                                id: camera.id,
+                                isActive: !camera.isActive,
+                              })
+                            }
+                            data-testid={`button-toggle-camera-${camera.id}`}
+                          >
+                            <Power className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => deleteCameraMutation.mutate(camera.id)}
+                            data-testid={`button-delete-camera-${camera.id}`}
+                          >
+                            <Trash className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No cameras configured. Add a camera below.
+                  </p>
+                )}
+
+                {/* Add New Camera */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-semibold mb-3">Add New Camera</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="camera-name">Camera Name</Label>
+                      <Input
+                        id="camera-name"
+                        placeholder="e.g., Camera Station A"
+                        value={newCameraName}
+                        onChange={(e) => setNewCameraName(e.target.value)}
+                        data-testid="input-camera-name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="device-index">Device Index</Label>
+                      <Input
+                        id="device-index"
+                        type="number"
+                        placeholder="0"
+                        value={newCameraDevice}
+                        onChange={(e) => setNewCameraDevice(e.target.value)}
+                        data-testid="input-device-index"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full mt-3"
+                    onClick={() =>
+                      createCameraMutation.mutate({
+                        name: newCameraName,
+                        deviceIndex: parseInt(newCameraDevice),
+                      })
+                    }
+                    disabled={!newCameraName || createCameraMutation.isPending}
+                    data-testid="button-add-camera"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {createCameraMutation.isPending ? "Adding..." : "Add Camera"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
