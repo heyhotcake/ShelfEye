@@ -23,12 +23,7 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
-    name: "Calibration", 
-    href: "/calibration",
-    icon: Camera,
-  },
-  {
-    name: "Slot Drawing",
+    name: "Template Design",
     href: "/slot-drawing", 
     icon: SquareFunction,
   },
@@ -38,14 +33,14 @@ const navigation = [
     icon: Printer,
   },
   {
+    name: "Calibration", 
+    href: "/calibration",
+    icon: Camera,
+  },
+  {
     name: "Configuration",
     href: "/configuration",
     icon: Settings,
-  },
-  {
-    name: "QR Generator",
-    href: "/qr-generator",
-    icon: QrCode,
   },
   {
     name: "Alerts",
