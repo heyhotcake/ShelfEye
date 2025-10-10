@@ -105,49 +105,70 @@ export default function TemplatePrint() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const renderCanvas = async () => {
+      const qrImageCache: { [key: string]: HTMLImageElement } = {};
 
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const loadImage = (src: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+      };
 
-    ctx.strokeStyle = '#cccccc';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
-    templatesWithCategories.forEach((rect) => {
-      const widthPx = cmToPixels(rect.category.widthCm, true);
-      const heightPx = cmToPixels(rect.category.heightCm, false);
-      const xPx = cmToPixels(rect.xCm, true);
-      const yPx = cmToPixels(rect.yCm, false);
-
-      const centerX = xPx;
-      const centerY = yPx;
-
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate((rect.rotation * Math.PI) / 180);
-
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
-
-      ctx.fillStyle = '#000000';
-      ctx.font = '12px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(rect.category.name, 0, 0);
-
-      if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-        const qrImg = new Image();
-        qrImg.src = qrCodes[rect.autoQrId];
-        qrImg.onload = () => {
-          const qrSize = Math.min(widthPx, heightPx) * 0.6;
-          ctx.drawImage(qrImg, -qrSize / 2, heightPx / 4, qrSize, qrSize);
-        };
+      for (const rect of templatesWithCategories) {
+        if (rect.autoQrId && qrCodes[rect.autoQrId]) {
+          try {
+            qrImageCache[rect.autoQrId] = await loadImage(qrCodes[rect.autoQrId]);
+          } catch (error) {
+            console.error(`Failed to load QR code for ${rect.autoQrId}:`, error);
+          }
+        }
       }
 
-      ctx.restore();
-    });
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#cccccc';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+      templatesWithCategories.forEach((rect) => {
+        const widthPx = cmToPixels(rect.category.widthCm, true);
+        const heightPx = cmToPixels(rect.category.heightCm, false);
+        const xPx = cmToPixels(rect.xCm, true);
+        const yPx = cmToPixels(rect.yCm, false);
+
+        const centerX = xPx;
+        const centerY = yPx;
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate((rect.rotation * Math.PI) / 180);
+
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
+
+        ctx.fillStyle = '#000000';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(rect.category.name, 0, 0);
+
+        if (rect.autoQrId && qrImageCache[rect.autoQrId]) {
+          const qrSize = Math.min(widthPx, heightPx) * 0.6;
+          ctx.drawImage(qrImageCache[rect.autoQrId], -qrSize / 2, heightPx / 4, qrSize, qrSize);
+        }
+
+        ctx.restore();
+      });
+    };
+
+    renderCanvas();
   }, [templatesWithCategories, qrCodes, canvasDimensions, paperSize]);
 
   const handlePrint = () => {
