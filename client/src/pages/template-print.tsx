@@ -174,10 +174,6 @@ export default function TemplatePrint() {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = '#cccccc';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
       // Render 4 corner ArUco markers (3cm from edges, 5cm size)
       if (arucoMarkers?.ok && arucoMarkers.markers) {
         const borderCm = 3;
