@@ -385,11 +385,12 @@ export default function SlotDrawing() {
     const markerSize = markerSizeMm * pxPerMm;
     
     // Position markers at 0cm from paper edges (extreme corners)
+    // A=top-left, B=top-right, C=bottom-right, D=bottom-left (clockwise from top-left)
     const markers = [
-      { x: canvasMargin, y: canvasMargin, id: '17' },  // Top-left
-      { x: canvasMargin + paperWidth - markerSize, y: canvasMargin, id: '18' },  // Top-right
-      { x: canvasMargin + paperWidth - markerSize, y: canvasMargin + paperHeight - markerSize, id: '19' },  // Bottom-right
-      { x: canvasMargin, y: canvasMargin + paperHeight - markerSize, id: '20' },  // Bottom-left
+      { x: canvasMargin, y: canvasMargin, id: 'A', arucoId: 17 },  // Top-left
+      { x: canvasMargin + paperWidth - markerSize, y: canvasMargin, id: 'B', arucoId: 18 },  // Top-right
+      { x: canvasMargin + paperWidth - markerSize, y: canvasMargin + paperHeight - markerSize, id: 'C', arucoId: 19 },  // Bottom-right
+      { x: canvasMargin, y: canvasMargin + paperHeight - markerSize, id: 'D', arucoId: 20 },  // Bottom-left
     ];
     
     markers.forEach(marker => {
