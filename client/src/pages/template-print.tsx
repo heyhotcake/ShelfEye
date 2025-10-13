@@ -409,21 +409,41 @@ export default function TemplatePrint() {
               </CardContent>
             </Card>
 
-            <div className="print:h-screen print:flex print:items-center print:justify-center">
-              <div className="canvas-container flex justify-center print:block">
-                <canvas 
-                  ref={canvasRef}
-                  width={canvasDimensions.width}
-                  height={canvasDimensions.height}
-                  className="bg-white rounded shadow-lg print:shadow-none print:rounded-none"
-                  style={{ 
-                    maxWidth: '100%',
-                    height: 'auto'
-                  }}
-                  data-testid="print-canvas"
-                />
-              </div>
+            <div className="flex justify-center">
+              <canvas 
+                ref={canvasRef}
+                width={canvasDimensions.width}
+                height={canvasDimensions.height}
+                className="bg-white rounded shadow-lg print:shadow-none print:rounded-none"
+                style={{ 
+                  maxWidth: '100%',
+                  height: 'auto'
+                }}
+                data-testid="print-canvas"
+              />
             </div>
+            
+            <style>{`
+              @media print {
+                @page {
+                  size: ${paperSize.includes('A3') ? 'A3' : paperSize.includes('A5') ? 'A5' : 'A4'} landscape;
+                  margin: 0;
+                }
+                body, html {
+                  margin: 0;
+                  padding: 0;
+                  overflow: hidden;
+                }
+                canvas {
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  max-width: 100vw !important;
+                  max-height: 100vh !important;
+                  object-fit: contain;
+                  page-break-inside: avoid;
+                }
+              }
+            `}</style>
           </div>
         </div>
       </main>
