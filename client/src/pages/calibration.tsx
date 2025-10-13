@@ -5,7 +5,6 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Camera, CheckCircle, Ruler, X } from "lucide-react";
 
@@ -18,11 +17,18 @@ interface CalibrationResult {
 
 export default function Calibration() {
   const { toast } = useToast();
-  const [errorThreshold, setErrorThreshold] = useState([1.5]);
-  const [selectedResolution, setSelectedResolution] = useState("1920x1080");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
   const { data: cameras } = useQuery({
     queryKey: ['/api/cameras'],
+  });
+
+  const { data: templateRectangles } = useQuery({
+    queryKey: ['/api/template-rectangles'],
+    queryFn: async () => {
+      const response = await fetch('/api/template-rectangles');
+      return response.json();
+    },
   });
 
   const calibrationMutation = useMutation({
@@ -54,9 +60,9 @@ export default function Calibration() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="calibration-title">
-                ArUco GridBoard Calibration
+                Camera Calibration
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">Align the camera with the grid markers</p>
+              <p className="text-sm text-muted-foreground mt-1">Position camera to see all 4 corner markers (A/B/C/D)</p>
             </div>
             <Button 
               variant="outline" 
@@ -87,18 +93,18 @@ export default function Calibration() {
                     
                     {/* ArUco markers overlay */}
                     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 600">
-                      {/* Corner markers */}
+                      {/* Corner markers A/B/C/D (clockwise from top-left) */}
                       <rect x="100" y="100" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                      <text x="110" y="130" fill="white" fontSize="14" fontWeight="bold">17</text>
+                      <text x="115" y="130" fill="white" fontSize="18" fontWeight="bold">A</text>
                       
                       <rect x="650" y="100" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                      <text x="660" y="130" fill="white" fontSize="14" fontWeight="bold">18</text>
+                      <text x="665" y="130" fill="white" fontSize="18" fontWeight="bold">B</text>
                       
                       <rect x="650" y="450" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                      <text x="660" y="480" fill="white" fontSize="14" fontWeight="bold">19</text>
+                      <text x="665" y="480" fill="white" fontSize="18" fontWeight="bold">C</text>
                       
                       <rect x="100" y="450" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                      <text x="110" y="480" fill="white" fontSize="14" fontWeight="bold">20</text>
+                      <text x="115" y="480" fill="white" fontSize="18" fontWeight="bold">D</text>
                       
                       {/* Grid outline */}
                       <polyline 
@@ -156,39 +162,25 @@ export default function Calibration() {
                   </div>
 
                   <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Grid Resolution</label>
-                    <Select value={selectedResolution} onValueChange={setSelectedResolution}>
-                      <SelectTrigger data-testid="select-resolution">
-                        <SelectValue />
+                    <label className="text-sm text-muted-foreground mb-2 block">Template Design (optional)</label>
+                    <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                      <SelectTrigger data-testid="select-template">
+                        <SelectValue placeholder="Select template to preview" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1920x1080">1920 x 1080 (Recommended)</SelectItem>
-                        <SelectItem value="1280x720">1280 x 720</SelectItem>
-                        <SelectItem value="2560x1440">2560 x 1440</SelectItem>
+                        <SelectItem value="none">No template overlay</SelectItem>
+                        {templateRectangles && templateRectangles.length > 0 && (
+                          templateRectangles.map((template: any) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.paperSize} - {template.categoryName || template.id.slice(0, 8)}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">
-                      Error Threshold (px)
-                    </label>
-                    <div className="px-3">
-                      <Slider
-                        value={errorThreshold}
-                        onValueChange={setErrorThreshold}
-                        max={3}
-                        min={0.5}
-                        step={0.1}
-                        className="w-full"
-                        data-testid="slider-error-threshold"
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>0.5</span>
-                      <span className="font-medium text-foreground">{errorThreshold[0]}</span>
-                      <span>3.0</span>
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Select a template to preview tool positions on the camera feed
+                    </p>
                   </div>
 
                   <div className="space-y-3">

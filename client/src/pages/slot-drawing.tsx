@@ -409,28 +409,28 @@ export default function SlotDrawing() {
 
     // Draw template rectangles (black outlines)
     templateRectangles.forEach((rect) => {
-      const x = canvasMargin + cmToPixels(rect.xCm, true);
-      const y = canvasMargin + cmToPixels(rect.yCm, false);
+      // xCm and yCm represent the CENTER of the rectangle
+      const centerX = canvasMargin + cmToPixels(rect.xCm, true);
+      const centerY = canvasMargin + cmToPixels(rect.yCm, false);
       const width = cmToPixels(rect.widthCm, true);
       const height = cmToPixels(rect.heightCm, false);
 
       ctx.save();
-      ctx.translate(x + width / 2, y + height / 2);
+      ctx.translate(centerX, centerY);
       ctx.rotate((rect.rotation * Math.PI) / 180);
-      ctx.translate(-(x + width / 2), -(y + height / 2));
 
-      // Draw rectangle
+      // Draw rectangle (centered at origin after translation)
       const isSelected = selectedTemplateRect?.id === rect.id;
       ctx.strokeStyle = isSelected ? 'rgb(59, 130, 246)' : 'rgb(0, 0, 0)';
       ctx.lineWidth = isSelected ? 3 / zoom : 2 / zoom;
-      ctx.strokeRect(x, y, width, height);
+      ctx.strokeRect(-width / 2, -height / 2, width, height);
 
-      // Draw category name label
+      // Draw category name label (at center)
       ctx.fillStyle = isSelected ? 'rgb(59, 130, 246)' : 'rgb(0, 0, 0)';
       ctx.font = `${10 / zoom}px monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(rect.categoryName, x + width / 2, y + height / 2);
+      ctx.fillText(rect.categoryName, 0, 0);
 
       ctx.restore();
     });
@@ -579,13 +579,11 @@ export default function SlotDrawing() {
 
   const isPointInRotatedRect = (px: number, py: number, rect: TemplateRectangle): boolean => {
     const canvasMargin = 40;
-    const rectX = canvasMargin + cmToPixels(rect.xCm, true);
-    const rectY = canvasMargin + cmToPixels(rect.yCm, false);
+    // xCm and yCm represent the CENTER of the rectangle
+    const centerX = canvasMargin + cmToPixels(rect.xCm, true);
+    const centerY = canvasMargin + cmToPixels(rect.yCm, false);
     const rectWidth = cmToPixels(rect.widthCm, true);
     const rectHeight = cmToPixels(rect.heightCm, false);
-
-    const centerX = rectX + rectWidth / 2;
-    const centerY = rectY + rectHeight / 2;
 
     const dx = px - centerX;
     const dy = py - centerY;

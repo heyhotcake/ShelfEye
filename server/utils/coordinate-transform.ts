@@ -31,8 +31,9 @@ export function transformTemplateToPixels(
 function getRectangleCorners(rect: TemplateRect): Point[] {
   const { xCm, yCm, widthCm, heightCm, rotation } = rect;
   
-  const centerX = xCm + widthCm / 2;
-  const centerY = yCm + heightCm / 2;
+  // xCm and yCm represent the CENTER of the rectangle
+  const centerX = xCm;
+  const centerY = yCm;
   
   const halfW = widthCm / 2;
   const halfH = heightCm / 2;

@@ -71,17 +71,20 @@ class ArucoCornerCalibrator:
             return {}, 0
     
     def calculate_homography(self, marker_centers: Dict[int, np.ndarray], 
-                            image_shape: Tuple[int, int]) -> Tuple[bool, Optional[np.ndarray], float]:
+                            image_shape: Tuple[int, int],
+                            paper_size_cm: Tuple[float, float] = (29.7, 21.0)) -> Tuple[bool, Optional[np.ndarray], float]:
         """
         Calculate homography matrix from 4 corner markers
+        Maps real-world paper coordinates (cm) to camera pixels
         
         Args:
-            marker_centers: Dictionary of marker ID -> center point
+            marker_centers: Dictionary of marker ID -> center point (pixels)
             image_shape: (height, width) of the image
+            paper_size_cm: (width_cm, height_cm) of the paper (default A4 landscape)
             
         Returns:
             success: Whether calculation was successful
-            homography: 3x3 homography matrix (or None if failed)
+            homography: 3x3 homography matrix that maps cm → pixels
             quality: Quality metric (mean reprojection error in pixels)
         """
         try:
@@ -96,30 +99,33 @@ class ArucoCornerCalibrator:
                 logger.warning(f"Missing marker IDs: {missing_ids}")
                 return False, None, float('inf')
             
-            # Source points: detected marker centers in order A, B, C, D (17, 18, 19, 20)
+            # Destination points: detected marker centers in pixels (in order A, B, C, D)
             # A (17) = top-left
             # B (18) = top-right
             # C (19) = bottom-right
             # D (20) = bottom-left
-            src_points = np.array([
+            dst_points = np.array([
                 marker_centers[17],  # A: top-left
                 marker_centers[18],  # B: top-right
                 marker_centers[19],  # C: bottom-right
                 marker_centers[20],  # D: bottom-left
             ], dtype=np.float32)
             
-            # Destination points: rectangle in a normalized coordinate system
-            # We'll use the actual paper dimensions in cm as the destination
-            # This will be provided by the frontend, but for now use image corners
-            height, width = image_shape
-            dst_points = np.array([
-                [0, 0],              # A: top-left
-                [width, 0],          # B: top-right
-                [width, height],     # C: bottom-right
-                [0, height],         # D: bottom-left
+            # Source points: paper corners in cm (real-world coordinates)
+            # Markers are 5cm × 5cm and positioned at paper corners (0cm from edges)
+            # So marker centers are at 2.5cm from each edge
+            paper_width_cm, paper_height_cm = paper_size_cm
+            marker_size_cm = 5.0
+            marker_center_offset = marker_size_cm / 2.0  # 2.5cm
+            
+            src_points = np.array([
+                [marker_center_offset, marker_center_offset],  # A: top-left center
+                [paper_width_cm - marker_center_offset, marker_center_offset],  # B: top-right center
+                [paper_width_cm - marker_center_offset, paper_height_cm - marker_center_offset],  # C: bottom-right center
+                [marker_center_offset, paper_height_cm - marker_center_offset],  # D: bottom-left center
             ], dtype=np.float32)
             
-            # Calculate homography matrix
+            # Calculate homography matrix: cm → pixels
             homography, mask = cv2.findHomography(src_points, dst_points, cv2.RANSAC, 5.0)
             
             if homography is None:
@@ -127,15 +133,16 @@ class ArucoCornerCalibrator:
                 return False, None, float('inf')
             
             # Calculate quality (reprojection error)
-            # Transform source points using homography
+            # Transform source points (cm) using homography to get predicted pixel positions
             src_points_homogeneous = np.hstack([src_points, np.ones((4, 1))])
             projected_points_homogeneous = homography @ src_points_homogeneous.T
             projected_points = (projected_points_homogeneous[:2, :] / projected_points_homogeneous[2, :]).T
             
-            # Calculate mean reprojection error
+            # Calculate mean reprojection error (difference between detected and predicted positions)
             reprojection_error = np.mean(np.linalg.norm(dst_points - projected_points, axis=1))
             
-            logger.info(f"Homography calculated successfully")
+            logger.info(f"Homography calculated successfully (maps cm → pixels)")
+            logger.info(f"Paper size: {paper_width_cm}cm × {paper_height_cm}cm")
             logger.info(f"Reprojection error: {reprojection_error:.2f} pixels")
             
             return True, homography, reprojection_error
