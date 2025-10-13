@@ -376,22 +376,20 @@ export default function SlotDrawing() {
     ctx.lineWidth = 3 / zoom;
     ctx.strokeRect(canvasMargin, canvasMargin, paperWidth, paperHeight);
     
-    // Calculate 3cm border in pixels (relative to paper size)
+    // Calculate pixel conversion (relative to paper size)
     const paperInfo = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
     const pxPerMm = paperWidth / paperInfo.realWidthMm;
-    const borderMm = 30; // 3cm = 30mm
-    const borderPx = borderMm * pxPerMm;
     
-    // ArUco marker size (typically 5cm = 50mm)
+    // ArUco marker size (5cm = 50mm)
     const markerSizeMm = 50;
     const markerSize = markerSizeMm * pxPerMm;
     
-    // Position markers 3cm from paper edges
+    // Position markers at 0cm from paper edges (extreme corners)
     const markers = [
-      { x: canvasMargin + borderPx, y: canvasMargin + borderPx, id: '17' },  // Top-left
-      { x: canvasMargin + paperWidth - borderPx - markerSize, y: canvasMargin + borderPx, id: '18' },  // Top-right
-      { x: canvasMargin + paperWidth - borderPx - markerSize, y: canvasMargin + paperHeight - borderPx - markerSize, id: '19' },  // Bottom-right
-      { x: canvasMargin + borderPx, y: canvasMargin + paperHeight - borderPx - markerSize, id: '20' },  // Bottom-left
+      { x: canvasMargin, y: canvasMargin, id: '17' },  // Top-left
+      { x: canvasMargin + paperWidth - markerSize, y: canvasMargin, id: '18' },  // Top-right
+      { x: canvasMargin + paperWidth - markerSize, y: canvasMargin + paperHeight - markerSize, id: '19' },  // Bottom-right
+      { x: canvasMargin, y: canvasMargin + paperHeight - markerSize, id: '20' },  // Bottom-left
     ];
     
     markers.forEach(marker => {
@@ -407,21 +405,6 @@ export default function SlotDrawing() {
       ctx.textBaseline = 'middle';
       ctx.fillText(marker.id, marker.x + markerSize / 2, marker.y + markerSize / 2);
     });
-    
-    // Draw grid area outline (area between markers)
-    ctx.strokeStyle = 'rgba(34, 197, 94, 0.6)'; // green
-    ctx.lineWidth = 2 / zoom;
-    ctx.beginPath();
-    const gridX1 = canvasMargin + borderPx + markerSize;
-    const gridY1 = canvasMargin + borderPx + markerSize;
-    const gridX2 = canvasMargin + paperWidth - borderPx;
-    const gridY2 = canvasMargin + paperHeight - borderPx;
-    ctx.moveTo(gridX1, gridY1);
-    ctx.lineTo(gridX2, gridY1);
-    ctx.lineTo(gridX2, gridY2);
-    ctx.lineTo(gridX1, gridY2);
-    ctx.closePath();
-    ctx.stroke();
 
     // Draw template rectangles (black outlines)
     templateRectangles.forEach((rect) => {
