@@ -46,11 +46,16 @@ export default function Alerts() {
     queryKey: ['/api/alert-queue'],
   });
 
-  const { data: emailConfig } = useQuery({
+  const { data: emailConfig } = useQuery<{ value: string[] }>({
     queryKey: ['/api/config/EMAIL_RECIPIENTS'],
   });
 
+  const { data: sheetsUrlData } = useQuery<{ url: string | null }>({
+    queryKey: ['/api/alerts/sheets-url'],
+  });
+
   const emailRecipients = (emailConfig?.value || []) as string[];
+  const sheetsUrl = sheetsUrlData?.url || null;
 
   const updateRuleMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<AlertRule> }) =>
@@ -308,13 +313,23 @@ export default function Alerts() {
                       </div>
                       <Switch defaultChecked data-testid="switch-sheets-log" />
                     </div>
-                    <Input
-                      placeholder="Sheet ID or URL"
-                      className="text-sm"
-                      data-testid="input-sheets-id"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Logs all detections and alerts to Google Sheets
+                    {sheetsUrl ? (
+                      <a 
+                        href={sheetsUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline block mb-2"
+                        data-testid="link-sheets-url"
+                      >
+                        📊 Open Alert Log Spreadsheet
+                      </a>
+                    ) : (
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Spreadsheet will be created automatically on first alert
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Logs all captures, diagnostics, and alerts to Google Sheets
                     </p>
                   </CardContent>
                 </Card>

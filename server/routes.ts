@@ -10,8 +10,11 @@ import QRCode from "qrcode";
 import { z } from "zod";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertCaptureRunSchema } from "@shared/schema";
 
+// Global scheduler instance
+let scheduler: CaptureScheduler;
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  const scheduler = new CaptureScheduler(storage);
+  scheduler = new CaptureScheduler(storage);
   await scheduler.initialize();
   // Health check
   app.get("/api/health", (_req, res) => {
@@ -527,6 +530,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Alert configuration and testing routes
+  app.get("/api/alerts/sheets-url", async (_req, res) => {
+    try {
+      const sheetsUrl = scheduler.getSheetsUrl();
+      res.json({ url: sheetsUrl });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get sheets URL", error });
+    }
+  });
+
   app.post("/api/alerts/test", async (_req, res) => {
     try {
       const result = await sendTestAlert();

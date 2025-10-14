@@ -4,6 +4,7 @@ import type { IStorage } from './storage';
 import { spawn } from 'child_process';
 import type { Camera, Slot } from '@shared/schema';
 import { sendAlertEmail } from './services/email-alerts';
+import { SheetsLogger } from './services/sheets-logger';
 
 const TIMEZONE = 'Asia/Tokyo';
 
@@ -18,9 +19,11 @@ export class CaptureScheduler {
   private tasks: Map<string, cron.ScheduledTask> = new Map();
   private diagnosticTasks: Map<string, cron.ScheduledTask> = new Map();
   private isInitialized = false;
+  private sheetsLogger: SheetsLogger;
 
   constructor(storage: IStorage) {
     this.storage = storage;
+    this.sheetsLogger = new SheetsLogger(storage);
   }
 
   /**
@@ -76,6 +79,9 @@ export class CaptureScheduler {
         'Whether scheduler is paused'
       );
     }
+
+    // Initialize sheets logger
+    await this.sheetsLogger.initialize();
 
     this.isInitialized = true;
     await this.reload();
@@ -205,6 +211,23 @@ export class CaptureScheduler {
         executionTimeMs: executionTime,
       });
 
+      // Log to Google Sheets
+      try {
+        const now = toZonedTime(new Date(), TIMEZONE);
+        const timestamp = format(now, 'yyyy-MM-dd HH:mm:ss', { timeZone: TIMEZONE });
+        await this.sheetsLogger.logCapture({
+          timestamp,
+          triggerType,
+          camerasCaptured: result.camerasCaptured || 0,
+          slotsProcessed: result.slotsProcessed || 0,
+          failureCount: result.failureCount || 0,
+          status: result.status,
+          executionTimeMs: executionTime,
+        });
+      } catch (error) {
+        console.error('[Scheduler] Failed to log to sheets:', error);
+      }
+
       // Create detection logs for each slot result
       if (result.results) {
         for (const cameraResult of result.results) {
@@ -272,15 +295,33 @@ export class CaptureScheduler {
       const executionTime = Date.now() - startTime;
 
       // Create diagnostic run record
+      const diagnosticStatus = result.status === 'healthy' ? 'success' : (result.status === 'warning' ? 'partial_failure' : 'failure');
       await this.storage.createCaptureRun({
         triggerType: 'diagnostic',
         camerasCaptured: result.healthy || 0,
         slotsProcessed: 0,
         failureCount: result.failed || 0,
-        status: result.status === 'healthy' ? 'success' : (result.status === 'warning' ? 'partial_failure' : 'failure'),
+        status: diagnosticStatus,
         errorMessages: result.results?.flatMap((r: any) => r.errors || []) || [],
         executionTimeMs: executionTime,
       });
+
+      // Log to Google Sheets
+      try {
+        const now = toZonedTime(new Date(), TIMEZONE);
+        const timestamp = format(now, 'yyyy-MM-dd HH:mm:ss', { timeZone: TIMEZONE });
+        await this.sheetsLogger.logCapture({
+          timestamp,
+          triggerType: 'diagnostic',
+          camerasCaptured: result.healthy || 0,
+          slotsProcessed: 0,
+          failureCount: result.failed || 0,
+          status: diagnosticStatus,
+          executionTimeMs: executionTime,
+        });
+      } catch (error) {
+        console.error('[Scheduler] Failed to log diagnostic to sheets:', error);
+      }
 
       // If there are failures or warnings, send alert
       if (result.status === 'failed' || result.status === 'warning') {
@@ -374,7 +415,7 @@ export class CaptureScheduler {
   }
 
   /**
-   * Send alert notification via email
+   * Send alert notification via email and log to Google Sheets
    */
   private async sendAlert(alertType: string, message: string) {
     try {
@@ -397,6 +438,7 @@ export class CaptureScheduler {
         subject = '📷 Tool Tracker - Camera Alert';
       }
       
+      // Send email
       await sendAlertEmail({
         type: emailType,
         subject,
@@ -405,6 +447,18 @@ export class CaptureScheduler {
           errorMessage: message
         }
       });
+      
+      // Log to Google Sheets
+      try {
+        await this.sheetsLogger.logAlert({
+          timestamp,
+          alertType,
+          status: 'sent',
+          errorMessage: message,
+        });
+      } catch (sheetsError) {
+        console.error('[Scheduler] Failed to log alert to sheets:', sheetsError);
+      }
       
       console.log(`[Scheduler] Alert sent successfully: ${alertType}`);
     } catch (error) {
@@ -479,5 +533,12 @@ export class CaptureScheduler {
     }
 
     return { capture, diagnostic };
+  }
+
+  /**
+   * Get Google Sheets URL for alert logs
+   */
+  getSheetsUrl(): string | null {
+    return this.sheetsLogger.getSpreadsheetUrl();
   }
 }
