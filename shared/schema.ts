@@ -105,6 +105,18 @@ export const templateRectangles = pgTable("template_rectangles", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+export const captureRuns = pgTable("capture_runs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  timestamp: timestamp("timestamp").notNull().default(sql`now()`),
+  triggerType: text("trigger_type").notNull(), // scheduled, manual, diagnostic
+  camerasCaptured: integer("cameras_captured").notNull().default(0),
+  slotsProcessed: integer("slots_processed").notNull().default(0),
+  failureCount: integer("failure_count").notNull().default(0),
+  status: text("status").notNull(), // success, partial_failure, failure
+  errorMessages: json("error_messages").$type<string[]>(),
+  executionTimeMs: integer("execution_time_ms"),
+});
+
 // Insert schemas
 export const insertCameraSchema = createInsertSchema(cameras).omit({ id: true, createdAt: true });
 export const insertSlotSchema = createInsertSchema(slots).omit({ id: true, createdAt: true });
@@ -115,6 +127,7 @@ export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({ 
 export const insertUserSchema = createInsertSchema(users).pick({ username: true, password: true, email: true, role: true });
 export const insertToolCategorySchema = createInsertSchema(toolCategories).omit({ id: true, createdAt: true });
 export const insertTemplateRectangleSchema = createInsertSchema(templateRectangles).omit({ id: true, createdAt: true });
+export const insertCaptureRunSchema = createInsertSchema(captureRuns).omit({ id: true, timestamp: true });
 
 // Types
 export type InsertCamera = z.infer<typeof insertCameraSchema>;
@@ -126,6 +139,7 @@ export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertToolCategory = z.infer<typeof insertToolCategorySchema>;
 export type InsertTemplateRectangle = z.infer<typeof insertTemplateRectangleSchema>;
+export type InsertCaptureRun = z.infer<typeof insertCaptureRunSchema>;
 
 export type Camera = typeof cameras.$inferSelect;
 export type Slot = typeof slots.$inferSelect;
@@ -136,3 +150,4 @@ export type SystemConfig = typeof systemConfig.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type ToolCategory = typeof toolCategories.$inferSelect;
 export type TemplateRectangle = typeof templateRectangles.$inferSelect;
+export type CaptureRun = typeof captureRuns.$inferSelect;
