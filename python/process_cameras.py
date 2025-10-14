@@ -350,6 +350,9 @@ class CameraProcessor:
         
         for camera in cameras:
             camera_id = camera.get('id')
+            if not camera_id:
+                logger.warning("Camera missing 'id' field, skipping")
+                continue
             camera_slots = slots_by_camera.get(camera_id, [])
             
             result = self.process_camera(camera, camera_slots)

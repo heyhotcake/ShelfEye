@@ -187,7 +187,7 @@ class ArucoCornerCalibrator:
                     marker_centers, frame.shape[:2]
                 )
                 
-                if success:
+                if success and homography is not None:
                     return {
                         'ok': True,
                         'homography_matrix': homography.flatten().tolist(),
