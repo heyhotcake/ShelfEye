@@ -104,7 +104,7 @@ class QRDetector:
                 return False
         
         # Validate type
-        if qr_data['type'] not in ['tool', 'worker']:
+        if qr_data['type'] not in ['slot', 'worker']:
             logger.warning(f"Invalid QR type: {qr_data['type']}")
             return False
         
@@ -214,8 +214,8 @@ def generate_qr_payload(qr_type: str, qr_id: str, **kwargs) -> Dict:
     }
     
     # Add type-specific fields
-    if qr_type == 'tool':
-        payload['tool_type'] = kwargs.get('tool_type', '')
+    if qr_type == 'slot':
+        payload['slot_name'] = kwargs.get('slot_name', '')
     elif qr_type == 'worker':
         payload['worker_name'] = kwargs.get('worker_name', '')
     

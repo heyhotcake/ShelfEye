@@ -14,7 +14,6 @@ import numpy as np
 import cv2
 
 from qr_detector import QRDetector
-from ssim_analyzer import SSIMAnalyzer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -25,7 +24,6 @@ class CameraManager:
         self.camera_index = camera_index
         self.homography_matrix = homography_matrix
         self.qr_detector = QRDetector()
-        self.ssim_analyzer = SSIMAnalyzer()
         self.cap = None
         
     def initialize_camera(self) -> bool:
@@ -103,20 +101,24 @@ class CameraManager:
             return None
     
     def process_slot(self, image: np.ndarray, slot_config: Dict) -> Dict:
-        """Process a single slot for QR detection and analysis"""
+        """
+        Process a single slot using simplified QR-based detection
+        
+        Detection Logic:
+        - Slot QR visible → EMPTY (tool missing, trigger alarm)
+        - Worker QR visible → CHECKED_OUT (signed out by worker)
+        - No QR visible → ITEM_PRESENT (tool covering slot QR)
+        """
         slot_id = slot_config['id']
         coords = slot_config['coords']
-        expected_qr = slot_config.get('expectedQr')
+        slot_qr_id = slot_config.get('expectedQr')  # This is the slot's own QR ID
         
         logger.info(f"Processing slot {slot_id}")
         
         result = {
             'slot_id': slot_id,
-            'status': 'UNCERTAIN',
-            'present': False,
-            'correct_item': False,
-            's_empty': 0.0,
-            's_full': 0.0,
+            'status': 'ITEM_PRESENT',  # Default: assume tool present
+            'present': True,
             'pose_quality': 0.0,
             'qr_id': None,
             'worker_name': None,
@@ -129,6 +131,7 @@ class CameraManager:
             roi = self.extract_slot_roi(image, coords)
             if roi is None:
                 logger.warning(f"Failed to extract ROI for slot {slot_id}")
+                result['status'] = 'ERROR'
                 return result
             
             # Save ROI image
@@ -146,56 +149,35 @@ class CameraManager:
             last_roi_path = f"data/{slot_id}_last.png"
             cv2.imwrite(last_roi_path, roi)
             
-            # QR Detection
+            # QR Detection (the core of simplified logic)
             qr_results = self.qr_detector.detect_qr_codes(roi)
             
             if qr_results:
                 qr_data = qr_results[0]  # Take first QR code found
                 result['qr_id'] = qr_data.get('id')
+                qr_type = qr_data.get('type')
                 
-                # Check if it's a worker badge
-                if qr_data.get('type') == 'worker':
+                if qr_type == 'worker':
+                    # Worker badge visible → checked out
                     result['status'] = 'CHECKED_OUT'
                     result['worker_name'] = qr_data.get('worker_name')
-                    result['present'] = True
-                elif qr_data.get('id') == expected_qr:
-                    result['status'] = 'ITEM_PRESENT'
-                    result['present'] = True
-                    result['correct_item'] = True
-                else:
-                    result['status'] = 'ITEM_PRESENT'
-                    result['present'] = True
-                    result['correct_item'] = False
-            else:
-                # No QR detected, check if slot is empty using SSIM
-                empty_baseline_path = f"data/{slot_id}_EMPTY.png"
-                full_baseline_path = f"data/{slot_id}_FULL.png"
-                
-                if os.path.exists(empty_baseline_path):
-                    empty_baseline = cv2.imread(empty_baseline_path, cv2.IMREAD_GRAYSCALE)
-                    if empty_baseline is not None:
-                        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) == 3 else roi
-                        result['s_empty'] = self.ssim_analyzer.compare_images(roi_gray, empty_baseline)
+                    result['present'] = True  # Item is "present" with worker
+                    result['alert_triggered'] = False
                     
-                    # Higher SSIM with empty baseline means slot is likely empty
-                    if result['s_empty'] > 0.8:
-                        result['status'] = 'EMPTY'
-                        result['present'] = False
-                    else:
-                        result['status'] = 'OCCUPIED_NO_QR'
-                        result['present'] = True
-                        result['alert_triggered'] = True
-                else:
-                    result['status'] = 'UNCALIBRATED_EMPTY'
-                
-                if os.path.exists(full_baseline_path) and result['present']:
-                    full_baseline = cv2.imread(full_baseline_path, cv2.IMREAD_GRAYSCALE)
-                    if full_baseline is not None:
-                        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) == 3 else roi
-                        result['s_full'] = self.ssim_analyzer.compare_images(roi_gray, full_baseline)
-                        result['correct_item'] = result['s_full'] > 0.7
+                elif qr_type == 'slot':
+                    # Slot QR visible → tool missing!
+                    result['status'] = 'EMPTY'
+                    result['present'] = False
+                    result['alert_triggered'] = True
+                    logger.warning(f"Slot {slot_id} QR visible - tool missing!")
+                    
+            else:
+                # No QR detected → tool is covering the slot QR
+                result['status'] = 'ITEM_PRESENT'
+                result['present'] = True
+                result['alert_triggered'] = False
             
-            # Calculate pose quality (simple metric based on image sharpness)
+            # Calculate pose quality (image sharpness metric)
             if len(roi.shape) == 3:
                 gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
             else:
@@ -207,7 +189,7 @@ class CameraManager:
             
         except Exception as e:
             logger.error(f"Error processing slot {slot_id}: {e}")
-            result['status'] = 'UNCERTAIN'
+            result['status'] = 'ERROR'
         
         return result
     
