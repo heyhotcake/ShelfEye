@@ -2,7 +2,10 @@
 """
 Camera Capture Processing Script
 Captures frames from all calibrated cameras and processes each slot.
-Performs QR decoding and SSIM analysis to determine tool status.
+Uses simplified QR-based detection:
+- Slot QR visible → EMPTY (tool missing, alarm)
+- Worker QR visible → CHECKED_OUT (signed out)
+- No QR visible → ITEM_PRESENT (tool covering slot QR)
 """
 
 import cv2
@@ -13,7 +16,6 @@ import numpy as np
 from typing import Dict, List, Any, Tuple, Optional
 from pathlib import Path
 from datetime import datetime
-from skimage.metrics import structural_similarity as ssim
 
 # Setup logging
 logging.basicConfig(
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class SlotProcessor:
-    """Process individual tool slots with QR and SSIM analysis"""
+    """Process individual tool slots with simplified QR-based detection"""
     
     def __init__(self, data_dir: str = "data"):
         self.data_dir = Path(data_dir)
@@ -99,91 +101,61 @@ class SlotProcessor:
             logger.error(f"QR decoding failed: {e}")
             return None
     
-    def calculate_ssim(self, roi: np.ndarray, baseline_path: Path) -> Optional[float]:
+    def parse_qr_json(self, qr_raw: str) -> Optional[Dict]:
         """
-        Calculate SSIM between current ROI and baseline image
+        Parse QR code data as JSON
         
         Args:
-            roi: Current ROI image
-            baseline_path: Path to baseline image
+            qr_raw: Raw QR code string
             
         Returns:
-            SSIM score (0-1) or None if calculation fails
+            Parsed JSON dict or None
         """
         try:
-            if not baseline_path.exists():
-                logger.warning(f"Baseline image not found: {baseline_path}")
-                return None
-            
-            # Load baseline
-            baseline = cv2.imread(str(baseline_path))
-            if baseline is None:
-                logger.error(f"Failed to load baseline: {baseline_path}")
-                return None
-            
-            # Resize ROI to match baseline
-            roi_resized = cv2.resize(roi, (baseline.shape[1], baseline.shape[0]))
-            
-            # Convert to grayscale
-            roi_gray = cv2.cvtColor(roi_resized, cv2.COLOR_BGR2GRAY)
-            baseline_gray = cv2.cvtColor(baseline, cv2.COLOR_BGR2GRAY)
-            
-            # Calculate SSIM
-            score = ssim(baseline_gray, roi_gray)
-            
-            return float(score)
-            
-        except Exception as e:
-            logger.error(f"SSIM calculation failed: {e}")
+            return json.loads(qr_raw)
+        except json.JSONDecodeError:
+            logger.warning(f"QR data is not valid JSON: {qr_raw}")
             return None
     
-    def determine_status(self, qr_data: Optional[str], ssim_empty: Optional[float], 
-                        ssim_full: Optional[float], expected_qr: Optional[str]) -> str:
+    def determine_status(self, qr_data: Optional[str]) -> Tuple[str, bool, Optional[str]]:
         """
-        Determine slot status based on QR and SSIM data
+        Determine slot status using simplified QR-based logic
         
         Args:
-            qr_data: Decoded QR data
-            ssim_empty: SSIM score vs empty baseline
-            ssim_full: SSIM score vs full baseline
-            expected_qr: Expected QR ID for this slot
+            qr_data: Decoded QR data (JSON string)
             
         Returns:
-            Status string (EMPTY, ITEM_PRESENT, CHECKED_OUT, TRAINING_ERROR, etc.)
+            Tuple of (status, alert_triggered, worker_name)
         """
-        # If no baselines exist yet
-        if ssim_empty is None and ssim_full is None:
-            return "TRAINING_ERROR"
+        # No QR detected → tool is covering the slot QR
+        if not qr_data:
+            return ("ITEM_PRESENT", False, None)
         
-        # Thresholds
-        SSIM_HIGH_THRESHOLD = 0.85
-        SSIM_LOW_THRESHOLD = 0.60
+        # Parse QR JSON
+        qr_json = self.parse_qr_json(qr_data)
+        if not qr_json:
+            # Invalid QR format, assume item present
+            return ("ITEM_PRESENT", False, None)
         
-        # Check if slot appears empty
-        if ssim_empty is not None and ssim_empty > SSIM_HIGH_THRESHOLD:
-            return "EMPTY"
+        qr_type = qr_json.get('type')
         
-        # Check if slot appears full (tool present)
-        if ssim_full is not None and ssim_full > SSIM_HIGH_THRESHOLD:
-            # Tool present, check QR
-            if qr_data:
-                if expected_qr and qr_data == expected_qr:
-                    return "ITEM_PRESENT"
-                else:
-                    return "WRONG_ITEM"
-            else:
-                return "ITEM_PRESENT"  # Tool there but no QR
+        # Worker badge → checked out
+        if qr_type == 'worker':
+            worker_name = qr_json.get('worker_name', 'Unknown')
+            return ("CHECKED_OUT", False, worker_name)
         
-        # Intermediate state - something changed but unclear what
-        if qr_data:
-            # QR visible but doesn't match baselines strongly
-            return "CHECKED_OUT"  # Assume checkout scenario
+        # Slot QR → tool missing (alarm!)
+        elif qr_type == 'slot':
+            return ("EMPTY", True, None)
         
-        return "OCCUPIED_NO_QR"
+        # Unknown QR type
+        else:
+            logger.warning(f"Unknown QR type: {qr_type}")
+            return ("ITEM_PRESENT", False, None)
     
     def process_slot(self, frame: np.ndarray, slot_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process a single slot
+        Process a single slot using simplified QR detection
         
         Args:
             frame: Camera frame
@@ -195,17 +167,16 @@ class SlotProcessor:
         slot_id = slot_data.get('id')
         slot_name = slot_data.get('slotId', slot_id)
         region_coords = slot_data.get('regionCoords', [])
-        expected_qr = slot_data.get('expectedQrId')
         
         logger.info(f"Processing slot: {slot_name}")
         
         result = {
             'slotId': slot_id,
             'slotName': slot_name,
-            'status': 'UNKNOWN',
+            'status': 'ITEM_PRESENT',  # Default
             'qrData': None,
-            'ssimEmpty': None,
-            'ssimFull': None,
+            'workerName': None,
+            'alertTriggered': False,
             'error': None
         }
         
@@ -214,7 +185,7 @@ class SlotProcessor:
             roi = self.extract_roi(frame, region_coords)
             if roi is None:
                 result['error'] = 'Failed to extract ROI'
-                result['status'] = 'PROCESSING_ERROR'
+                result['status'] = 'ERROR'
                 return result
             
             # Save current ROI
@@ -225,25 +196,17 @@ class SlotProcessor:
             qr_data = self.decode_qr(roi)
             result['qrData'] = qr_data
             
-            # Calculate SSIM vs baselines
-            empty_baseline = self.data_dir / f"{slot_name}_EMPTY.png"
-            full_baseline = self.data_dir / f"{slot_name}_FULL.png"
-            
-            ssim_empty = self.calculate_ssim(roi, empty_baseline)
-            ssim_full = self.calculate_ssim(roi, full_baseline)
-            
-            result['ssimEmpty'] = ssim_empty
-            result['ssimFull'] = ssim_full
-            
-            # Determine status
-            status = self.determine_status(qr_data, ssim_empty, ssim_full, expected_qr)
+            # Determine status using simplified logic
+            status, alert_triggered, worker_name = self.determine_status(qr_data)
             result['status'] = status
+            result['alertTriggered'] = alert_triggered
+            result['workerName'] = worker_name
             
-            logger.info(f"Slot {slot_name}: {status} (QR: {qr_data}, SSIM_E: {ssim_empty:.3f if ssim_empty else 'N/A'}, SSIM_F: {ssim_full:.3f if ssim_full else 'N/A'})")
+            logger.info(f"Slot {slot_name}: {status} (QR: {qr_data if qr_data else 'None'}, Alert: {alert_triggered})")
             
         except Exception as e:
             result['error'] = str(e)
-            result['status'] = 'PROCESSING_ERROR'
+            result['status'] = 'ERROR'
             logger.error(f"Slot {slot_name} processing error: {e}")
         
         return result

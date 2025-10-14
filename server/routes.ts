@@ -385,12 +385,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QR code generation route
   app.post("/api/qr-generate", async (req, res) => {
     try {
-      const { type, id, toolType, workerName, errorCorrection = 'L', moduleSize = 25, includeHmac = true } = req.body;
+      const { type, id, slotName, workerName, errorCorrection = 'L', moduleSize = 25, includeHmac = true } = req.body;
 
       const payload: any = {
         type,
         id,
-        tool_type: toolType || undefined,
+        slot_name: slotName || undefined,
         worker_name: workerName || undefined,
         version: "1.0",
         ts: Math.floor(Date.now() / 1000),
