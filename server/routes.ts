@@ -1,14 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { CaptureScheduler } from "./scheduler";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
 import QRCode from "qrcode";
 import { z } from "zod";
-import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema } from "@shared/schema";
+import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertCaptureRunSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const scheduler = new CaptureScheduler(storage);
+  await scheduler.initialize();
   // Health check
   app.get("/api/health", (_req, res) => {
     res.json({
@@ -650,6 +653,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Template rectangle not found" });
     }
     res.json({ success: true });
+  });
+
+  // Scheduler configuration routes
+  app.get("/api/schedule-config", async (_req, res) => {
+    try {
+      const captureTimesConfig = await storage.getConfigByKey("capture_times");
+      const timezoneConfig = await storage.getConfigByKey("timezone");
+      const schedulerPausedConfig = await storage.getConfigByKey("scheduler_paused");
+
+      res.json({
+        capture_times: captureTimesConfig?.value || ["08:00", "11:00", "14:00", "17:00"],
+        timezone: timezoneConfig?.value || "UTC",
+        scheduler_paused: schedulerPausedConfig?.value || false,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get schedule config", error });
+    }
+  });
+
+  app.post("/api/schedule-config", async (req, res) => {
+    try {
+      const { capture_times, timezone, scheduler_paused } = req.body;
+
+      if (capture_times !== undefined) {
+        await storage.setConfig("capture_times", capture_times, "Scheduled capture times");
+      }
+      if (timezone !== undefined) {
+        await storage.setConfig("timezone", timezone, "System timezone");
+      }
+      if (scheduler_paused !== undefined) {
+        await storage.setConfig("scheduler_paused", scheduler_paused, "Scheduler paused state");
+      }
+
+      await scheduler.reload();
+
+      res.json({
+        ok: true,
+        message: "Schedule configuration updated successfully",
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update schedule config", error });
+    }
+  });
+
+  app.post("/api/schedule-config/reload", async (_req, res) => {
+    try {
+      await scheduler.reload();
+      res.json({
+        ok: true,
+        message: "Scheduler reloaded successfully",
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reload scheduler", error });
+    }
+  });
+
+  app.get("/api/schedule-config/next-runs", async (_req, res) => {
+    try {
+      const nextRuns = await scheduler.getNextRuns();
+      res.json(nextRuns);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get next runs", error });
+    }
+  });
+
+  // Capture now route
+  app.post("/api/capture-now", async (_req, res) => {
+    try {
+      const result = await scheduler.triggerCaptureNow();
+      res.json({
+        ok: true,
+        ...result
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Capture error", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
+  // Diagnostic check route
+  app.post("/api/diagnostic-check", async (_req, res) => {
+    try {
+      const result = await scheduler.triggerDiagnosticNow();
+      res.json({
+        ok: true,
+        ...result
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Diagnostic check error", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
+  // Capture runs history route
+  app.get("/api/capture-runs", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const runs = await storage.getCaptureRuns(limit);
+      res.json(runs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get capture runs", error });
+    }
   });
 
   // Analytics routes

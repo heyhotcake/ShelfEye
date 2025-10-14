@@ -1,4 +1,4 @@
-import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle } from "@shared/schema";
+import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type CaptureRun, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle, type InsertCaptureRun } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -66,6 +66,11 @@ export interface IStorage {
   createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle>;
   updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined>;
   deleteTemplateRectangle(id: string): Promise<boolean>;
+
+  // Capture run methods
+  getCaptureRuns(limit?: number): Promise<CaptureRun[]>;
+  getCaptureRun(id: string): Promise<CaptureRun | undefined>;
+  createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun>;
 }
 
 export class MemStorage implements IStorage {
@@ -78,6 +83,7 @@ export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private toolCategories: Map<string, ToolCategory> = new Map();
   private templateRectangles: Map<string, TemplateRectangle> = new Map();
+  private captureRuns: Map<string, CaptureRun> = new Map();
 
   constructor() {
     // Initialize with default camera and slots
@@ -453,6 +459,28 @@ export class MemStorage implements IStorage {
   async deleteTemplateRectangle(id: string): Promise<boolean> {
     return this.templateRectangles.delete(id);
   }
+
+  // Capture run methods
+  async getCaptureRuns(limit = 50): Promise<CaptureRun[]> {
+    return Array.from(this.captureRuns.values())
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, limit);
+  }
+
+  async getCaptureRun(id: string): Promise<CaptureRun | undefined> {
+    return this.captureRuns.get(id);
+  }
+
+  async createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun> {
+    const id = randomUUID();
+    const newRun: CaptureRun = {
+      ...run,
+      id,
+      timestamp: new Date(),
+    };
+    this.captureRuns.set(id, newRun);
+    return newRun;
+  }
 }
 
 import { db } from './db';
@@ -740,6 +768,20 @@ export class DbStorage implements IStorage {
   async deleteTemplateRectangle(id: string): Promise<boolean> {
     const result = await db.delete(schema.templateRectangles).where(eq(schema.templateRectangles.id, id));
     return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getCaptureRuns(limit: number = 50): Promise<CaptureRun[]> {
+    return await db.select().from(schema.captureRuns).orderBy(desc(schema.captureRuns.timestamp)).limit(limit);
+  }
+
+  async getCaptureRun(id: string): Promise<CaptureRun | undefined> {
+    const result = await db.select().from(schema.captureRuns).where(eq(schema.captureRuns.id, id));
+    return result[0];
+  }
+
+  async createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun> {
+    const result = await db.insert(schema.captureRuns).values(run).returning();
+    return result[0];
   }
 }
 
