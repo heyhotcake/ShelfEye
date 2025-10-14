@@ -80,6 +80,54 @@ export class CaptureScheduler {
       );
     }
 
+    // Initialize default alert message templates
+    const alertTemplatesConfig = await this.storage.getConfigByKey('ALERT_TEMPLATES');
+    if (!alertTemplatesConfig) {
+      await this.storage.setConfig(
+        'ALERT_TEMPLATES',
+        {
+          diagnostic_failure: {
+            subject: '⚠️ Tool Tracker - Diagnostic Check Failed',
+            emailBody: 'Pre-flight diagnostic check failed at {timestamp}.\n\nDetails:\n{errorMessage}\n\nPlease check the cameras before the next scheduled capture.',
+            sheetsMessage: 'Diagnostic check failed: {errorMessage}'
+          },
+          capture_failure: {
+            subject: '🚨 Tool Tracker - Capture Failed',
+            emailBody: 'Scheduled capture failed at {timestamp}.\n\nDetails:\n{errorMessage}\n\nImmediate attention required.',
+            sheetsMessage: 'Capture failed: {errorMessage}'
+          },
+          camera_offline: {
+            subject: '📷 Tool Tracker - Camera Alert',
+            emailBody: 'Camera health issue detected at {timestamp}.\n\nDetails:\n{errorMessage}',
+            sheetsMessage: 'Camera issue: {errorMessage}'
+          },
+          test_alert: {
+            subject: '✅ Tool Tracker - Test Alert',
+            emailBody: 'This is a test alert from Tool Tracker at {timestamp}.\n\nIf you received this, your alert system is working correctly.',
+            sheetsMessage: 'Test alert sent successfully'
+          }
+        },
+        'Alert message templates with placeholders: {timestamp}, {errorMessage}, {cameraId}, {slotId}'
+      );
+    }
+
+    // Initialize Google Sheets formatting configuration
+    const sheetsConfigData = await this.storage.getConfigByKey('SHEETS_FORMATTING');
+    if (!sheetsConfigData) {
+      await this.storage.setConfig(
+        'SHEETS_FORMATTING',
+        {
+          tabCreation: 'monthly', // monthly, weekly, daily, single
+          tabNamePattern: 'Alerts-{YYYY-MM}', // {YYYY}, {MM}, {DD}, {WW} (week number)
+          columnOrder: ['timestamp', 'alertType', 'status', 'cameraId', 'slotId', 'errorMessage', 'details'],
+          includeHeaders: true,
+          freezeHeaderRow: true,
+          autoResize: true
+        },
+        'Google Sheets formatting configuration for alert logs'
+      );
+    }
+
     // Initialize sheets logger
     await this.sheetsLogger.initialize();
 
@@ -415,28 +463,53 @@ export class CaptureScheduler {
   }
 
   /**
-   * Send alert notification via email and log to Google Sheets
+   * Send alert notification via email and log to Google Sheets using configurable templates
    */
-  private async sendAlert(alertType: string, message: string) {
+  private async sendAlert(alertType: string, message: string, cameraId?: string, slotId?: string) {
     try {
       console.log(`[Scheduler] Sending alert: ${alertType}`);
       
       const now = toZonedTime(new Date(), TIMEZONE);
       const timestamp = format(now, 'yyyy-MM-dd HH:mm:ss', { timeZone: TIMEZONE });
       
+      // Determine email type
       let emailType: 'diagnostic_failure' | 'capture_failure' | 'camera_offline' | 'test_alert';
-      let subject: string;
-      
       if (alertType === 'DIAGNOSTIC_FAILURE' || alertType === 'DIAGNOSTIC_ERROR') {
         emailType = 'diagnostic_failure';
-        subject = '⚠️ Tool Tracker - Diagnostic Check Failed';
       } else if (alertType === 'CAPTURE_FAILURE' || alertType === 'CAPTURE_ERROR') {
         emailType = 'capture_failure';
-        subject = '🚨 Tool Tracker - Capture Failed';
       } else {
         emailType = 'camera_offline';
-        subject = '📷 Tool Tracker - Camera Alert';
       }
+      
+      // Get alert templates from configuration
+      const templatesConfig = await this.storage.getConfigByKey('ALERT_TEMPLATES');
+      const templates = templatesConfig?.value as Record<string, { subject: string; emailBody: string; sheetsMessage: string }> || {};
+      const template = templates[emailType] || {
+        subject: 'Tool Tracker Alert',
+        emailBody: '{errorMessage}',
+        sheetsMessage: '{errorMessage}'
+      };
+      
+      // Substitute placeholders
+      const substitutions: Record<string, string> = {
+        '{timestamp}': timestamp,
+        '{errorMessage}': message,
+        '{cameraId}': cameraId || 'N/A',
+        '{slotId}': slotId || 'N/A'
+      };
+      
+      const substituteTemplate = (text: string) => {
+        let result = text;
+        for (const [placeholder, value] of Object.entries(substitutions)) {
+          result = result.replace(new RegExp(placeholder, 'g'), value);
+        }
+        return result;
+      };
+      
+      const subject = substituteTemplate(template.subject);
+      const emailBody = substituteTemplate(template.emailBody);
+      const sheetsMessage = substituteTemplate(template.sheetsMessage);
       
       // Send email
       await sendAlertEmail({
@@ -444,7 +517,7 @@ export class CaptureScheduler {
         subject,
         details: {
           timestamp,
-          errorMessage: message
+          errorMessage: emailBody
         }
       });
       
@@ -454,7 +527,9 @@ export class CaptureScheduler {
           timestamp,
           alertType,
           status: 'sent',
-          errorMessage: message,
+          errorMessage: sheetsMessage,
+          cameraId,
+          slotId
         });
       } catch (sheetsError) {
         console.error('[Scheduler] Failed to log alert to sheets:', sheetsError);

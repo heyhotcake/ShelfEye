@@ -9,8 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Table, Volume2, X, TestTube } from "lucide-react";
+import { Mail, Table, Volume2, X, TestTube, MessageSquare, Settings2 } from "lucide-react";
 
 interface AlertRule {
   id: string;
@@ -54,8 +56,22 @@ export default function Alerts() {
     queryKey: ['/api/alerts/sheets-url'],
   });
 
+  const { data: alertTemplatesConfig } = useQuery<{ value: Record<string, { subject: string; emailBody: string; sheetsMessage: string }> }>({
+    queryKey: ['/api/config/ALERT_TEMPLATES'],
+  });
+
+  const { data: sheetsFormattingConfig } = useQuery<{ value: any }>({
+    queryKey: ['/api/config/SHEETS_FORMATTING'],
+  });
+
   const emailRecipients = (emailConfig?.value || []) as string[];
   const sheetsUrl = sheetsUrlData?.url || null;
+  const alertTemplates = alertTemplatesConfig?.value || {};
+  const sheetsFormatting = sheetsFormattingConfig?.value || {
+    tabCreation: 'monthly',
+    tabNamePattern: 'Alerts-{YYYY-MM}',
+    columnOrder: ['timestamp', 'alertType', 'status', 'cameraId', 'slotId', 'errorMessage', 'details']
+  };
 
   const updateRuleMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<AlertRule> }) =>
@@ -391,6 +407,167 @@ export default function Alerts() {
               </div>
             </div>
             
+            {/* Alert Message Templates Configuration */}
+            <Card className="mt-6">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-primary" />
+                  <CardTitle>Alert Message Templates</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Customize alert messages for each type. Use placeholders: <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{timestamp}'}</code>, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{errorMessage}'}</code>, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{cameraId}'}</code>, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{slotId}'}</code>
+                </p>
+                
+                <Tabs defaultValue="diagnostic_failure" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="diagnostic_failure">Diagnostic</TabsTrigger>
+                    <TabsTrigger value="capture_failure">Capture</TabsTrigger>
+                    <TabsTrigger value="camera_offline">Camera</TabsTrigger>
+                    <TabsTrigger value="test_alert">Test</TabsTrigger>
+                  </TabsList>
+                  
+                  {Object.entries(alertTemplates).map(([alertType, template]: [string, any]) => (
+                    <TabsContent key={alertType} value={alertType} className="space-y-4">
+                      <div>
+                        <Label htmlFor={`${alertType}-subject`}>Email Subject</Label>
+                        <Input
+                          id={`${alertType}-subject`}
+                          value={template.subject || ''}
+                          onChange={(e) => {
+                            const updated = { ...alertTemplates, [alertType]: { ...template, subject: e.target.value } };
+                            updateConfigMutation.mutate({ key: 'ALERT_TEMPLATES', value: updated }, {
+                              onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/ALERT_TEMPLATES'] })
+                            });
+                          }}
+                          data-testid={`input-${alertType}-subject`}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`${alertType}-body`}>Email Body</Label>
+                        <Textarea
+                          id={`${alertType}-body`}
+                          value={template.emailBody || ''}
+                          onChange={(e) => {
+                            const updated = { ...alertTemplates, [alertType]: { ...template, emailBody: e.target.value } };
+                            updateConfigMutation.mutate({ key: 'ALERT_TEMPLATES', value: updated }, {
+                              onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/ALERT_TEMPLATES'] })
+                            });
+                          }}
+                          rows={5}
+                          data-testid={`input-${alertType}-body`}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`${alertType}-sheets`}>Sheets Message</Label>
+                        <Input
+                          id={`${alertType}-sheets`}
+                          value={template.sheetsMessage || ''}
+                          onChange={(e) => {
+                            const updated = { ...alertTemplates, [alertType]: { ...template, sheetsMessage: e.target.value } };
+                            updateConfigMutation.mutate({ key: 'ALERT_TEMPLATES', value: updated }, {
+                              onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/ALERT_TEMPLATES'] })
+                            });
+                          }}
+                          data-testid={`input-${alertType}-sheets`}
+                        />
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Google Sheets Formatting Configuration */}
+            <Card className="mt-6">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-5 h-5 text-primary" />
+                  <CardTitle>Google Sheets Formatting</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="tab-creation">Tab Creation Rule</Label>
+                  <Select
+                    value={sheetsFormatting.tabCreation || 'monthly'}
+                    onValueChange={(value) => {
+                      const updated = { ...sheetsFormatting, tabCreation: value };
+                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
+                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
+                      });
+                    }}
+                  >
+                    <SelectTrigger id="tab-creation" data-testid="select-tab-creation">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single">Single Sheet (All in one tab)</SelectItem>
+                      <SelectItem value="monthly">Monthly Tabs (One per month)</SelectItem>
+                      <SelectItem value="weekly">Weekly Tabs (One per week)</SelectItem>
+                      <SelectItem value="daily">Daily Tabs (One per day)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Controls when new tabs are created in the spreadsheet
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="tab-pattern">Tab Name Pattern</Label>
+                  <Input
+                    id="tab-pattern"
+                    value={sheetsFormatting.tabNamePattern || 'Alerts-{YYYY-MM}'}
+                    onChange={(e) => {
+                      const updated = { ...sheetsFormatting, tabNamePattern: e.target.value };
+                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
+                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
+                      });
+                    }}
+                    data-testid="input-tab-pattern"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Use: <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{YYYY}'}</code> for year, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{MM}'}</code> for month, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{DD}'}</code> for day, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{WW}'}</code> for week
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Include Headers</Label>
+                    <p className="text-xs text-muted-foreground">Add column headers to new tabs</p>
+                  </div>
+                  <Switch
+                    checked={sheetsFormatting.includeHeaders !== false}
+                    onCheckedChange={(checked) => {
+                      const updated = { ...sheetsFormatting, includeHeaders: checked };
+                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
+                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
+                      });
+                    }}
+                    data-testid="switch-include-headers"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Freeze Header Row</Label>
+                    <p className="text-xs text-muted-foreground">Keep headers visible when scrolling</p>
+                  </div>
+                  <Switch
+                    checked={sheetsFormatting.freezeHeaderRow !== false}
+                    onCheckedChange={(checked) => {
+                      const updated = { ...sheetsFormatting, freezeHeaderRow: checked };
+                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
+                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
+                      });
+                    }}
+                    data-testid="switch-freeze-headers"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Recent Alert History */}
             <Card className="mt-6">
               <CardHeader>
