@@ -173,9 +173,9 @@ class CameraManager:
                 
                 if os.path.exists(empty_baseline_path):
                     empty_baseline = cv2.imread(empty_baseline_path, cv2.IMREAD_GRAYSCALE)
-                    roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) == 3 else roi
-                    
-                    result['s_empty'] = self.ssim_analyzer.compare_images(roi_gray, empty_baseline)
+                    if empty_baseline is not None:
+                        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) == 3 else roi
+                        result['s_empty'] = self.ssim_analyzer.compare_images(roi_gray, empty_baseline)
                     
                     # Higher SSIM with empty baseline means slot is likely empty
                     if result['s_empty'] > 0.8:
@@ -190,10 +190,10 @@ class CameraManager:
                 
                 if os.path.exists(full_baseline_path) and result['present']:
                     full_baseline = cv2.imread(full_baseline_path, cv2.IMREAD_GRAYSCALE)
-                    roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) == 3 else roi
-                    
-                    result['s_full'] = self.ssim_analyzer.compare_images(roi_gray, full_baseline)
-                    result['correct_item'] = result['s_full'] > 0.7
+                    if full_baseline is not None:
+                        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) == 3 else roi
+                        result['s_full'] = self.ssim_analyzer.compare_images(roi_gray, full_baseline)
+                        result['correct_item'] = result['s_full'] > 0.7
             
             # Calculate pose quality (simple metric based on image sharpness)
             if len(roi.shape) == 3:
@@ -227,6 +227,8 @@ class CameraManager:
         
         # Rectify image if homography is available
         rectified_frame = self.rectify_image(frame)
+        if rectified_frame is None:
+            rectified_frame = frame
         
         # Process each slot
         slot_results = []
@@ -284,8 +286,11 @@ def main():
         sys.exit(1)
     
     finally:
-        if 'camera_manager' in locals():
-            camera_manager.cleanup()
+        try:
+            if 'camera_manager' in locals():
+                camera_manager.cleanup()
+        except:
+            pass
 
 if __name__ == '__main__':
     main()
