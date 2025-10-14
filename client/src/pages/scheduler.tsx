@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -154,184 +155,192 @@ export default function Scheduler() {
 
   if (isLoadingConfig) {
     return (
-      <div className="p-6">
-        <div className="text-center text-muted-foreground">Loading scheduler configuration...</div>
+      <div className="flex h-screen">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-muted-foreground">Loading scheduler configuration...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Scheduler</h1>
-          <p className="text-muted-foreground mt-1">Configure automated capture schedule</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Scheduler</span>
-            <Switch
-              checked={!isPaused}
-              onCheckedChange={handleTogglePause}
-              disabled={updateConfigMutation.isPending}
-              data-testid="switch-scheduler-pause"
-            />
-            <span className={`text-sm font-medium ${isPaused ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-              {isPaused ? "Paused" : "Active"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Capture Times Configuration */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="w-5 h-5 text-primary" />
-          <h2 className="text-xl font-semibold">Scheduled Capture Times (JST)</h2>
-        </div>
-
-        <div className="space-y-4">
-          {/* Current capture times */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {captureTimes.map((time: string) => (
-              <div
-                key={time}
-                className="flex items-center justify-between p-3 border rounded-lg bg-card"
-                data-testid={`capture-time-${time}`}
-              >
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-mono text-lg">{time}</span>
-                  <span className="text-sm text-muted-foreground">JST</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveTime(time)}
+    <div className="flex h-screen bg-background overflow-hidden">
+      <Sidebar />
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Scheduler</h1>
+              <p className="text-muted-foreground mt-1">Configure automated capture schedule</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Scheduler</span>
+                <Switch
+                  checked={!isPaused}
+                  onCheckedChange={handleTogglePause}
                   disabled={updateConfigMutation.isPending}
-                  data-testid={`button-remove-time-${time}`}
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
+                  data-testid="switch-scheduler-pause"
+                />
+                <span className={`text-sm font-medium ${isPaused ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                  {isPaused ? "Paused" : "Active"}
+                </span>
               </div>
-            ))}
+            </div>
           </div>
 
-          {/* Add new time */}
-          <div className="flex gap-2">
-            <Input
-              type="time"
-              value={newCaptureTime}
-              onChange={(e) => setNewCaptureTime(e.target.value)}
-              placeholder="HH:mm"
-              className="max-w-xs"
-              data-testid="input-new-capture-time"
-            />
-            <Button
-              onClick={handleAddTime}
-              disabled={updateConfigMutation.isPending}
-              data-testid="button-add-capture-time"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Time
-            </Button>
+          {/* Capture Times Configuration */}
+          <Card className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-semibold">Scheduled Capture Times (JST)</h2>
           </div>
-        </div>
-      </Card>
 
-      {/* Next Scheduled Runs */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="w-5 h-5 text-primary" />
-          <h2 className="text-xl font-semibold">Next Scheduled Runs</h2>
-        </div>
+          <div className="space-y-4">
+            {/* Current capture times */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {captureTimes.map((time: string) => (
+                <div
+                  key={time}
+                  className="flex items-center justify-between p-3 border rounded-lg bg-card"
+                  data-testid={`capture-time-${time}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-mono text-lg">{time}</span>
+                    <span className="text-sm text-muted-foreground">JST</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveTime(time)}
+                    disabled={updateConfigMutation.isPending}
+                    data-testid={`button-remove-time-${time}`}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
 
-        {isPaused ? (
-          <div className="text-center text-muted-foreground py-4">
-            <AlertTriangle className="w-12 h-12 mx-auto mb-2 text-yellow-500" />
-            <p>Scheduler is paused. No captures scheduled.</p>
+            {/* Add new time */}
+            <div className="flex gap-2">
+              <Input
+                type="time"
+                value={newCaptureTime}
+                onChange={(e) => setNewCaptureTime(e.target.value)}
+                placeholder="HH:mm"
+                className="max-w-xs"
+                data-testid="input-new-capture-time"
+              />
+              <Button
+                onClick={handleAddTime}
+                disabled={updateConfigMutation.isPending}
+                data-testid="button-add-capture-time"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Time
+              </Button>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {nextRuns?.capture?.map((time: string, index: number) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-card">
-                <div className="flex items-center gap-3">
-                  <Play className="w-4 h-4 text-green-600" />
-                  <div>
-                    <div className="font-medium">Capture #{index + 1}</div>
-                    <div className="text-sm text-muted-foreground">{time}</div>
+          </Card>
+
+          {/* Next Scheduled Runs */}
+          <Card className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-semibold">Next Scheduled Runs</h2>
+          </div>
+
+          {isPaused ? (
+            <div className="text-center text-muted-foreground py-4">
+              <AlertTriangle className="w-12 h-12 mx-auto mb-2 text-yellow-500" />
+              <p>Scheduler is paused. No captures scheduled.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {nextRuns?.capture?.map((time: string, index: number) => (
+                <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                  <div className="flex items-center gap-3">
+                    <Play className="w-4 h-4 text-green-600" />
+                    <div>
+                      <div className="font-medium">Capture #{index + 1}</div>
+                      <div className="text-sm text-muted-foreground">{time}</div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Diagnostic: {nextRuns.diagnostic[index]}
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Diagnostic: {nextRuns.diagnostic[index]}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+              ))}
+            </div>
+          )}
+          </Card>
 
-      {/* Recent Capture History */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-semibold">Recent Capture History</h2>
+          {/* Recent Capture History */}
+          <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-semibold">Recent Capture History</h2>
+            </div>
           </div>
-        </div>
 
-        {isLoadingRuns ? (
-          <div className="text-center text-muted-foreground py-4">Loading history...</div>
-        ) : captureRuns.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>No capture runs yet</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b">
-                <tr className="text-left text-sm text-muted-foreground">
-                  <th className="pb-3 font-medium">Timestamp (JST)</th>
-                  <th className="pb-3 font-medium">Trigger</th>
-                  <th className="pb-3 font-medium">Status</th>
-                  <th className="pb-3 font-medium text-right">Cameras</th>
-                  <th className="pb-3 font-medium text-right">Slots</th>
-                  <th className="pb-3 font-medium text-right">Failures</th>
-                  <th className="pb-3 font-medium text-right">Time (ms)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {captureRuns.map((run) => (
-                  <tr
-                    key={run.id}
-                    className="border-b last:border-0 hover:bg-muted/50"
-                    data-testid={`capture-run-${run.id}`}
-                  >
-                    <td className="py-3 text-sm">{formatJSTTimestamp(run.timestamp)}</td>
-                    <td className="py-3">
-                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary">
-                        {run.triggerType.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="py-3">{getStatusBadge(run.status)}</td>
-                    <td className="py-3 text-right text-sm">{run.camerasCaptured}</td>
-                    <td className="py-3 text-right text-sm">{run.slotsProcessed}</td>
-                    <td className="py-3 text-right">
-                      <span className={`text-sm font-medium ${run.failureCount > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                        {run.failureCount}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right text-sm text-muted-foreground">
-                      {run.executionTimeMs?.toLocaleString() || "—"}
-                    </td>
+          {isLoadingRuns ? (
+            <div className="text-center text-muted-foreground py-4">Loading history...</div>
+          ) : captureRuns.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No capture runs yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b">
+                  <tr className="text-left text-sm text-muted-foreground">
+                    <th className="pb-3 font-medium">Timestamp (JST)</th>
+                    <th className="pb-3 font-medium">Trigger</th>
+                    <th className="pb-3 font-medium">Status</th>
+                    <th className="pb-3 font-medium text-right">Cameras</th>
+                    <th className="pb-3 font-medium text-right">Slots</th>
+                    <th className="pb-3 font-medium text-right">Failures</th>
+                    <th className="pb-3 font-medium text-right">Time (ms)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                </thead>
+                <tbody>
+                  {captureRuns.map((run) => (
+                    <tr
+                      key={run.id}
+                      className="border-b last:border-0 hover:bg-muted/50"
+                      data-testid={`capture-run-${run.id}`}
+                    >
+                      <td className="py-3 text-sm">{formatJSTTimestamp(run.timestamp)}</td>
+                      <td className="py-3">
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary">
+                          {run.triggerType.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="py-3">{getStatusBadge(run.status)}</td>
+                      <td className="py-3 text-right text-sm">{run.camerasCaptured}</td>
+                      <td className="py-3 text-right text-sm">{run.slotsProcessed}</td>
+                      <td className="py-3 text-right">
+                        <span className={`text-sm font-medium ${run.failureCount > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+                          {run.failureCount}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right text-sm text-muted-foreground">
+                        {run.executionTimeMs?.toLocaleString() || "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }
