@@ -255,6 +255,7 @@ def main():
     parser.add_argument('--homography', type=str, help='JSON string of homography matrix')
     
     args = parser.parse_args()
+    camera_manager = None
     
     try:
         # Parse slot configurations

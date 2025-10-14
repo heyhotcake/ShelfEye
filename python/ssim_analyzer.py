@@ -42,7 +42,8 @@ class SSIMAnalyzer:
             blurred = cv2.GaussianBlur(resized, (3, 3), 0)
             
             # Normalize pixel values
-            normalized = cv2.normalize(blurred, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+            normalized = np.zeros_like(blurred)
+            normalized = cv2.normalize(blurred, normalized, 0, 255, cv2.NORM_MINMAX)
             
             return normalized.astype(np.uint8)
             
