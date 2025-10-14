@@ -10,6 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **Simplified QR-Based Detection Logic (Oct 2025)**: Removed complex SSIM image analysis in favor of slot QR code as binary sensor. Slot QR visible = tool missing (alarm), worker QR visible = checked out, no QR visible = tool present. QR type changed from "tool" to "slot" for clarity.
 - **Gmail & Google Sheets Alert Integration (Oct 2025)**: Implemented complete multi-channel alert system using Replit's native connectors. Gmail sends formatted emails on capture/diagnostic failures. Google Sheets automatically logs all alerts, captures, and diagnostics with auto-created spreadsheet. Alert configuration UI manages email recipients and displays sheets URL.
 - **ArUco Marker Positioning (Oct 2025)**: ArUco corner markers (IDs 17-20) are now positioned at the extreme corners of the printable area (0cm from edges) across all paper sizes, maximizing usable template space since printers have natural margins anyway.
 - **Unified Template-to-Slot Workflow (Oct 2025)**: Templates can be designed before calibration. Calibration automatically creates slots from templates using homography transformation. Manual polygon drawing removed.
@@ -67,9 +68,9 @@ Preferred communication style: Simple, everyday language.
 **Python Integration:**
 - OpenCV-based computer vision modules executed as child processes
 - ArUco GridBoard calibration for perspective correction
-- SSIM (Structural Similarity Index) for presence detection
-- Multi-scale QR decoding with pyzbar fallback
+- Multi-scale QR decoding with pyzbar and OpenCV fallback
 - Homography computation and storage per camera
+- Slot QR code visibility as binary sensor for presence detection
 
 ### Data Storage
 
@@ -90,10 +91,9 @@ systemConfig: key, value, description
 ```
 
 **File Storage Strategy:**
-- Baseline images: `data/<slot_id>_EMPTY.png` and `data/<slot_id>_FULL.png`
 - Live preview: `data/<slot_id>_last.png`
 - ROI archive: `data/rois/<slot_id>/<YYYY-MM>/<timestamp>_<slot_id>.png`
-- Append-only CSV manifest: `data/manifest.csv`
+- Future SSIM baselines (optional): `data/<slot_id>_EMPTY.png` and `data/<slot_id>_FULL.png`
 
 ### External Dependencies
 
@@ -103,10 +103,9 @@ systemConfig: key, value, description
 - **Google Sheets API** - Secondary logging destination (optional)
 
 **Computer Vision Libraries:**
-- **OpenCV (opencv-contrib-python-headless)** - ArUco detection, image processing, homography
-- **scikit-image** - SSIM computation for presence detection
-- **pyzbar** - Primary QR code decoder
-- **zxing-cpp** - Fallback QR decoder (mentioned in docs)
+- **OpenCV (opencv-contrib-python-headless)** - ArUco detection, image processing, homography, QR decoding
+- **pyzbar** - Primary QR code decoder with multi-scale preprocessing
+- **scikit-image** - (Reserved for future SSIM validation layer)
 
 **UI Component Libraries:**
 - **Radix UI Primitives** - Accessible, unstyled components (@radix-ui/react-*)
@@ -127,11 +126,15 @@ systemConfig: key, value, description
 - **Replit plugins** - Error overlay, cartographer, dev banner
 
 **Detection & Alert System:**
-- **State Machine**: EMPTY → ITEM_PRESENT → CHECKED_OUT → OCCUPIED_NO_QR → TRAINING_ERROR
-- **Temporal Smoothing**: k-of-n voting over 5-minute verification window
+- **Simplified State Machine**: ITEM_PRESENT (tool covering slot QR) → EMPTY (slot QR visible, alarm) → CHECKED_OUT (worker QR visible)
+- **QR Type System**: "slot" type for slot QR codes, "worker" type for worker badge QR codes
+- **Binary Detection Logic**: 
+  - Slot QR visible → EMPTY + Alert (tool missing without authorization)
+  - Worker QR visible → CHECKED_OUT (tool signed out by worker)
+  - No QR visible → ITEM_PRESENT (tool covering slot QR, normal state)
 - **Business Rules Engine**: Time-based monitoring with configurable grace periods
 - **Queue-based Alerts**: Offline resilience with retry logic and rate limiting
 - **HMAC Signature Validation**: Prevents QR spoofing with SHA-256 signatures
 
 **Image Processing Pipeline:**
-- ArUco GridBoard detection → Homography computation → Perspective warp → ROI extraction → QR decode + SSIM analysis → State decision with hysteresis thresholds
+- ArUco GridBoard detection → Homography computation → Perspective warp → ROI extraction → QR decode with multi-scale preprocessing → State decision based on QR visibility
