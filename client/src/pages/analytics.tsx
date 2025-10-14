@@ -5,6 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Activity, Clock, AlertTriangle, CheckCircle } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { format, toZonedTime } from "date-fns-tz";
+
+const TIMEZONE = "Asia/Tokyo";
 
 interface AnalyticsSummary {
   totalSlots: number;
@@ -33,6 +36,12 @@ export default function Analytics() {
   const { data: detectionHistory } = useQuery({
     queryKey: ['/api/detection-logs', { limit: 100 }],
   });
+
+  const formatJSTTimestamp = (timestamp: string | Date) => {
+    const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+    const zonedDate = toZonedTime(date, TIMEZONE);
+    return format(zonedDate, "yyyy-MM-dd HH:mm:ss", { timeZone: TIMEZONE });
+  };
 
   // Generate sample time series data
   const timeSeriesData = [
@@ -289,7 +298,7 @@ export default function Analytics() {
                         dataKey="date" 
                         stroke="hsl(var(--muted-foreground))"
                         fontSize={12}
-                        tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        tickFormatter={(value) => format(toZonedTime(new Date(value), TIMEZONE), 'MMM dd', { timeZone: TIMEZONE })}
                       />
                       <YAxis 
                         stroke="hsl(var(--muted-foreground))"
@@ -302,7 +311,7 @@ export default function Analytics() {
                           borderRadius: '8px',
                           color: 'hsl(var(--foreground))',
                         }}
-                        labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                        labelFormatter={(value) => format(toZonedTime(new Date(value), TIMEZONE), 'yyyy-MM-dd', { timeZone: TIMEZONE })}
                       />
                       <Bar dataKey="toolMissing" stackId="a" fill="hsl(0, 84%, 60%)" name="Tool Missing" />
                       <Bar dataKey="qrFailure" stackId="a" fill="hsl(38, 92%, 50%)" name="QR Failure" />

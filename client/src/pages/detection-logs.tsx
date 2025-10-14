@@ -10,6 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { downloadFile } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Download, ChevronLeft, ChevronRight, Eye, Filter } from "lucide-react";
+import { format, toZonedTime } from "date-fns-tz";
+
+const TIMEZONE = "Asia/Tokyo";
 
 interface DetectionLog {
   id: string;
@@ -75,15 +78,10 @@ export default function DetectionLogs() {
     return variants[status] || 'bg-gray-500/20 text-gray-500';
   };
 
-  const formatDateTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
+  const formatJSTTimestamp = (timestamp: string | Date) => {
+    const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+    const zonedDate = toZonedTime(date, TIMEZONE);
+    return format(zonedDate, "yyyy-MM-dd HH:mm:ss", { timeZone: TIMEZONE });
   };
 
   const totalPages = Math.ceil((logs?.length || 0) / logsPerPage);
@@ -224,7 +222,7 @@ export default function DetectionLogs() {
                       {logs?.map((log) => (
                         <TableRow key={log.id} className="hover:bg-muted/50">
                           <TableCell className="font-mono text-sm">
-                            {formatDateTime(log.timestamp)}
+                            {formatJSTTimestamp(log.timestamp)}
                           </TableCell>
                           <TableCell className="font-medium">
                             {log.slotId}

@@ -7,6 +7,7 @@ import Dashboard from "@/pages/dashboard";
 import Calibration from "@/pages/calibration";
 import SlotDrawing from "@/pages/slot-drawing";
 import Configuration from "@/pages/configuration";
+import Scheduler from "@/pages/scheduler";
 import Alerts from "@/pages/alerts";
 import Analytics from "@/pages/analytics";
 import DetectionLogs from "@/pages/detection-logs";
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/slot-drawing" component={SlotDrawing} />
       <Route path="/template-print" component={TemplatePrint} />
       <Route path="/configuration" component={Configuration} />
+      <Route path="/scheduler" component={Scheduler} />
       <Route path="/alerts" component={Alerts} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/detection-logs" component={DetectionLogs} />

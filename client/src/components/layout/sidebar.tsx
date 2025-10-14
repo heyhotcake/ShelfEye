@@ -6,6 +6,7 @@ import {
   Camera, 
   SquareFunction, 
   Settings, 
+  Clock,
   QrCode, 
   Bell, 
   TrendingUp, 
@@ -41,6 +42,11 @@ const navigation = [
     name: "Configuration",
     href: "/configuration",
     icon: Settings,
+  },
+  {
+    name: "Scheduler",
+    href: "/scheduler",
+    icon: Clock,
   },
   {
     name: "Alerts",

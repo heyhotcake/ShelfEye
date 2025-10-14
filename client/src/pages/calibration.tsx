@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Camera, CheckCircle, Ruler, X } from "lucide-react";
+import { format, toZonedTime } from "date-fns-tz";
+
+const TIMEZONE = "Asia/Tokyo";
 
 interface CalibrationResult {
   ok: boolean;
@@ -18,6 +21,12 @@ interface CalibrationResult {
 export default function Calibration() {
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+
+  const formatJSTTimestamp = (timestamp: string | Date) => {
+    const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+    const zonedDate = toZonedTime(date, TIMEZONE);
+    return format(zonedDate, "yyyy-MM-dd HH:mm:ss", { timeZone: TIMEZONE });
+  };
 
   const { data: cameras } = useQuery({
     queryKey: ['/api/cameras'],
@@ -194,7 +203,7 @@ export default function Calibration() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           Last calibrated: {activeCamera.calibrationTimestamp 
-                            ? new Date(activeCamera.calibrationTimestamp).toLocaleString() 
+                            ? formatJSTTimestamp(activeCamera.calibrationTimestamp)
                             : 'Unknown'}
                         </p>
                       </div>
