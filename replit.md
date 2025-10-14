@@ -10,6 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **Gmail & Google Sheets Alert Integration (Oct 2025)**: Implemented complete multi-channel alert system using Replit's native connectors. Gmail sends formatted emails on capture/diagnostic failures. Google Sheets automatically logs all alerts, captures, and diagnostics with auto-created spreadsheet. Alert configuration UI manages email recipients and displays sheets URL.
 - **ArUco Marker Positioning (Oct 2025)**: ArUco corner markers (IDs 17-20) are now positioned at the extreme corners of the printable area (0cm from edges) across all paper sizes, maximizing usable template space since printers have natural margins anyway.
 - **Unified Template-to-Slot Workflow (Oct 2025)**: Templates can be designed before calibration. Calibration automatically creates slots from templates using homography transformation. Manual polygon drawing removed.
 
