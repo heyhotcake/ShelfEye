@@ -3,6 +3,7 @@ import { format, toZonedTime } from 'date-fns-tz';
 import type { IStorage } from './storage';
 import { spawn } from 'child_process';
 import type { Camera, Slot } from '@shared/schema';
+import { sendAlertEmail } from './services/email-alerts';
 
 const TIMEZONE = 'Asia/Tokyo';
 
@@ -373,27 +374,41 @@ export class CaptureScheduler {
   }
 
   /**
-   * Send alert notification
+   * Send alert notification via email
    */
   private async sendAlert(alertType: string, message: string) {
     try {
-      // Find matching alert rule
-      const rules = await this.storage.getActiveAlertRules();
-      const rule = rules.find(r => r.ruleType === alertType || r.ruleType === 'CAMERA_HEALTH');
-
-      if (rule) {
-        await this.storage.createAlert({
-          ruleId: rule.id,
-          alertType,
-          message,
-          status: 'pending',
-          retryCount: 0,
-          scheduledAt: new Date(),
-        });
-        console.log(`[Scheduler] Alert queued: ${alertType}`);
+      console.log(`[Scheduler] Sending alert: ${alertType}`);
+      
+      const now = toZonedTime(new Date(), TIMEZONE);
+      const timestamp = format(now, 'yyyy-MM-dd HH:mm:ss', { timeZone: TIMEZONE });
+      
+      let emailType: 'diagnostic_failure' | 'capture_failure' | 'camera_offline' | 'test_alert';
+      let subject: string;
+      
+      if (alertType === 'DIAGNOSTIC_FAILURE' || alertType === 'DIAGNOSTIC_ERROR') {
+        emailType = 'diagnostic_failure';
+        subject = '⚠️ Tool Tracker - Diagnostic Check Failed';
+      } else if (alertType === 'CAPTURE_FAILURE' || alertType === 'CAPTURE_ERROR') {
+        emailType = 'capture_failure';
+        subject = '🚨 Tool Tracker - Capture Failed';
+      } else {
+        emailType = 'camera_offline';
+        subject = '📷 Tool Tracker - Camera Alert';
       }
+      
+      await sendAlertEmail({
+        type: emailType,
+        subject,
+        details: {
+          timestamp,
+          errorMessage: message
+        }
+      });
+      
+      console.log(`[Scheduler] Alert sent successfully: ${alertType}`);
     } catch (error) {
-      console.error('[Scheduler] Failed to queue alert:', error);
+      console.error('[Scheduler] Failed to send alert:', error);
     }
   }
 

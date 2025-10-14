@@ -36,7 +36,6 @@ interface AlertQueue {
 export default function Alerts() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [emailRecipients, setEmailRecipients] = useState<string[]>(['manager@factory.com', 'supervisor@factory.com']);
   const [newRecipient, setNewRecipient] = useState('');
 
   const { data: alertRules } = useQuery<AlertRule[]>({
@@ -47,9 +46,11 @@ export default function Alerts() {
     queryKey: ['/api/alert-queue'],
   });
 
-  const { data: config } = useQuery({
-    queryKey: ['/api/config'],
+  const { data: emailConfig } = useQuery({
+    queryKey: ['/api/config/EMAIL_RECIPIENTS'],
   });
+
+  const emailRecipients = (emailConfig?.value || []) as string[];
 
   const updateRuleMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<AlertRule> }) =>
@@ -109,16 +110,22 @@ export default function Alerts() {
   const addEmailRecipient = () => {
     if (newRecipient && !emailRecipients.includes(newRecipient)) {
       const updated = [...emailRecipients, newRecipient];
-      setEmailRecipients(updated);
       setNewRecipient('');
-      updateConfigMutation.mutate({ key: 'EMAIL_RECIPIENTS', value: updated });
+      updateConfigMutation.mutate({ key: 'EMAIL_RECIPIENTS', value: updated }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['/api/config/EMAIL_RECIPIENTS'] });
+        }
+      });
     }
   };
 
   const removeEmailRecipient = (email: string) => {
     const updated = emailRecipients.filter(e => e !== email);
-    setEmailRecipients(updated);
-    updateConfigMutation.mutate({ key: 'EMAIL_RECIPIENTS', value: updated });
+    updateConfigMutation.mutate({ key: 'EMAIL_RECIPIENTS', value: updated }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/config/EMAIL_RECIPIENTS'] });
+      }
+    });
   };
 
   const getRuleIcon = (ruleType: string) => {
@@ -254,12 +261,7 @@ export default function Alerts() {
                         <div key={index} className="flex items-center gap-2">
                           <Input
                             value={email}
-                            onChange={(e) => {
-                              const updated = [...emailRecipients];
-                              updated[index] = e.target.value;
-                              setEmailRecipients(updated);
-                            }}
-                            onBlur={() => updateConfigMutation.mutate({ key: 'EMAIL_RECIPIENTS', value: emailRecipients })}
+                            readOnly
                             className="text-sm"
                             data-testid={`input-email-${index}`}
                           />

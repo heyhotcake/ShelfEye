@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { CaptureScheduler } from "./scheduler";
+import { sendTestAlert } from "./services/email-alerts";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
@@ -522,6 +523,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(config);
     } catch (error) {
       res.status(400).json({ message: "Invalid configuration data", error });
+    }
+  });
+
+  // Alert configuration and testing routes
+  app.post("/api/alerts/test", async (_req, res) => {
+    try {
+      const result = await sendTestAlert();
+      if (result) {
+        res.json({ 
+          ok: true, 
+          message: "Test alert sent successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          ok: false, 
+          message: "Failed to send test alert. Check email configuration." 
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ 
+        ok: false, 
+        message: "Error sending test alert", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
     }
   });
 
