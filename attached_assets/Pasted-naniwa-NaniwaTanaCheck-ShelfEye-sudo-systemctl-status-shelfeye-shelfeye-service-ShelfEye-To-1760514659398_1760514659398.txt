@@ -1,0 +1,52 @@
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo systemctl status shelfeye
+○ shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; enabled; preset: enabled)
+     Active: inactive (dead) since Wed 2025-10-15 16:48:08 JST; 2min 31s ago
+   Duration: 38.194s
+ Invocation: 87895495e2134ebdb9c08b424f8a93f8
+    Process: 8170 ExecStart=/home/naniwa/ShelfEye/pi-startup.sh (code=killed, signal=TERM)
+   Main PID: 8170 (code=killed, signal=TERM)
+        CPU: 27.008s
+
+Oct 15 16:48:03 NaniwaTanaCheck pi-startup.sh[8253]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Oct 15 16:48:04 NaniwaTanaCheck pi-startup.sh[8253]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Oct 15 16:48:04 NaniwaTanaCheck pi-startup.sh[8253]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Oct 15 16:48:04 NaniwaTanaCheck pi-startup.sh[8253]: [Scheduler] Scheduled 4 capture times
+Oct 15 16:48:04 NaniwaTanaCheck pi-startup.sh[8253]: [Scheduler] Initialized successfully
+Oct 15 16:48:04 NaniwaTanaCheck pi-startup.sh[8253]: 4:48:04 PM [express] serving on port 5000
+Oct 15 16:48:08 NaniwaTanaCheck systemd[1]: Stopping shelfeye.service - ShelfEye Tool Monitoring System...
+Oct 15 16:48:08 NaniwaTanaCheck systemd[1]: shelfeye.service: Deactivated successfully.
+Oct 15 16:48:08 NaniwaTanaCheck systemd[1]: Stopped shelfeye.service - ShelfEye Tool Monitoring System.
+Oct 15 16:48:08 NaniwaTanaCheck systemd[1]: shelfeye.service: Consumed 27.008s CPU time.
+naniwa@NaniwaTanaCheck:~/ShelfEye $ tail -30 ~/ShelfEye/logs/startup.log
+[⢿] Pulling schema from database...
+[⣻] Pulling schema from database...
+[⣽] Pulling schema from database...
+[⣷] Pulling schema from database...
+[⣯] Pulling schema from database...
+[⣟] Pulling schema from database...
+[⡿] Pulling schema from database...
+[⢿] Pulling schema from database...
+[✓] Pulling schema from database...
+[i] No changes detected
+[2025-10-15 16:47:47] 🚀 Starting ShelfEye application...
+[2025-10-15 16:47:47] Access at: http://naniwatanacheck.local:5000
+[2025-10-15 16:47:47] =========================================
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[Scheduler] Initializing...
+[Scheduler] Reloading configuration...
+[Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+[Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+[Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+[Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+[Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+[Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+[Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+[Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+[Scheduler] Scheduled 4 capture times
+[Scheduler] Initialized successfully
+4:48:04 PM [express] serving on port 5000
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo netstat -tlnp | grep 5000
