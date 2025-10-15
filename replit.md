@@ -134,8 +134,14 @@ workers: id, workerCode (unique), name, department, qrPayload, isActive, created
 - **QR Type System**: "slot" type for slot QR codes, "worker" type for worker badge QR codes
 - **Binary Detection Logic**: 
   - Slot QR visible → EMPTY + Alert (tool missing without authorization)
-  - Worker QR visible → CHECKED_OUT (tool signed out by worker)
+  - Worker QR visible → Database validation → CHECKED_OUT (if valid worker) or EMPTY (if invalid/inactive)
   - No QR visible → ITEM_PRESENT (tool covering slot QR, normal state)
+- **Worker QR Validation**: All worker QR codes are validated against the workers database at capture time
+  - Valid + active worker: Status = CHECKED_OUT, stores workerId + workerName in detection logs
+  - Invalid/inactive/unknown worker: Status = EMPTY (unauthorized removal), triggers security alert, no worker info stored
+- **Checkout Tracking**: Detection logs include workerId foreign key for relational tracking of tool checkouts
+  - Checkout report API (`/api/reports/checkouts`) shows which worker has which tool at any timestamp
+  - Time-based queries support historical analysis of tool assignments at each capture time (8AM, 11AM, 2PM, 5PM JST)
 - **Business Rules Engine**: Time-based monitoring with configurable grace periods
 - **Queue-based Alerts**: Offline resilience with retry logic and rate limiting
 - **HMAC Signature Validation**: Prevents QR spoofing with SHA-256 signatures
