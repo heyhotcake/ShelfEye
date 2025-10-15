@@ -31,6 +31,17 @@ cd "$APP_DIR" || {
     exit 1
 }
 
+# Load environment variables from .env.pi if it exists
+if [ -f ".env.pi" ]; then
+    log "Loading environment variables from .env.pi..."
+    set -a  # Export all variables
+    source .env.pi
+    set +a
+else
+    log "⚠️  WARNING: .env.pi file not found! Database connection may fail."
+    log "   Create .env.pi with DATABASE_URL and SESSION_SECRET"
+fi
+
 # Fetch latest changes from GitHub
 log "Checking for updates from GitHub..."
 git fetch origin main 2>&1 | tee -a "$LOG_FILE"
