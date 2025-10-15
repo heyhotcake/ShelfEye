@@ -1,4 +1,4 @@
-import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type CaptureRun, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle, type InsertCaptureRun } from "@shared/schema";
+import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type Worker, type CaptureRun, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle, type InsertWorker, type InsertCaptureRun } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -67,6 +67,15 @@ export interface IStorage {
   updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined>;
   deleteTemplateRectangle(id: string): Promise<boolean>;
 
+  // Worker methods
+  getWorkers(): Promise<Worker[]>;
+  getActiveWorkers(): Promise<Worker[]>;
+  getWorker(id: string): Promise<Worker | undefined>;
+  getWorkerByCode(workerCode: string): Promise<Worker | undefined>;
+  createWorker(worker: InsertWorker): Promise<Worker>;
+  updateWorker(id: string, updates: Partial<Worker>): Promise<Worker | undefined>;
+  deleteWorker(id: string): Promise<boolean>;
+
   // Capture run methods
   getCaptureRuns(limit?: number): Promise<CaptureRun[]>;
   getCaptureRun(id: string): Promise<CaptureRun | undefined>;
@@ -83,6 +92,7 @@ export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private toolCategories: Map<string, ToolCategory> = new Map();
   private templateRectangles: Map<string, TemplateRectangle> = new Map();
+  private workers: Map<string, Worker> = new Map();
   private captureRuns: Map<string, CaptureRun> = new Map();
 
   constructor() {
@@ -460,6 +470,65 @@ export class MemStorage implements IStorage {
     return this.templateRectangles.delete(id);
   }
 
+  // Worker methods
+  async getWorkers(): Promise<Worker[]> {
+    return Array.from(this.workers.values());
+  }
+
+  async getActiveWorkers(): Promise<Worker[]> {
+    return Array.from(this.workers.values()).filter(w => w.isActive);
+  }
+
+  async getWorker(id: string): Promise<Worker | undefined> {
+    return this.workers.get(id);
+  }
+
+  async getWorkerByCode(workerCode: string): Promise<Worker | undefined> {
+    return Array.from(this.workers.values()).find(w => w.workerCode === workerCode);
+  }
+
+  async createWorker(worker: InsertWorker): Promise<Worker> {
+    const existing = Array.from(this.workers.values()).find(w => w.workerCode === worker.workerCode);
+    if (existing) {
+      throw new Error(`Worker with code ${worker.workerCode} already exists`);
+    }
+
+    const id = randomUUID();
+    const newWorker: Worker = {
+      id,
+      workerCode: worker.workerCode,
+      name: worker.name,
+      department: worker.department ?? null,
+      qrPayload: null,
+      isActive: worker.isActive ?? true,
+      createdAt: new Date(),
+    };
+    this.workers.set(id, newWorker);
+    return newWorker;
+  }
+
+  async updateWorker(id: string, updates: Partial<Worker>): Promise<Worker | undefined> {
+    const worker = this.workers.get(id);
+    if (!worker) return undefined;
+
+    if (updates.workerCode && updates.workerCode !== worker.workerCode) {
+      const existing = Array.from(this.workers.values()).find(
+        w => w.id !== id && w.workerCode === updates.workerCode
+      );
+      if (existing) {
+        throw new Error(`Worker with code ${updates.workerCode} already exists`);
+      }
+    }
+
+    const updated = { ...worker, ...updates, id: worker.id };
+    this.workers.set(id, updated);
+    return updated;
+  }
+
+  async deleteWorker(id: string): Promise<boolean> {
+    return this.workers.delete(id);
+  }
+
   // Capture run methods
   async getCaptureRuns(limit = 50): Promise<CaptureRun[]> {
     return Array.from(this.captureRuns.values())
@@ -767,6 +836,40 @@ export class DbStorage implements IStorage {
 
   async deleteTemplateRectangle(id: string): Promise<boolean> {
     const result = await db.delete(schema.templateRectangles).where(eq(schema.templateRectangles.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // Worker methods
+  async getWorkers(): Promise<Worker[]> {
+    return await db.select().from(schema.workers);
+  }
+
+  async getActiveWorkers(): Promise<Worker[]> {
+    return await db.select().from(schema.workers).where(eq(schema.workers.isActive, true));
+  }
+
+  async getWorker(id: string): Promise<Worker | undefined> {
+    const result = await db.select().from(schema.workers).where(eq(schema.workers.id, id));
+    return result[0];
+  }
+
+  async getWorkerByCode(workerCode: string): Promise<Worker | undefined> {
+    const result = await db.select().from(schema.workers).where(eq(schema.workers.workerCode, workerCode));
+    return result[0];
+  }
+
+  async createWorker(worker: InsertWorker): Promise<Worker> {
+    const result = await db.insert(schema.workers).values(worker).returning();
+    return result[0];
+  }
+
+  async updateWorker(id: string, updates: Partial<Worker>): Promise<Worker | undefined> {
+    const result = await db.update(schema.workers).set(updates).where(eq(schema.workers.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteWorker(id: string): Promise<boolean> {
+    const result = await db.delete(schema.workers).where(eq(schema.workers.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 

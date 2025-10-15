@@ -105,6 +105,16 @@ export const templateRectangles = pgTable("template_rectangles", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+export const workers = pgTable("workers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  workerCode: text("worker_code").notNull().unique(),
+  name: text("name").notNull(),
+  department: text("department"),
+  qrPayload: json("qr_payload"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 export const captureRuns = pgTable("capture_runs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   timestamp: timestamp("timestamp").notNull().default(sql`now()`),
@@ -127,6 +137,7 @@ export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({ 
 export const insertUserSchema = createInsertSchema(users).pick({ username: true, password: true, email: true, role: true });
 export const insertToolCategorySchema = createInsertSchema(toolCategories).omit({ id: true, createdAt: true });
 export const insertTemplateRectangleSchema = createInsertSchema(templateRectangles).omit({ id: true, createdAt: true });
+export const insertWorkerSchema = createInsertSchema(workers).omit({ id: true, createdAt: true, qrPayload: true });
 export const insertCaptureRunSchema = createInsertSchema(captureRuns).omit({ id: true, timestamp: true });
 
 // Types
@@ -139,6 +150,7 @@ export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertToolCategory = z.infer<typeof insertToolCategorySchema>;
 export type InsertTemplateRectangle = z.infer<typeof insertTemplateRectangleSchema>;
+export type InsertWorker = z.infer<typeof insertWorkerSchema>;
 export type InsertCaptureRun = z.infer<typeof insertCaptureRunSchema>;
 
 export type Camera = typeof cameras.$inferSelect;
@@ -150,4 +162,5 @@ export type SystemConfig = typeof systemConfig.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type ToolCategory = typeof toolCategories.$inferSelect;
 export type TemplateRectangle = typeof templateRectangles.$inferSelect;
+export type Worker = typeof workers.$inferSelect;
 export type CaptureRun = typeof captureRuns.$inferSelect;

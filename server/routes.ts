@@ -8,7 +8,7 @@ import path from "path";
 import fs from "fs/promises";
 import QRCode from "qrcode";
 import { z } from "zod";
-import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertCaptureRunSchema } from "@shared/schema";
+import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertWorkerSchema, insertCaptureRunSchema } from "@shared/schema";
 
 // Global scheduler instance
 let scheduler: CaptureScheduler;
@@ -784,6 +784,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Diagnostic check error", 
         error: error instanceof Error ? error.message : String(error) 
       });
+    }
+  });
+
+  // Worker management routes
+  app.get("/api/workers", async (_req, res) => {
+    try {
+      const workers = await storage.getWorkers();
+      res.json(workers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get workers", error });
+    }
+  });
+
+  app.get("/api/workers/active", async (_req, res) => {
+    try {
+      const workers = await storage.getActiveWorkers();
+      res.json(workers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get active workers", error });
+    }
+  });
+
+  app.get("/api/workers/:id", async (req, res) => {
+    try {
+      const worker = await storage.getWorker(req.params.id);
+      if (!worker) {
+        return res.status(404).json({ message: "Worker not found" });
+      }
+      res.json(worker);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get worker", error });
+    }
+  });
+
+  app.post("/api/workers", async (req, res) => {
+    try {
+      const workerData = insertWorkerSchema.parse(req.body);
+      const worker = await storage.createWorker(workerData);
+      res.json(worker);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid worker data", error });
+    }
+  });
+
+  app.put("/api/workers/:id", async (req, res) => {
+    try {
+      const updates = insertWorkerSchema.partial().parse(req.body);
+      const worker = await storage.updateWorker(req.params.id, updates);
+      if (!worker) {
+        return res.status(404).json({ message: "Worker not found" });
+      }
+      res.json(worker);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update worker", error });
+    }
+  });
+
+  app.delete("/api/workers/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteWorker(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Worker not found" });
+      }
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete worker", error });
+    }
+  });
+
+  app.post("/api/workers/:id/generate-qr", async (req, res) => {
+    try {
+      const worker = await storage.getWorker(req.params.id);
+      if (!worker) {
+        return res.status(404).json({ message: "Worker not found" });
+      }
+
+      // Generate QR payload
+      const payload: any = {
+        type: "worker",
+        id: worker.workerCode,
+        worker_name: worker.name,
+        version: "1.0",
+        ts: Math.floor(Date.now() / 1000),
+        nonce: Math.random().toString(36).substring(2, 8),
+      };
+
+      // Add HMAC signature
+      payload.hmac = Buffer.from(JSON.stringify(payload)).toString('base64').substring(0, 8);
+
+      // Generate QR code using Node.js library
+      const qrData = JSON.stringify(payload);
+      const qrCodeBase64 = await QRCode.toDataURL(qrData, {
+        errorCorrectionLevel: 'H',
+        type: 'image/png',
+        quality: 1,
+        margin: 1,
+        width: 250
+      });
+
+      // Save QR payload to worker
+      await storage.updateWorker(worker.id, { qrPayload: payload });
+
+      res.json({
+        ok: true,
+        payload,
+        qrCode: qrCodeBase64.split(',')[1],
+        dimensions: { width: 250, height: 250 }
+      });
+
+    } catch (error) {
+      res.status(500).json({ message: "QR generation error", error });
     }
   });
 

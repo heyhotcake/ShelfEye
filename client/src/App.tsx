@@ -12,6 +12,7 @@ import Alerts from "@/pages/alerts";
 import Analytics from "@/pages/analytics";
 import DetectionLogs from "@/pages/detection-logs";
 import TemplatePrint from "@/pages/template-print";
+import Workers from "@/pages/workers";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/alerts" component={Alerts} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/detection-logs" component={DetectionLogs} />
+      <Route path="/workers" component={Workers} />
       <Route component={NotFound} />
     </Switch>
   );

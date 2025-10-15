@@ -64,6 +64,11 @@ const navigation = [
     href: "/detection-logs",
     icon: Database,
   },
+  {
+    name: "Workers",
+    href: "/workers",
+    icon: User,
+  },
 ];
 
 export function Sidebar() {
