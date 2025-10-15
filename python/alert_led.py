@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Alert LED Controller - Flashing Red Light for System Alerts
-Provides visual indication of errors and anomalies
+Uses WS2812B addressable LED strip to show red flashing alerts
 """
 
 import sys
@@ -12,35 +12,62 @@ import threading
 import signal
 
 try:
-    import RPi.GPIO as GPIO
-    GPIO_AVAILABLE = True
+    from rpi_ws281x import PixelStrip, Color
+    WS2812_AVAILABLE = True
 except ImportError:
-    GPIO_AVAILABLE = False
-    print("WARNING: RPi.GPIO not available (not on Raspberry Pi)", file=sys.stderr)
+    WS2812_AVAILABLE = False
+    print("WARNING: rpi_ws281x not available (not on Raspberry Pi)", file=sys.stderr)
 
 class AlertLED:
-    """Controller for flashing alert LED"""
+    """Controller for flashing alert LED using WS2812B strip"""
     
-    def __init__(self, pin: int):
+    def __init__(self, pin: int, num_leds: int = 27):
         """
-        Initialize alert LED controller
+        Initialize alert LED controller for WS2812B strip
         
         Args:
-            pin: GPIO pin number (BCM)
+            pin: GPIO pin number (BCM) - should be 18 for WS2812B
+            num_leds: Number of LEDs in the strip (default 27)
         """
         self.pin = pin
+        self.num_leds = num_leds
         self.flashing = False
         self.flash_thread = None
+        self.strip = None
         
-        if GPIO_AVAILABLE:
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setwarnings(False)
-            GPIO.setup(pin, GPIO.OUT)
-            GPIO.output(pin, GPIO.LOW)
+        if WS2812_AVAILABLE:
+            try:
+                self.strip = PixelStrip(
+                    num_leds,
+                    pin,
+                    800000,  # 800kHz for WS2812
+                    10,      # DMA channel
+                    False,   # Invert signal
+                    255,     # Max brightness
+                    0,       # Channel
+                    0x00081000  # WS2812 strip type
+                )
+                self.strip.begin()
+            except Exception as e:
+                print(f"Error initializing LED strip: {e}", file=sys.stderr)
+                self.strip = None
+    
+    def _set_all_color(self, r: int, g: int, b: int):
+        """Set all LEDs to a specific color"""
+        if not self.strip:
+            return False
+        try:
+            for i in range(self.num_leds):
+                self.strip.setPixelColor(i, Color(r, g, b))
+            self.strip.show()
+            return True
+        except Exception as e:
+            print(f"Error setting LED color: {e}", file=sys.stderr)
+            return False
     
     def start_flash(self, pattern: str = "fast"):
         """
-        Start flashing the LED
+        Start flashing the LED strip RED
         
         Args:
             pattern: Flash pattern - "fast" (0.25s), "slow" (1s), "pulse" (variable)
@@ -65,15 +92,15 @@ class AlertLED:
         
         def flash_loop():
             while self.flashing:
-                if GPIO_AVAILABLE:
-                    GPIO.output(self.pin, GPIO.HIGH)
+                # Turn RED
+                self._set_all_color(255, 0, 0)
                 time.sleep(on_time)
                 
                 if not self.flashing:
                     break
                 
-                if GPIO_AVAILABLE:
-                    GPIO.output(self.pin, GPIO.LOW)
+                # Turn OFF
+                self._set_all_color(0, 0, 0)
                 time.sleep(off_time)
         
         self.flash_thread = threading.Thread(target=flash_loop)
@@ -81,13 +108,13 @@ class AlertLED:
         return True
     
     def stop_flash(self):
-        """Stop flashing and turn off LED"""
+        """Stop flashing and turn off LED strip"""
         self.flashing = False
         if self.flash_thread:
             self.flash_thread.join(timeout=2)
         
-        if GPIO_AVAILABLE:
-            GPIO.output(self.pin, GPIO.LOW)
+        # Turn off all LEDs
+        self._set_all_color(0, 0, 0)
         
         return True
     
@@ -96,25 +123,28 @@ class AlertLED:
         return self.flashing
     
     def set_state(self, state: bool):
-        """Set LED to constant on or off"""
+        """Set LED strip to constant RED (on) or OFF"""
         self.stop_flash()
         
-        if GPIO_AVAILABLE:
-            GPIO.output(self.pin, GPIO.HIGH if state else GPIO.LOW)
+        if state:
+            self._set_all_color(255, 0, 0)  # RED for alerts
+        else:
+            self._set_all_color(0, 0, 0)  # OFF
         
         return True
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Alert LED Controller")
-    parser.add_argument("--pin", type=int, required=True, help="GPIO pin number (BCM)")
+    parser = argparse.ArgumentParser(description="Alert LED Controller - WS2812B RGB LED Strip")
+    parser.add_argument("--pin", type=int, required=True, help="GPIO pin number (BCM) - should be 18 for WS2812B")
     parser.add_argument("--action", choices=["flash", "stop", "on", "off", "status"], required=True, help="Action to perform")
     parser.add_argument("--pattern", choices=["fast", "slow", "pulse"], default="fast", help="Flash pattern (for flash action)")
     parser.add_argument("--duration", type=int, help="Flash duration in seconds (optional)")
+    parser.add_argument("--num-leds", type=int, default=27, help="Number of LEDs in the strip (default 27)")
     
     args = parser.parse_args()
     
-    led = AlertLED(args.pin)
+    led = AlertLED(args.pin, args.num_leds)
     
     # Setup signal handler for graceful shutdown
     def signal_handler(sig, frame):
