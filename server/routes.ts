@@ -1045,8 +1045,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const pin = parseInt(lightStripConfig.value as string);
 
-      // Call Python GPIO controller
-      const pythonProcess = spawn('python3', [
+      // Call Python GPIO controller with sudo (required for WS2812B /dev/mem access)
+      const pythonProcess = spawn('sudo', [
+        'python3',
         path.join(process.cwd(), 'python/gpio_controller.py'),
         '--pin', pin.toString(),
         '--action', action

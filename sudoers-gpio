@@ -1,0 +1,8 @@
+# Allow naniwa user to run gpio_controller.py as root without password
+# This is required for WS2812B LED control which needs /dev/mem access
+#
+# Installation:
+#   sudo cp sudoers-gpio /etc/sudoers.d/gpio
+#   sudo chmod 0440 /etc/sudoers.d/gpio
+#
+naniwa ALL=(ALL) NOPASSWD: /usr/bin/python3 /home/naniwa/ShelfEye/python/gpio_controller.py*

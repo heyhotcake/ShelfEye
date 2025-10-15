@@ -38,8 +38,9 @@ def control_light(pin: int, state: str):
         script_dir = Path(__file__).parent
         gpio_script = script_dir / "gpio_controller.py"
         
+        # Use sudo for WS2812B /dev/mem access
         result = subprocess.run(
-            [sys.executable, str(gpio_script), "--pin", str(pin), "--action", state],
+            ["sudo", sys.executable, str(gpio_script), "--pin", str(pin), "--action", state],
             capture_output=True,
             text=True,
             timeout=5
