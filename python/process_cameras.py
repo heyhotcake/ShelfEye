@@ -13,6 +13,7 @@ import sys
 import json
 import logging
 import numpy as np
+import subprocess
 from typing import Dict, List, Any, Tuple, Optional
 from pathlib import Path
 from datetime import datetime
@@ -23,6 +24,33 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# GPIO Light Control Functions
+def control_light(pin: int, state: str):
+    """
+    Control GPIO light strip
+    
+    Args:
+        pin: GPIO pin number
+        state: 'on' or 'off'
+    """
+    try:
+        script_dir = Path(__file__).parent
+        gpio_script = script_dir / "gpio_controller.py"
+        
+        result = subprocess.run(
+            [sys.executable, str(gpio_script), "--pin", str(pin), "--action", state],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        if result.returncode == 0:
+            logger.info(f"Light strip (GPIO {pin}): {state.upper()}")
+        else:
+            logger.warning(f"Light control failed: {result.stderr}")
+    except Exception as e:
+        logger.warning(f"Light control error: {e}")
 
 
 class SlotProcessor:
@@ -293,40 +321,53 @@ class CameraProcessor:
         return result
     
     def process_all(self, cameras: List[Dict[str, Any]], 
-                   slots_by_camera: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
+                   slots_by_camera: Dict[str, List[Dict[str, Any]]],
+                   light_strip_pin: Optional[int] = None) -> Dict[str, Any]:
         """
         Process all cameras
         
         Args:
             cameras: List of camera configurations
             slots_by_camera: Slots grouped by camera ID
+            light_strip_pin: GPIO pin for LED light strip (optional)
             
         Returns:
             Overall processing result
         """
         logger.info(f"Starting capture processing for {len(cameras)} cameras")
         
+        # Turn on light strip for consistent lighting
+        if light_strip_pin:
+            control_light(light_strip_pin, "on")
+            import time
+            time.sleep(0.5)  # Brief delay to let light stabilize
+        
         results = []
         total_slots = 0
         total_cameras_success = 0
         total_cameras_failed = 0
         
-        for camera in cameras:
-            camera_id = camera.get('id')
-            if not camera_id:
-                logger.warning("Camera missing 'id' field, skipping")
-                continue
-            camera_slots = slots_by_camera.get(camera_id, [])
-            
-            result = self.process_camera(camera, camera_slots)
-            results.append(result)
-            
-            total_slots += result['slotsProcessed']
-            
-            if result['status'] == 'success':
-                total_cameras_success += 1
-            else:
-                total_cameras_failed += 1
+        try:
+            for camera in cameras:
+                camera_id = camera.get('id')
+                if not camera_id:
+                    logger.warning("Camera missing 'id' field, skipping")
+                    continue
+                camera_slots = slots_by_camera.get(camera_id, [])
+                
+                result = self.process_camera(camera, camera_slots)
+                results.append(result)
+                
+                total_slots += result['slotsProcessed']
+                
+                if result['status'] == 'success':
+                    total_cameras_success += 1
+                else:
+                    total_cameras_failed += 1
+        finally:
+            # Always turn off light strip after captures
+            if light_strip_pin:
+                control_light(light_strip_pin, "off")
         
         overall_status = 'success'
         if total_cameras_failed > 0:
@@ -357,10 +398,11 @@ def main():
         
         cameras = data.get('cameras', [])
         slots_by_camera = data.get('slotsByCamera', {})
+        light_strip_pin = data.get('lightStripPin')  # Optional GPIO pin for light strip
         
         # Process all cameras
         processor = CameraProcessor()
-        results = processor.process_all(cameras, slots_by_camera)
+        results = processor.process_all(cameras, slots_by_camera, light_strip_pin)
         
         # Output results as JSON
         print(json.dumps(results))
