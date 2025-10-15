@@ -1028,6 +1028,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GPIO Light Control route (for testing)
+  app.post("/api/gpio/light", async (req, res) => {
+    try {
+      const { action } = req.body;
+      
+      if (!action || !['on', 'off'].includes(action)) {
+        return res.status(400).json({ message: "Invalid action. Use 'on' or 'off'" });
+      }
+
+      // Get light strip GPIO pin from config
+      const lightStripConfig = await storage.getConfig('light_strip_gpio_pin');
+      if (!lightStripConfig) {
+        return res.status(400).json({ message: "Light strip GPIO pin not configured" });
+      }
+
+      const pin = parseInt(lightStripConfig.value as string);
+
+      // Call Python GPIO controller
+      const pythonProcess = spawn('python3', [
+        path.join(process.cwd(), 'python/gpio_controller.py'),
+        '--pin', pin.toString(),
+        '--action', action
+      ]);
+
+      let result = '';
+      let error = '';
+      let responseSent = false;
+
+      pythonProcess.on('error', (err) => {
+        if (!responseSent) {
+          responseSent = true;
+          res.status(503).json({ 
+            message: "GPIO control not available", 
+            error: err.message 
+          });
+        }
+      });
+
+      pythonProcess.stdout.on('data', (data) => {
+        result += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (responseSent) return;
+        responseSent = true;
+
+        if (code === 0) {
+          try {
+            const gpioResult = JSON.parse(result);
+            res.json({
+              ok: true,
+              ...gpioResult,
+              message: `Light ${action === 'on' ? 'turned on' : 'turned off'} successfully`
+            });
+          } catch (e) {
+            res.status(500).json({ 
+              message: "Failed to parse GPIO response", 
+              error: result 
+            });
+          }
+        } else {
+          res.status(500).json({ 
+            message: "GPIO control failed", 
+            error 
+          });
+        }
+      });
+
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Light control error", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
   // Analytics routes
   app.get("/api/analytics/summary", async (_req, res) => {
     const slots = await storage.getSlots();

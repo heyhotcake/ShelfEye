@@ -237,10 +237,14 @@ export class CaptureScheduler {
         slotsByCamera[slot.cameraId].push(slot);
       }
 
+      // Get light strip GPIO pin from config
+      const lightStripPin = await this.storage.getConfig('light_strip_gpio_pin');
+      
       // Prepare data for Python script
       const inputData = {
         cameras: activeCameras,
         slotsByCamera,
+        lightStripPin: lightStripPin ? parseInt(lightStripPin.value as string) : null,
       };
 
       // Execute Python script
