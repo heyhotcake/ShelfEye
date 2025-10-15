@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Calendar, Clock, Play, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Calendar, Clock, Play, AlertTriangle, Settings } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 import type { CaptureRun } from "@shared/schema";
 
@@ -16,6 +18,8 @@ const TIMEZONE = "Asia/Tokyo";
 export default function Scheduler() {
   const { toast } = useToast();
   const [newCaptureTime, setNewCaptureTime] = useState("");
+  const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   // Fetch schedule configuration
   const { data: scheduleConfig, isLoading: isLoadingConfig } = useQuery({
@@ -32,6 +36,12 @@ export default function Scheduler() {
   const { data: captureRuns = [], isLoading: isLoadingRuns } = useQuery<CaptureRun[]>({
     queryKey: ["/api/capture-runs"],
     refetchInterval: 30000,
+  });
+
+  // Fetch capture time settings
+  const { data: captureTimeSettings } = useQuery<Record<string, { allowWorkerCheckout: boolean }>>({
+    queryKey: ["/api/config/CAPTURE_TIME_SETTINGS"],
+    select: (data: any) => data?.value || {},
   });
 
   // Update schedule config mutation
@@ -62,6 +72,33 @@ export default function Scheduler() {
       toast({
         title: "Scheduler Reloaded",
         description: "Schedule has been reloaded with new configuration",
+      });
+    },
+  });
+
+  // Update capture time settings mutation
+  const updateCaptureTimeSettingsMutation = useMutation({
+    mutationFn: (data: { time: string; settings: { allowWorkerCheckout: boolean } }) =>
+      apiRequest("POST", "/api/config", {
+        key: "CAPTURE_TIME_SETTINGS",
+        value: {
+          ...captureTimeSettings,
+          [data.time]: data.settings,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/config/CAPTURE_TIME_SETTINGS"] });
+      toast({
+        title: "Settings Updated",
+        description: "Capture time settings have been updated",
+      });
+      setCustomizeDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Update Failed",
+        description: String(error),
+        variant: "destructive",
       });
     },
   });
@@ -117,6 +154,29 @@ export default function Scheduler() {
     const updatedTimes = captureTimes.filter((t: string) => t !== time);
     updateConfigMutation.mutate({
       capture_times: updatedTimes,
+    });
+  };
+
+  const handleCustomizeTime = (time: string) => {
+    setSelectedTime(time);
+    setCustomizeDialogOpen(true);
+  };
+
+  const handleSaveSettings = () => {
+    if (!selectedTime) return;
+
+    const currentSettings = captureTimeSettings?.[selectedTime] || { allowWorkerCheckout: true };
+    updateCaptureTimeSettingsMutation.mutate({
+      time: selectedTime,
+      settings: currentSettings,
+    });
+  };
+
+  const toggleWorkerCheckout = (time: string) => {
+    const currentSettings = captureTimeSettings?.[time] || { allowWorkerCheckout: true };
+    updateCaptureTimeSettingsMutation.mutate({
+      time,
+      settings: { allowWorkerCheckout: !currentSettings.allowWorkerCheckout },
     });
   };
 
@@ -200,28 +260,49 @@ export default function Scheduler() {
           <div className="space-y-4">
             {/* Current capture times */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {captureTimes.map((time: string) => (
-                <div
-                  key={time}
-                  className="flex items-center justify-between p-3 border rounded-lg bg-card"
-                  data-testid={`capture-time-${time}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-mono text-lg">{time}</span>
-                    <span className="text-sm text-muted-foreground">JST</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveTime(time)}
-                    disabled={updateConfigMutation.isPending}
-                    data-testid={`button-remove-time-${time}`}
+              {captureTimes.map((time: string) => {
+                const settings = captureTimeSettings?.[time] || { allowWorkerCheckout: true };
+                return (
+                  <div
+                    key={time}
+                    className="flex items-center justify-between p-3 border rounded-lg bg-card"
+                    data-testid={`capture-time-${time}`}
                   >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-mono text-lg">{time}</span>
+                        <span className="text-sm text-muted-foreground">JST</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {settings.allowWorkerCheckout 
+                          ? "✓ Worker checkouts allowed" 
+                          : "✗ All tools must be present"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCustomizeTime(time)}
+                        disabled={updateConfigMutation.isPending}
+                        data-testid={`button-customize-time-${time}`}
+                      >
+                        <Settings className="w-4 h-4 text-primary" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveTime(time)}
+                        disabled={updateConfigMutation.isPending}
+                        data-testid={`button-remove-time-${time}`}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Add new time */}
@@ -341,6 +422,61 @@ export default function Scheduler() {
           </Card>
         </div>
       </main>
+
+      {/* Customize Dialog */}
+      <Dialog open={customizeDialogOpen} onOpenChange={setCustomizeDialogOpen}>
+        <DialogContent className="max-w-md" data-testid="dialog-customize-capture-time">
+          <DialogHeader>
+            <DialogTitle>Customize Capture Time: {selectedTime}</DialogTitle>
+            <DialogDescription>
+              Configure detection behavior for this specific capture time
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="flex items-start justify-between space-x-4 rounded-lg border p-4">
+              <div className="flex-1 space-y-1">
+                <Label className="text-base font-medium">Allow Worker Checkouts</Label>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, worker name tag QR codes will NOT trigger alarms (checked out status is acceptable).
+                  When disabled, ANY missing tool triggers an alarm - all tools must be present.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                  <strong>Note:</strong> Empty slots (slot QR code visible) always trigger alarms regardless of this setting.
+                </p>
+              </div>
+              <Switch
+                checked={captureTimeSettings?.[selectedTime || ""]?.allowWorkerCheckout ?? true}
+                onCheckedChange={() => selectedTime && toggleWorkerCheckout(selectedTime)}
+                disabled={updateCaptureTimeSettingsMutation.isPending}
+                data-testid="switch-allow-worker-checkout"
+              />
+            </div>
+
+            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+              <h4 className="text-sm font-medium">Examples:</h4>
+              <div className="text-xs space-y-1 text-muted-foreground">
+                <p>
+                  <strong>First/Last capture (OFF):</strong> Start/end of day - all tools must be present, no checkouts allowed
+                </p>
+                <p>
+                  <strong>Midday captures (ON):</strong> Allow workers to check out tools during work hours
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setCustomizeDialogOpen(false)}
+                data-testid="button-cancel-customize"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
