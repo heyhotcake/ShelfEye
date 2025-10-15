@@ -1,0 +1,24 @@
+[Unit]
+Description=ShelfEye Tool Monitoring System
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=naniwa
+WorkingDirectory=/home/naniwa/ShelfEye
+ExecStart=/home/naniwa/ShelfEye/pi-startup.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables
+Environment="NODE_ENV=production"
+Environment="PATH=/home/naniwa/.nvm/versions/node/v20.18.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
