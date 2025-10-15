@@ -10,6 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **GPIO LED Light Strip Integration (Oct 2025)**: Implemented automatic lighting control for consistent image capture quality. LED light strip on GPIO 22 automatically turns on before captures and off after. Features Python GPIO controller script, manual control API endpoint (`POST /api/gpio/light`), scheduler integration, and frontend control UI in configuration page. Gracefully handles non-Pi environments with warning messages instead of errors.
 - **Raspberry Pi Deployment Package (Oct 2025)**: Created comprehensive deployment automation for Raspberry Pi 4 production deployment. Includes automated deployment script (`deploy-to-pi.sh`), systemd service configuration, camera testing utilities, quick-start management tools, and complete documentation (`PI-DEPLOYMENT.md`, `RASPBERRY-PI-SETUP.md`). Deployment script handles Node.js 20 installation, Python dependencies (OpenCV, pyzbar), environment setup, camera validation, and database schema sync.
 - **Worker Validation & Checkout Tracking (Oct 2025)**: Enhanced worker QR validation with database lookup at capture time. Invalid/inactive workers treated as EMPTY (unauthorized removal), valid workers logged as CHECKED_OUT with workerId tracking. Added checkout report API endpoint for historical queries showing which worker has which tool at specific capture times (8AM, 11AM, 2PM, 5PM JST).
 - **Worker Management System (Oct 2025)**: Implemented comprehensive worker management with database schema, API endpoints (CRUD operations), and frontend UI. Workers can be registered with unique codes, names, and departments. System generates HMAC-signed QR badge IDs for tool checkout tracking. Features include: workerCode uniqueness validation in both MemStorage and database, shadcn Form + react-hook-form + zodResolver integration for type-safe validation, QR badge generation and download functionality. Integrates with detection logic for worker-based tool checkout authorization.
@@ -69,6 +70,7 @@ Preferred communication style: Simple, everyday language.
 - `/api/qr-generate` - QR code generation with HMAC
 - `/api/workers` - Worker CRUD operations with uniqueness validation
 - `/api/workers/:id/generate-qr` - Generate HMAC-signed worker badge QR
+- `/api/gpio/light` - Manual GPIO light strip control (on/off)
 
 **Python Integration:**
 - OpenCV-based computer vision modules executed as child processes
