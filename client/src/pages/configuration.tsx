@@ -378,7 +378,7 @@ export default function Configuration() {
                 <div className="space-y-4">
                   <div className="bg-muted/50 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-3">
-                      Controls the LED light strip on GPIO 17 for consistent lighting during captures.
+                      Controls the LED light strip on GPIO 18 for consistent lighting during captures.
                       The light automatically turns on before captures and off after.
                     </p>
                     <div className="flex gap-3">
@@ -405,8 +405,8 @@ export default function Configuration() {
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    <p><strong>GPIO Pin:</strong> 17 (Physical Pin 11)</p>
-                    <p><strong>Connected to:</strong> LED Light Strip (5V)</p>
+                    <p><strong>GPIO Pin:</strong> 18 (Physical Pin 12)</p>
+                    <p><strong>Connected to:</strong> LED Light Strip WS2812B (27 LEDs)</p>
                   </div>
                 </div>
               </CardContent>

@@ -76,6 +76,12 @@ if [ "$LOCAL" != "$REMOTE" ]; then
         pip3 install -r requirements.txt 2>&1 | tee -a "$LOG_FILE"
     fi
     
+    # Ensure WS2812B LED library is installed (critical for light control)
+    if ! python3 -c "import rpi_ws281x" 2>/dev/null; then
+        log "🔦 Installing WS2812B LED library..."
+        sudo pip3 install rpi_ws281x --break-system-packages 2>&1 | tee -a "$LOG_FILE"
+    fi
+    
     log "✅ Update completed successfully!"
 else
     log "✓ Already up to date (commit: ${LOCAL:0:7})"
