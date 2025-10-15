@@ -122,10 +122,34 @@ export class AlertLEDController {
     try {
       // Kill the current flash process if it exists
       if (this.currentFlashProcess) {
-        this.currentFlashProcess.kill('SIGTERM');
+        // Send SIGTERM and wait for process to exit
+        const processExited = await new Promise<boolean>((resolve) => {
+          const timeout = setTimeout(() => {
+            // Force kill if process doesn't exit gracefully
+            if (this.currentFlashProcess) {
+              this.currentFlashProcess.kill('SIGKILL');
+            }
+            resolve(false);
+          }, 1000);
+
+          this.currentFlashProcess.once('close', () => {
+            clearTimeout(timeout);
+            resolve(true);
+          });
+
+          this.currentFlashProcess.kill('SIGTERM');
+        });
+
         this.currentFlashProcess = null;
-        
-        // Also run the stop command to ensure LED is off
+
+        if (!processExited) {
+          console.warn('[Alert LED] Process did not exit gracefully, forced kill');
+        }
+
+        // Small delay to ensure GPIO is released
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Run stop command to ensure LED is off and GPIO is clean
         const config = await this.storage.getConfigByKey('alert_led_gpio_pin');
         if (config) {
           const pin = parseInt(config.value as string);
@@ -139,13 +163,19 @@ export class AlertLEDController {
 
           await new Promise<boolean>((resolve) => {
             pythonProcess.on('close', (code) => {
-              console.log('[Alert LED] Stopped flashing');
+              console.log('[Alert LED] Stopped flashing and cleaned up GPIO');
               resolve(code === 0);
             });
 
             pythonProcess.on('error', () => {
               resolve(false);
             });
+
+            // Timeout for stop command
+            setTimeout(() => {
+              pythonProcess.kill('SIGTERM');
+              resolve(false);
+            }, 1000);
           });
         }
         

@@ -139,7 +139,7 @@ def main():
                 "flashing": False
             }
         else:
-            # Output result immediately
+            # Output result immediately and flush before blocking
             result = {
                 "success": success,
                 "pin": args.pin,
@@ -147,13 +147,15 @@ def main():
                 "pattern": args.pattern,
                 "flashing": led.is_flashing()
             }
-            print(json.dumps(result))
-            sys.stdout.flush()
+            print(json.dumps(result), flush=True)
             
             # Keep process alive by joining the thread
             # This blocks until the thread is signaled to stop
             if led.flash_thread:
                 led.flash_thread.join()
+            
+            # Clean up on exit
+            led.stop_flash()
             return 0
     
     elif args.action == "stop":
