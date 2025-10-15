@@ -124,6 +124,31 @@ export default function Configuration() {
     },
   });
 
+  const alertLEDMutation = useMutation({
+    mutationFn: (action: 'flash' | 'stop' | 'test') => {
+      if (action === 'test') {
+        return apiRequest('POST', '/api/alert-led/test');
+      } else if (action === 'stop') {
+        return apiRequest('POST', '/api/alert-led/stop');
+      } else {
+        return apiRequest('POST', '/api/alert-led/flash', { pattern: 'fast' });
+      }
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Alert LED",
+        description: data.message || 'Alert LED action completed',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Alert LED Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const exportConfig = async (format: 'yaml' | 'json') => {
     try {
       const response = await apiRequest('GET', `/api/config/export?format=${format}`);
@@ -362,6 +387,52 @@ export default function Configuration() {
                     <Plus className="w-4 h-4 mr-2" />
                     {createCameraMutation.isPending ? "Adding..." : "Add Camera"}
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Alert LED Control */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Power className="w-5 h-5 text-red-500" />
+                  Alert LED Control
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Red flashing LED that activates automatically when errors occur (tool missing, QR failures, camera issues).
+                      Test the alert LED or manually control it here.
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => alertLEDMutation.mutate('test')}
+                        disabled={alertLEDMutation.isPending}
+                        variant="outline"
+                        data-testid="button-test-alert-led"
+                      >
+                        Test Alert (5s Flash)
+                      </Button>
+                      <Button
+                        onClick={() => alertLEDMutation.mutate('flash')}
+                        disabled={alertLEDMutation.isPending}
+                        variant="destructive"
+                        data-testid="button-start-flash"
+                      >
+                        Start Flashing
+                      </Button>
+                      <Button
+                        onClick={() => alertLEDMutation.mutate('stop')}
+                        disabled={alertLEDMutation.isPending}
+                        variant="secondary"
+                        data-testid="button-stop-flash"
+                      >
+                        Stop Flash
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
