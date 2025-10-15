@@ -38,37 +38,79 @@ export class AlertLEDController {
         stdio: ['ignore', 'pipe', 'pipe']
       });
 
-      // Read the first line of stdout to confirm startup
-      let startupConfirmed = false;
-      this.currentFlashProcess.stdout.once('data', (data: Buffer) => {
-        try {
-          const result = JSON.parse(data.toString());
-          if (result.success) {
-            startupConfirmed = true;
-            console.log(`[Alert LED] Started flashing (${pattern} pattern)`);
+      // Wait for startup confirmation or error
+      const startupResult = await new Promise<boolean>((resolve) => {
+        let resolved = false;
+
+        // Read the first line of stdout to confirm startup
+        this.currentFlashProcess.stdout.once('data', (data: Buffer) => {
+          if (resolved) return;
+          try {
+            const result = JSON.parse(data.toString());
+            if (result.success) {
+              console.log(`[Alert LED] Started flashing (${pattern} pattern)`);
+              resolved = true;
+              resolve(true);
+            } else {
+              console.error('[Alert LED] Python script reported failure:', result.error);
+              resolved = true;
+              resolve(false);
+            }
+          } catch (err) {
+            console.error('[Alert LED] Failed to parse startup response');
+            resolved = true;
+            resolve(false);
           }
-        } catch (err) {
-          console.error('[Alert LED] Failed to parse startup response');
-        }
+        });
+
+        // Handle process errors
+        this.currentFlashProcess.on('error', (error: Error) => {
+          if (resolved) return;
+          console.error('[Alert LED] Process error:', error);
+          this.currentFlashProcess = null;
+          resolved = true;
+          resolve(false);
+        });
+
+        // Handle unexpected early exit
+        this.currentFlashProcess.on('close', (code: number) => {
+          if (resolved) return;
+          if (code !== 0) {
+            console.error('[Alert LED] Process exited with code:', code);
+            this.currentFlashProcess = null;
+            resolved = true;
+            resolve(false);
+          }
+        });
+
+        // Timeout after 2 seconds
+        setTimeout(() => {
+          if (resolved) return;
+          console.error('[Alert LED] Startup timeout');
+          if (this.currentFlashProcess) {
+            this.currentFlashProcess.kill('SIGTERM');
+            this.currentFlashProcess = null;
+          }
+          resolved = true;
+          resolve(false);
+        }, 2000);
       });
 
-      // Handle process errors
-      this.currentFlashProcess.on('error', (error: Error) => {
-        console.error('[Alert LED] Process error:', error);
-        this.currentFlashProcess = null;
-      });
+      // Set up long-running process handlers
+      if (startupResult && this.currentFlashProcess) {
+        this.currentFlashProcess.on('close', () => {
+          console.log('[Alert LED] Flash process ended');
+          this.currentFlashProcess = null;
+        });
+      }
 
-      this.currentFlashProcess.on('close', () => {
-        console.log('[Alert LED] Flash process ended');
-        this.currentFlashProcess = null;
-      });
-
-      // Wait a moment for startup
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      return true;
+      return startupResult;
     } catch (error) {
       console.error('[Alert LED] Failed to start flash:', error);
+      if (this.currentFlashProcess) {
+        this.currentFlashProcess.kill('SIGTERM');
+        this.currentFlashProcess = null;
+      }
       return false;
     }
   }
