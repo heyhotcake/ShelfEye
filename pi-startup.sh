@@ -5,6 +5,7 @@
 #
 
 set -e  # Exit on error
+set -o pipefail  # Catch errors in pipes
 
 # Configuration
 APP_DIR="/home/naniwa/ShelfEye"
@@ -41,8 +42,13 @@ REMOTE=$(git rev-parse origin/main)
 if [ "$LOCAL" != "$REMOTE" ]; then
     log "✨ New version found! Updating..."
     
-    # Stash any local changes
-    git stash 2>&1 | tee -a "$LOG_FILE"
+    # Stash any local changes (if there are any)
+    if [ -n "$(git status --porcelain)" ]; then
+        log "Stashing local changes..."
+        git stash 2>&1 | tee -a "$LOG_FILE"
+    else
+        log "No local changes to stash"
+    fi
     
     # Pull latest changes
     git pull origin main 2>&1 | tee -a "$LOG_FILE"
