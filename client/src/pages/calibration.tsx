@@ -68,10 +68,10 @@ export default function Calibration() {
 
   const activeCamera = cameras?.find((c: any) => c.isActive);
 
-  // Camera preview - poll every 1 second
+  // Camera preview - poll every 1 second, but pause during calibration
   const { data: preview } = useQuery<CameraPreview>({
     queryKey: ['/api/camera-preview', activeCamera?.id],
-    enabled: !!activeCamera?.id,
+    enabled: !!activeCamera?.id && !calibrationMutation.isPending,
     refetchInterval: 1000,
   });
 
