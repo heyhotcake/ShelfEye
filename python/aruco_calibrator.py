@@ -16,12 +16,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ArucoCornerCalibrator:
-    def __init__(self, dictionary_type=cv2.aruco.DICT_4X4_250):
+    def __init__(self, dictionary_type=cv2.aruco.DICT_4X4_100):
         """
         Initialize ArUco calibrator for 4-corner detection
         
         Args:
-            dictionary_type: ArUco dictionary type (DICT_4X4_250)
+            dictionary_type: ArUco dictionary type (DICT_4X4_100)
         """
         # Initialize ArUco dictionary and detector
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(dictionary_type)
