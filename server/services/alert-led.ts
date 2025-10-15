@@ -27,7 +27,7 @@ export class AlertLEDController {
       // Stop any existing flash
       await this.stopFlash();
 
-      // Start new flash process (non-blocking, runs in background)
+      // Start new flash process (keeps running in background)
       this.currentFlashProcess = spawn('sudo', [
         'python3',
         path.join(process.cwd(), 'python/alert_led.py'),
@@ -35,13 +35,37 @@ export class AlertLEDController {
         '--action', 'flash',
         '--pattern', pattern
       ], {
-        detached: true,
-        stdio: 'ignore'
+        stdio: ['ignore', 'pipe', 'pipe']
       });
 
-      this.currentFlashProcess.unref();
+      // Read the first line of stdout to confirm startup
+      let startupConfirmed = false;
+      this.currentFlashProcess.stdout.once('data', (data: Buffer) => {
+        try {
+          const result = JSON.parse(data.toString());
+          if (result.success) {
+            startupConfirmed = true;
+            console.log(`[Alert LED] Started flashing (${pattern} pattern)`);
+          }
+        } catch (err) {
+          console.error('[Alert LED] Failed to parse startup response');
+        }
+      });
 
-      console.log(`[Alert LED] Started flashing (${pattern} pattern)`);
+      // Handle process errors
+      this.currentFlashProcess.on('error', (error: Error) => {
+        console.error('[Alert LED] Process error:', error);
+        this.currentFlashProcess = null;
+      });
+
+      this.currentFlashProcess.on('close', () => {
+        console.log('[Alert LED] Flash process ended');
+        this.currentFlashProcess = null;
+      });
+
+      // Wait a moment for startup
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       return true;
     } catch (error) {
       console.error('[Alert LED] Failed to start flash:', error);
@@ -54,36 +78,39 @@ export class AlertLEDController {
    */
   async stopFlash(): Promise<boolean> {
     try {
-      const config = await this.storage.getConfigByKey('alert_led_gpio_pin');
-      if (!config) {
-        return false;
+      // Kill the current flash process if it exists
+      if (this.currentFlashProcess) {
+        this.currentFlashProcess.kill('SIGTERM');
+        this.currentFlashProcess = null;
+        
+        // Also run the stop command to ensure LED is off
+        const config = await this.storage.getConfigByKey('alert_led_gpio_pin');
+        if (config) {
+          const pin = parseInt(config.value as string);
+          
+          const pythonProcess = spawn('sudo', [
+            'python3',
+            path.join(process.cwd(), 'python/alert_led.py'),
+            '--pin', pin.toString(),
+            '--action', 'stop'
+          ]);
+
+          await new Promise<boolean>((resolve) => {
+            pythonProcess.on('close', (code) => {
+              console.log('[Alert LED] Stopped flashing');
+              resolve(code === 0);
+            });
+
+            pythonProcess.on('error', () => {
+              resolve(false);
+            });
+          });
+        }
+        
+        return true;
       }
 
-      const pin = parseInt(config.value as string);
-
-      // Send stop command
-      const pythonProcess = spawn('sudo', [
-        'python3',
-        path.join(process.cwd(), 'python/alert_led.py'),
-        '--pin', pin.toString(),
-        '--action', 'stop'
-      ]);
-
-      return new Promise((resolve) => {
-        pythonProcess.on('close', (code) => {
-          if (code === 0) {
-            console.log('[Alert LED] Stopped flashing');
-            resolve(true);
-          } else {
-            console.error('[Alert LED] Failed to stop flash');
-            resolve(false);
-          }
-        });
-
-        pythonProcess.on('error', () => {
-          resolve(false);
-        });
-      });
+      return true;
     } catch (error) {
       console.error('[Alert LED] Error stopping flash:', error);
       return false;

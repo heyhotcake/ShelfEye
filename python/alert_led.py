@@ -9,6 +9,7 @@ import argparse
 import json
 import time
 import threading
+import signal
 
 try:
     import RPi.GPIO as GPIO
@@ -75,7 +76,7 @@ class AlertLED:
                     GPIO.output(self.pin, GPIO.LOW)
                 time.sleep(off_time)
         
-        self.flash_thread = threading.Thread(target=flash_loop, daemon=True)
+        self.flash_thread = threading.Thread(target=flash_loop)
         self.flash_thread.start()
         return True
     
@@ -115,6 +116,14 @@ def main():
     
     led = AlertLED(args.pin)
     
+    # Setup signal handler for graceful shutdown
+    def signal_handler(sig, frame):
+        led.stop_flash()
+        sys.exit(0)
+    
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    
     if args.action == "flash":
         success = led.start_flash(args.pattern)
         
@@ -122,14 +131,30 @@ def main():
         if args.duration:
             time.sleep(args.duration)
             led.stop_flash()
-        
-        result = {
-            "success": success,
-            "pin": args.pin,
-            "action": "flash",
-            "pattern": args.pattern,
-            "flashing": led.is_flashing()
-        }
+            result = {
+                "success": success,
+                "pin": args.pin,
+                "action": "flash",
+                "pattern": args.pattern,
+                "flashing": False
+            }
+        else:
+            # Output result immediately
+            result = {
+                "success": success,
+                "pin": args.pin,
+                "action": "flash",
+                "pattern": args.pattern,
+                "flashing": led.is_flashing()
+            }
+            print(json.dumps(result))
+            sys.stdout.flush()
+            
+            # Keep process alive by joining the thread
+            # This blocks until the thread is signaled to stop
+            if led.flash_thread:
+                led.flash_thread.join()
+            return 0
     
     elif args.action == "stop":
         success = led.stop_flash()
