@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Download, FileCode, FileText, RotateCcw, X, Plus, Camera, Trash, Power } from "lucide-react";
+import { Upload, Download, FileCode, FileText, RotateCcw, X, Plus, Camera, Trash, Power, Lightbulb } from "lucide-react";
 
 interface SystemConfig {
   key: string;
@@ -100,6 +100,24 @@ export default function Configuration() {
     onError: (error) => {
       toast({
         title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const lightControlMutation = useMutation({
+    mutationFn: (action: 'on' | 'off') =>
+      apiRequest('POST', '/api/gpio/light', { action }),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Light Control",
+        description: data.message || `Light ${data.state === 'HIGH' ? 'turned on' : 'turned off'}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Light Control Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -344,6 +362,52 @@ export default function Configuration() {
                     <Plus className="w-4 h-4 mr-2" />
                     {createCameraMutation.isPending ? "Adding..." : "Add Camera"}
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* LED Light Strip Control */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5" />
+                  LED Light Strip Control
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Controls the LED light strip on GPIO 22 for consistent lighting during captures.
+                      The light automatically turns on before captures and off after.
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => lightControlMutation.mutate('on')}
+                        disabled={lightControlMutation.isPending}
+                        data-testid="button-light-on"
+                      >
+                        <Lightbulb className="w-4 h-4 mr-2" />
+                        Turn On
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => lightControlMutation.mutate('off')}
+                        disabled={lightControlMutation.isPending}
+                        data-testid="button-light-off"
+                      >
+                        <Power className="w-4 h-4 mr-2" />
+                        Turn Off
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <p><strong>GPIO Pin:</strong> 22 (Physical Pin 15)</p>
+                    <p><strong>Connected to:</strong> LED Light Strip (5V)</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
