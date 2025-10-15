@@ -10,6 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **Worker Management System (Oct 2025)**: Implemented comprehensive worker management with database schema, API endpoints (CRUD operations), and frontend UI. Workers can be registered with unique codes, names, and departments. System generates HMAC-signed QR badge IDs for tool checkout tracking. Features include: workerCode uniqueness validation in both MemStorage and database, shadcn Form + react-hook-form + zodResolver integration for type-safe validation, QR badge generation and download functionality. Integrates with detection logic for worker-based tool checkout authorization.
 - **Simplified QR-Based Detection Logic (Oct 2025)**: Removed complex SSIM image analysis in favor of slot QR code as binary sensor. Slot QR visible = tool missing (alarm), worker QR visible = checked out, no QR visible = tool present. QR type changed from "tool" to "slot" for clarity.
 - **Gmail & Google Sheets Alert Integration (Oct 2025)**: Implemented complete multi-channel alert system using Replit's native connectors. Gmail sends formatted emails on capture/diagnostic failures. Google Sheets automatically logs all alerts, captures, and diagnostics with auto-created spreadsheet. Alert configuration UI manages email recipients and displays sheets URL.
 - **ArUco Marker Positioning (Oct 2025)**: ArUco corner markers (IDs 17-20) are now positioned at the extreme corners of the printable area (0cm from edges) across all paper sizes, maximizing usable template space since printers have natural margins anyway.
@@ -64,6 +65,8 @@ Preferred communication style: Simple, everyday language.
 - `/api/detection-logs` - Historical detection data
 - `/api/alert-rules` - Alert configuration
 - `/api/qr-generate` - QR code generation with HMAC
+- `/api/workers` - Worker CRUD operations with uniqueness validation
+- `/api/workers/:id/generate-qr` - Generate HMAC-signed worker badge QR
 
 **Python Integration:**
 - OpenCV-based computer vision modules executed as child processes
@@ -88,6 +91,7 @@ detectionLogs: id, slotId, timestamp, status, qrId, workerName, ssimScore, poseQ
 alertRules: id, name, ruleType, isEnabled, verificationWindow, businessHoursOnly, priority, conditions
 alertQueue: id, alertType, message, status, retryCount, scheduledAt, sentAt
 systemConfig: key, value, description
+workers: id, workerCode (unique), name, department, qrPayload, isActive, createdAt
 ```
 
 **File Storage Strategy:**
