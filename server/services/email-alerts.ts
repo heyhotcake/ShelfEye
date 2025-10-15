@@ -19,16 +19,16 @@ interface AlertEmailData {
 export async function sendAlertEmail(alertData: AlertEmailData): Promise<boolean> {
   try {
     // Get email recipients from system config
-    const alertEmailsConfig = await storage.getSystemConfigValue('EMAIL_RECIPIENTS');
+    const alertEmailsConfig = await storage.getConfigByKey('EMAIL_RECIPIENTS');
     
-    if (!alertEmailsConfig) {
+    if (!alertEmailsConfig || !alertEmailsConfig.value) {
       console.log('[Email Alert] No alert email recipients configured');
       return false;
     }
 
-    const recipients = typeof alertEmailsConfig === 'string' 
-      ? JSON.parse(alertEmailsConfig) 
-      : alertEmailsConfig;
+    const recipients = typeof alertEmailsConfig.value === 'string' 
+      ? JSON.parse(alertEmailsConfig.value) 
+      : alertEmailsConfig.value;
     if (!recipients || recipients.length === 0) {
       console.log('[Email Alert] No alert email recipients configured');
       return false;
