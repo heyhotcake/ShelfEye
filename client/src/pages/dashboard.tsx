@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, Clock, CheckCircle, AlertTriangle, HelpCircle, ClipboardCheck, Users, Activity, XCircle } from "lucide-react";
+import { Camera, Clock, CheckCircle, AlertTriangle, HelpCircle, ClipboardCheck, Users, Activity, XCircle, BellOff } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 import type { CaptureRun } from "@shared/schema";
 
@@ -75,6 +75,23 @@ export default function Dashboard() {
     onError: (error) => {
       toast({
         title: "Capture Failed", 
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const stopAlarmMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/alert-led/stop'),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Alarm Stopped",
+        description: data.message || "Alert LED has been turned off",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Stop Alarm",
         description: error.message,
         variant: "destructive",
       });
@@ -195,6 +212,17 @@ export default function Dashboard() {
                   </span>
                 </div>
               )}
+              
+              <Button
+                onClick={() => stopAlarmMutation.mutate()}
+                disabled={stopAlarmMutation.isPending}
+                variant="destructive"
+                className="flex items-center gap-2"
+                data-testid="button-stop-alarm-header"
+              >
+                <BellOff className="w-4 h-4" />
+                {stopAlarmMutation.isPending ? 'Stopping...' : 'Stop Alarm'}
+              </Button>
               
               <Button
                 onClick={() => captureMutation.mutate()}
@@ -379,9 +407,22 @@ export default function Dashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Recent Alerts</CardTitle>
-                  <Button variant="link" className="text-primary p-0" data-testid="link-view-all-alerts">
-                    View All
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => stopAlarmMutation.mutate()}
+                      disabled={stopAlarmMutation.isPending}
+                      variant="destructive"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      data-testid="button-stop-alarm-alerts"
+                    >
+                      <BellOff className="w-4 h-4" />
+                      Stop Alarm
+                    </Button>
+                    <Button variant="link" className="text-primary p-0" data-testid="link-view-all-alerts">
+                      View All
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               
