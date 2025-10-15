@@ -34,6 +34,7 @@ export const detectionLogs = pgTable("detection_logs", {
   timestamp: timestamp("timestamp").notNull().default(sql`now()`),
   status: text("status").notNull(), // EMPTY, ITEM_PRESENT, CHECKED_OUT, TRAINING_ERROR
   qrId: text("qr_id"),
+  workerId: varchar("worker_id").references(() => workers.id),
   workerName: text("worker_name"),
   ssimScore: real("ssim_score"),
   poseQuality: real("pose_quality"),
