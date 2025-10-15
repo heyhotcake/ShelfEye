@@ -1038,7 +1038,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get light strip GPIO pin from config
-      const lightStripConfig = await storage.getConfig('light_strip_gpio_pin');
+      const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
       if (!lightStripConfig) {
         return res.status(400).json({ message: "Light strip GPIO pin not configured" });
       }
