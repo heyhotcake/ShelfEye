@@ -315,6 +315,24 @@ export default function Alerts() {
                           +
                         </Button>
                       </div>
+                      
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => testAlertMutation.mutate()}
+                          disabled={testAlertMutation.isPending || emailRecipients.length === 0}
+                          data-testid="button-test-email"
+                        >
+                          <TestTube className="w-4 h-4 mr-2" />
+                          {testAlertMutation.isPending ? 'Sending Test Email...' : 'Send Test Email'}
+                        </Button>
+                        {emailRecipients.length === 0 && (
+                          <p className="text-xs text-muted-foreground mt-2 text-center">
+                            Add at least one recipient to test
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
