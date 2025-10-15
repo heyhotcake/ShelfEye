@@ -1,0 +1,31 @@
+[Unit]
+Description=Tool Tracking System - NaniwaTanaCheck
+Documentation=https://github.com/heyhotcake/NaniwaTanaCheck
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=naniwa
+Group=naniwa
+WorkingDirectory=/home/naniwa/NaniwaTanaCheck
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tool-tracker
+
+# Environment
+Environment=NODE_ENV=production
+EnvironmentFile=/home/naniwa/NaniwaTanaCheck/.env
+
+# Security hardening (optional)
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
