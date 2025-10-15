@@ -183,6 +183,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Camera preview route
+  app.get("/api/camera-preview/:cameraId", async (req, res) => {
+    try {
+      const { cameraId } = req.params;
+      const camera = await storage.getCamera(cameraId);
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+
+      // Call Python preview script
+      const pythonProcess = spawn('python3', [
+        path.join(process.cwd(), 'python/camera_preview.py'),
+        camera.deviceIndex.toString(),
+        camera.resolution[0].toString(),
+        camera.resolution[1].toString()
+      ]);
+
+      let result = '';
+      let error = '';
+      let responseSent = false;
+
+      pythonProcess.on('error', (err) => {
+        if (!responseSent) {
+          responseSent = true;
+          res.status(503).json({ 
+            message: "Camera preview not available", 
+            error: err.message 
+          });
+        }
+      });
+
+      pythonProcess.stdout.on('data', (data) => {
+        result += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (responseSent) return;
+        
+        if (code === 0) {
+          try {
+            const previewData = JSON.parse(result);
+            res.json(previewData);
+          } catch (parseError) {
+            res.status(500).json({ message: "Failed to parse preview result", error: parseError });
+          }
+        } else {
+          res.status(500).json({ message: "Preview failed", error });
+        }
+      });
+
+    } catch (error) {
+      res.status(500).json({ message: "Preview error", error });
+    }
+  });
+
   // Manual capture route
   app.post("/api/capture", async (req, res) => {
     try {
@@ -898,11 +957,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const qrData = JSON.stringify(payload);
       const qrCodeBase64 = await QRCode.toDataURL(qrData, {
         errorCorrectionLevel: 'H',
-        type: 'image/png',
-        quality: 1,
         margin: 1,
         width: 250
-      });
+      }) as string;
 
       // Save QR payload to worker
       await storage.updateWorker(worker.id, { qrPayload: payload });

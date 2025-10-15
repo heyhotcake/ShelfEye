@@ -18,6 +18,14 @@ interface CalibrationResult {
   markersDetected: number;
 }
 
+interface CameraPreview {
+  ok: boolean;
+  image?: string;
+  error?: string;
+  width?: number;
+  height?: number;
+}
+
 export default function Calibration() {
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
@@ -28,11 +36,11 @@ export default function Calibration() {
     return format(zonedDate, "yyyy-MM-dd HH:mm:ss", { timeZone: TIMEZONE });
   };
 
-  const { data: cameras } = useQuery({
+  const { data: cameras } = useQuery<any[]>({
     queryKey: ['/api/cameras'],
   });
 
-  const { data: templateRectangles } = useQuery({
+  const { data: templateRectangles } = useQuery<any[]>({
     queryKey: ['/api/template-rectangles'],
     queryFn: async () => {
       const response = await fetch('/api/template-rectangles');
@@ -59,6 +67,13 @@ export default function Calibration() {
   });
 
   const activeCamera = cameras?.find((c: any) => c.isActive);
+
+  // Camera preview - poll every 1 second
+  const { data: preview } = useQuery<CameraPreview>({
+    queryKey: ['/api/camera-preview', activeCamera?.id],
+    enabled: !!activeCamera?.id,
+    refetchInterval: 1000,
+  });
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -92,37 +107,49 @@ export default function Calibration() {
                 <h3 className="text-lg font-semibold text-foreground mb-3">Live Camera View</h3>
                 <div className="canvas-container">
                   <div className="aspect-[4/3] bg-muted rounded relative overflow-hidden">
-                    {/* Placeholder for camera feed */}
-                    <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                      <div className="text-center">
-                        <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Camera feed will appear here</p>
-                      </div>
-                    </div>
-                    
-                    {/* ArUco markers overlay */}
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 600">
-                      {/* Corner markers A/B/C/D (clockwise from top-left) */}
-                      <rect x="100" y="100" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                      <text x="115" y="130" fill="white" fontSize="18" fontWeight="bold">A</text>
-                      
-                      <rect x="650" y="100" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                      <text x="665" y="130" fill="white" fontSize="18" fontWeight="bold">B</text>
-                      
-                      <rect x="650" y="450" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                      <text x="665" y="480" fill="white" fontSize="18" fontWeight="bold">C</text>
-                      
-                      <rect x="100" y="450" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                      <text x="115" y="480" fill="white" fontSize="18" fontWeight="bold">D</text>
-                      
-                      {/* Grid outline */}
-                      <polyline 
-                        points="125,125 675,125 675,475 125,475 125,125" 
-                        fill="none" 
-                        stroke="hsl(142, 76%, 45%)" 
-                        strokeWidth="2"
+                    {preview?.ok && preview?.image ? (
+                      <img 
+                        src={preview.image} 
+                        alt="Camera preview" 
+                        className="w-full h-full object-contain"
+                        data-testid="img-camera-preview"
                       />
-                    </svg>
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                        <div className="text-center">
+                          <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2 animate-pulse" />
+                          <p className="text-sm text-muted-foreground">
+                            {preview?.error ? `Error: ${preview.error}` : 'Loading camera feed...'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* ArUco markers overlay - shown when camera is visible */}
+                    {preview?.ok && (
+                      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 600">
+                        {/* Corner markers A/B/C/D (clockwise from top-left) */}
+                        <rect x="100" y="100" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
+                        <text x="115" y="130" fill="white" fontSize="18" fontWeight="bold">A</text>
+                        
+                        <rect x="650" y="100" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
+                        <text x="665" y="130" fill="white" fontSize="18" fontWeight="bold">B</text>
+                        
+                        <rect x="650" y="450" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
+                        <text x="665" y="480" fill="white" fontSize="18" fontWeight="bold">C</text>
+                        
+                        <rect x="100" y="450" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
+                        <text x="115" y="480" fill="white" fontSize="18" fontWeight="bold">D</text>
+                        
+                        {/* Grid outline */}
+                        <polyline 
+                          points="125,125 675,125 675,475 125,475 125,125" 
+                          fill="none" 
+                          stroke="hsl(142, 76%, 45%)" 
+                          strokeWidth="2"
+                        />
+                      </svg>
+                    )}
                   </div>
                 </div>
                 
