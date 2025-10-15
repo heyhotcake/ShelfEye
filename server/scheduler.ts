@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import type { Camera, Slot } from '@shared/schema';
 import { sendAlertEmail } from './services/email-alerts';
 import { SheetsLogger } from './services/sheets-logger';
+import { getAlertLEDController } from './services/alert-led';
 
 const TIMEZONE = 'Asia/Tokyo';
 
@@ -537,6 +538,15 @@ export class CaptureScheduler {
         });
       } catch (sheetsError) {
         console.error('[Scheduler] Failed to log alert to sheets:', sheetsError);
+      }
+      
+      // Flash alert LED
+      try {
+        const alertLED = getAlertLEDController(this.storage);
+        await alertLED.startFlash('fast');
+        console.log('[Scheduler] Alert LED activated');
+      } catch (ledError) {
+        console.error('[Scheduler] Failed to activate alert LED:', ledError);
       }
       
       console.log(`[Scheduler] Alert sent successfully: ${alertType}`);

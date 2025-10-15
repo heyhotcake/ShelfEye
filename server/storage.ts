@@ -620,6 +620,7 @@ export class DbStorage implements IStorage {
       await this.setConfig("buzzer_gpio_pin", 17, "Buzzer GPIO pin");
       await this.setConfig("led_gpio_pin", 27, "LED GPIO pin");
       await this.setConfig("light_strip_gpio_pin", 22, "LED light strip GPIO pin for consistent capture lighting");
+      await this.setConfig("alert_led_gpio_pin", 17, "Red alert LED GPIO pin for flashing error indicators");
     }
   }
 

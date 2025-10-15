@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { CaptureScheduler } from "./scheduler";
 import { sendTestAlert } from "./services/email-alerts";
+import { getAlertLEDController } from "./services/alert-led";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
@@ -1105,6 +1106,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: "Light control error", 
         error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
+  // Alert LED Control routes
+  app.post("/api/alert-led/flash", async (req, res) => {
+    try {
+      const { pattern, duration } = req.body;
+      const alertLED = getAlertLEDController(storage);
+      
+      let success = false;
+      if (duration) {
+        success = await alertLED.flashFor(parseInt(duration), pattern || 'fast');
+      } else {
+        success = await alertLED.startFlash(pattern || 'fast');
+      }
+      
+      if (success) {
+        res.json({
+          ok: true,
+          message: duration 
+            ? `Alert LED flashing for ${duration}s`
+            : 'Alert LED started flashing'
+        });
+      } else {
+        res.status(500).json({
+          ok: false,
+          message: 'Failed to start alert LED'
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: 'Alert LED control error',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.post("/api/alert-led/stop", async (_req, res) => {
+    try {
+      const alertLED = getAlertLEDController(storage);
+      const success = await alertLED.stopFlash();
+      
+      if (success) {
+        res.json({
+          ok: true,
+          message: 'Alert LED stopped'
+        });
+      } else {
+        res.status(500).json({
+          ok: false,
+          message: 'Failed to stop alert LED'
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: 'Alert LED control error',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.post("/api/alert-led/test", async (_req, res) => {
+    try {
+      const alertLED = getAlertLEDController(storage);
+      const success = await alertLED.flashFor(5, 'fast'); // Flash for 5 seconds
+      
+      if (success) {
+        res.json({
+          ok: true,
+          message: 'Alert LED test completed'
+        });
+      } else {
+        res.status(500).json({
+          ok: false,
+          message: 'Failed to test alert LED'
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: 'Alert LED test error',
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   });
