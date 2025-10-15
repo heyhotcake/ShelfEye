@@ -242,12 +242,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const slot = slots.find(s => s.slotId === slotResult.slot_id);
               if (!slot) continue;
 
+              // Validate worker checkout if status is CHECKED_OUT
+              let workerId: string | null = null;
+              let workerName: string | null = null;
+              let finalStatus = slotResult.status;
+
+              if (slotResult.status === 'CHECKED_OUT' && slotResult.qr_id) {
+                // Look up worker by workerCode (qr_id contains the workerCode for worker QRs)
+                const worker = await storage.getWorkerByCode(slotResult.qr_id);
+                
+                if (worker && worker.isActive) {
+                  // Valid worker checkout
+                  workerId = worker.id;
+                  workerName = worker.name;
+                } else {
+                  // Invalid/inactive worker - treat as unauthorized removal
+                  finalStatus = 'EMPTY';
+                  console.log(`[SECURITY] Unauthorized checkout attempt with QR: ${slotResult.qr_id}`);
+                }
+              }
+
               // Create detection log
               await storage.createDetectionLog({
                 slotId: slot.id,
-                status: slotResult.status,
+                status: finalStatus,
                 qrId: slotResult.qr_id || null,
-                workerName: slotResult.worker_name || null,
+                workerId,
+                workerName,
                 ssimScore: slotResult.ssim_score || null,
                 poseQuality: slotResult.pose_quality || null,
                 imagePath: slotResult.image_path || null,
@@ -256,16 +277,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
 
               statuses[slotResult.slot_id] = {
-                state: slotResult.status,
-                present: slotResult.present || false,
+                state: finalStatus,
+                present: finalStatus === 'ITEM_PRESENT',
                 correct_item: slotResult.correct_item || false,
                 scores: {
                   s_empty: slotResult.s_empty || 0,
                   s_full: slotResult.s_full || 0
                 },
                 pose_quality: slotResult.pose_quality || 0,
-                qr_id: slotResult.qr_id || null,
-                worker_name: slotResult.worker_name || null,
+                qr_id: finalStatus === 'CHECKED_OUT' ? slotResult.qr_id : null,
+                worker_name: workerName,
                 roi_path: slotResult.image_path ? `/api/roi/${slotResult.slot_id}.png` : null
               };
             }
@@ -906,6 +927,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(runs);
     } catch (error) {
       res.status(500).json({ message: "Failed to get capture runs", error });
+    }
+  });
+
+  // Worker checkout report route - shows which worker has which tool at a specific time
+  app.get("/api/reports/checkouts", async (req, res) => {
+    try {
+      const timestamp = req.query.timestamp ? new Date(req.query.timestamp as string) : new Date();
+      const slots = await storage.getSlots();
+      const checkouts = [];
+
+      for (const slot of slots) {
+        // Get the most recent detection log for this slot at or before the timestamp
+        const latestLog = await storage.getLatestDetectionLogBySlotBeforeTime(slot.id, timestamp);
+        
+        if (latestLog && latestLog.status === 'CHECKED_OUT' && latestLog.workerId) {
+          const worker = await storage.getWorker(latestLog.workerId);
+          
+          if (worker) {
+            checkouts.push({
+              slotId: slot.slotId,
+              toolName: slot.toolName,
+              workerId: worker.id,
+              workerCode: worker.workerCode,
+              workerName: worker.name,
+              department: worker.department,
+              checkedOutAt: latestLog.timestamp,
+              qrId: latestLog.qrId,
+            });
+          }
+        }
+      }
+
+      res.json({
+        ok: true,
+        timestamp: timestamp.toISOString(),
+        totalCheckouts: checkouts.length,
+        checkouts,
+      });
+
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate checkout report", error });
     }
   });
 

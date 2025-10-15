@@ -22,6 +22,7 @@ export interface IStorage {
   getDetectionLogs(limit?: number, offset?: number): Promise<DetectionLog[]>;
   getDetectionLogsBySlot(slotId: string, limit?: number): Promise<DetectionLog[]>;
   getDetectionLogsByDateRange(startDate: Date, endDate: Date): Promise<DetectionLog[]>;
+  getLatestDetectionLogBySlotBeforeTime(slotId: string, timestamp: Date): Promise<DetectionLog | undefined>;
   createDetectionLog(log: InsertDetectionLog): Promise<DetectionLog>;
 
   // Alert rule methods
@@ -257,6 +258,13 @@ export class MemStorage implements IStorage {
     return this.detectionLogs.filter(log => 
       log.timestamp >= startDate && log.timestamp <= endDate
     ).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }
+
+  async getLatestDetectionLogBySlotBeforeTime(slotId: string, timestamp: Date): Promise<DetectionLog | undefined> {
+    const slotLogs = this.detectionLogs
+      .filter(log => log.slotId === slotId && log.timestamp <= timestamp)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return slotLogs[0];
   }
 
   async createDetectionLog(log: InsertDetectionLog): Promise<DetectionLog> {
@@ -681,6 +689,17 @@ export class DbStorage implements IStorage {
 
   async getDetectionLogsByDateRange(startDate: Date, endDate: Date): Promise<DetectionLog[]> {
     return await db.select().from(schema.detectionLogs).where(and(gte(schema.detectionLogs.timestamp, startDate), lte(schema.detectionLogs.timestamp, endDate))).orderBy(desc(schema.detectionLogs.timestamp));
+  }
+
+  async getLatestDetectionLogBySlotBeforeTime(slotId: string, timestamp: Date): Promise<DetectionLog | undefined> {
+    const result = await db.select().from(schema.detectionLogs)
+      .where(and(
+        eq(schema.detectionLogs.slotId, slotId),
+        lte(schema.detectionLogs.timestamp, timestamp)
+      ))
+      .orderBy(desc(schema.detectionLogs.timestamp))
+      .limit(1);
+    return result[0];
   }
 
   async createDetectionLog(log: InsertDetectionLog): Promise<DetectionLog> {
