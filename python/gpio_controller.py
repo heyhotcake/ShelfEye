@@ -70,8 +70,8 @@ class LEDStripController:
             return False
     
     def turn_on(self):
-        """Turn on all LEDs (bright white for workshop lighting)"""
-        return self.set_all((255, 255, 255))
+        """Turn on all LEDs (warm white for workshop lighting)"""
+        return self.set_all((255, 210, 140))
     
     def turn_off(self):
         """Turn off all LEDs"""
