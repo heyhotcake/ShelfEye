@@ -10,6 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **Alert LED Visual Notification System (Oct 2025)**: Implemented flashing red LED on GPIO 17 for visual error notifications. LED automatically flashes when alerts are triggered (tool missing, QR failures, camera errors, network issues). Features include: Python alert_led.py script with fast/slow/pulse patterns, TypeScript service with process lifecycle management, API endpoints for manual control, scheduler integration for automatic triggering, and UI controls in configuration page. Includes robust error handling, proper GPIO contention prevention, and startup confirmation validation. Production-ready implementation verified by architect review.
 - **Auto-Start & Auto-Update System (Oct 2025)**: Created systemd service for automatic startup and GitHub update checking. On boot, the Pi checks for updates, pulls if available, installs dependencies if needed, and starts the app. Includes `pi-startup.sh` (main script), `shelfeye.service` (systemd config), `install-autostart.sh` (one-time setup), and comprehensive documentation (`AUTO-START-GUIDE.md`). Provides automatic recovery from crashes and centralized logging.
 - **GPIO LED Light Strip Integration (Oct 2025)**: Implemented automatic lighting control for consistent image capture quality. WS2812B addressable LED light strip (27 LEDs) on GPIO 18 (Physical Pin 12) automatically turns on before captures and off after. Features Python GPIO controller script with rpi_ws281x library support, manual control API endpoint (`POST /api/gpio/light`), scheduler integration, and frontend control UI in configuration page. Gracefully handles non-Pi environments with warning messages instead of errors.
 - **Raspberry Pi Deployment Package (Oct 2025)**: Created comprehensive deployment automation for Raspberry Pi 4 production deployment. Includes automated deployment script (`deploy-to-pi.sh`), systemd service configuration, camera testing utilities, quick-start management tools, and complete documentation (`PI-DEPLOYMENT.md`, `RASPBERRY-PI-SETUP.md`). Deployment script handles Node.js 20 installation, Python dependencies (OpenCV, pyzbar), environment setup, camera validation, and database schema sync.
@@ -72,6 +73,9 @@ Preferred communication style: Simple, everyday language.
 - `/api/workers` - Worker CRUD operations with uniqueness validation
 - `/api/workers/:id/generate-qr` - Generate HMAC-signed worker badge QR
 - `/api/gpio/light` - Manual GPIO light strip control (on/off)
+- `/api/alert-led/flash` - Start flashing alert LED (continuous)
+- `/api/alert-led/stop` - Stop flashing alert LED
+- `/api/alert-led/test` - Test alert LED (5 second flash)
 
 **Python Integration:**
 - OpenCV-based computer vision modules executed as child processes
