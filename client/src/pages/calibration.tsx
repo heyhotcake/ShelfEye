@@ -107,6 +107,7 @@ export default function Calibration() {
 
   // Reset calibration when camera changes
   useEffect(() => {
+    console.log('[Calibration] Camera change effect running, activeCamera:', activeCamera?.id);
     setCalibrationResult(null);
     setCalibrationStep(0);
     setStep1Result(null);
@@ -115,8 +116,10 @@ export default function Calibration() {
     
     // Auto-select template if only one exists for this camera
     if (activeCamera && relevantDesigns.length === 1) {
+      console.log('[Calibration] Auto-selecting template:', relevantDesigns[0].timestamp);
       setSelectedTemplate(relevantDesigns[0].timestamp);
     } else {
+      console.log('[Calibration] Clearing template selection');
       setSelectedTemplate("");
     }
   }, [activeCamera?.id]);
@@ -176,6 +179,7 @@ export default function Calibration() {
     },
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
+      console.log('[Calibration] ArUco calibration SUCCESS, setting step to 1');
       setCalibrationResult(data);
       setCalibrationStep(1); // Move to step 1: show rectified preview
       setIsCameraLocked(false); // Clear lock state
