@@ -42,7 +42,7 @@ interface TemplateDesign {
   name: string;
   timestamp: string;
   paperSize: string;
-  cameraId: string;
+  cameraId?: string; // Optional for backward compatibility with old saved designs
   templateRectangles: any[];
   categories: any[];
 }
@@ -90,8 +90,19 @@ export default function Calibration() {
   }, []);
 
   // Filter designs that belong to the active camera
+  // Include designs without cameraId (backward compatibility for old saved designs)
   const relevantDesigns = savedTemplateDesigns.filter(design => {
-    return design.cameraId === activeCamera?.id;
+    // New designs: match by cameraId
+    if (design.cameraId) {
+      return design.cameraId === activeCamera?.id;
+    }
+    // Old designs without cameraId: check if paper size exists in camera's templates
+    if (!design.cameraId && templateRectangles && activeCamera) {
+      return templateRectangles.some((rect: any) => 
+        rect.paperSize === design.paperSize && rect.cameraId === activeCamera.id
+      );
+    }
+    return false;
   });
 
   // Clear calibration result and auto-select template when active camera changes
