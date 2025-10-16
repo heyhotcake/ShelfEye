@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,7 @@ interface CameraPreview {
 export default function Calibration() {
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [calibrationResult, setCalibrationResult] = useState<CalibrationResult | null>(null);
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
     const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
@@ -48,14 +50,45 @@ export default function Calibration() {
     },
   });
 
+  const activeCamera = cameras?.find((c: any) => c.isActive);
+
+  // Clear calibration result when active camera changes
+  useEffect(() => {
+    setCalibrationResult(null);
+  }, [activeCamera?.id]);
+
+  // Camera preview - poll every 1 second, but pause during calibration
+  const { data: preview } = useQuery<CameraPreview>({
+    queryKey: ['/api/camera-preview', activeCamera?.id],
+    enabled: !!activeCamera?.id,
+    refetchInterval: 1000,
+  });
+
+  // Rectified preview - fetch after successful calibration
+  const { data: rectifiedPreview, refetch: refetchRectified } = useQuery<CameraPreview>({
+    queryKey: ['/api/rectified-preview', activeCamera?.id],
+    queryFn: async () => {
+      if (!activeCamera?.id) throw new Error('No active camera');
+      const response = await fetch(`/api/rectified-preview/${activeCamera.id}`);
+      if (!response.ok) throw new Error('Failed to fetch rectified preview');
+      return response.json();
+    },
+    enabled: false, // Don't auto-fetch, trigger manually after calibration
+  });
+
   const calibrationMutation = useMutation({
     mutationFn: (cameraId: string) => apiRequest('POST', `/api/calibrate/${cameraId}`),
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
+      setCalibrationResult(data);
       toast({
         title: "Calibration Successful",
         description: `Markers detected: ${data.markersDetected}, Error: ${data.reprojectionError.toFixed(2)} px`,
       });
+      // Invalidate cameras query to update calibration badge
+      queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+      // Fetch rectified preview after successful calibration
+      refetchRectified();
     },
     onError: (error) => {
       toast({
@@ -64,15 +97,6 @@ export default function Calibration() {
         variant: "destructive",
       });
     },
-  });
-
-  const activeCamera = cameras?.find((c: any) => c.isActive);
-
-  // Camera preview - poll every 1 second, but pause during calibration
-  const { data: preview } = useQuery<CameraPreview>({
-    queryKey: ['/api/camera-preview', activeCamera?.id],
-    enabled: !!activeCamera?.id && !calibrationMutation.isPending,
-    refetchInterval: 1000,
   });
 
   return (
@@ -160,7 +184,9 @@ export default function Calibration() {
                         <CheckCircle className="w-5 h-5 text-green-500" />
                         <span className="text-sm text-foreground">Markers Detected</span>
                       </div>
-                      <span className="text-sm font-mono text-foreground" data-testid="text-markers-detected">4/4</span>
+                      <span className="text-sm font-mono text-foreground" data-testid="text-markers-detected">
+                        {calibrationResult ? `${calibrationResult.markersDetected}/4` : '-'}
+                      </span>
                     </CardContent>
                   </Card>
                   
@@ -170,7 +196,9 @@ export default function Calibration() {
                         <Ruler className="w-5 h-5 text-primary" />
                         <span className="text-sm text-foreground">Reprojection Error</span>
                       </div>
-                      <span className="text-sm font-mono text-foreground" data-testid="text-reprojection-error">0.74 px</span>
+                      <span className="text-sm font-mono text-foreground" data-testid="text-reprojection-error">
+                        {calibrationResult ? `${calibrationResult.reprojectionError.toFixed(2)} px` : '-'}
+                      </span>
                     </CardContent>
                   </Card>
                 </div>
@@ -263,9 +291,22 @@ export default function Calibration() {
                   <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview</h4>
                   <div className="canvas-container">
                     <div className="aspect-[4/3] bg-muted rounded overflow-hidden">
-                      <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
-                        <p className="text-sm text-muted-foreground">Rectified grid will appear here</p>
-                      </div>
+                      {rectifiedPreview?.ok && rectifiedPreview?.image ? (
+                        <img 
+                          src={rectifiedPreview.image} 
+                          alt="Rectified preview" 
+                          className="w-full h-full object-contain"
+                          data-testid="img-rectified-preview"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
+                          <p className="text-sm text-muted-foreground">
+                            {rectifiedPreview?.error 
+                              ? `Error: ${rectifiedPreview.error}` 
+                              : 'Rectified grid will appear after calibration'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

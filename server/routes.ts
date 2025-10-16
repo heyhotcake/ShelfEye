@@ -243,6 +243,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rectified preview route
+  app.get("/api/rectified-preview/:cameraId", async (req, res) => {
+    try {
+      const { cameraId } = req.params;
+      const camera = await storage.getCamera(cameraId);
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+
+      if (!camera.homographyMatrix || camera.homographyMatrix.length !== 9) {
+        return res.status(400).json({ 
+          message: "Camera not calibrated. Please calibrate the camera first." 
+        });
+      }
+
+      // Call Python rectified preview script
+      const homographyStr = camera.homographyMatrix.join(',');
+      const pythonProcess = spawn('python3', [
+        path.join(process.cwd(), 'python/rectified_preview.py'),
+        '--camera', camera.deviceIndex.toString(),
+        '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
+        '--homography', homographyStr,
+        '--output-size', '800x600'
+      ]);
+
+      let result = '';
+      let error = '';
+      let responseSent = false;
+
+      pythonProcess.on('error', (err) => {
+        if (!responseSent) {
+          responseSent = true;
+          res.status(503).json({ 
+            message: "Rectified preview not available", 
+            error: err.message 
+          });
+        }
+      });
+
+      pythonProcess.stdout.on('data', (data) => {
+        result += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      pythonProcess.on('close', (code) => {
+        if (responseSent) return;
+        
+        if (code === 0) {
+          try {
+            const previewData = JSON.parse(result);
+            res.json(previewData);
+          } catch (parseError) {
+            res.status(500).json({ message: "Failed to parse rectified preview result", error: parseError });
+          }
+        } else {
+          res.status(500).json({ message: "Rectified preview failed", error });
+        }
+      });
+
+    } catch (error) {
+      res.status(500).json({ message: "Rectified preview error", error });
+    }
+  });
+
   // Manual capture route
   app.post("/api/capture", async (req, res) => {
     try {
