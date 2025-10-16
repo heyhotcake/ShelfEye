@@ -38,6 +38,14 @@ interface ValidationResult {
   visible_qrs?: any[];
 }
 
+interface TemplateDesign {
+  name: string;
+  timestamp: string;
+  paperSize: string;
+  templateRectangles: any[];
+  categories: any[];
+}
+
 export default function Calibration() {
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
@@ -46,6 +54,7 @@ export default function Calibration() {
   const [step1Result, setStep1Result] = useState<ValidationResult | null>(null);
   const [step2Result, setStep2Result] = useState<ValidationResult | null>(null);
   const [isCameraLocked, setIsCameraLocked] = useState<boolean>(false);
+  const [savedTemplateDesigns, setSavedTemplateDesigns] = useState<TemplateDesign[]>([]);
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
     const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
@@ -66,6 +75,33 @@ export default function Calibration() {
   });
 
   const activeCamera = cameras?.find((c: any) => c.isActive);
+
+  // Load saved template designs from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('templateConfigVersions');
+    if (saved) {
+      try {
+        setSavedTemplateDesigns(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load saved template designs:', e);
+      }
+    }
+  }, []);
+
+  // Filter designs that have templates for the active camera
+  const relevantDesigns = savedTemplateDesigns.filter(design => {
+    // Check if any template rectangle from this design exists for the active camera
+    return templateRectangles?.some((rect: any) => 
+      rect.paperSize === design.paperSize && rect.cameraId === activeCamera?.id
+    );
+  });
+
+  // Auto-select template if only one relevant design exists
+  useEffect(() => {
+    if (activeCamera && relevantDesigns.length === 1 && !selectedTemplate) {
+      setSelectedTemplate(relevantDesigns[0].timestamp);
+    }
+  }, [activeCamera?.id, relevantDesigns.length]);
 
   // Clear calibration result and template selection when active camera changes
   useEffect(() => {
@@ -431,12 +467,17 @@ export default function Calibration() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No template overlay</SelectItem>
-                        {templateRectangles && templateRectangles.length > 0 && (
-                          templateRectangles.map((template: any) => (
-                            <SelectItem key={template.id} value={template.id}>
-                              {template.paperSize} - {template.categoryName || template.id.slice(0, 8)}
+                        {relevantDesigns.length > 0 && (
+                          relevantDesigns.map((design) => (
+                            <SelectItem key={design.timestamp} value={design.timestamp}>
+                              {design.paperSize} - {design.name}
                             </SelectItem>
                           ))
+                        )}
+                        {relevantDesigns.length === 0 && (
+                          <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                            No saved designs for this camera
+                          </div>
                         )}
                       </SelectContent>
                     </Select>
@@ -486,43 +527,37 @@ export default function Calibration() {
                           className="w-full"
                           onClick={() => {
                             if (activeCamera) {
-                              // Get templates for this camera
-                              const cameraTemplates = templateRectangles?.filter(
-                                (t: any) => t.cameraId === activeCamera.id
-                              );
-                              
-                              // Determine paper size from selected template
+                              // Determine paper size from selected template design
                               let paperSize = 'A4-landscape'; // default fallback
                               
-                              // Priority 1: Use selected template if provided
+                              // Priority 1: Use selected template design if provided
                               if (selectedTemplate && selectedTemplate !== 'none') {
-                                const template = templateRectangles?.find((t: any) => t.id === selectedTemplate);
-                                if (template && template.cameraId === activeCamera.id) {
-                                  paperSize = template.paperSize || 'A4-landscape';
+                                const design = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+                                if (design) {
+                                  paperSize = design.paperSize;
                                 } else {
-                                  // Template doesn't belong to this camera, show error
                                   toast({
-                                    title: "Invalid Template",
-                                    description: "The selected template doesn't belong to this camera. Please select a valid template.",
+                                    title: "Invalid Template Design",
+                                    description: "The selected template design is not found. Please select a valid design.",
                                     variant: "destructive",
                                   });
                                   return;
                                 }
                               } 
-                              // Priority 2: Check camera templates
-                              else if (cameraTemplates && cameraTemplates.length > 1) {
-                                // Multiple templates exist but none selected
+                              // Priority 2: Check if multiple designs exist
+                              else if (relevantDesigns.length > 1) {
+                                // Multiple designs exist but none selected
                                 toast({
-                                  title: "Template Required",
-                                  description: "Please select a template design before calibrating. This camera has multiple templates with different paper sizes.",
+                                  title: "Template Design Required",
+                                  description: "Please select a template design before calibrating. This camera has multiple saved designs.",
                                   variant: "destructive",
                                 });
                                 return;
-                              } else if (cameraTemplates && cameraTemplates.length === 1) {
-                                // Exactly one template, automatically use it
-                                paperSize = cameraTemplates[0].paperSize || 'A4-landscape';
+                              } else if (relevantDesigns.length === 1) {
+                                // Exactly one design, automatically use it
+                                paperSize = relevantDesigns[0].paperSize;
                               }
-                              // Priority 3: No templates - use default A4-landscape
+                              // Priority 3: No designs - use default A4-landscape
                               
                               calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize });
                             }

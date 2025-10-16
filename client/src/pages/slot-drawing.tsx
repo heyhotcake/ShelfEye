@@ -934,19 +934,33 @@ export default function SlotDrawing() {
   const saveTemplateVersion = () => {
     if (!templateVersionName.trim()) {
       toast({
-        title: "Version Name Required",
-        description: "Please enter a name for this template version",
+        title: "Design Name Required",
+        description: "Please enter a name for this template design",
         variant: "destructive",
       });
       return;
     }
 
+    // templateRectangles are already filtered for current paper size by the query
+    if (templateRectangles.length === 0) {
+      toast({
+        title: "No Templates to Save",
+        description: "Add some tool templates before saving",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get only the categories used in current templates
+    const usedCategoryIds = new Set(templateRectangles.map(t => t.categoryId));
+    const relevantCategories = toolCategories.filter((c: any) => usedCategoryIds.has(c.id));
+
     const newVersion = {
       name: templateVersionName,
       timestamp: new Date().toISOString(),
-      templateRectangles: templateRectangles,
-      categories: toolCategories,
       paperSize: paperSize,
+      templateRectangles: templateRectangles,
+      categories: relevantCategories,
     };
 
     const updated = [...savedTemplateVersions, newVersion];
@@ -954,8 +968,8 @@ export default function SlotDrawing() {
     localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
     
     toast({
-      title: "Template Version Saved",
-      description: `Template configuration saved as "${templateVersionName}"`,
+      title: "Template Design Saved",
+      description: `"${paperSize} - ${templateVersionName}" saved with ${templateRectangles.length} tools`,
     });
     
     setTemplateVersionName('');
@@ -963,6 +977,9 @@ export default function SlotDrawing() {
 
   const loadTemplateVersion = async (version: typeof savedTemplateVersions[0]) => {
     try {
+      // Set paper size first so the query fetches the right templates
+      setPaperSize(version.paperSize);
+
       // First, we need to ensure categories exist in the database
       for (const category of version.categories) {
         // Check if category exists, if not create it
@@ -980,7 +997,8 @@ export default function SlotDrawing() {
       // Refresh categories
       await queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
 
-      // Delete existing template rectangles for this paper size
+      // Delete existing template rectangles for this paper size only
+      // templateRectangles are filtered by paperSize, so we delete all current ones
       for (const rect of templateRectangles) {
         await apiRequest('DELETE', `/api/template-rectangles/${rect.id}`);
       }
@@ -997,33 +1015,31 @@ export default function SlotDrawing() {
         });
       }
 
-      // Refresh template rectangles
+      // Refresh template rectangles to show the loaded design
       await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
-
-      // Set paper size
-      setPaperSize(version.paperSize);
       setSelectedTemplateRect(null);
 
       toast({
-        title: "Template Version Loaded",
-        description: `Loaded template configuration "${version.name}"`,
+        title: "Template Design Loaded",
+        description: `Loaded "${version.paperSize} - ${version.name}" with ${version.templateRectangles.length} tools`,
       });
     } catch (error) {
       toast({
         title: "Load Failed",
-        description: "Failed to load template version",
+        description: "Failed to load template design",
         variant: "destructive",
       });
     }
   };
 
   const deleteTemplateVersion = (timestamp: string) => {
+    const versionToDelete = savedTemplateVersions.find(v => v.timestamp === timestamp);
     const updated = savedTemplateVersions.filter(v => v.timestamp !== timestamp);
     setSavedTemplateVersions(updated);
     localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
     toast({
-      title: "Template Version Deleted",
-      description: "Template configuration version removed",
+      title: "Template Design Deleted",
+      description: versionToDelete ? `"${versionToDelete.paperSize} - ${versionToDelete.name}" removed` : "Design removed",
     });
   };
 
@@ -1396,15 +1412,15 @@ export default function SlotDrawing() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Clock className="w-4 h-4" />
-                      Template Versions
+                      Template Designs
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {/* Save Template Version */}
+                      {/* Save Template Design */}
                       <div className="flex gap-2">
                         <Input
-                          placeholder="Template version name (e.g., Pen Layout v1)"
+                          placeholder="Design name (e.g., Workshop Layout)"
                           value={templateVersionName}
                           onChange={(e) => setTemplateVersionName(e.target.value)}
                           data-testid="input-template-version-name"
@@ -1415,10 +1431,10 @@ export default function SlotDrawing() {
                         </Button>
                       </div>
 
-                      {/* Saved Template Versions List */}
+                      {/* Saved Template Designs List */}
                       {savedTemplateVersions.length > 0 && (
                         <div className="border rounded-lg p-3 space-y-2">
-                          <p className="text-sm font-medium">Saved Template Versions ({savedTemplateVersions.length})</p>
+                          <p className="text-sm font-medium">Saved Designs ({savedTemplateVersions.length})</p>
                           <div className="space-y-2 max-h-40 overflow-y-auto">
                             {savedTemplateVersions.map((version) => (
                               <div
@@ -1426,9 +1442,9 @@ export default function SlotDrawing() {
                                 className="flex items-center justify-between p-2 bg-muted rounded text-sm"
                               >
                                 <div className="flex-1">
-                                  <p className="font-medium">{version.name}</p>
+                                  <p className="font-medium">{version.paperSize} - {version.name}</p>
                                   <p className="text-xs text-muted-foreground">
-                                    {new Date(version.timestamp).toLocaleString()} • {version.templateRectangles.length} templates • {version.categories.length} categories
+                                    {new Date(version.timestamp).toLocaleString()} • {version.templateRectangles.length} tools
                                   </p>
                                 </div>
                                 <div className="flex gap-1">
