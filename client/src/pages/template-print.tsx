@@ -19,6 +19,24 @@ export default function TemplatePrint() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [paperSize, setPaperSize] = useState('A4-landscape');
 
+  // Load paper size from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('templateConfigVersions');
+    if (saved) {
+      try {
+        const versions = JSON.parse(saved);
+        if (versions.current) {
+          const currentVersion = versions.versions.find((v: any) => v.id === versions.current);
+          if (currentVersion && currentVersion.paperSize) {
+            setPaperSize(currentVersion.paperSize);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load paper size from localStorage:', error);
+      }
+    }
+  }, []);
+
   // Canvas dimensions at 300 DPI for accurate printing (1mm = 11.811 pixels at 300 DPI)
   const paperDimensions: Record<string, { 
     width: number; 
