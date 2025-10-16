@@ -165,7 +165,7 @@ export default function Calibration() {
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
       setCalibrationResult(data);
-      setCalibrationStep(1); // Move to step 1: validate QRs visible
+      setCalibrationStep(1); // Move to step 1: show rectified preview
       setIsCameraLocked(false); // Clear lock state
       
       const errorText = data.reprojectionError < 0.01 
@@ -174,7 +174,7 @@ export default function Calibration() {
       
       toast({
         title: "ArUco Calibration Complete",
-        description: `Markers detected: ${data.markersDetected}, Error: ${errorText}. Starting QR validation...`,
+        description: `Markers detected: ${data.markersDetected}, Error: ${errorText}. Verify template alignment below.`,
       });
       
       // Invalidate cameras query to update calibration badge
@@ -183,13 +183,6 @@ export default function Calibration() {
       queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
       // Fetch rectified preview after successful calibration
       refetchRectified();
-      
-      // Automatically trigger Step 1: Validate QRs visible
-      if (activeCamera) {
-        setTimeout(() => {
-          validateQRsVisibleMutation.mutate(activeCamera.id);
-        }, 500); // Small delay to ensure state updates
-      }
     },
     onError: async (error: any) => {
       setIsCameraLocked(false); // Clear lock state on error
@@ -228,9 +221,9 @@ export default function Calibration() {
       setIsCameraLocked(false); // Clear lock state
       
       if (data.success) {
-        setCalibrationStep(2); // Move to step 3
+        setCalibrationStep(3); // Move to step 4 (tools covering QRs)
         toast({
-          title: "Step 2 Complete - QR Codes Visible ✓",
+          title: "Step 3 Complete - QR Codes Visible ✓",
           description: `All ${data.detected_count} slot QR codes detected successfully. Now place ALL tools in their slots, then click the validation button.`,
           duration: 8000, // Show longer to ensure user sees the instruction
         });
@@ -570,9 +563,29 @@ export default function Calibration() {
 
                     {calibrationStep === 1 && (
                       <div className="space-y-2">
+                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-3">
+                          <p className="text-xs text-muted-foreground">
+                            <strong>Step 2:</strong> Verify template alignment below in the rectified preview. Check that tool outlines match your physical layout. If alignment is correct, proceed to QR validation.
+                          </p>
+                        </div>
+                        <Button 
+                          className="w-full"
+                          onClick={() => {
+                            setCalibrationStep(2); // Move to QR validation step
+                          }}
+                          data-testid="button-proceed-qr-validation"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Proceed to QR Validation
+                        </Button>
+                      </div>
+                    )}
+
+                    {calibrationStep === 2 && (
+                      <div className="space-y-2">
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 2:</strong> Ensure all tool slots are EMPTY (QR codes should be visible). Click to validate.
+                            <strong>Step 3:</strong> Ensure all tool slots are EMPTY (QR codes should be visible). Click to validate.
                           </p>
                         </div>
                         <Button 
@@ -589,23 +602,34 @@ export default function Calibration() {
                           {validateQRsVisibleMutation.isPending ? 'Validating...' : 'Validate QR Codes Visible'}
                         </Button>
                         {step1Result && !step1Result.success && step1Result.missing_slots && (
-                          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
-                            <p className="text-xs text-red-500 font-semibold mb-1">Missing QR Codes:</p>
-                            <ul className="text-xs text-muted-foreground list-disc list-inside">
-                              {step1Result.missing_slots.map((slot: any, idx: number) => (
-                                <li key={idx}>{slot.slotId} - {slot.toolName}</li>
-                              ))}
-                            </ul>
-                          </div>
+                          <>
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
+                              <p className="text-xs text-red-500 font-semibold mb-1">Missing QR Codes ({step1Result.detected_count}/{step1Result.expected_count} detected):</p>
+                              <ul className="text-xs text-muted-foreground list-disc list-inside">
+                                {step1Result.missing_slots.map((slot: any, idx: number) => (
+                                  <li key={idx}>{slot.slotId} - {slot.toolName}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mt-2">
+                              <p className="text-xs font-semibold text-amber-600 mb-1">Troubleshooting:</p>
+                              <ul className="text-xs text-muted-foreground list-disc list-inside space-y-0.5">
+                                <li>Check rectified preview above - are template outlines aligned?</li>
+                                <li>QR codes might be too small - try larger QR codes or better camera position</li>
+                                <li>Image quality might be poor - check lighting and camera focus</li>
+                                <li>Template positions might not match physical layout</li>
+                              </ul>
+                            </div>
+                          </>
                         )}
                       </div>
                     )}
 
-                    {calibrationStep === 2 && (
+                    {calibrationStep === 3 && (
                       <div className="space-y-2">
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 3:</strong> Place ALL tools in their slots so they cover the QR codes. When ready, click the button below to verify.
+                            <strong>Step 4:</strong> Place ALL tools in their slots so they cover the QR codes. When ready, click the button below to verify.
                           </p>
                         </div>
                         {!step2Result && (
@@ -671,34 +695,41 @@ export default function Calibration() {
                   </div>
                 </div>
                 
-                {/* Rectified Preview */}
-                <div className="mt-6">
-                  <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview with Template Overlay</h4>
-                  <div className="canvas-container">
-                    <div className="aspect-[4/3] bg-muted rounded overflow-hidden">
-                      {isLoadingRectified ? (
-                        <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
-                          <p className="text-sm text-muted-foreground">Loading rectified view...</p>
-                        </div>
-                      ) : rectifiedPreview?.ok && rectifiedPreview?.image ? (
-                        <img 
-                          src={rectifiedPreview.image} 
-                          alt="Rectified preview with template overlay" 
-                          className="w-full h-full object-contain"
-                          data-testid="img-rectified-preview"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
-                          <p className="text-sm text-muted-foreground">
-                            {rectifiedError ? `Error: ${rectifiedError.message}` :
-                             rectifiedPreview?.error ? `Error: ${rectifiedPreview.error}` : 
-                             'Rectified view with slot overlay will appear after calibration'}
-                          </p>
-                        </div>
-                      )}
+                {/* Rectified Preview - Show after ArUco calibration (Step 2) */}
+                {calibrationStep >= 1 && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview with Template Overlay</h4>
+                    <div className="canvas-container">
+                      <div className="aspect-[4/3] bg-muted rounded overflow-hidden">
+                        {isLoadingRectified ? (
+                          <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
+                            <p className="text-sm text-muted-foreground">Loading rectified view...</p>
+                          </div>
+                        ) : rectifiedPreview?.ok && rectifiedPreview?.image ? (
+                          <img 
+                            src={rectifiedPreview.image} 
+                            alt="Rectified preview with template overlay" 
+                            className="w-full h-full object-contain"
+                            data-testid="img-rectified-preview"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
+                            <p className="text-sm text-muted-foreground">
+                              {rectifiedError ? `Error: ${rectifiedError.message}` :
+                               rectifiedPreview?.error ? `Error: ${rectifiedPreview.error}` : 
+                               'Loading rectified view...'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded">
+                      <p className="text-xs text-muted-foreground">
+                        ℹ️ Verify that the tool outlines (magenta rectangles) align with your physical tool layout. If they don't align, the QR codes may be in the wrong positions.
+                      </p>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
