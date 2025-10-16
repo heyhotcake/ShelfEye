@@ -48,6 +48,7 @@ export default function SlotDrawing() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Legacy slot drawing state (kept for backwards compatibility, but UI removed)
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentRegion, setCurrentRegion] = useState<SlotRegion | null>(null);
   const [regions, setRegions] = useState<SlotRegion[]>([]);
@@ -602,57 +603,7 @@ export default function SlotDrawing() {
       ctx.restore();
     });
 
-    // Draw existing regions
-    regions.forEach((region, index) => {
-      if (region.points.length > 2) {
-        ctx.beginPath();
-        ctx.moveTo(region.points[0].x, region.points[0].y);
-        region.points.forEach(point => ctx.lineTo(point.x, point.y));
-        ctx.closePath();
-        
-        // Fill and stroke
-        const isSelected = selectedRegion?.id === region.id;
-        ctx.fillStyle = isSelected 
-          ? 'rgba(59, 130, 246, 0.2)' 
-          : 'rgba(34, 197, 94, 0.2)';
-        ctx.fill();
-        ctx.strokeStyle = isSelected 
-          ? 'rgb(59, 130, 246)' 
-          : 'rgb(34, 197, 94)';
-        ctx.lineWidth = 2 / zoom;
-        ctx.stroke();
-
-        // Draw label
-        const centerX = region.points.reduce((sum, p) => sum + p.x, 0) / region.points.length;
-        const centerY = region.points.reduce((sum, p) => sum + p.y, 0) / region.points.length;
-        
-        ctx.fillStyle = 'white';
-        ctx.font = `${12 / zoom}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.fillText(region.slotId, centerX, centerY);
-      }
-    });
-
-    // Draw current region being drawn
-    if (currentRegion && currentRegion.points.length > 0) {
-      ctx.strokeStyle = 'rgb(239, 68, 68)';
-      ctx.lineWidth = 2 / zoom;
-      ctx.beginPath();
-      ctx.moveTo(currentRegion.points[0].x, currentRegion.points[0].y);
-      currentRegion.points.forEach(point => ctx.lineTo(point.x, point.y));
-      if (currentRegion.points.length > 2) {
-        ctx.closePath();
-      }
-      ctx.stroke();
-
-      // Draw points
-      currentRegion.points.forEach(point => {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 4 / zoom, 0, 2 * Math.PI);
-        ctx.fillStyle = 'rgb(239, 68, 68)';
-        ctx.fill();
-      });
-    }
+    // Slot drawing removed - slots are now auto-generated from templates during calibration
     
     // Restore context state
     ctx.restore();
@@ -1283,11 +1234,10 @@ export default function SlotDrawing() {
                   height={canvasDimensions.height}
                   className="drawing-canvas rounded bg-muted"
                   style={{ 
-                    cursor: isPanning ? 'grabbing' : isDrawing ? 'crosshair' : 'grab',
+                    cursor: isPanning ? 'grabbing' : 'grab',
                     maxWidth: '100%',
                     height: 'auto'
                   }}
-                  onClick={isDrawing ? handleCanvasClick : handleRegionClick}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
@@ -1508,72 +1458,6 @@ export default function SlotDrawing() {
                   </CardContent>
                 </Card>
 
-                {/* Slot Version Management */}
-                <Card className="mt-4">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Clock className="w-4 h-4" />
-                      Slot Configuration Versions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {/* Save Version */}
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Version name (e.g., Workshop Layout v1)"
-                          value={versionName}
-                          onChange={(e) => setVersionName(e.target.value)}
-                          data-testid="input-version-name"
-                        />
-                        <Button onClick={saveVersion} data-testid="button-save-version">
-                          <Save className="w-4 h-4 mr-2" />
-                          Save
-                        </Button>
-                      </div>
-
-                      {/* Saved Versions List */}
-                      {savedVersions.length > 0 && (
-                        <div className="border rounded-lg p-3 space-y-2">
-                          <p className="text-sm font-medium">Saved Versions ({savedVersions.length})</p>
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {savedVersions.map((version) => (
-                              <div
-                                key={version.timestamp}
-                                className="flex items-center justify-between p-2 bg-muted rounded text-sm"
-                              >
-                                <div className="flex-1">
-                                  <p className="font-medium">{version.name}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {new Date(version.timestamp).toLocaleString()} • {version.regions.length} regions
-                                  </p>
-                                </div>
-                                <div className="flex gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => loadVersion(version)}
-                                    data-testid={`button-load-version-${version.timestamp}`}
-                                  >
-                                    <Download className="w-3 h-3" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => deleteVersion(version.timestamp)}
-                                    data-testid={`button-delete-version-${version.timestamp}`}
-                                  >
-                                    <Trash className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
             </div>
           </div>
         </div>

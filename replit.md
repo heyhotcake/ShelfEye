@@ -20,7 +20,7 @@ Preferred communication style: Simple, everyday language.
 - **Simplified QR-Based Detection Logic (Oct 2025)**: Removed complex SSIM image analysis in favor of slot QR code as binary sensor. Slot QR visible = tool missing (alarm), worker QR visible = checked out, no QR visible = tool present. QR type changed from "tool" to "slot" for clarity.
 - **Gmail & Google Sheets Alert Integration (Oct 2025)**: Implemented complete multi-channel alert system using Replit's native connectors. Gmail sends formatted emails on capture/diagnostic failures. Google Sheets automatically logs all alerts, captures, and diagnostics with auto-created spreadsheet. Alert configuration UI manages email recipients and displays sheets URL.
 - **ArUco Marker Positioning (Oct 2025)**: ArUco corner markers (IDs 17-20) are now positioned at the extreme corners of the printable area (0cm from edges) across all paper sizes, maximizing usable template space since printers have natural margins anyway.
-- **Unified Template-to-Slot Workflow (Oct 2025)**: Templates can be designed before calibration. Calibration automatically creates slots from templates using homography transformation. Manual polygon drawing removed.
+- **Unified Template-to-Slot Workflow (Oct 2025)**: Templates can be designed before calibration. Calibration automatically creates slots from templates using homography transformation. Manual polygon drawing and slot configuration versions removed from UI - slots are now fully auto-generated from template rectangles.
 
 ## System Architecture
 
