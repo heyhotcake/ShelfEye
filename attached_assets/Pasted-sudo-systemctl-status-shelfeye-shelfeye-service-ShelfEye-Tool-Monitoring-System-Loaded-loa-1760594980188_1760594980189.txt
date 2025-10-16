@@ -1,0 +1,38 @@
+sudo systemctl status shelfeye
+● shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2025-10-16 15:01:00 JST; 7min ago
+ Invocation: f4369c2e8c6a4fa288e85f701755a6b1
+   Main PID: 1506 (pi-startup.sh)
+      Tasks: 53 (limit: 1579)
+        CPU: 1min 6.243s
+     CGroup: /system.slice/shelfeye.service
+             ├─1506 /bin/bash /home/naniwa/ShelfEye/pi-startup.sh
+             ├─1585 "npm run dev"
+             ├─1586 tee -a /home/naniwa/ShelfEye/logs/startup.log
+             ├─1597 sh -c "NODE_ENV=development tsx server/index.ts"
+             ├─1598 node /home/naniwa/ShelfEye/node_modules/.bin/tsx server/index.ts
+             ├─1609 /usr/bin/node --require /home/naniwa/ShelfEye/node_modules/tsx/dist/pre>
+             ├─1621 /home/naniwa/ShelfEye/node_modules/@esbuild/linux-arm64/bin/esbuild --s>
+             └─1632 /home/naniwa/ShelfEye/node_modules/vite/node_modules/@esbuild/linux-arm>
+
+Oct 16 15:02:52 NaniwaTanaCheck pi-startup.sh[1586]: 3:02:52 PM [express] GET /api/camera-p>
+Oct 16 15:02:58 NaniwaTanaCheck pi-startup.sh[1586]: 3:02:58 PM [express] GET /api/camera-p>
+Oct 16 15:03:03 NaniwaTanaCheck pi-startup.sh[1586]: 3:03:03 PM [express] GET /api/camera-p>
+Oct 16 15:03:09 NaniwaTanaCheck pi-startup.sh[1586]: 3:03:09 PM [express] GET /api/camera-p>
+Oct 16 15:03:10 NaniwaTanaCheck pi-startup.sh[1586]: [CameraSessionManager] Exclusive lock >
+Oct 16 15:03:11 NaniwaTanaCheck pi-startup.sh[1586]: [CameraSessionManager] Released exclus>
+Oct 16 15:03:11 NaniwaTanaCheck pi-startup.sh[1586]: 3:03:11 PM [express] POST /api/calibra>
+Oct 16 15:03:14 NaniwaTanaCheck pi-startup.sh[1586]: 3:03:14 PM [express] GET /api/camera-p>
+Oct 16 15:03:19 NaniwaTanaCheck pi-startup.sh[1586]: 3:03:19 PM [express] GET /api/camera-p>
+Oct 16 15:03:24 NaniwaTanaCheck pi-startup.sh[1586]: 3:03:24 PM [express] GET /api/camera-p>
+lines 1-27/27 (END)
+
+
+ ps aux | grep -E "(node|python|shelfeye)" | grep -v grep
+naniwa      1598  0.3  2.7 761508 52648 ?        Sl   15:01   0:01 node /home/naniwa/ShelfEye/node_modules/.bin/tsx server/index.ts
+naniwa      1609 10.0 16.2 18590212 306288 ?     Sl   15:01   0:45 /usr/bin/node --require /home/naniwa/ShelfEye/node_modules/tsx/dist/preflight.cjs --import file:///home/naniwa/ShelfEye/node_modules/tsx/dist/loader.mjs server/index.ts
+naniwa      1621  0.1  0.6 1236240 11796 ?       Sl   15:01   0:00 /home/naniwa/ShelfEye/node_modules/@esbuild/linux-arm64/bin/esbuild --service=0.25.9 --ping
+naniwa      1632  0.2  0.7 721436 13272 ?        Sl   15:01   0:01 /home/naniwa/ShelfEye/node_modules/vite/node_modules/@esbuild/linux-arm64/bin/esbuild --service=0.21.5 --ping
+
+
