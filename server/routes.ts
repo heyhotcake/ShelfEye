@@ -880,6 +880,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Google OAuth2 routes
+  app.get("/api/oauth/google/status", async (_req, res) => {
+    try {
+      const gmailCred = await storage.getGoogleOAuthCredential('gmail');
+      const sheetsCred = await storage.getGoogleOAuthCredential('sheets');
+      
+      res.json({
+        gmail: {
+          configured: gmailCred?.isConfigured || false,
+          hasClientCredentials: !!(gmailCred?.clientId && gmailCred?.clientSecret)
+        },
+        sheets: {
+          configured: sheetsCred?.isConfigured || false,
+          hasClientCredentials: !!(sheetsCred?.clientId && sheetsCred?.clientSecret)
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get OAuth status", error });
+    }
+  });
+
+  app.post("/api/oauth/google/setup", async (req, res) => {
+    try {
+      const { service, clientId, clientSecret } = req.body;
+      
+      if (!['gmail', 'sheets'].includes(service)) {
+        return res.status(400).json({ message: "Invalid service. Must be 'gmail' or 'sheets'" });
+      }
+      
+      if (!clientId || !clientSecret) {
+        return res.status(400).json({ message: "Client ID and Client Secret are required" });
+      }
+
+      await storage.setGoogleOAuthCredential(service, {
+        service,
+        clientId,
+        clientSecret,
+        isConfigured: false // Will be set to true after OAuth callback
+      });
+
+      res.json({ ok: true, message: `${service} OAuth credentials saved` });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to save OAuth credentials", error });
+    }
+  });
+
+  app.get("/api/oauth/google/auth-url/:service", async (req, res) => {
+    try {
+      const { service } = req.params;
+      
+      if (!['gmail', 'sheets'].includes(service)) {
+        return res.status(400).json({ message: "Invalid service" });
+      }
+
+      let authUrl: string;
+      if (service === 'gmail') {
+        const { getGmailOAuthUrl } = await import('./services/gmail-client-oauth.js');
+        authUrl = await getGmailOAuthUrl();
+      } else {
+        const { getSheetsOAuthUrl } = await import('./services/sheets-client-oauth.js');
+        authUrl = await getSheetsOAuthUrl();
+      }
+
+      res.json({ authUrl });
+    } catch (error) {
+      res.status(500).json({ 
+        message: "Failed to generate auth URL", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
+  app.get("/api/oauth/google/callback", async (req, res) => {
+    try {
+      const { code, state } = req.query;
+      
+      if (!code || typeof code !== 'string') {
+        return res.status(400).send('Missing authorization code');
+      }
+
+      const service = state as string;
+      
+      if (service === 'gmail') {
+        const { handleGmailOAuthCallback } = await import('./services/gmail-client-oauth.js');
+        await handleGmailOAuthCallback(code);
+      } else if (service === 'sheets') {
+        const { handleSheetsOAuthCallback } = await import('./services/sheets-client-oauth.js');
+        await handleSheetsOAuthCallback(code);
+      } else {
+        return res.status(400).send('Invalid state parameter');
+      }
+
+      // Redirect to settings page with success message
+      res.redirect('/?oauth=success&service=' + service);
+    } catch (error) {
+      console.error('[OAuth Callback Error]:', error);
+      res.redirect('/?oauth=error&message=' + encodeURIComponent(error instanceof Error ? error.message : 'OAuth failed'));
+    }
+  });
+
   // Alert configuration and testing routes
   app.get("/api/alerts/sheets-url", async (_req, res) => {
     try {

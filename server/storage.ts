@@ -1,4 +1,4 @@
-import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type Worker, type CaptureRun, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle, type InsertWorker, type InsertCaptureRun } from "@shared/schema";
+import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type Worker, type CaptureRun, type GoogleOAuthCredential, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle, type InsertWorker, type InsertCaptureRun, type InsertGoogleOAuthCredential } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -906,6 +906,34 @@ export class DbStorage implements IStorage {
   async createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun> {
     const result = await db.insert(schema.captureRuns).values(run).returning();
     return result[0];
+  }
+
+  // Google OAuth credential methods
+  async getGoogleOAuthCredential(service: 'gmail' | 'sheets'): Promise<GoogleOAuthCredential | undefined> {
+    const result = await db.select().from(schema.googleOAuthCredentials).where(eq(schema.googleOAuthCredentials.service, service));
+    return result[0];
+  }
+
+  async setGoogleOAuthCredential(service: 'gmail' | 'sheets', credential: Partial<InsertGoogleOAuthCredential>): Promise<GoogleOAuthCredential> {
+    const existing = await this.getGoogleOAuthCredential(service);
+    
+    if (existing) {
+      const result = await db.update(schema.googleOAuthCredentials)
+        .set({ ...credential, updatedAt: new Date() })
+        .where(eq(schema.googleOAuthCredentials.service, service))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(schema.googleOAuthCredentials)
+        .values({ service, ...credential } as any)
+        .returning();
+      return result[0];
+    }
+  }
+
+  async deleteGoogleOAuthCredential(service: 'gmail' | 'sheets'): Promise<boolean> {
+    const result = await db.delete(schema.googleOAuthCredentials).where(eq(schema.googleOAuthCredentials.service, service));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 }
 

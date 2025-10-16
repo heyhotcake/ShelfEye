@@ -128,6 +128,18 @@ export const captureRuns = pgTable("capture_runs", {
   executionTimeMs: integer("execution_time_ms"),
 });
 
+export const googleOAuthCredentials = pgTable("google_oauth_credentials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  service: text("service").notNull().unique(), // 'gmail' or 'sheets'
+  clientId: text("client_id").notNull(),
+  clientSecret: text("client_secret").notNull(),
+  refreshToken: text("refresh_token"),
+  accessToken: text("access_token"),
+  expiresAt: timestamp("expires_at"),
+  isConfigured: boolean("is_configured").notNull().default(false),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
 // Insert schemas
 export const insertCameraSchema = createInsertSchema(cameras).omit({ id: true, createdAt: true });
 export const insertSlotSchema = createInsertSchema(slots).omit({ id: true, createdAt: true });
@@ -140,6 +152,7 @@ export const insertToolCategorySchema = createInsertSchema(toolCategories).omit(
 export const insertTemplateRectangleSchema = createInsertSchema(templateRectangles).omit({ id: true, createdAt: true });
 export const insertWorkerSchema = createInsertSchema(workers).omit({ id: true, createdAt: true, qrPayload: true });
 export const insertCaptureRunSchema = createInsertSchema(captureRuns).omit({ id: true, timestamp: true });
+export const insertGoogleOAuthCredentialSchema = createInsertSchema(googleOAuthCredentials).omit({ id: true, updatedAt: true });
 
 // Types
 export type InsertCamera = z.infer<typeof insertCameraSchema>;
@@ -153,6 +166,7 @@ export type InsertToolCategory = z.infer<typeof insertToolCategorySchema>;
 export type InsertTemplateRectangle = z.infer<typeof insertTemplateRectangleSchema>;
 export type InsertWorker = z.infer<typeof insertWorkerSchema>;
 export type InsertCaptureRun = z.infer<typeof insertCaptureRunSchema>;
+export type InsertGoogleOAuthCredential = z.infer<typeof insertGoogleOAuthCredentialSchema>;
 
 export type Camera = typeof cameras.$inferSelect;
 export type Slot = typeof slots.$inferSelect;
@@ -165,3 +179,4 @@ export type ToolCategory = typeof toolCategories.$inferSelect;
 export type TemplateRectangle = typeof templateRectangles.$inferSelect;
 export type Worker = typeof workers.$inferSelect;
 export type CaptureRun = typeof captureRuns.$inferSelect;
+export type GoogleOAuthCredential = typeof googleOAuthCredentials.$inferSelect;
