@@ -49,7 +49,7 @@ export default function TemplatePrint() {
     'A3-landscape': { width: 4961, height: 3508, realWidthMm: 420, realHeightMm: 297 },
     '2xA5-landscape': { width: 4961, height: 1748, realWidthMm: 420, realHeightMm: 148 },
     '3xA5-landscape': { width: 7441, height: 1748, realWidthMm: 630, realHeightMm: 148 },
-    '6-page-3x2': { width: 7618, height: 7104, realWidthMm: 645, realHeightMm: 601.5 },
+    '6-page-3x2': { width: 10701, height: 5049, realWidthMm: 906, realHeightMm: 427.5 },
   };
 
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -265,16 +265,16 @@ export default function TemplatePrint() {
     const is6Page = paperSize === '6-page-3x2';
 
     if (is6Page) {
-      // 6-Page format: Create PDF with 6 A4 portrait pages
-      const a4WidthMm = 210;
-      const a4HeightMm = 297;
+      // 6-Page format: Create PDF with 6 A4 landscape pages
+      const a4WidthMm = 297;  // A4 landscape
+      const a4HeightMm = 210;
       const gutterMm = 7.5;
       const markerSizeMm = 50;
-      const markerInsetMm = 5;
+      const markerInsetMm = 10;  // Inside safe zone
       const safeMarginMm = 10; // 1cm safe zone
 
       const pdf = new jsPDF({
-        orientation: 'portrait',
+        orientation: 'landscape',
         unit: 'mm',
         format: 'a4',
       });

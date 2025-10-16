@@ -106,7 +106,7 @@ export default function SlotDrawing() {
     'A3-landscape': { width: 1131, height: 800, realWidthMm: 420, realHeightMm: 297 },
     '2xA5-landscape': { width: 1200, height: 424, realWidthMm: 420, realHeightMm: 148 },
     '3xA5-landscape': { width: 1800, height: 424, realWidthMm: 630, realHeightMm: 148 },
-    '6-page-3x2': { width: 1738, height: 1620, realWidthMm: 645, realHeightMm: 601.5 },
+    '6-page-3x2': { width: 2437, height: 1150, realWidthMm: 906, realHeightMm: 427.5 },
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -339,8 +339,8 @@ export default function SlotDrawing() {
     if (paperSize !== '6-page-3x2') return null;
     
     const gutterMm = 7.5;
-    const a4WidthMm = 210;
-    const a4HeightMm = 297;
+    const a4WidthMm = 297;  // A4 landscape
+    const a4HeightMm = 210;
     
     // Convert cm to mm
     const xMm = xCm * 10;
@@ -437,8 +437,8 @@ export default function SlotDrawing() {
       // 6-Page (3×2) layout with gutters
       const gutterMm = 7.5;
       const gutterPx = gutterMm * pxPerMm;
-      const a4WidthMm = 210;
-      const a4HeightMm = 297;
+      const a4WidthMm = 297;  // A4 landscape
+      const a4HeightMm = 210;
       const sheetWidth = a4WidthMm * pxPerMm;
       const sheetHeight = a4HeightMm * pxPerMm;
       const safeMarginMm = 10; // 1cm safe zone
@@ -495,7 +495,7 @@ export default function SlotDrawing() {
     // ArUco marker size (5cm = 50mm)
     const markerSizeMm = 50;
     const markerSize = markerSizeMm * pxPerMm;
-    const markerInsetMm = 5; // 5mm inset from edge for 6-page format
+    const markerInsetMm = 10; // 10mm inset from edge (inside safe zone)
     const markerInset = markerInsetMm * pxPerMm;
     
     // Position markers based on format
@@ -505,8 +505,8 @@ export default function SlotDrawing() {
       // 6-page format: markers only on corner sheets (1, 3, 4, 6)
       const gutterMm = 7.5;
       const gutterPx = gutterMm * pxPerMm;
-      const a4WidthMm = 210;
-      const a4HeightMm = 297;
+      const a4WidthMm = 297;  // A4 landscape
+      const a4HeightMm = 210;
       const sheetWidth = a4WidthMm * pxPerMm;
       const sheetHeight = a4HeightMm * pxPerMm;
       
