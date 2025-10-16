@@ -117,8 +117,11 @@ export default function Calibration() {
   });
 
   const calibrationMutation = useMutation({
-    mutationFn: ({ cameraId, paperSize }: { cameraId: string; paperSize: string }) => 
-      apiRequest('POST', `/api/calibrate/${cameraId}`, { paperSize }),
+    mutationFn: ({ cameraId, paperSize }: { cameraId: string; paperSize: string }) => {
+      // Lock camera BEFORE starting calibration to stop preview polling
+      setIsCameraLocked(true);
+      return apiRequest('POST', `/api/calibrate/${cameraId}`, { paperSize });
+    },
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
       setCalibrationResult(data);
@@ -161,7 +164,11 @@ export default function Calibration() {
   });
 
   const validateQRsVisibleMutation = useMutation({
-    mutationFn: (cameraId: string) => apiRequest('POST', `/api/calibrate/${cameraId}/validate-qrs-visible`),
+    mutationFn: (cameraId: string) => {
+      // Lock camera BEFORE starting validation to stop preview polling
+      setIsCameraLocked(true);
+      return apiRequest('POST', `/api/calibrate/${cameraId}/validate-qrs-visible`);
+    },
     onSuccess: async (response) => {
       const data: ValidationResult = await response.json();
       setStep1Result(data);
@@ -205,7 +212,11 @@ export default function Calibration() {
   });
 
   const validateQRsCoveredMutation = useMutation({
-    mutationFn: (cameraId: string) => apiRequest('POST', `/api/calibrate/${cameraId}/validate-qrs-covered`),
+    mutationFn: (cameraId: string) => {
+      // Lock camera BEFORE starting validation to stop preview polling
+      setIsCameraLocked(true);
+      return apiRequest('POST', `/api/calibrate/${cameraId}/validate-qrs-covered`);
+    },
     onSuccess: async (response) => {
       const data: ValidationResult = await response.json();
       setStep2Result(data);
