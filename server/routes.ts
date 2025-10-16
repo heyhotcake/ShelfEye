@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Acquire exclusive camera lock AFTER validation succeeds
-      // This includes a 500ms delay to ensure any preview process has released the camera
+      // This includes a 5-second delay to ensure any preview process has fully released the camera
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
 
@@ -272,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
-      // This includes a 500ms delay to ensure any preview process has released the camera
+      // This includes a 5-second delay to ensure any preview process has fully released the camera
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
       
@@ -378,7 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
-      // This includes a 500ms delay to ensure any preview process has released the camera
+      // This includes a 5-second delay to ensure any preview process has fully released the camera
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
       

@@ -46,8 +46,10 @@ class CameraSessionManager {
     // Clear any existing locks
     this.locks.delete(cameraId);
     
-    // Wait 500ms to ensure any Python preview process has fully released the camera
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait 5 seconds to ensure any Python preview process has fully released the camera
+    // Preview operations can take 4+ seconds, so we need to wait for them to complete
+    console.log(`[CameraSessionManager] Waiting for camera ${cameraId} to be released...`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
     
     this.locks.set(cameraId, {
       cameraId,
