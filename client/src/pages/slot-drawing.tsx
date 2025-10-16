@@ -334,6 +334,60 @@ export default function SlotDrawing() {
     return Math.round(cm / gridSize) * gridSize;
   };
 
+  // Helper function to get sheet boundaries for 6-page format
+  const getSheetBounds = (xCm: number, yCm: number): { minX: number; maxX: number; minY: number; maxY: number } | null => {
+    if (paperSize !== '6-page-3x2') return null;
+    
+    const gutterMm = 7.5;
+    const a4WidthMm = 210;
+    const a4HeightMm = 297;
+    
+    // Convert cm to mm
+    const xMm = xCm * 10;
+    const yMm = yCm * 10;
+    
+    // Determine which sheet (column and row)
+    const totalWidthPerSheet = a4WidthMm + gutterMm;
+    const totalHeightPerSheet = a4HeightMm + gutterMm;
+    
+    const col = Math.floor(xMm / totalWidthPerSheet);
+    const row = Math.floor(yMm / totalHeightPerSheet);
+    
+    // Clamp to valid sheet range
+    const clampedCol = Math.max(0, Math.min(2, col));
+    const clampedRow = Math.max(0, Math.min(1, row));
+    
+    // Calculate sheet boundaries in cm
+    const minXCm = (clampedCol * totalWidthPerSheet) / 10;
+    const maxXCm = (clampedCol * a4WidthMm + clampedCol * gutterMm + a4WidthMm) / 10;
+    const minYCm = (clampedRow * totalHeightPerSheet) / 10;
+    const maxYCm = (clampedRow * a4HeightMm + clampedRow * gutterMm + a4HeightMm) / 10;
+    
+    return { minX: minXCm, maxX: maxXCm, minY: minYCm, maxY: maxYCm };
+  };
+
+  // Constrain position to sheet boundaries
+  const constrainToSheet = (xCm: number, yCm: number, rectWidthCm: number, rectHeightCm: number): { x: number; y: number } => {
+    const bounds = getSheetBounds(xCm, yCm);
+    if (!bounds) return { x: xCm, y: yCm };
+    
+    // Add safe margin (1cm) to keep rectangles inside printable area
+    const safeMarginCm = 1;
+    const halfWidth = rectWidthCm / 2;
+    const halfHeight = rectHeightCm / 2;
+    
+    const constrainedX = Math.max(
+      bounds.minX + safeMarginCm + halfWidth,
+      Math.min(bounds.maxX - safeMarginCm - halfWidth, xCm)
+    );
+    const constrainedY = Math.max(
+      bounds.minY + safeMarginCm + halfHeight,
+      Math.min(bounds.maxY - safeMarginCm - halfHeight, yCm)
+    );
+    
+    return { x: constrainedX, y: constrainedY };
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -839,8 +893,13 @@ export default function SlotDrawing() {
       const newXPixels = canvasMargin + cmToPixels(rect.xCm, true) + deltaX;
       const newYPixels = canvasMargin + cmToPixels(rect.yCm, false) + deltaY;
 
-      const newXCm = snapToGrid(pixelsToCm(newXPixels - canvasMargin, true));
-      const newYCm = snapToGrid(pixelsToCm(newYPixels - canvasMargin, false));
+      let newXCm = snapToGrid(pixelsToCm(newXPixels - canvasMargin, true));
+      let newYCm = snapToGrid(pixelsToCm(newYPixels - canvasMargin, false));
+
+      // Constrain to sheet boundaries for 6-page format
+      const constrained = constrainToSheet(newXCm, newYCm, rect.widthCm, rect.heightCm);
+      newXCm = constrained.x;
+      newYCm = constrained.y;
 
       // Update local state immediately for smooth dragging
       setTemplateRectangles(prev => prev.map(r => 
