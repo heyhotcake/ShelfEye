@@ -40,8 +40,15 @@ class CameraSessionManager {
   /**
    * Acquire an exclusive lock for calibration/validation
    * This will block all preview requests until released
+   * Returns a promise that resolves after a brief delay to ensure camera is released at OS level
    */
-  acquireExclusiveLock(cameraId: string): void {
+  async acquireExclusiveLock(cameraId: string): Promise<void> {
+    // Clear any existing locks
+    this.locks.delete(cameraId);
+    
+    // Wait 500ms to ensure any Python preview process has fully released the camera
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     this.locks.set(cameraId, {
       cameraId,
       type: 'exclusive',

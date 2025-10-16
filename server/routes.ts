@@ -110,7 +110,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Acquire exclusive camera lock AFTER validation succeeds
-      cameraSessionManager.acquireExclusiveLock(cameraId);
+      // This includes a 500ms delay to ensure any preview process has released the camera
+      await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
 
       // Call Python calibration script with paper size
@@ -271,7 +272,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
-      cameraSessionManager.acquireExclusiveLock(cameraId);
+      // This includes a 500ms delay to ensure any preview process has released the camera
+      await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
       
       // Call Python validation script
@@ -376,7 +378,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
-      cameraSessionManager.acquireExclusiveLock(cameraId);
+      // This includes a 500ms delay to ensure any preview process has released the camera
+      await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
       
       // Call Python validation script
@@ -509,6 +512,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       pythonProcess.on('close', (code) => {
         if (responseSent) return;
+        
+        // Note: Preview lock is auto-expired after 5 seconds, so no explicit release needed
+        // The lock will be cleaned up automatically by the session manager
         
         if (code === 0) {
           try {
