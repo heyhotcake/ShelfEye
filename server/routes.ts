@@ -215,6 +215,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Two-step calibration validation routes
+  app.post("/api/calibrate/:cameraId/validate-qrs-visible", async (req, res) => {
+    try {
+      const { cameraId } = req.params;
+      const camera = await storage.getCamera(cameraId);
+      
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      
+      if (!camera.homographyMatrix) {
+        return res.status(400).json({ message: "Camera not calibrated. Run ArUco calibration first." });
+      }
+      
+      // Get slots for this camera
+      const slots = await storage.getSlotsByCamera(cameraId);
+      if (slots.length === 0) {
+        return res.status(400).json({ message: "No slots configured for this camera" });
+      }
+      
+      // Get HMAC secret
+      const secretConfig = await storage.getConfigByKey('QR_SECRET_KEY');
+      const secret = secretConfig?.value as string || 'default-secret-key';
+      
+      // Prepare expected slots data - use expectedQrId to match against QR payload
+      const expectedSlots = slots.map(slot => ({
+        id: slot.expectedQrId, // This matches the 'id' field in QR payload
+        slotId: slot.slotId,
+        toolName: slot.toolName
+      }));
+      
+      // Call Python validation script
+      const pythonProcess = spawn('python3', [
+        path.join(process.cwd(), 'python/validate_slot_qrs.py'),
+        '--camera', camera.deviceIndex.toString(),
+        '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
+        '--homography', JSON.stringify(camera.homographyMatrix),
+        '--slots', JSON.stringify(expectedSlots),
+        '--secret', secret,
+        '--should-detect', 'true' // Step 1: QRs should be visible
+      ]);
+      
+      let result = '';
+      let error = '';
+      let responseSent = false;
+      
+      pythonProcess.on('error', (err) => {
+        if (!responseSent) {
+          responseSent = true;
+          res.status(503).json({ message: "Validation failed", error: err.message });
+        }
+      });
+      
+      pythonProcess.stdout.on('data', (data) => {
+        result += data.toString();
+      });
+      
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (responseSent) return;
+        
+        if (code === 0) {
+          try {
+            const validationResult = JSON.parse(result);
+            res.json(validationResult);
+          } catch (parseError) {
+            res.status(500).json({ message: "Failed to parse validation result", error: parseError });
+          }
+        } else {
+          try {
+            const validationResult = JSON.parse(result);
+            res.status(400).json(validationResult);
+          } catch {
+            res.status(500).json({ message: "Validation failed", error });
+          }
+        }
+      });
+      
+    } catch (error) {
+      res.status(500).json({ message: "Validation error", error });
+    }
+  });
+  
+  app.post("/api/calibrate/:cameraId/validate-qrs-covered", async (req, res) => {
+    try {
+      const { cameraId } = req.params;
+      const camera = await storage.getCamera(cameraId);
+      
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      
+      if (!camera.homographyMatrix) {
+        return res.status(400).json({ message: "Camera not calibrated. Run ArUco calibration first." });
+      }
+      
+      // Get slots for this camera
+      const slots = await storage.getSlotsByCamera(cameraId);
+      if (slots.length === 0) {
+        return res.status(400).json({ message: "No slots configured for this camera" });
+      }
+      
+      // Get HMAC secret
+      const secretConfig = await storage.getConfigByKey('QR_SECRET_KEY');
+      const secret = secretConfig?.value as string || 'default-secret-key';
+      
+      // Prepare expected slots data - use expectedQrId to match against QR payload
+      const expectedSlots = slots.map(slot => ({
+        id: slot.expectedQrId, // This matches the 'id' field in QR payload
+        slotId: slot.slotId,
+        toolName: slot.toolName
+      }));
+      
+      // Call Python validation script
+      const pythonProcess = spawn('python3', [
+        path.join(process.cwd(), 'python/validate_slot_qrs.py'),
+        '--camera', camera.deviceIndex.toString(),
+        '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
+        '--homography', JSON.stringify(camera.homographyMatrix),
+        '--slots', JSON.stringify(expectedSlots),
+        '--secret', secret,
+        '--should-detect', 'false' // Step 2: QRs should NOT be visible
+      ]);
+      
+      let result = '';
+      let error = '';
+      let responseSent = false;
+      
+      pythonProcess.on('error', (err) => {
+        if (!responseSent) {
+          responseSent = true;
+          res.status(503).json({ message: "Validation failed", error: err.message });
+        }
+      });
+      
+      pythonProcess.stdout.on('data', (data) => {
+        result += data.toString();
+      });
+      
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (responseSent) return;
+        
+        if (code === 0) {
+          try {
+            const validationResult = JSON.parse(result);
+            res.json(validationResult);
+          } catch (parseError) {
+            res.status(500).json({ message: "Failed to parse validation result", error: parseError });
+          }
+        } else {
+          try {
+            const validationResult = JSON.parse(result);
+            res.status(400).json(validationResult);
+          } catch {
+            res.status(500).json({ message: "Validation failed", error });
+          }
+        }
+      });
+      
+    } catch (error) {
+      res.status(500).json({ message: "Validation error", error });
+    }
+  });
+
   // Camera preview route
   app.get("/api/camera-preview/:cameraId", async (req, res) => {
     try {

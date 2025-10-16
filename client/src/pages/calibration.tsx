@@ -27,10 +27,24 @@ interface CameraPreview {
   height?: number;
 }
 
+interface ValidationResult {
+  success: boolean;
+  step: string;
+  detected_count: number;
+  expected_count: number;
+  message: string;
+  valid_qrs?: any[];
+  missing_slots?: any[];
+  visible_qrs?: any[];
+}
+
 export default function Calibration() {
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [calibrationResult, setCalibrationResult] = useState<CalibrationResult | null>(null);
+  const [calibrationStep, setCalibrationStep] = useState<number>(0); // 0: ArUco, 1: QRs visible, 2: QRs covered
+  const [step1Result, setStep1Result] = useState<ValidationResult | null>(null);
+  const [step2Result, setStep2Result] = useState<ValidationResult | null>(null);
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
     const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
@@ -56,6 +70,9 @@ export default function Calibration() {
   useEffect(() => {
     setCalibrationResult(null);
     setSelectedTemplate(""); // Reset template selection for new camera
+    setCalibrationStep(0); // Reset to first step
+    setStep1Result(null);
+    setStep2Result(null);
   }, [activeCamera?.id]);
 
   // Camera preview - poll every 1 second, but pause during calibration
@@ -83,9 +100,10 @@ export default function Calibration() {
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
       setCalibrationResult(data);
+      setCalibrationStep(1); // Move to step 1: validate QRs visible
       toast({
-        title: "Calibration Successful",
-        description: `Markers detected: ${data.markersDetected}, Error: ${data.reprojectionError.toFixed(2)} px`,
+        title: "ArUco Calibration Complete",
+        description: `Markers detected: ${data.markersDetected}, Error: ${data.reprojectionError.toFixed(2)} px. Now validate slot QR codes.`,
       });
       // Invalidate cameras query to update calibration badge
       queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
@@ -108,6 +126,81 @@ export default function Calibration() {
       
       toast({
         title: "Calibration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const validateQRsVisibleMutation = useMutation({
+    mutationFn: (cameraId: string) => apiRequest('POST', `/api/calibrate/${cameraId}/validate-qrs-visible`),
+    onSuccess: async (response) => {
+      const data: ValidationResult = await response.json();
+      setStep1Result(data);
+      
+      if (data.success) {
+        setCalibrationStep(2); // Move to step 2
+        toast({
+          title: "Step 1 Complete",
+          description: `All ${data.detected_count} slot QR codes detected successfully. Now place tools in slots.`,
+        });
+      } else {
+        toast({
+          title: "QR Validation Failed",
+          description: data.message || `Only ${data.detected_count}/${data.expected_count} QR codes detected`,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: async (error: any) => {
+      let errorMessage = "QR validation failed";
+      if (error.response) {
+        try {
+          const errorData = await error.response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = error.message || errorMessage;
+        }
+      }
+      toast({
+        title: "Validation Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const validateQRsCoveredMutation = useMutation({
+    mutationFn: (cameraId: string) => apiRequest('POST', `/api/calibrate/${cameraId}/validate-qrs-covered`),
+    onSuccess: async (response) => {
+      const data: ValidationResult = await response.json();
+      setStep2Result(data);
+      
+      if (data.success) {
+        toast({
+          title: "Calibration Complete",
+          description: "All tools are properly covering QR codes. System is ready!",
+        });
+      } else {
+        toast({
+          title: "Tools Not Covering QRs",
+          description: data.message || `${data.detected_count} QR codes still visible`,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: async (error: any) => {
+      let errorMessage = "QR validation failed";
+      if (error.response) {
+        try {
+          const errorData = await error.response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = error.message || errorMessage;
+        }
+      }
+      toast({
+        title: "Validation Error",
         description: errorMessage,
         variant: "destructive",
       });
@@ -290,57 +383,163 @@ export default function Calibration() {
                     )}
                   </div>
 
-                  <Button 
-                    className="w-full"
-                    onClick={() => {
-                      if (activeCamera) {
-                        // Get templates for this camera
-                        const cameraTemplates = templateRectangles?.filter(
-                          (t: any) => t.cameraId === activeCamera.id
-                        );
-                        
-                        // Determine paper size from selected template
-                        let paperSize = 'A4-landscape'; // default fallback
-                        
-                        // Priority 1: Use selected template if provided
-                        if (selectedTemplate && selectedTemplate !== 'none') {
-                          const template = templateRectangles?.find((t: any) => t.id === selectedTemplate);
-                          if (template && template.cameraId === activeCamera.id) {
-                            paperSize = template.paperSize || 'A4-landscape';
-                          } else {
-                            // Template doesn't belong to this camera, show error
-                            toast({
-                              title: "Invalid Template",
-                              description: "The selected template doesn't belong to this camera. Please select a valid template.",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-                        } 
-                        // Priority 2: Check camera templates
-                        else if (cameraTemplates && cameraTemplates.length > 1) {
-                          // Multiple templates exist but none selected
-                          toast({
-                            title: "Template Required",
-                            description: "Please select a template design before calibrating. This camera has multiple templates with different paper sizes.",
-                            variant: "destructive",
-                          });
-                          return;
-                        } else if (cameraTemplates && cameraTemplates.length === 1) {
-                          // Exactly one template, automatically use it
-                          paperSize = cameraTemplates[0].paperSize || 'A4-landscape';
-                        }
-                        // Priority 3: No templates - use default A4-landscape
-                        
-                        calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize });
-                      }
-                    }}
-                    disabled={!activeCamera || calibrationMutation.isPending}
-                    data-testid="button-start-calibration"
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    {calibrationMutation.isPending ? 'Calibrating...' : 'Start Calibration'}
-                  </Button>
+                  {/* Step-based calibration buttons */}
+                  <div className="space-y-3">
+                    {calibrationStep === 0 && (
+                      <div className="space-y-2">
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
+                          <p className="text-xs text-muted-foreground">
+                            <strong>Step 1:</strong> Position camera to see all 4 ArUco corner markers (A/B/C/D), then run calibration.
+                          </p>
+                        </div>
+                        <Button 
+                          className="w-full"
+                          onClick={() => {
+                            if (activeCamera) {
+                              // Get templates for this camera
+                              const cameraTemplates = templateRectangles?.filter(
+                                (t: any) => t.cameraId === activeCamera.id
+                              );
+                              
+                              // Determine paper size from selected template
+                              let paperSize = 'A4-landscape'; // default fallback
+                              
+                              // Priority 1: Use selected template if provided
+                              if (selectedTemplate && selectedTemplate !== 'none') {
+                                const template = templateRectangles?.find((t: any) => t.id === selectedTemplate);
+                                if (template && template.cameraId === activeCamera.id) {
+                                  paperSize = template.paperSize || 'A4-landscape';
+                                } else {
+                                  // Template doesn't belong to this camera, show error
+                                  toast({
+                                    title: "Invalid Template",
+                                    description: "The selected template doesn't belong to this camera. Please select a valid template.",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                              } 
+                              // Priority 2: Check camera templates
+                              else if (cameraTemplates && cameraTemplates.length > 1) {
+                                // Multiple templates exist but none selected
+                                toast({
+                                  title: "Template Required",
+                                  description: "Please select a template design before calibrating. This camera has multiple templates with different paper sizes.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              } else if (cameraTemplates && cameraTemplates.length === 1) {
+                                // Exactly one template, automatically use it
+                                paperSize = cameraTemplates[0].paperSize || 'A4-landscape';
+                              }
+                              // Priority 3: No templates - use default A4-landscape
+                              
+                              calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize });
+                            }
+                          }}
+                          disabled={!activeCamera || calibrationMutation.isPending}
+                          data-testid="button-start-calibration"
+                        >
+                          <Camera className="w-4 h-4 mr-2" />
+                          {calibrationMutation.isPending ? 'Calibrating...' : 'Run ArUco Calibration'}
+                        </Button>
+                      </div>
+                    )}
+
+                    {calibrationStep === 1 && (
+                      <div className="space-y-2">
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
+                          <p className="text-xs text-muted-foreground">
+                            <strong>Step 2:</strong> Ensure all tool slots are EMPTY (QR codes should be visible). Click to validate.
+                          </p>
+                        </div>
+                        <Button 
+                          className="w-full"
+                          onClick={() => {
+                            if (activeCamera) {
+                              validateQRsVisibleMutation.mutate(activeCamera.id);
+                            }
+                          }}
+                          disabled={!activeCamera || validateQRsVisibleMutation.isPending}
+                          data-testid="button-validate-qrs-visible"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          {validateQRsVisibleMutation.isPending ? 'Validating...' : 'Validate QR Codes Visible'}
+                        </Button>
+                        {step1Result && !step1Result.success && step1Result.missing_slots && (
+                          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
+                            <p className="text-xs text-red-500 font-semibold mb-1">Missing QR Codes:</p>
+                            <ul className="text-xs text-muted-foreground list-disc list-inside">
+                              {step1Result.missing_slots.map((slot: any, idx: number) => (
+                                <li key={idx}>{slot.slotId} - {slot.toolName}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {calibrationStep === 2 && (
+                      <div className="space-y-2">
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
+                          <p className="text-xs text-muted-foreground">
+                            <strong>Step 3:</strong> Place all tools in their slots (covering the QR codes). Click to validate.
+                          </p>
+                        </div>
+                        <Button 
+                          className="w-full"
+                          onClick={() => {
+                            if (activeCamera) {
+                              validateQRsCoveredMutation.mutate(activeCamera.id);
+                            }
+                          }}
+                          disabled={!activeCamera || validateQRsCoveredMutation.isPending}
+                          data-testid="button-validate-qrs-covered"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          {validateQRsCoveredMutation.isPending ? 'Validating...' : 'Validate Tools Covering QRs'}
+                        </Button>
+                        {step2Result && !step2Result.success && step2Result.visible_qrs && (
+                          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
+                            <p className="text-xs text-red-500 font-semibold mb-1">QR Codes Still Visible:</p>
+                            <ul className="text-xs text-muted-foreground list-disc list-inside">
+                              {step2Result.visible_qrs.map((qr: any, idx: number) => (
+                                <li key={idx}>{qr.slotId} - {qr.toolName}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {step2Result && step2Result.success && (
+                          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mt-2">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                              <p className="text-xs text-green-500 font-semibold">Calibration Complete!</p>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              All tools are properly covering QR codes. System is ready for monitoring.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Reset button - show if calibration started */}
+                    {calibrationStep > 0 && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => {
+                          setCalibrationStep(0);
+                          setStep1Result(null);
+                          setStep2Result(null);
+                          setCalibrationResult(null);
+                        }}
+                        data-testid="button-reset-calibration"
+                      >
+                        Reset Calibration
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Rectified Preview */}
