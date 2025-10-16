@@ -1,0 +1,83 @@
+ sudo journalctl -b -1 -n 50 --no-pager
+Specifying boot ID or boot offset has no effect, no persistent journal was found.
+naniwa@NaniwaTanaCheck:~ $ sudo systemctl status shelfeye
+● shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; >
+     Active: active (running) since Thu 2025-10-16 15:19:21>
+ Invocation: 3f38cb02ff4449a0bd94c14ca9da6787
+   Main PID: 1923 (pi-startup.sh)
+      Tasks: 52 (limit: 1579)
+        CPU: 1min 17.257s
+     CGroup: /system.slice/shelfeye.service
+             ├─1923 /bin/bash /home/naniwa/ShelfEye/pi-star>
+             ├─2027 "npm run dev"
+             ├─2028 tee -a /home/naniwa/ShelfEye/logs/start>
+             ├─2039 sh -c "NODE_ENV=development tsx server/>
+             ├─2040 node /home/naniwa/ShelfEye/node_modules>
+             ├─2051 /usr/bin/node --require /home/naniwa/Sh>
+             ├─2063 /home/naniwa/ShelfEye/node_modules/@esb>
+             └─2074 /home/naniwa/ShelfEye/node_modules/vite>
+
+Oct 16 15:22:25 NaniwaTanaCheck pi-startup.sh[2028]: [Camer>
+Oct 16 15:22:25 NaniwaTanaCheck pi-startup.sh[2028]: 3:22:2>
+Oct 16 15:22:25 NaniwaTanaCheck pi-startup.sh[2028]: 3:22:2>
+Oct 16 15:22:30 NaniwaTanaCheck pi-startup.sh[2028]: 3:22:3>
+Oct 16 15:22:36 NaniwaTanaCheck pi-startup.sh[2028]: 3:22:3>
+Oct 16 15:24:59 NaniwaTanaCheck pi-startup.sh[2028]: 3:24:5>
+Oct 16 15:25:23 NaniwaTanaCheck pi-startup.sh[2028]: 3:25:2>
+Oct 16 15:25:28 NaniwaTanaCheck pi-startup.sh[2028]: 3:25:2>
+Oct 16 15:25:34 NaniwaTanaCheck pi-startup.sh[2028]: 3:25:3>
+Oct 16 15:25:39 NaniwaTanaCheck pi-startup.sh[2028]: 3:25:3>
+
+naniwa@NaniwaTanaCheck:~ $ dmesg | tail -50
+[    5.824692] vc4-drm gpu: bound fef00700.hdmi (ops vc4_hdmi_ops [vc4])
+[    5.828018] Loaded X.509 cert 'benh@debian.org: 577e021cb980e0e820821ba7b54b4961b8b4fadf'
+[    5.828398] Loaded X.509 cert 'romain.perier@gmail.com: 3abbc6ec146e09d1b6016ab9d6cf71dd233f0328'
+[    5.828744] Loaded X.509 cert 'sforshee: 00b28ddf47aef9cea7'
+[    5.829113] Loaded X.509 cert 'wens: 61c038651aabdcf94bd0ac7ff06c7248db18c600'
+[    5.833897] Registered IR keymap rc-cec
+[    5.837947] rc rc1: vc4-hdmi-1 as /devices/platform/soc/fef05700.hdmi/rc/rc1
+[    5.838073] input: vc4-hdmi-1 as /devices/platform/soc/fef05700.hdmi/rc/rc1/input2
+[    5.845066] input: vc4-hdmi-1 HDMI Jack as /devices/platform/soc/fef05700.hdmi/sound/card2/input3
+[    5.845440] vc4-drm gpu: bound fef05700.hdmi (ops vc4_hdmi_ops [vc4])
+[    5.846875] vc4-drm gpu: bound fe004000.txp (ops vc4_txp_ops [vc4])
+[    5.847142] vc4-drm gpu: bound fe206000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    5.847329] vc4-drm gpu: bound fe207000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    5.860156] vc4-drm gpu: bound fe20a000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    5.860381] vc4-drm gpu: bound fe216000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    5.860578] vc4-drm gpu: bound fec12000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    5.889924] [drm] Initialized vc4 0.0.0 for gpu on minor 1
+[    5.890239] vc4-drm gpu: [drm] Cannot find any crtc or sizes
+[    5.898757] vc4-drm gpu: [drm] Cannot find any crtc or sizes
+[    5.898852] vc4-drm gpu: [drm] Cannot find any crtc or sizes
+[    6.093079] usb 1-1.1: Found UVC 1.00 device USB 2.0 Camera (0c45:6366)
+[    6.114544] usbcore: registered new interface driver uvcvideo
+[    6.129220] brcmfmac: F1 signature read @0x18000000=0x15264345
+[    6.133476] brcmfmac: brcmf_fw_alloc_request: using brcm/brcmfmac43455-sdio for chip BCM4345/6
+[    6.136787] usbcore: registered new interface driver brcmfmac
+[    6.174070] Bluetooth: hci0: BCM: chip id 107
+[    6.174569] Bluetooth: hci0: BCM: features 0x2f
+[    6.175668] Bluetooth: hci0: BCM4345C0
+[    6.175692] Bluetooth: hci0: BCM4345C0 (003.001.025) build 0000
+[    6.182116] Bluetooth: hci0: BCM4345C0 'brcm/BCM4345C0.raspberrypi,4-model-b.hcd' Patch
+[    6.209836] usb 1-1.1: 3:1: cannot get freq at ep 0x84
+[    6.282538] usbcore: registered new interface driver snd-usb-audio
+[    6.405480] brcmfmac: brcmf_c_process_txcap_blob: no txcap_blob available (err=-2)
+[    6.406180] brcmfmac: brcmf_c_preinit_dcmds: Firmware: BCM4345/6 wl0: Aug 29 2023 01:47:08 version 7.45.265 (28bca26 CY) FWID 01-b677b91b
+[    6.956594] Bluetooth: hci0: BCM: features 0x2f
+[    6.957884] Bluetooth: hci0: BCM43455 37.4MHz Raspberry Pi 3+-0190
+[    6.957895] Bluetooth: hci0: BCM4345C0 (003.001.025) build 0382
+[    9.015858] Bluetooth: BNEP (Ethernet Emulation) ver 1.3
+[    9.015876] Bluetooth: BNEP filters: protocol multicast
+[    9.015889] Bluetooth: BNEP socket layer initialized
+[    9.020211] Bluetooth: MGMT ver 1.23
+[    9.042304] NET: Registered PF_ALG protocol family
+[    9.377961] Bluetooth: RFCOMM TTY layer initialized
+[    9.377988] Bluetooth: RFCOMM socket layer initialized
+[    9.378006] Bluetooth: RFCOMM ver 1.11
+[   11.597398] bcmgenet fd580000.ethernet: configuring instance for external RGMII (RX delay)
+[   11.599307] bcmgenet fd580000.ethernet eth0: Link is Down
+[   11.612938] brcmfmac: brcmf_cfg80211_set_power_mgmt: power save enabled
+[ 3180.506741] uvcvideo 1-1.1:1.1: Failed to resubmit video URB (-1).
+[ 3224.294890] uvcvideo 1-1.1:1.1: Failed to resubmit video URB (-1).
+naniwa@NaniwaTanaCheck:~ $
