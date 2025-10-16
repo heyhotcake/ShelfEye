@@ -106,6 +106,7 @@ export default function SlotDrawing() {
     'A3-landscape': { width: 1131, height: 800, realWidthMm: 420, realHeightMm: 297 },
     '2xA5-landscape': { width: 1200, height: 424, realWidthMm: 420, realHeightMm: 148 },
     '3xA5-landscape': { width: 1800, height: 424, realWidthMm: 630, realHeightMm: 148 },
+    '6-page-3x2': { width: 1738, height: 1620, realWidthMm: 645, realHeightMm: 601.5 },
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -1075,6 +1076,7 @@ export default function SlotDrawing() {
                         <SelectItem value="A3-landscape">A3 Landscape</SelectItem>
                         <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
                         <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
+                        <SelectItem value="6-page-3x2">6-Page (3×2 A4)</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">

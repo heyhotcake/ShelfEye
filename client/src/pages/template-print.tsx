@@ -31,6 +31,7 @@ export default function TemplatePrint() {
     'A3-landscape': { width: 4961, height: 3508, realWidthMm: 420, realHeightMm: 297 },
     '2xA5-landscape': { width: 4961, height: 1748, realWidthMm: 420, realHeightMm: 148 },
     '3xA5-landscape': { width: 7441, height: 1748, realWidthMm: 630, realHeightMm: 148 },
+    '6-page-3x2': { width: 7618, height: 7104, realWidthMm: 645, realHeightMm: 601.5 },
   };
 
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -400,6 +401,7 @@ export default function TemplatePrint() {
                       <SelectItem value="A3-landscape">A3 Landscape</SelectItem>
                       <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
                       <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
+                      <SelectItem value="6-page-3x2">6-Page (3×2 A4)</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
