@@ -79,8 +79,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Calibration routes
   app.post("/api/calibrate/:cameraId", async (req, res) => {
+    const { cameraId } = req.params;
+    
     try {
-      const { cameraId } = req.params;
+      // Acquire exclusive camera lock for calibration
+      cameraSessionManager.acquireExclusiveLock(cameraId);
+      
       const { paperSize } = req.body; // Expected: "6-page-3x2", "A4-landscape", etc.
       
       const camera = await storage.getCamera(cameraId);
@@ -122,6 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('error', (err) => {
         if (!responseSent) {
           responseSent = true;
+          cameraSessionManager.releaseLock(cameraId);
           res.status(503).json({ 
             message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
             error: err.message 
@@ -140,79 +145,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('close', async (code) => {
         if (responseSent) return;
         
-        if (code === 0) {
-          try {
-            const calibrationData = JSON.parse(result);
-            const homographyMatrix = calibrationData.homography_matrix;
-            
-            await storage.updateCamera(cameraId, {
-              homographyMatrix: homographyMatrix,
-              calibrationTimestamp: new Date(),
-            });
+        try {
+          if (code === 0) {
+            try {
+              const calibrationData = JSON.parse(result);
+              const homographyMatrix = calibrationData.homography_matrix;
+              
+              await storage.updateCamera(cameraId, {
+                homographyMatrix: homographyMatrix,
+                calibrationTimestamp: new Date(),
+              });
 
-            const templateRectangles = await storage.getTemplateRectanglesByCamera(cameraId);
-            const createdSlots: any[] = [];
+              const templateRectangles = await storage.getTemplateRectanglesByCamera(cameraId);
+              const createdSlots: any[] = [];
 
-            const { transformTemplateToPixels } = await import('./utils/coordinate-transform.js');
+              const { transformTemplateToPixels } = await import('./utils/coordinate-transform.js');
 
-            for (const template of templateRectangles) {
-              try {
-                const category = await storage.getToolCategory(template.categoryId);
-                if (!category) {
-                  console.warn(`Tool category ${template.categoryId} not found for template ${template.id}`);
-                  continue;
+              for (const template of templateRectangles) {
+                try {
+                  const category = await storage.getToolCategory(template.categoryId);
+                  if (!category) {
+                    console.warn(`Tool category ${template.categoryId} not found for template ${template.id}`);
+                    continue;
+                  }
+
+                  const pixelCoords = transformTemplateToPixels({
+                    xCm: template.xCm,
+                    yCm: template.yCm,
+                    widthCm: category.widthCm,
+                    heightCm: category.heightCm,
+                    rotation: template.rotation,
+                  }, homographyMatrix);
+
+                  const slot = await storage.createSlot({
+                    slotId: template.autoQrId || `${category.name}_${template.id.slice(0, 4)}`,
+                    cameraId: cameraId,
+                    toolName: category.name,
+                    expectedQrId: template.autoQrId || '',
+                    priority: 'high',
+                    regionCoords: pixelCoords,
+                    allowCheckout: true,
+                    graceWindow: '08:00-17:00',
+                  });
+
+                  await storage.updateTemplateRectangle(template.id, {
+                    slotId: slot.id,
+                  });
+
+                  createdSlots.push(slot);
+                } catch (slotError) {
+                  console.warn(`Failed to create slot for template ${template.id}:`, slotError);
                 }
-
-                const pixelCoords = transformTemplateToPixels({
-                  xCm: template.xCm,
-                  yCm: template.yCm,
-                  widthCm: category.widthCm,
-                  heightCm: category.heightCm,
-                  rotation: template.rotation,
-                }, homographyMatrix);
-
-                const slot = await storage.createSlot({
-                  slotId: template.autoQrId || `${category.name}_${template.id.slice(0, 4)}`,
-                  cameraId: cameraId,
-                  toolName: category.name,
-                  expectedQrId: template.autoQrId || '',
-                  priority: 'high',
-                  regionCoords: pixelCoords,
-                  allowCheckout: true,
-                  graceWindow: '08:00-17:00',
-                });
-
-                await storage.updateTemplateRectangle(template.id, {
-                  slotId: slot.id,
-                });
-
-                createdSlots.push(slot);
-              } catch (slotError) {
-                console.warn(`Failed to create slot for template ${template.id}:`, slotError);
               }
+
+              // Store last successful calibration configuration
+              await storage.setConfig('last_calibration_camera_id', cameraId, 'Last successfully calibrated camera ID');
+              await storage.setConfig('last_calibration_timestamp', new Date().toISOString(), 'Last successful calibration timestamp');
+              await storage.setConfig('last_calibration_paper_size_format', paperSize || 'A4-landscape', 'Last calibration paper size format (e.g., 6-page-3x2)');
+
+              res.json({
+                ok: true,
+                homographyMatrix: homographyMatrix,
+                reprojectionError: calibrationData.reprojection_error,
+                markersDetected: calibrationData.markers_detected,
+                slotsCreated: createdSlots.length,
+              });
+            } catch (parseError) {
+              res.status(500).json({ message: "Failed to parse calibration result", error: parseError });
             }
-
-            // Store last successful calibration configuration
-            await storage.setConfig('last_calibration_camera_id', cameraId, 'Last successfully calibrated camera ID');
-            await storage.setConfig('last_calibration_timestamp', new Date().toISOString(), 'Last successful calibration timestamp');
-            await storage.setConfig('last_calibration_paper_size_format', paperSize || 'A4-landscape', 'Last calibration paper size format (e.g., 6-page-3x2)');
-
-            res.json({
-              ok: true,
-              homographyMatrix: homographyMatrix,
-              reprojectionError: calibrationData.reprojection_error,
-              markersDetected: calibrationData.markers_detected,
-              slotsCreated: createdSlots.length,
-            });
-          } catch (parseError) {
-            res.status(500).json({ message: "Failed to parse calibration result", error: parseError });
+          } else {
+            res.status(500).json({ message: "Calibration failed", error });
           }
-        } else {
-          res.status(500).json({ message: "Calibration failed", error });
+        } finally {
+          // Always release lock when calibration completes
+          cameraSessionManager.releaseLock(cameraId);
         }
       });
 
     } catch (error) {
+      // Release lock on error
+      cameraSessionManager.releaseLock(cameraId);
       res.status(500).json({ message: "Calibration error", error });
     }
   });
