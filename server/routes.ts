@@ -77,6 +77,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ ok: true });
   });
 
+  // Helper function to turn off LED light safely
+  const turnOffLED = async () => {
+    try {
+      const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+      if (lightConfig) {
+        const pin = parseInt(lightConfig.value as string);
+        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'off']);
+        console.log('[LED] Light turned OFF');
+      }
+    } catch (err) {
+      console.error('[LED] Failed to turn off light:', err);
+    }
+  };
+
   // Calibration routes
   app.post("/api/calibrate/:cameraId", async (req, res) => {
     const { cameraId } = req.params;
@@ -110,9 +124,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Acquire exclusive camera lock AFTER validation succeeds
-      // This includes a 5-second delay to ensure any preview process has fully released the camera
+      // This includes a 10-second delay to ensure any preview process has fully released the camera
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
+
+      // Turn on LED light for consistent illumination during calibration
+      const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+      if (lightStripConfig) {
+        const pin = parseInt(lightStripConfig.value as string);
+        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        console.log('[Calibration] LED light turned ON for calibration');
+      }
 
       // Call Python calibration script with paper size
       const pythonProcess = spawn('python3', [
@@ -126,11 +148,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let error = '';
       let responseSent = false;
 
-      pythonProcess.on('error', (err) => {
+      pythonProcess.on('error', async (err) => {
         if (!responseSent) {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
+          await turnOffLED(); // Turn off LED on Python spawn error
           res.status(503).json({ 
             message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
             error: err.message 
@@ -226,6 +249,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             cameraSessionManager.releaseLock(cameraId);
             lockAcquired = false;
           }
+          
+          // Turn off LED light after calibration
+          turnOffLED().catch(err => console.error('[Calibration] LED turnoff error:', err));
         }
       });
 
@@ -234,6 +260,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (lockAcquired) {
         cameraSessionManager.releaseLock(cameraId);
       }
+      // Turn off LED on unexpected errors
+      await turnOffLED();
       res.status(500).json({ message: "Calibration error", error });
     }
   });
@@ -272,9 +300,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
-      // This includes a 5-second delay to ensure any preview process has fully released the camera
+      // This includes a 10-second delay to ensure any preview process has fully released the camera
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
+      
+      // Turn on LED light for consistent illumination during validation
+      const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+      if (lightConfig) {
+        const pin = parseInt(lightConfig.value as string);
+        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        console.log('[Validation] LED light turned ON');
+      }
       
       // Call Python validation script
       const pythonProcess = spawn('python3', [
@@ -291,11 +327,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let error = '';
       let responseSent = false;
       
-      pythonProcess.on('error', (err) => {
+      pythonProcess.on('error', async (err) => {
         if (!responseSent) {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
+          await turnOffLED(); // Turn off LED on Python spawn error
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });
@@ -333,6 +370,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             cameraSessionManager.releaseLock(cameraId);
             lockAcquired = false;
           }
+          
+          // Turn off LED light after validation
+          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
         }
       });
       
@@ -341,6 +381,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (lockAcquired) {
         cameraSessionManager.releaseLock(cameraId);
       }
+      // Turn off LED on unexpected errors
+      await turnOffLED();
       res.status(500).json({ message: "Validation error", error });
     }
   });
@@ -378,9 +420,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
-      // This includes a 5-second delay to ensure any preview process has fully released the camera
+      // This includes a 10-second delay to ensure any preview process has fully released the camera
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
+      
+      // Turn on LED light for consistent illumination during validation
+      const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+      if (lightConfig) {
+        const pin = parseInt(lightConfig.value as string);
+        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        console.log('[Validation] LED light turned ON');
+      }
       
       // Call Python validation script
       const pythonProcess = spawn('python3', [
@@ -397,11 +447,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let error = '';
       let responseSent = false;
       
-      pythonProcess.on('error', (err) => {
+      pythonProcess.on('error', async (err) => {
         if (!responseSent) {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
+          await turnOffLED(); // Turn off LED on Python spawn error
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });
@@ -439,6 +490,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             cameraSessionManager.releaseLock(cameraId);
             lockAcquired = false;
           }
+          
+          // Turn off LED light after validation
+          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
         }
       });
       
@@ -447,6 +501,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (lockAcquired) {
         cameraSessionManager.releaseLock(cameraId);
       }
+      // Turn off LED on unexpected errors
+      await turnOffLED();
       res.status(500).json({ message: "Validation error", error });
     }
   });
