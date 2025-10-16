@@ -618,6 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           y: t.yCm,
           width: category?.widthCm || 0,
           height: category?.heightCm || 0,
+          rotation: t.rotation || 0,
           categoryName: category?.name || 'Unknown'
         };
       });

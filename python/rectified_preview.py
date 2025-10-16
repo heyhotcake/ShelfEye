@@ -57,12 +57,26 @@ def generate_rectified_preview(
             raise Exception("Failed to capture frame from camera")
         
         # Apply perspective warp using homography
-        # The homography maps from paper coordinates (cm) to pixels
-        # We need the inverse to map from pixels to normalized paper coordinates
-        H_inv = np.linalg.inv(H)
+        # H maps from paper coordinates (cm) to camera pixels
+        # We want to create a rectified view where the paper fits the output size
         
-        # Warp the image to get a top-down rectified view
-        rectified = cv2.warpPerspective(frame, H_inv, output_size)
+        # Calculate scaling to fit paper into output
+        paper_width_cm, paper_height_cm = paper_size_cm
+        scale_x = output_size[0] / paper_width_cm
+        scale_y = output_size[1] / paper_height_cm
+        
+        # Scaling matrix: output pixels → cm
+        S_inv = np.array([
+            [1.0/scale_x, 0, 0],
+            [0, 1.0/scale_y, 0],
+            [0, 0, 1]
+        ], dtype=np.float32)
+        
+        # Combined warp: output_pixel → cm → camera_pixel
+        M = H @ S_inv
+        
+        # Warp the image: rectified[x,y] = frame[M @ [x,y]]
+        rectified = cv2.warpPerspective(frame, M, output_size)
         
         # Draw grid overlay on rectified image for visual reference
         # Draw vertical lines every 50 pixels (representing ~5cm if output is 800x600)
@@ -75,53 +89,58 @@ def generate_rectified_preview(
         
         # Draw template slot overlays if provided
         if templates:
-            # Simple approach: The rectified image is warped to show the paper area
-            # We directly scale cm coordinates to output pixels based on paper size and output size
-            paper_width_cm, paper_height_cm = paper_size_cm
-            out_width, out_height = output_size
-            
-            # Calculate direct scale: pixels per cm
-            # Assuming the warpPerspective maps the full paper area to the output
-            scale_x = out_width / paper_width_cm
-            scale_y = out_height / paper_height_cm
+            # With the new warp M = H @ S_inv, output pixels map directly:
+            # output_pixel = cm * scale (where scale = output_size / paper_size)
+            # So cm coordinates can be directly converted to pixels
             
             logger.info(f"Paper size: {paper_width_cm}×{paper_height_cm} cm")
-            logger.info(f"Output size: {out_width}×{out_height} px")
-            logger.info(f"Direct scale: {scale_x:.2f} px/cm (x), {scale_y:.2f} px/cm (y)")
+            logger.info(f"Output size: {output_size[0]}×{output_size[1]} px")
+            logger.info(f"Scale: {scale_x:.2f} px/cm (x), {scale_y:.2f} px/cm (y)")
             
             for template in templates:
-                # Template has: x, y, width, height in cm, and categoryName
+                # Template has: x, y, width, height, rotation in cm
                 x_cm = template.get('x', 0)
                 y_cm = template.get('y', 0)
                 w_cm = template.get('width', 0)
                 h_cm = template.get('height', 0)
+                rotation_deg = template.get('rotation', 0)
                 label = template.get('categoryName', '')
                 
                 if w_cm == 0 or h_cm == 0:
                     logger.warning(f"Skipping template {label} with zero dimensions")
                     continue
                 
-                # Convert cm directly to rectified pixels
-                x_px = int(x_cm * scale_x)
-                y_px = int(y_cm * scale_y)
-                w_px = int(w_cm * scale_x)
-                h_px = int(h_cm * scale_y)
+                # Define rectangle corners in cm (unrotated)
+                corners_cm = np.array([
+                    [x_cm, y_cm],                    # Top-left
+                    [x_cm + w_cm, y_cm],             # Top-right
+                    [x_cm + w_cm, y_cm + h_cm],      # Bottom-right
+                    [x_cm, y_cm + h_cm]              # Bottom-left
+                ], dtype=np.float32)
                 
-                # Define rectangle corners in pixels
-                corners_px = np.array([
-                    [x_px, y_px],              # Top-left
-                    [x_px + w_px, y_px],        # Top-right
-                    [x_px + w_px, y_px + h_px], # Bottom-right
-                    [x_px, y_px + h_px]         # Bottom-left
-                ], dtype=np.int32)
+                # Apply rotation if specified (around rectangle center)
+                if rotation_deg != 0:
+                    center_cm = np.array([x_cm + w_cm/2, y_cm + h_cm/2])
+                    angle_rad = np.deg2rad(rotation_deg)
+                    cos_a = np.cos(angle_rad)
+                    sin_a = np.sin(angle_rad)
+                    
+                    # Rotation matrix
+                    R = np.array([[cos_a, -sin_a], [sin_a, cos_a]])
+                    
+                    # Rotate corners around center
+                    corners_cm = (R @ (corners_cm - center_cm).T).T + center_cm
+                
+                # Convert cm to pixels using the same scale as the warp
+                corners_px = corners_cm * np.array([scale_x, scale_y])
                 
                 # Draw rectangle on rectified image
-                pts = corners_px.reshape((-1, 1, 2))
-                cv2.polylines(rectified, [pts], True, (255, 0, 255), 3)  # Magenta rectangle (thicker)
+                pts = corners_px.astype(np.int32).reshape((-1, 1, 2))
+                cv2.polylines(rectified, [pts], True, (255, 0, 255), 3)  # Magenta rectangle
                 
                 # Draw label at center
-                center_x = x_px + w_px // 2
-                center_y = y_px + h_px // 2
+                center_x = int(np.mean(corners_px[:, 0]))
+                center_y = int(np.mean(corners_px[:, 1]))
                 
                 # Draw background for text
                 text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
