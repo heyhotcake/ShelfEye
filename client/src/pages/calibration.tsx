@@ -112,6 +112,7 @@ export default function Calibration() {
     setStep1Result(null);
     setStep2Result(null);
     setSelectedTemplate("");
+    setIsCameraLocked(false); // Clear camera lock state
   }, [activeCamera?.id]);
   
   // Auto-select template when designs change (only if not calibrating)
@@ -702,6 +703,8 @@ export default function Calibration() {
                           setStep1Result(null);
                           setStep2Result(null);
                           setCalibrationResult(null);
+                          setIsCameraLocked(false); // Clear camera lock
+                          queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] }); // Resume preview
                         }}
                         data-testid="button-reset-calibration"
                       >
