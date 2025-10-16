@@ -80,11 +80,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Calibration routes
   app.post("/api/calibrate/:cameraId", async (req, res) => {
     const { cameraId } = req.params;
+    let lockAcquired = false;
     
     try {
-      // Acquire exclusive camera lock for calibration
-      cameraSessionManager.acquireExclusiveLock(cameraId);
-      
       const { paperSize } = req.body; // Expected: "6-page-3x2", "A4-landscape", etc.
       
       const camera = await storage.getCamera(cameraId);
@@ -111,6 +109,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Acquire exclusive camera lock AFTER validation succeeds
+      cameraSessionManager.acquireExclusiveLock(cameraId);
+      lockAcquired = true;
+
       // Call Python calibration script with paper size
       const pythonProcess = spawn('python3', [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
@@ -126,7 +128,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('error', (err) => {
         if (!responseSent) {
           responseSent = true;
-          cameraSessionManager.releaseLock(cameraId);
+          if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
+          lockAcquired = false;
           res.status(503).json({ 
             message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
             error: err.message 
@@ -217,14 +220,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             res.status(500).json({ message: "Calibration failed", error });
           }
         } finally {
-          // Always release lock when calibration completes
-          cameraSessionManager.releaseLock(cameraId);
+          // Always release lock when calibration completes (if it was acquired)
+          if (lockAcquired) {
+            cameraSessionManager.releaseLock(cameraId);
+            lockAcquired = false;
+          }
         }
       });
 
     } catch (error) {
-      // Release lock on error
-      cameraSessionManager.releaseLock(cameraId);
+      // Release lock on error (if it was acquired)
+      if (lockAcquired) {
+        cameraSessionManager.releaseLock(cameraId);
+      }
       res.status(500).json({ message: "Calibration error", error });
     }
   });
@@ -232,11 +240,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Two-step calibration validation routes
   app.post("/api/calibrate/:cameraId/validate-qrs-visible", async (req, res) => {
     const { cameraId } = req.params;
+    let lockAcquired = false;
     
     try {
-      // Acquire exclusive camera lock for validation
-      cameraSessionManager.acquireExclusiveLock(cameraId);
-      
       const camera = await storage.getCamera(cameraId);
       
       if (!camera) {
@@ -263,6 +269,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         slotId: slot.slotId,
         toolName: slot.toolName
       }));
+
+      // Acquire exclusive camera lock AFTER validation succeeds
+      cameraSessionManager.acquireExclusiveLock(cameraId);
+      lockAcquired = true;
       
       // Call Python validation script
       const pythonProcess = spawn('python3', [
@@ -282,7 +292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('error', (err) => {
         if (!responseSent) {
           responseSent = true;
-          cameraSessionManager.releaseLock(cameraId);
+          if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
+          lockAcquired = false;
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });
@@ -315,25 +326,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
         } finally {
-          // Always release lock when validation completes
-          cameraSessionManager.releaseLock(cameraId);
+          // Always release lock when validation completes (if it was acquired)
+          if (lockAcquired) {
+            cameraSessionManager.releaseLock(cameraId);
+            lockAcquired = false;
+          }
         }
       });
       
     } catch (error) {
-      // Release lock on error
-      cameraSessionManager.releaseLock(cameraId);
+      // Release lock on error (if it was acquired)
+      if (lockAcquired) {
+        cameraSessionManager.releaseLock(cameraId);
+      }
       res.status(500).json({ message: "Validation error", error });
     }
   });
   
   app.post("/api/calibrate/:cameraId/validate-qrs-covered", async (req, res) => {
     const { cameraId } = req.params;
+    let lockAcquired = false;
     
     try {
-      // Acquire exclusive camera lock for validation
-      cameraSessionManager.acquireExclusiveLock(cameraId);
-      
       const camera = await storage.getCamera(cameraId);
       
       if (!camera) {
@@ -360,6 +374,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         slotId: slot.slotId,
         toolName: slot.toolName
       }));
+
+      // Acquire exclusive camera lock AFTER validation succeeds
+      cameraSessionManager.acquireExclusiveLock(cameraId);
+      lockAcquired = true;
       
       // Call Python validation script
       const pythonProcess = spawn('python3', [
@@ -379,7 +397,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('error', (err) => {
         if (!responseSent) {
           responseSent = true;
-          cameraSessionManager.releaseLock(cameraId);
+          if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
+          lockAcquired = false;
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });
@@ -412,14 +431,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
         } finally {
-          // Always release lock when validation completes
-          cameraSessionManager.releaseLock(cameraId);
+          // Always release lock when validation completes (if it was acquired)
+          if (lockAcquired) {
+            cameraSessionManager.releaseLock(cameraId);
+            lockAcquired = false;
+          }
         }
       });
       
     } catch (error) {
-      // Release lock on error
-      cameraSessionManager.releaseLock(cameraId);
+      // Release lock on error (if it was acquired)
+      if (lockAcquired) {
+        cameraSessionManager.releaseLock(cameraId);
+      }
       res.status(500).json({ message: "Validation error", error });
     }
   });
