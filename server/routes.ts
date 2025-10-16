@@ -5,6 +5,7 @@ import { CaptureScheduler } from "./scheduler";
 import { sendTestAlert } from "./services/email-alerts";
 import { getAlertLEDController } from "./services/alert-led";
 import { startupCalibrationService } from "./services/startup-calibration";
+import { cameraSessionManager } from "./camera-session-manager";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
@@ -394,6 +395,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
         return res.status(404).json({ message: "Camera not found" });
+      }
+
+      // Check if camera is exclusively locked
+      const lockStatus = cameraSessionManager.getLockStatus(cameraId);
+      if (lockStatus.locked && lockStatus.type === 'exclusive') {
+        return res.status(423).json({ 
+          ok: false,
+          message: "Camera is busy", 
+          reason: lockStatus.reason || 'camera_locked'
+        });
+      }
+
+      // Acquire preview lock
+      const lockAcquired = cameraSessionManager.acquirePreviewLock(cameraId);
+      if (!lockAcquired) {
+        return res.status(423).json({ 
+          ok: false,
+          message: "Camera is busy", 
+          reason: 'calibration_in_progress'
+        });
       }
 
       // Call Python preview script
