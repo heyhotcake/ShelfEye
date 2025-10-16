@@ -188,22 +188,12 @@ export default function Calibration() {
       setIsCameraLocked(false); // Clear lock state
       
       if (data.success) {
-        setCalibrationStep(2); // Move to step 2
+        setCalibrationStep(2); // Move to step 3
         toast({
-          title: "Step 1 Complete - QR Codes Visible ✓",
-          description: `All ${data.detected_count} slot QR codes detected successfully. Please place all tools in their slots now.`,
+          title: "Step 2 Complete - QR Codes Visible ✓",
+          description: `All ${data.detected_count} slot QR codes detected successfully. Now place ALL tools in their slots, then click the validation button.`,
+          duration: 8000, // Show longer to ensure user sees the instruction
         });
-        
-        // Automatically trigger Step 2: Validate QRs covered after a delay
-        if (activeCamera) {
-          setTimeout(() => {
-            toast({
-              title: "Starting Step 2 - Validating Tool Placement",
-              description: "Verifying that all tools are covering their QR codes...",
-            });
-            validateQRsCoveredMutation.mutate(activeCamera.id);
-          }, 10000); // 10 second delay to allow user to place tools
-        }
       } else {
         toast({
           title: "QR Validation Failed",
@@ -390,9 +380,16 @@ export default function Calibration() {
                         <Ruler className="w-5 h-5 text-primary" />
                         <span className="text-sm text-foreground">Reprojection Error</span>
                       </div>
-                      <span className="text-sm font-mono text-foreground" data-testid="text-reprojection-error">
-                        {calibrationResult ? `${calibrationResult.reprojectionError.toFixed(2)} px` : '-'}
-                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-sm font-mono text-foreground" data-testid="text-reprojection-error">
+                          {calibrationResult ? `${calibrationResult.reprojectionError.toFixed(2)} px` : '-'}
+                        </span>
+                        {calibrationResult && calibrationResult.reprojectionError < 0.01 && (
+                          <span className="text-xs text-muted-foreground">
+                            (perfect fit with 4 points)
+                          </span>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -569,9 +566,16 @@ export default function Calibration() {
                       <div className="space-y-2">
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 3:</strong> Place all tools in their slots (covering the QR codes). Click to validate.
+                            <strong>Step 3:</strong> Place ALL tools in their slots so they cover the QR codes. When ready, click the button below to verify.
                           </p>
                         </div>
+                        {!step2Result && (
+                          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 mb-2">
+                            <p className="text-xs text-amber-600">
+                              ⏳ Awaiting verification - Place tools then click button
+                            </p>
+                          </div>
+                        )}
                         <Button 
                           className="w-full"
                           onClick={() => {
@@ -583,7 +587,7 @@ export default function Calibration() {
                           data-testid="button-validate-qrs-covered"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          {validateQRsCoveredMutation.isPending ? 'Validating...' : 'Validate Tools Covering QRs'}
+                          {validateQRsCoveredMutation.isPending ? 'Validating...' : 'Verify Tools Are Covering QR Codes'}
                         </Button>
                         {step2Result && !step2Result.success && step2Result.visible_qrs && (
                           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
