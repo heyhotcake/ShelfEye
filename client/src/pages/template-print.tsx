@@ -241,107 +241,238 @@ export default function TemplatePrint() {
   const handleDownload = () => {
     if (!arucoMarkers || !qrCodes) return;
 
-    // Create PDF with exact physical dimensions in mm
-    const { realWidthMm, realHeightMm } = canvasDimensions;
-    const pdf = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: [realWidthMm, realHeightMm],
-    });
-
     // Helper to convert cm to mm
     const cmToMm = (cm: number) => cm * 10;
 
-    // Draw ArUco corner markers (5cm × 5cm at 0cm from edges)
-    const markerSizeMm = 50; // 5cm
-    const cornerPositions = [
-      { x: 0, y: 0 }, // Top-left (ID 17)
-      { x: realWidthMm - markerSizeMm, y: 0 }, // Top-right (ID 18)
-      { x: realWidthMm - markerSizeMm, y: realHeightMm - markerSizeMm }, // Bottom-right (ID 19)
-      { x: 0, y: realHeightMm - markerSizeMm }, // Bottom-left (ID 20)
-    ];
+    const is6Page = paperSize === '6-page-3x2';
 
-    arucoMarkers.markers.forEach((marker: any, index: number) => {
-      const pos = cornerPositions[index];
-      if (marker.image) {
-        pdf.addImage(marker.image, 'PNG', pos.x, pos.y, markerSizeMm, markerSizeMm);
-      }
-    });
+    if (is6Page) {
+      // 6-Page format: Create PDF with 6 A4 portrait pages
+      const a4WidthMm = 210;
+      const a4HeightMm = 297;
+      const gutterMm = 7.5;
+      const markerSizeMm = 50;
+      const markerInsetMm = 5;
+      const safeMarginMm = 10; // 1cm safe zone
 
-    // Draw template rectangles and QR codes
-    templatesWithCategories.forEach((rect) => {
-      const xMm = cmToMm(rect.xCm);
-      const yMm = cmToMm(rect.yCm);
-      const widthMm = cmToMm(rect.category.widthCm);
-      const heightMm = cmToMm(rect.category.heightCm);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
 
-      const centerX = xMm;
-      const centerY = yMm;
+      // Helper to determine which sheet a rectangle belongs to
+      const getSheetForRect = (xMm: number, yMm: number): number => {
+        const col = Math.floor(xMm / (a4WidthMm + gutterMm));
+        const row = Math.floor(yMm / (a4HeightMm + gutterMm));
+        return row * 3 + col + 1; // Sheet number 1-6
+      };
 
-      // Save state and apply rotation
-      pdf.saveGraphicsState();
-      
-      // Draw rectangle outline (black, 0.5mm line width)
-      pdf.setDrawColor(0, 0, 0);
-      pdf.setLineWidth(0.5);
-      
-      if (rect.rotation !== 0) {
-        // For rotated rectangles, we need to transform
-        const angleRad = (rect.rotation * Math.PI) / 180;
-        
-        // Calculate corners relative to center
-        const halfW = widthMm / 2;
-        const halfH = heightMm / 2;
-        const corners = [
-          { x: -halfW, y: -halfH },
-          { x: halfW, y: -halfH },
-          { x: halfW, y: halfH },
-          { x: -halfW, y: halfH },
-        ];
-        
-        // Rotate corners and translate to position
-        const rotatedCorners = corners.map(c => ({
-          x: centerX + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
-          y: centerY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
-        }));
-        
-        // Draw polygon
-        pdf.lines(
-          rotatedCorners.map((c, i) => [
-            rotatedCorners[(i + 1) % 4].x - c.x,
-            rotatedCorners[(i + 1) % 4].y - c.y,
-          ]),
-          rotatedCorners[0].x,
-          rotatedCorners[0].y,
-          [1, 1],
-          'S'
-        );
-        
-        // Draw QR code at center (3cm × 3cm)
-        if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-          const qrSizeMm = 30; // 3cm
-          const qrX = centerX - qrSizeMm / 2;
-          const qrY = centerY - qrSizeMm / 2;
-          pdf.addImage(qrCodes[rect.autoQrId], 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
+      // Process each of the 6 sheets
+      for (let sheetNum = 1; sheetNum <= 6; sheetNum++) {
+        if (sheetNum > 1) pdf.addPage();
+
+        const row = Math.floor((sheetNum - 1) / 3);
+        const col = (sheetNum - 1) % 3;
+        const sheetOffsetX = col * (a4WidthMm + gutterMm);
+        const sheetOffsetY = row * (a4HeightMm + gutterMm);
+
+        // Draw safe zone (grey margin 1cm inset)
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(0.3);
+        pdf.rect(safeMarginMm, safeMarginMm, a4WidthMm - 2 * safeMarginMm, a4HeightMm - 2 * safeMarginMm);
+
+        // Draw sheet number
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(`Sheet ${sheetNum}`, a4WidthMm / 2, 5, { align: 'center' });
+
+        // Add ArUco markers for corner sheets
+        if ([1, 3, 4, 6].includes(sheetNum)) {
+          const markerIndex = { 1: 0, 3: 1, 4: 3, 6: 2 }[sheetNum] as number;
+          const marker = arucoMarkers.markers[markerIndex];
+          
+          let markerX = 0;
+          let markerY = 0;
+
+          if (sheetNum === 1) { // Top-left
+            markerX = markerInsetMm;
+            markerY = markerInsetMm;
+          } else if (sheetNum === 3) { // Top-right
+            markerX = a4WidthMm - markerSizeMm - markerInsetMm;
+            markerY = markerInsetMm;
+          } else if (sheetNum === 4) { // Bottom-left
+            markerX = markerInsetMm;
+            markerY = a4HeightMm - markerSizeMm - markerInsetMm;
+          } else if (sheetNum === 6) { // Bottom-right
+            markerX = a4WidthMm - markerSizeMm - markerInsetMm;
+            markerY = a4HeightMm - markerSizeMm - markerInsetMm;
+          }
+
+          if (marker && marker.image) {
+            pdf.addImage(marker.image, 'PNG', markerX, markerY, markerSizeMm, markerSizeMm);
+          }
         }
-      } else {
-        // Non-rotated rectangle (simpler)
-        pdf.rect(centerX - widthMm / 2, centerY - heightMm / 2, widthMm, heightMm);
-        
-        // Draw QR code centered
-        if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-          const qrSizeMm = 30; // 3cm
-          const qrX = centerX - qrSizeMm / 2;
-          const qrY = centerY - qrSizeMm / 2;
-          pdf.addImage(qrCodes[rect.autoQrId], 'PNG', qrX, qrY, qrSizeMm, qrSizeMm);
+
+        // Draw template rectangles that belong to this sheet
+        templatesWithCategories.forEach((rect) => {
+          const xMm = cmToMm(rect.xCm);
+          const yMm = cmToMm(rect.yCm);
+          const rectSheet = getSheetForRect(xMm, yMm);
+
+          if (rectSheet !== sheetNum) return; // Skip if not on this sheet
+
+          const widthMm = cmToMm(rect.category.widthCm);
+          const heightMm = cmToMm(rect.category.heightCm);
+
+          // Adjust coordinates relative to sheet
+          const localX = xMm - sheetOffsetX;
+          const localY = yMm - sheetOffsetY;
+
+          pdf.saveGraphicsState();
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.5);
+
+          if (rect.rotation !== 0) {
+            const angleRad = (rect.rotation * Math.PI) / 180;
+            const halfW = widthMm / 2;
+            const halfH = heightMm / 2;
+            const corners = [
+              { x: -halfW, y: -halfH },
+              { x: halfW, y: -halfH },
+              { x: halfW, y: halfH },
+              { x: -halfW, y: halfH },
+            ];
+
+            const rotatedCorners = corners.map(c => ({
+              x: localX + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
+              y: localY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
+            }));
+
+            pdf.lines(
+              rotatedCorners.map((c, i) => [
+                rotatedCorners[(i + 1) % 4].x - c.x,
+                rotatedCorners[(i + 1) % 4].y - c.y,
+              ]),
+              rotatedCorners[0].x,
+              rotatedCorners[0].y,
+              [1, 1],
+              'S'
+            );
+
+            if (rect.autoQrId && qrCodes[rect.autoQrId]) {
+              const qrSizeMm = 30;
+              pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
+            }
+          } else {
+            pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
+
+            if (rect.autoQrId && qrCodes[rect.autoQrId]) {
+              const qrSizeMm = 30;
+              pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
+            }
+          }
+
+          pdf.restoreGraphicsState();
+        });
+
+        // Add assembly instructions on last page
+        if (sheetNum === 6) {
+          pdf.setFontSize(8);
+          pdf.setTextColor(0, 0, 0);
+          const instructions = [
+            'Assembly Instructions:',
+            '1. Print all 6 pages on A4 paper',
+            '2. Tape sheets edge-to-edge in 3×2 grid (no gaps/overlaps)',
+            '3. Sheets 1,2,3 on top row; sheets 4,5,6 on bottom',
+            '4. White borders create 7.5mm gutters (expected)',
+          ];
+          instructions.forEach((line, i) => {
+            pdf.text(line, 10, a4HeightMm - 30 + i * 4);
+          });
         }
       }
-      
-      pdf.restoreGraphicsState();
-    });
 
-    // Save PDF
-    pdf.save(`template-${paperSize}-${new Date().toISOString().slice(0, 10)}.pdf`);
+      pdf.save(`template-6page-3x2-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } else {
+      // Single-page format (original logic)
+      const { realWidthMm, realHeightMm } = canvasDimensions;
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: [realWidthMm, realHeightMm],
+      });
+
+      const markerSizeMm = 50;
+      const cornerPositions = [
+        { x: 0, y: 0 },
+        { x: realWidthMm - markerSizeMm, y: 0 },
+        { x: realWidthMm - markerSizeMm, y: realHeightMm - markerSizeMm },
+        { x: 0, y: realHeightMm - markerSizeMm },
+      ];
+
+      arucoMarkers.markers.forEach((marker: any, index: number) => {
+        const pos = cornerPositions[index];
+        if (marker.image) {
+          pdf.addImage(marker.image, 'PNG', pos.x, pos.y, markerSizeMm, markerSizeMm);
+        }
+      });
+
+      templatesWithCategories.forEach((rect) => {
+        const xMm = cmToMm(rect.xCm);
+        const yMm = cmToMm(rect.yCm);
+        const widthMm = cmToMm(rect.category.widthCm);
+        const heightMm = cmToMm(rect.category.heightCm);
+
+        pdf.saveGraphicsState();
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.5);
+
+        if (rect.rotation !== 0) {
+          const angleRad = (rect.rotation * Math.PI) / 180;
+          const halfW = widthMm / 2;
+          const halfH = heightMm / 2;
+          const corners = [
+            { x: -halfW, y: -halfH },
+            { x: halfW, y: -halfH },
+            { x: halfW, y: halfH },
+            { x: -halfW, y: halfH },
+          ];
+
+          const rotatedCorners = corners.map(c => ({
+            x: xMm + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
+            y: yMm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
+          }));
+
+          pdf.lines(
+            rotatedCorners.map((c, i) => [
+              rotatedCorners[(i + 1) % 4].x - c.x,
+              rotatedCorners[(i + 1) % 4].y - c.y,
+            ]),
+            rotatedCorners[0].x,
+            rotatedCorners[0].y,
+            [1, 1],
+            'S'
+          );
+
+          if (rect.autoQrId && qrCodes[rect.autoQrId]) {
+            const qrSizeMm = 30;
+            pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
+          }
+        } else {
+          pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
+
+          if (rect.autoQrId && qrCodes[rect.autoQrId]) {
+            const qrSizeMm = 30;
+            pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
+          }
+        }
+
+        pdf.restoreGraphicsState();
+      });
+
+      pdf.save(`template-${paperSize}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
   };
 
   return (
