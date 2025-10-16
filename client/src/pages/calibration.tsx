@@ -105,20 +105,25 @@ export default function Calibration() {
     return false;
   });
 
-  // Clear calibration result and auto-select template when active camera changes
+  // Reset calibration when camera changes
   useEffect(() => {
     setCalibrationResult(null);
     setCalibrationStep(0);
     setStep1Result(null);
     setStep2Result(null);
-    
-    // Auto-select template if only one relevant design exists
-    if (activeCamera && relevantDesigns.length === 1) {
-      setSelectedTemplate(relevantDesigns[0].timestamp);
-    } else {
-      setSelectedTemplate(""); // Reset template selection
+    setSelectedTemplate("");
+  }, [activeCamera?.id]);
+  
+  // Auto-select template when designs change (only if not calibrating)
+  useEffect(() => {
+    if (calibrationStep === 0 && activeCamera) {
+      if (relevantDesigns.length === 1) {
+        setSelectedTemplate(relevantDesigns[0].timestamp);
+      } else if (relevantDesigns.length === 0) {
+        setSelectedTemplate("");
+      }
     }
-  }, [activeCamera?.id, relevantDesigns.length, relevantDesigns[0]?.timestamp]);
+  }, [relevantDesigns.length, relevantDesigns[0]?.timestamp, calibrationStep, activeCamera]);
 
   // Camera preview - poll every 1 second, but pause when camera is locked
   const { data: preview } = useQuery<CameraPreview>({
