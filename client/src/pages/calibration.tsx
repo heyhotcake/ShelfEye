@@ -111,20 +111,15 @@ export default function Calibration() {
     setCalibrationStep(0);
     setStep1Result(null);
     setStep2Result(null);
-    setSelectedTemplate("");
-    setIsCameraLocked(false); // Clear camera lock state
-  }, [activeCamera?.id]);
-  
-  // Auto-select template when designs change (only if not calibrating)
-  useEffect(() => {
-    if (calibrationStep === 0 && activeCamera) {
-      if (relevantDesigns.length === 1) {
-        setSelectedTemplate(relevantDesigns[0].timestamp);
-      } else if (relevantDesigns.length === 0) {
-        setSelectedTemplate("");
-      }
+    setIsCameraLocked(false);
+    
+    // Auto-select template if only one exists for this camera
+    if (activeCamera && relevantDesigns.length === 1) {
+      setSelectedTemplate(relevantDesigns[0].timestamp);
+    } else {
+      setSelectedTemplate("");
     }
-  }, [relevantDesigns.length, relevantDesigns[0]?.timestamp, calibrationStep, activeCamera]);
+  }, [activeCamera?.id]);
 
   // Camera preview - poll every 1 second, but pause when camera is locked
   const { data: preview } = useQuery<CameraPreview>({
