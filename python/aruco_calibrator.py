@@ -139,11 +139,17 @@ class ArucoCornerCalibrator:
             projected_points = (projected_points_homogeneous[:2, :] / projected_points_homogeneous[2, :]).T
             
             # Calculate mean reprojection error (difference between detected and predicted positions)
-            reprojection_error = np.mean(np.linalg.norm(dst_points - projected_points, axis=1))
+            point_errors = np.linalg.norm(dst_points - projected_points, axis=1)
+            reprojection_error = np.mean(point_errors)
+            max_error = np.max(point_errors)
             
             logger.info(f"Homography calculated successfully (maps cm → pixels)")
             logger.info(f"Paper size: {paper_width_cm}cm × {paper_height_cm}cm")
-            logger.info(f"Reprojection error: {reprojection_error:.2f} pixels")
+            logger.info(f"Detected points: {dst_points.tolist()}")
+            logger.info(f"Projected points: {projected_points.tolist()}")
+            logger.info(f"Point-wise errors: {point_errors.tolist()}")
+            logger.info(f"Reprojection error: mean={reprojection_error:.4f} px, max={max_error:.4f} px")
+            logger.info(f"Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero")
             
             return True, homography, reprojection_error
             

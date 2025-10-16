@@ -127,16 +127,29 @@ export default function Calibration() {
       setCalibrationResult(data);
       setCalibrationStep(1); // Move to step 1: validate QRs visible
       setIsCameraLocked(false); // Clear lock state
+      
+      const errorText = data.reprojectionError < 0.01 
+        ? "~0.00 px (perfect fit with 4 points)" 
+        : `${data.reprojectionError.toFixed(2)} px`;
+      
       toast({
         title: "ArUco Calibration Complete",
-        description: `Markers detected: ${data.markersDetected}, Error: ${data.reprojectionError.toFixed(2)} px. Now validate slot QR codes.`,
+        description: `Markers detected: ${data.markersDetected}, Error: ${errorText}. Starting QR validation...`,
       });
+      
       // Invalidate cameras query to update calibration badge
       queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
       // Resume preview polling
       queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
       // Fetch rectified preview after successful calibration
       refetchRectified();
+      
+      // Automatically trigger Step 1: Validate QRs visible
+      if (activeCamera) {
+        setTimeout(() => {
+          validateQRsVisibleMutation.mutate(activeCamera.id);
+        }, 500); // Small delay to ensure state updates
+      }
     },
     onError: async (error: any) => {
       setIsCameraLocked(false); // Clear lock state on error
@@ -177,9 +190,20 @@ export default function Calibration() {
       if (data.success) {
         setCalibrationStep(2); // Move to step 2
         toast({
-          title: "Step 1 Complete",
-          description: `All ${data.detected_count} slot QR codes detected successfully. Now place tools in slots.`,
+          title: "Step 1 Complete - QR Codes Visible ✓",
+          description: `All ${data.detected_count} slot QR codes detected successfully. Please place all tools in their slots now.`,
         });
+        
+        // Automatically trigger Step 2: Validate QRs covered after a delay
+        if (activeCamera) {
+          setTimeout(() => {
+            toast({
+              title: "Starting Step 2 - Validating Tool Placement",
+              description: "Verifying that all tools are covering their QR codes...",
+            });
+            validateQRsCoveredMutation.mutate(activeCamera.id);
+          }, 10000); // 10 second delay to allow user to place tools
+        }
       } else {
         toast({
           title: "QR Validation Failed",
