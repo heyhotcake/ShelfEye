@@ -84,22 +84,25 @@ export default function Workers() {
   });
 
   const generateQRMutation = useMutation({
-    mutationFn: (workerId: string) => apiRequest('POST', `/api/workers/${workerId}/generate-qr`),
-    onSuccess: (response: any, workerId: string) => {
+    mutationFn: async (workerId: string) => {
+      const response = await apiRequest('POST', `/api/workers/${workerId}/generate-qr`);
+      return response.json();
+    },
+    onSuccess: async (data: any, workerId: string) => {
       const worker = workers?.find(w => w.id === workerId);
-      if (worker) {
-        setSelectedQR({ worker, qrData: response.qrCode });
+      if (worker && data.qrCode) {
+        setSelectedQR({ worker, qrData: data.qrCode });
         toast({
           title: "QR Code Generated",
-          description: "Worker QR badge is ready to print",
+          description: `Worker badge ready for ${worker.name} (ID: ${worker.workerCode})`,
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/workers'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to Generate QR",
-        description: error.message,
+        description: error.message || "An error occurred while generating the QR code",
         variant: "destructive",
       });
     },
@@ -114,23 +117,27 @@ export default function Workers() {
 
     const { worker, qrData } = selectedQR;
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true }); // Enable RGBA
     if (!ctx) return;
 
     canvas.width = 400;
     canvas.height = 500;
 
+    // Fill with white background
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Worker name
     ctx.fillStyle = 'black';
     ctx.font = 'bold 24px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(worker.name, 200, 40);
 
+    // Worker code
     ctx.font = '16px Arial';
     ctx.fillText(worker.workerCode, 200, 70);
 
+    // Department (optional)
     if (worker.department) {
       ctx.font = '14px Arial';
       ctx.fillStyle = '#666';
@@ -139,12 +146,15 @@ export default function Workers() {
 
     const img = new Image();
     img.onload = () => {
-      ctx.drawImage(img, 75, 120, 250, 250);
+      // Draw QR code
+      ctx.drawImage(img, 50, 120, 300, 300);
 
+      // Draw border
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 2;
       ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
 
+      // Export as RGBA PNG
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
@@ -158,9 +168,17 @@ export default function Workers() {
 
           toast({
             title: "Badge Downloaded",
-            description: `Badge for ${worker.name} saved successfully`,
+            description: `Badge for ${worker.name} saved as RGBA PNG`,
           });
         }
+      }, 'image/png'); // Explicitly specify PNG format
+    };
+
+    img.onerror = () => {
+      toast({
+        title: "Download Failed",
+        description: "Failed to load QR code image",
+        variant: "destructive",
       });
     };
 

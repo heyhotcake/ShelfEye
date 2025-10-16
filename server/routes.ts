@@ -9,6 +9,7 @@ import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
 import QRCode from "qrcode";
+import crypto from "crypto";
 import { z } from "zod";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertWorkerSchema, insertCaptureRunSchema } from "@shared/schema";
 
@@ -1210,26 +1211,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Worker not found" });
       }
 
-      // Generate QR payload
+      // Get HMAC secret key from config
+      const secretConfig = await storage.getConfigByKey('QR_SECRET_KEY');
+      const secretKey = secretConfig?.value as string || 'default-secret-key';
+
+      // Generate QR payload (unique per worker with workerCode as ID)
       const payload: any = {
         type: "worker",
-        id: worker.workerCode,
+        id: worker.workerCode, // Unique worker identifier for checkout tracking
         worker_name: worker.name,
         version: "1.0",
         ts: Math.floor(Date.now() / 1000),
         nonce: Math.random().toString(36).substring(2, 8),
       };
 
-      // Add HMAC signature
-      payload.hmac = Buffer.from(JSON.stringify(payload)).toString('base64').substring(0, 8);
+      if (worker.department) {
+        payload.department = worker.department;
+      }
 
-      // Generate QR code using Node.js library
+      // Generate proper HMAC-SHA256 signature (matching Python implementation)
+      const message = JSON.stringify(payload, Object.keys(payload).sort());
+      const hmac = crypto.createHmac('sha256', secretKey);
+      hmac.update(message);
+      payload.hmac = hmac.digest('hex');
+
+      // Generate QR code as PNG with RGBA
       const qrData = JSON.stringify(payload);
-      const qrCodeBase64 = await QRCode.toDataURL(qrData, {
+      const qrCodeBuffer = await QRCode.toBuffer(qrData, {
         errorCorrectionLevel: 'H',
         margin: 1,
-        width: 250
-      }) as string;
+        width: 300,
+        type: 'png',
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+
+      // Convert to base64
+      const qrCodeBase64 = qrCodeBuffer.toString('base64');
 
       // Save QR payload to worker
       await storage.updateWorker(worker.id, { qrPayload: payload });
@@ -1237,8 +1257,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         ok: true,
         payload,
-        qrCode: qrCodeBase64.split(',')[1],
-        dimensions: { width: 250, height: 250 }
+        qrCode: qrCodeBase64,
+        dimensions: { width: 300, height: 300 }
       });
 
     } catch (error) {
