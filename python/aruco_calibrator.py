@@ -151,13 +151,15 @@ class ArucoCornerCalibrator:
             logger.error(f"Error calculating homography: {e}")
             return False, None, float('inf')
     
-    def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int]) -> Dict:
+    def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int], 
+                             paper_size_cm: Tuple[float, float] = (29.7, 21.0)) -> Dict:
         """
         Capture frame from camera and calculate homography
         
         Args:
             camera_index: Camera device index (0, 1, 2, etc.)
             resolution: (width, height) tuple
+            paper_size_cm: (width_cm, height_cm) of the paper template
             
         Returns:
             Dictionary with calibration results
@@ -184,7 +186,7 @@ class ArucoCornerCalibrator:
             # Calculate homography if all markers found
             if num_detected == 4:
                 success, homography, error = self.calculate_homography(
-                    marker_centers, frame.shape[:2]
+                    marker_centers, frame.shape[:2], paper_size_cm
                 )
                 
                 if success and homography is not None:
@@ -227,6 +229,7 @@ def main():
     parser = argparse.ArgumentParser(description='ArUco 4-Corner Calibration')
     parser.add_argument('--camera', type=int, default=0, help='Camera device index')
     parser.add_argument('--resolution', type=str, default='1920x1080', help='Camera resolution (WxH)')
+    parser.add_argument('--paper-size', type=str, default='29.7x21.0', help='Paper size in cm (WidthxHeight)')
     
     args = parser.parse_args()
     
@@ -235,11 +238,15 @@ def main():
         width, height = map(int, args.resolution.split('x'))
         resolution = (width, height)
         
+        # Parse paper size
+        paper_width, paper_height = map(float, args.paper_size.split('x'))
+        paper_size_cm = (paper_width, paper_height)
+        
         # Initialize calibrator
         calibrator = ArucoCornerCalibrator()
         
         # Run calibration
-        result = calibrator.calibrate_from_camera(args.camera, resolution)
+        result = calibrator.calibrate_from_camera(args.camera, resolution, paper_size_cm)
         
         # Output JSON result
         print(json.dumps(result))

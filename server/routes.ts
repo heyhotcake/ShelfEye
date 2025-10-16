@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { CaptureScheduler } from "./scheduler";
 import { sendTestAlert } from "./services/email-alerts";
 import { getAlertLEDController } from "./services/alert-led";
+import { startupCalibrationService } from "./services/startup-calibration";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
@@ -17,6 +18,9 @@ let scheduler: CaptureScheduler;
 export async function registerRoutes(app: Express): Promise<Server> {
   scheduler = new CaptureScheduler(storage);
   await scheduler.initialize();
+  
+  // Run startup calibration
+  await startupCalibrationService.initialize();
   // Health check
   app.get("/api/health", (_req, res) => {
     res.json({
@@ -75,16 +79,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/calibrate/:cameraId", async (req, res) => {
     try {
       const { cameraId } = req.params;
+      const { paperSize } = req.body; // Expected: "6-page-3x2", "A4-landscape", etc.
+      
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
         return res.status(404).json({ message: "Camera not found" });
       }
 
-      // Call Python calibration script
+      // Get paper dimensions from format with validation
+      const { getPaperDimensions } = await import('./utils/paper-size.js');
+      const paperSizeFormat = paperSize || 'A4-landscape';
+      
+      let paperDims;
+      try {
+        paperDims = getPaperDimensions(paperSizeFormat);
+        if (!paperDims || paperDims.widthCm <= 0 || paperDims.heightCm <= 0) {
+          return res.status(400).json({ 
+            message: `Invalid paper size format: ${paperSizeFormat}. Must be a supported format like "A4-landscape" or "6-page-3x2"` 
+          });
+        }
+      } catch (err) {
+        return res.status(400).json({ 
+          message: `Invalid paper size format: ${paperSizeFormat}`,
+          error: err instanceof Error ? err.message : 'Unknown error'
+        });
+      }
+
+      // Call Python calibration script with paper size
       const pythonProcess = spawn('python3', [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
         '--camera', camera.deviceIndex.toString(),
-        '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`
+        '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
+        '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
       ]);
 
       let result = '';
@@ -163,6 +189,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.warn(`Failed to create slot for template ${template.id}:`, slotError);
               }
             }
+
+            // Store last successful calibration configuration
+            await storage.setConfig('last_calibration_camera_id', cameraId, 'Last successfully calibrated camera ID');
+            await storage.setConfig('last_calibration_timestamp', new Date().toISOString(), 'Last successful calibration timestamp');
+            await storage.setConfig('last_calibration_paper_size_format', paperSize || 'A4-landscape', 'Last calibration paper size format (e.g., 6-page-3x2)');
 
             res.json({
               ok: true,

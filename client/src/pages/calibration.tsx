@@ -52,9 +52,10 @@ export default function Calibration() {
 
   const activeCamera = cameras?.find((c: any) => c.isActive);
 
-  // Clear calibration result when active camera changes
+  // Clear calibration result and template selection when active camera changes
   useEffect(() => {
     setCalibrationResult(null);
+    setSelectedTemplate(""); // Reset template selection for new camera
   }, [activeCamera?.id]);
 
   // Camera preview - poll every 1 second, but pause during calibration
@@ -77,7 +78,8 @@ export default function Calibration() {
   });
 
   const calibrationMutation = useMutation({
-    mutationFn: (cameraId: string) => apiRequest('POST', `/api/calibrate/${cameraId}`),
+    mutationFn: ({ cameraId, paperSize }: { cameraId: string; paperSize: string }) => 
+      apiRequest('POST', `/api/calibrate/${cameraId}`, { paperSize }),
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
       setCalibrationResult(data);
@@ -90,10 +92,23 @@ export default function Calibration() {
       // Fetch rectified preview after successful calibration
       refetchRectified();
     },
-    onError: (error) => {
+    onError: async (error: any) => {
+      // Try to extract the server's detailed error message
+      let errorMessage = "An error occurred during calibration";
+      if (error.response) {
+        try {
+          const errorData = await error.response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch {
+          errorMessage = error.message || errorMessage;
+        }
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+      
       toast({
         title: "Calibration Failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -277,7 +292,49 @@ export default function Calibration() {
 
                   <Button 
                     className="w-full"
-                    onClick={() => activeCamera && calibrationMutation.mutate(activeCamera.id)}
+                    onClick={() => {
+                      if (activeCamera) {
+                        // Get templates for this camera
+                        const cameraTemplates = templateRectangles?.filter(
+                          (t: any) => t.cameraId === activeCamera.id
+                        );
+                        
+                        // Determine paper size from selected template
+                        let paperSize = 'A4-landscape'; // default fallback
+                        
+                        // Priority 1: Use selected template if provided
+                        if (selectedTemplate && selectedTemplate !== 'none') {
+                          const template = templateRectangles?.find((t: any) => t.id === selectedTemplate);
+                          if (template && template.cameraId === activeCamera.id) {
+                            paperSize = template.paperSize || 'A4-landscape';
+                          } else {
+                            // Template doesn't belong to this camera, show error
+                            toast({
+                              title: "Invalid Template",
+                              description: "The selected template doesn't belong to this camera. Please select a valid template.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                        } 
+                        // Priority 2: Check camera templates
+                        else if (cameraTemplates && cameraTemplates.length > 1) {
+                          // Multiple templates exist but none selected
+                          toast({
+                            title: "Template Required",
+                            description: "Please select a template design before calibrating. This camera has multiple templates with different paper sizes.",
+                            variant: "destructive",
+                          });
+                          return;
+                        } else if (cameraTemplates && cameraTemplates.length === 1) {
+                          // Exactly one template, automatically use it
+                          paperSize = cameraTemplates[0].paperSize || 'A4-landscape';
+                        }
+                        // Priority 3: No templates - use default A4-landscape
+                        
+                        calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize });
+                      }
+                    }}
                     disabled={!activeCamera || calibrationMutation.isPending}
                     data-testid="button-start-calibration"
                   >

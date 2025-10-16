@@ -1,8 +1,8 @@
-# Tool Tracking System - Development Guide
+# Tool Tracking System - Compressed Development Guide
 
 ## Overview
 
-A Raspberry Pi-based automated tool monitoring system that uses computer vision, QR codes, and ArUco marker calibration (4 corner markers) to track tools across multiple cameras. The system provides real-time detection, HMAC-signed QR validation, temporal smoothing for presence detection, and multi-channel alerting (email, Google Sheets, sound). Features a React-based web dashboard for calibration, slot configuration, analytics, and system management. The number of tool slots is fully configurable based on your workshop needs.
+A Raspberry Pi-based automated tool monitoring system utilizing computer vision, QR codes, and ArUco markers for real-time tool tracking across multiple cameras. It features HMAC-signed QR validation, temporal smoothing for presence detection, and multi-channel alerting (email, Google Sheets, sound). The system includes a React web dashboard for calibration, configurable slot management, analytics, and system administration. Its core purpose is to prevent tool loss and improve accountability in workshops by tracking tool presence and checkout status.
 
 ## User Preferences
 
@@ -10,152 +10,103 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- **Calibration UI Fixes & Rectified Preview (Oct 2025)**: Fixed calibration page bugs where reprojection error showed hardcoded 0.74 instead of actual values, and rectified preview was not implemented. Now displays real calibration metrics from ArUco detection. Implemented complete rectified preview system: Python script (rectified_preview.py) applies inverse homography to generate top-down view with grid overlay, API endpoint validates homography matrix, frontend fetches and displays preview after successful calibration. Added camera query invalidation to update calibration badge, and useEffect to clear stale results when switching cameras. Production-ready and architect-approved.
-- **6-Page (3×2 A4) Multi-Sheet Template System (Oct 2025)**: Implemented large-format template design using 6 A4 landscape sheets (297mm × 210mm each) arranged in 3×2 grid (891mm × 420mm total area). Features include: edge-to-edge sheet alignment for seamless print-and-tape assembly, ArUco markers (IDs 17-20) positioned on corner sheets only (1,3,4,6) with 10mm inset from edges (inside safe zones), 1cm safe zones per sheet preventing placement near edges, sheet-constrained rectangle placement (rectangles stay within individual sheets), PDF export with 6 separate landscape pages including sheet numbers and assembly instructions. Sheets touch edge-to-edge with no gaps. Architect-reviewed and approved for production use.
-- **Alert LED Visual Notification System (Oct 2025)**: Implemented flashing red LED using the same WS2812B LED strip (GPIO 18) that provides white lighting during photo captures. LED strip flashes red when alerts are triggered (tool missing, QR failures, camera errors, network issues). Features include: Python alert_led.py script using rpi_ws281x library with fast/slow/pulse patterns, TypeScript service with process lifecycle management, API endpoints for manual control, scheduler integration for automatic triggering, and UI controls in configuration page. Dual-purpose LED strip: white for photos, red flashing for alerts. Production-ready implementation verified by architect review.
-- **Auto-Start & Auto-Update System (Oct 2025)**: Created systemd service for automatic startup and GitHub update checking. On boot, the Pi checks for updates, pulls if available, installs dependencies if needed, and starts the app. Includes `pi-startup.sh` (main script), `shelfeye.service` (systemd config), `install-autostart.sh` (one-time setup), and comprehensive documentation (`AUTO-START-GUIDE.md`). Provides automatic recovery from crashes and centralized logging.
-- **GPIO LED Light Strip Integration (Oct 2025)**: Implemented dual-purpose automatic lighting control for consistent image capture quality and visual alerts. WS2812B addressable LED light strip (27 LEDs) on GPIO 18 (Physical Pin 12) serves two functions: (1) white light automatically turns on before captures and off after for consistent lighting, (2) red flashing light for system alerts and errors. Features Python GPIO controller script with rpi_ws281x library support, manual control API endpoints (`POST /api/gpio/light`, `/api/alert-led/*`), scheduler integration, and frontend control UI in configuration page. Gracefully handles non-Pi environments with warning messages instead of errors.
-- **Raspberry Pi Deployment Package (Oct 2025)**: Created comprehensive deployment automation for Raspberry Pi 4 production deployment. Includes automated deployment script (`deploy-to-pi.sh`), systemd service configuration, camera testing utilities, quick-start management tools, and complete documentation (`PI-DEPLOYMENT.md`, `RASPBERRY-PI-SETUP.md`). Deployment script handles Node.js 20 installation, Python dependencies (OpenCV, pyzbar), environment setup, camera validation, and database schema sync.
-- **Worker Validation & Checkout Tracking (Oct 2025)**: Enhanced worker QR validation with database lookup at capture time. Invalid/inactive workers treated as EMPTY (unauthorized removal), valid workers logged as CHECKED_OUT with workerId tracking. Added checkout report API endpoint for historical queries showing which worker has which tool at specific capture times (8AM, 11AM, 2PM, 5PM JST).
-- **Worker Management System (Oct 2025)**: Implemented comprehensive worker management with database schema, API endpoints (CRUD operations), and frontend UI. Workers can be registered with unique codes, names, and departments. System generates HMAC-signed QR badge IDs for tool checkout tracking. Features include: workerCode uniqueness validation in both MemStorage and database, shadcn Form + react-hook-form + zodResolver integration for type-safe validation, QR badge generation and download functionality. Integrates with detection logic for worker-based tool checkout authorization.
-- **Simplified QR-Based Detection Logic (Oct 2025)**: Removed complex SSIM image analysis in favor of slot QR code as binary sensor. Slot QR visible = tool missing (alarm), worker QR visible = checked out, no QR visible = tool present. QR type changed from "tool" to "slot" for clarity.
-- **Gmail & Google Sheets Alert Integration (Oct 2025)**: Implemented complete multi-channel alert system using Replit's native connectors. Gmail sends formatted emails on capture/diagnostic failures. Google Sheets automatically logs all alerts, captures, and diagnostics with auto-created spreadsheet. Alert configuration UI manages email recipients and displays sheets URL.
-- **ArUco Marker Positioning (Oct 2025)**: ArUco corner markers (IDs 17-20) are now positioned at the extreme corners of the printable area (0cm from edges) across all paper sizes, maximizing usable template space since printers have natural margins anyway.
-- **Unified Template-to-Slot Workflow (Oct 2025)**: Templates can be designed before calibration. Calibration automatically creates slots from templates using homography transformation. Manual polygon drawing and slot configuration versions removed from UI - slots are now fully auto-generated from template rectangles.
+- **Paper Size Format Support for Calibration (Oct 2025)**: Refactored calibration system to use paper size formats (e.g., "6-page-3x2", "A4-landscape") instead of camera resolution for ArUco marker positioning. Intelligent template selection: single-template cameras auto-use paper size, multi-template cameras require user selection with validation. Frontend resets template selection on camera change, validates templates belong to active camera, and blocks calibration with clear errors when multi-template cameras have no selection. Backend validates paper size format with detailed error messages, converts format to physical dimensions (cm) for Python calibrator. System stores `last_calibration_paper_size_format` in config for startup re-calibration. Supports all scenarios: single/multi/no templates, camera switching, multi-camera setups. Production-ready with comprehensive error handling and validation.
 
 ## System Architecture
 
 ### Frontend Architecture
 
 **Technology Stack:**
-- React with TypeScript for type safety
-- Vite as the build tool and dev server
-- TanStack Query for server state management with optimistic updates
-- Wouter for client-side routing (lightweight alternative to React Router)
-- Tailwind CSS with custom dark theme design system
-- shadcn/ui component library (Radix UI primitives)
+- React with TypeScript, Vite, TanStack Query, Wouter.
+- Tailwind CSS with a custom dark theme and shadcn/ui.
 
 **Key Design Patterns:**
-- Component-based architecture with separation between pages, layouts, and UI components
-- Modal-driven interactions for focused tasks (calibration, QR generation, configuration)
-- Canvas API for interactive slot drawing with zoom/pan controls and ArUco marker overlays
-- Configurable canvas aspect ratios for ISO A-series paper sizes (A5, A4, A3, multiple sheets)
-- Dual version management system using localStorage:
-  - Template versions: Saves rectangles, categories, and paper size configurations
-  - Slot versions: Saves slot region configurations for camera overlays
-- Recharts for analytics visualization and time-series data
-- Real-time polling for live dashboard updates (30-second intervals)
+- Component-based architecture with modal-driven interactions.
+- Canvas API for interactive slot drawing with zoom/pan and ArUco overlays.
+- Configurable canvas aspect ratios for ISO A-series paper sizes and multi-sheet templates.
+- Dual version management (template and slot configurations) using localStorage.
+- Recharts for analytics visualization.
+- Real-time polling for dashboard updates (30-second intervals).
 
 **State Management Strategy:**
-- Server state via TanStack Query with automatic background refetching
-- Local component state for UI interactions (drawing, forms)
-- No global state management needed - query cache serves as source of truth
+- Server state managed via TanStack Query.
+- Local component state for UI interactions.
 
 ### Backend Architecture
 
 **Framework & Runtime:**
-- Express.js server running on Node.js
-- TypeScript throughout for type consistency
-- ESM module system for modern JavaScript
-- Session-based state (potential for auth in future)
+- Express.js server on Node.js with TypeScript and ESM modules.
 
 **API Design:**
-- RESTful endpoints organized by resource type
-- JSON request/response format
-- Child process spawning for Python CV operations
-- File system operations for image storage and manifest tracking
-
-**Key API Endpoints:**
-- `/api/cameras` - Camera CRUD operations
-- `/api/calibrate/:cameraId` - ArUco calibration trigger
-- `/api/slots` - Slot configuration management
-- `/api/detection-logs` - Historical detection data
-- `/api/alert-rules` - Alert configuration
-- `/api/qr-generate` - QR code generation with HMAC
-- `/api/workers` - Worker CRUD operations with uniqueness validation
-- `/api/workers/:id/generate-qr` - Generate HMAC-signed worker badge QR
-- `/api/gpio/light` - Manual GPIO light strip control (white on/off for photos)
-- `/api/alert-led/flash` - Start flashing alert LED (red flashing, continuous)
-- `/api/alert-led/stop` - Stop flashing alert LED (turn off)
-- `/api/alert-led/test` - Test alert LED (5 second red flash)
+- RESTful endpoints, JSON format, child process spawning for Python CV operations, file system operations.
+- Key APIs for cameras, calibration, slots, detection logs, alert rules, QR generation, workers, and GPIO control.
 
 **Python Integration:**
-- OpenCV-based computer vision modules executed as child processes
-- ArUco GridBoard calibration for perspective correction
-- Multi-scale QR decoding with pyzbar and OpenCV fallback
-- Homography computation and storage per camera
-- Slot QR code visibility as binary sensor for presence detection
+- OpenCV-based computer vision modules (ArUco calibration, QR decoding, homography).
+- Executed as child processes for perspective correction and slot QR visibility detection.
 
 ### Data Storage
 
 **Database:**
-- PostgreSQL via Neon serverless (configured in drizzle.config.ts)
-- Drizzle ORM for type-safe database queries
-- Schema-first approach with TypeScript types generated from schema
-- Persistent storage - tool categories, template rectangles, and all data survives app restarts
-
-**Schema Design:**
-```
-cameras: id, name, deviceIndex, resolution, homographyMatrix, calibrationTimestamp, isActive
-slots: id, slotId, cameraId, toolName, expectedQrId, priority, regionCoords, allowCheckout, graceWindow
-detectionLogs: id, slotId, timestamp, status, qrId, workerName, ssimScore, poseQuality, imagePath, alertTriggered
-alertRules: id, name, ruleType, isEnabled, verificationWindow, businessHoursOnly, priority, conditions
-alertQueue: id, alertType, message, status, retryCount, scheduledAt, sentAt
-systemConfig: key, value, description
-workers: id, workerCode (unique), name, department, qrPayload, isActive, createdAt
-```
+- PostgreSQL (Neon serverless) using Drizzle ORM for type-safe queries.
+- Persistent storage for cameras, slots, detection logs, alert rules, system config, and workers.
 
 **File Storage Strategy:**
-- Live preview: `data/<slot_id>_last.png`
-- ROI archive: `data/rois/<slot_id>/<YYYY-MM>/<timestamp>_<slot_id>.png`
-- Future SSIM baselines (optional): `data/<slot_id>_EMPTY.png` and `data/<slot_id>_FULL.png`
+- `data/<slot_id>_last.png` for live previews.
+- `data/rois/<slot_id>/<YYYY-MM>/<timestamp>_<slot_id>.png` for ROI archives.
 
-### External Dependencies
+### System Design Choices
 
-**Third-Party Services:**
-- **Neon Serverless Postgres** - Cloud database with connection pooling via `@neondatabase/serverless`
-- **SMTP Email Server** - Alert delivery (configured via system config)
-- **Google Sheets API** - Secondary logging destination (optional)
+**UI/UX:**
+- Calibration system uses paper size formats (e.g., "A4-landscape") for ArUco marker positioning.
+- Rectified preview with grid overlay after calibration.
+- 6-Page (3x2 A4) multi-sheet template system for large areas, with edge-to-edge alignment and ArUco markers on corner sheets.
+- Automated slot creation from templates after calibration, removing manual polygon drawing.
+- Alert LED visual notifications using WS2812B strip (flashing red for alerts, white for photo illumination).
 
-**Computer Vision Libraries:**
-- **OpenCV (opencv-contrib-python-headless)** - ArUco detection, image processing, homography, QR decoding
-- **pyzbar** - Primary QR code decoder with multi-scale preprocessing
-- **scikit-image** - (Reserved for future SSIM validation layer)
-
-**UI Component Libraries:**
-- **Radix UI Primitives** - Accessible, unstyled components (@radix-ui/react-*)
-- **Recharts** - Declarative charting library for analytics
-- **cmdk** - Command palette component
-- **embla-carousel-react** - Touch-friendly carousel
-
-**Utility Libraries:**
-- **date-fns** - Date manipulation and formatting
-- **clsx & tailwind-merge** - Conditional className handling
-- **zod** - Runtime type validation for API contracts
-- **drizzle-zod** - Zod schema generation from Drizzle tables
-
-**Development Tools:**
-- **tsx** - TypeScript execution for dev server
-- **esbuild** - Fast bundling for production server
-- **drizzle-kit** - Database migrations and schema push
-- **Replit plugins** - Error overlay, cartographer, dev banner
+**Technical Implementations:**
+- Auto-start and auto-update system using systemd services and GitHub for Raspberry Pi deployments.
+- GPIO LED light strip integration for dual-purpose lighting (consistent image capture and visual alerts).
+- Comprehensive Raspberry Pi deployment package for automated setup.
+- Worker QR validation against a database for checkout tracking, logging valid workers and treating invalid ones as EMPTY.
+- Simplified QR-based detection: Slot QR visible = tool missing; Worker QR visible = checked out; No QR visible = tool present.
+- Gmail and Google Sheets integration for multi-channel alerts and logging.
+- ArUco corner markers (IDs 17-20) positioned at extreme corners of the printable area.
 
 **Detection & Alert System:**
-- **Simplified State Machine**: ITEM_PRESENT (tool covering slot QR) → EMPTY (slot QR visible, alarm) → CHECKED_OUT (worker QR visible)
-- **QR Type System**: "slot" type for slot QR codes, "worker" type for worker badge QR codes
-- **Binary Detection Logic**: 
-  - Slot QR visible → EMPTY + Alert (tool missing without authorization)
-  - Worker QR visible → Database validation → CHECKED_OUT (if valid worker) or EMPTY (if invalid/inactive)
-  - No QR visible → ITEM_PRESENT (tool covering slot QR, normal state)
-- **Worker QR Validation**: All worker QR codes are validated against the workers database at capture time
-  - Valid + active worker: Status = CHECKED_OUT, stores workerId + workerName in detection logs
-  - Invalid/inactive/unknown worker: Status = EMPTY (unauthorized removal), triggers security alert, no worker info stored
-- **Checkout Tracking**: Detection logs include workerId foreign key for relational tracking of tool checkouts
-  - Checkout report API (`/api/reports/checkouts`) shows which worker has which tool at any timestamp
-  - Time-based queries support historical analysis of tool assignments at each capture time (8AM, 11AM, 2PM, 5PM JST)
-- **Business Rules Engine**: Time-based monitoring with configurable grace periods
-- **Queue-based Alerts**: Offline resilience with retry logic and rate limiting
-- **HMAC Signature Validation**: Prevents QR spoofing with SHA-256 signatures
+- **State Machine**: ITEM_PRESENT → EMPTY → CHECKED_OUT.
+- **QR Type System**: "slot" and "worker" types.
+- **Binary Detection Logic**: Based on QR visibility and type.
+- **Worker Validation**: Database lookup for worker QR codes to track checkouts and identify unauthorized removals.
+- **Checkout Tracking**: Detection logs include worker ID for relational tracking and historical reports.
+- **Business Rules Engine**: Time-based monitoring with grace periods.
+- **Queue-based Alerts**: Offline resilience with retry logic.
+- **HMAC Signature Validation**: Prevents QR spoofing.
 
-**Image Processing Pipeline:**
-- ArUco GridBoard detection → Homography computation → Perspective warp → ROI extraction → QR decode with multi-scale preprocessing → State decision based on QR visibility
+## External Dependencies
+
+**Third-Party Services:**
+- **Neon Serverless Postgres**: Cloud database.
+- **SMTP Email Server**: For alert delivery.
+- **Google Sheets API**: Secondary logging destination.
+
+**Computer Vision Libraries:**
+- **OpenCV**: ArUco detection, image processing, homography, QR decoding.
+- **pyzbar**: Primary QR code decoder.
+
+**UI Component Libraries:**
+- **Radix UI Primitives**: Accessible UI components.
+- **Recharts**: Charting library for analytics.
+- **cmdk**: Command palette.
+- **embla-carousel-react**: Carousel component.
+
+**Utility Libraries:**
+- **date-fns**: Date manipulation.
+- **clsx & tailwind-merge**: Conditional className handling.
+- **zod**: Runtime type validation.
+- **drizzle-zod**: Zod schema generation.
+
+**Development Tools:**
+- **tsx**: TypeScript execution.
+- **esbuild**: Fast bundling.
+- **drizzle-kit**: Database migrations.
