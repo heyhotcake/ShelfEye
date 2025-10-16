@@ -604,15 +604,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Get template rectangles for this camera to overlay on rectified view
+      const templates = await storage.getTemplateRectanglesByCamera(cameraId);
+      
+      // Get categories for dimensions and names
+      const categories = await storage.getToolCategories();
+      const categoryMap = new Map(categories.map(c => [c.id, c]));
+      
+      const templateData = templates.map(t => {
+        const category = categoryMap.get(t.categoryId);
+        return {
+          x: t.xCm,
+          y: t.yCm,
+          width: category?.widthCm || 0,
+          height: category?.heightCm || 0,
+          categoryName: category?.name || 'Unknown'
+        };
+      });
+
+      // Get paper size from last calibration config
+      const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
+      let paperSizeFormat = 'A4-landscape'; // default
+      if (paperSizeConfig && paperSizeConfig.value) {
+        paperSizeFormat = paperSizeConfig.value as string;
+      }
+      
+      // Convert paper size format to dimensions in cm
+      const { getPaperDimensions } = await import('./utils/paper-size.js');
+      const paperDimensions = getPaperDimensions(paperSizeFormat);
+
       // Call Python rectified preview script
       const homographyStr = camera.homographyMatrix.join(',');
-      const pythonProcess = spawn('python3', [
+      const args = [
         path.join(process.cwd(), 'python/rectified_preview.py'),
         '--camera', camera.deviceIndex.toString(),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', homographyStr,
-        '--output-size', '800x600'
-      ]);
+        '--output-size', '800x600',
+        '--paper-size', `${paperDimensions.widthCm}x${paperDimensions.heightCm}`
+      ];
+      
+      // Add templates if available
+      if (templateData.length > 0) {
+        args.push('--templates', JSON.stringify(templateData));
+      }
+      
+      const pythonProcess = spawn('python3', args);
 
       let result = '';
       let error = '';

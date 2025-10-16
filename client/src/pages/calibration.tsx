@@ -105,13 +105,20 @@ export default function Calibration() {
   });
 
   // Rectified preview - fetch after successful calibration
-  const { data: rectifiedPreview, refetch: refetchRectified } = useQuery<CameraPreview>({
+  const { data: rectifiedPreview, refetch: refetchRectified, isLoading: isLoadingRectified, error: rectifiedError } = useQuery<CameraPreview>({
     queryKey: ['/api/rectified-preview', activeCamera?.id],
     queryFn: async () => {
       if (!activeCamera?.id) throw new Error('No active camera');
+      console.log('[Rectified Preview] Fetching for camera:', activeCamera.id);
       const response = await fetch(`/api/rectified-preview/${activeCamera.id}`);
-      if (!response.ok) throw new Error('Failed to fetch rectified preview');
-      return response.json();
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[Rectified Preview] Error:', errorData);
+        throw new Error(errorData.message || 'Failed to fetch rectified preview');
+      }
+      const data = await response.json();
+      console.log('[Rectified Preview] Success:', data.ok);
+      return data;
     },
     enabled: false, // Don't auto-fetch, trigger manually after calibration
   });
@@ -634,22 +641,26 @@ export default function Calibration() {
                 
                 {/* Rectified Preview */}
                 <div className="mt-6">
-                  <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview</h4>
+                  <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview with Template Overlay</h4>
                   <div className="canvas-container">
                     <div className="aspect-[4/3] bg-muted rounded overflow-hidden">
-                      {rectifiedPreview?.ok && rectifiedPreview?.image ? (
+                      {isLoadingRectified ? (
+                        <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
+                          <p className="text-sm text-muted-foreground">Loading rectified view...</p>
+                        </div>
+                      ) : rectifiedPreview?.ok && rectifiedPreview?.image ? (
                         <img 
                           src={rectifiedPreview.image} 
-                          alt="Rectified preview" 
+                          alt="Rectified preview with template overlay" 
                           className="w-full h-full object-contain"
                           data-testid="img-rectified-preview"
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
                           <p className="text-sm text-muted-foreground">
-                            {rectifiedPreview?.error 
-                              ? `Error: ${rectifiedPreview.error}` 
-                              : 'Rectified grid will appear after calibration'}
+                            {rectifiedError ? `Error: ${rectifiedError.message}` :
+                             rectifiedPreview?.error ? `Error: ${rectifiedPreview.error}` : 
+                             'Rectified view with slot overlay will appear after calibration'}
                           </p>
                         </div>
                       )}

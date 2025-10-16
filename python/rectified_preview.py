@@ -9,7 +9,7 @@ import json
 import sys
 import base64
 import logging
-from typing import Tuple
+from typing import Tuple, Optional, List
 import numpy as np
 import cv2
 
@@ -20,7 +20,9 @@ def generate_rectified_preview(
     camera_index: int,
     resolution: Tuple[int, int],
     homography_matrix: list,
-    output_size: Tuple[int, int] = (800, 600)
+    output_size: Tuple[int, int] = (800, 600),
+    templates: Optional[List[dict]] = None,
+    paper_size_cm: Tuple[float, float] = (88.8, 42.0)  # Default for 6-page-3x2
 ) -> dict:
     """
     Generate a rectified preview image using homography transformation
@@ -30,6 +32,7 @@ def generate_rectified_preview(
         resolution: (width, height) camera resolution
         homography_matrix: Flattened 3x3 homography matrix (9 values)
         output_size: (width, height) of output rectified image
+        templates: List of template rectangles with x, y, width, height in cm
         
     Returns:
         Dictionary with ok status and base64 encoded image or error
@@ -70,6 +73,67 @@ def generate_rectified_preview(
         for y in range(0, output_size[1], 50):
             cv2.line(rectified, (0, y), (output_size[0], y), (0, 255, 0), 1)
         
+        # Draw template slot overlays if provided
+        if templates:
+            # Simple approach: The rectified image is warped to show the paper area
+            # We directly scale cm coordinates to output pixels based on paper size and output size
+            paper_width_cm, paper_height_cm = paper_size_cm
+            out_width, out_height = output_size
+            
+            # Calculate direct scale: pixels per cm
+            # Assuming the warpPerspective maps the full paper area to the output
+            scale_x = out_width / paper_width_cm
+            scale_y = out_height / paper_height_cm
+            
+            logger.info(f"Paper size: {paper_width_cm}×{paper_height_cm} cm")
+            logger.info(f"Output size: {out_width}×{out_height} px")
+            logger.info(f"Direct scale: {scale_x:.2f} px/cm (x), {scale_y:.2f} px/cm (y)")
+            
+            for template in templates:
+                # Template has: x, y, width, height in cm, and categoryName
+                x_cm = template.get('x', 0)
+                y_cm = template.get('y', 0)
+                w_cm = template.get('width', 0)
+                h_cm = template.get('height', 0)
+                label = template.get('categoryName', '')
+                
+                if w_cm == 0 or h_cm == 0:
+                    logger.warning(f"Skipping template {label} with zero dimensions")
+                    continue
+                
+                # Convert cm directly to rectified pixels
+                x_px = int(x_cm * scale_x)
+                y_px = int(y_cm * scale_y)
+                w_px = int(w_cm * scale_x)
+                h_px = int(h_cm * scale_y)
+                
+                # Define rectangle corners in pixels
+                corners_px = np.array([
+                    [x_px, y_px],              # Top-left
+                    [x_px + w_px, y_px],        # Top-right
+                    [x_px + w_px, y_px + h_px], # Bottom-right
+                    [x_px, y_px + h_px]         # Bottom-left
+                ], dtype=np.int32)
+                
+                # Draw rectangle on rectified image
+                pts = corners_px.reshape((-1, 1, 2))
+                cv2.polylines(rectified, [pts], True, (255, 0, 255), 3)  # Magenta rectangle (thicker)
+                
+                # Draw label at center
+                center_x = x_px + w_px // 2
+                center_y = y_px + h_px // 2
+                
+                # Draw background for text
+                text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
+                cv2.rectangle(rectified, 
+                            (center_x - text_size[0]//2 - 4, center_y - text_size[1]//2 - 4),
+                            (center_x + text_size[0]//2 + 4, center_y + text_size[1]//2 + 4),
+                            (0, 0, 0), -1)
+                
+                cv2.putText(rectified, label, 
+                          (center_x - text_size[0]//2, center_y + text_size[1]//2),
+                          cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        
         # Encode image as JPEG
         _, buffer = cv2.imencode('.jpg', rectified)
         image_base64 = base64.b64encode(buffer).decode('utf-8')
@@ -97,6 +161,8 @@ def main():
     parser.add_argument('--resolution', type=str, required=True, help='Camera resolution (WxH)')
     parser.add_argument('--homography', type=str, required=True, help='Homography matrix as comma-separated values')
     parser.add_argument('--output-size', type=str, default='800x600', help='Output image size (WxH)')
+    parser.add_argument('--templates', type=str, default=None, help='Template rectangles as JSON string')
+    parser.add_argument('--paper-size', type=str, default='88.8x42.0', help='Paper size in cm (WxH)')
     
     args = parser.parse_args()
     
@@ -114,8 +180,17 @@ def main():
         if len(homography) != 9:
             raise ValueError(f"Homography matrix must have 9 values, got {len(homography)}")
         
+        # Parse templates if provided
+        templates = None
+        if args.templates:
+            templates = json.loads(args.templates)
+        
+        # Parse paper size
+        paper_width, paper_height = map(float, args.paper_size.split('x'))
+        paper_size_cm = (paper_width, paper_height)
+        
         # Generate rectified preview
-        result = generate_rectified_preview(args.camera, resolution, homography, output_size)
+        result = generate_rectified_preview(args.camera, resolution, homography, output_size, templates, paper_size_cm)
         
         # Output JSON result
         print(json.dumps(result))
