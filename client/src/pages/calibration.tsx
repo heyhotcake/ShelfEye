@@ -45,6 +45,7 @@ export default function Calibration() {
   const [calibrationStep, setCalibrationStep] = useState<number>(0); // 0: ArUco, 1: QRs visible, 2: QRs covered
   const [step1Result, setStep1Result] = useState<ValidationResult | null>(null);
   const [step2Result, setStep2Result] = useState<ValidationResult | null>(null);
+  const [isCameraLocked, setIsCameraLocked] = useState<boolean>(false);
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
     const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
@@ -75,11 +76,32 @@ export default function Calibration() {
     setStep2Result(null);
   }, [activeCamera?.id]);
 
-  // Camera preview - poll every 1 second, but pause during calibration
+  // Camera preview - poll every 1 second, but pause when camera is locked
   const { data: preview } = useQuery<CameraPreview>({
     queryKey: ['/api/camera-preview', activeCamera?.id],
-    enabled: !!activeCamera?.id,
-    refetchInterval: 1000,
+    queryFn: async () => {
+      if (!activeCamera?.id) throw new Error('No active camera');
+      const response = await fetch(`/api/camera-preview/${activeCamera.id}`);
+      
+      // Handle camera locked during calibration
+      if (response.status === 423) {
+        const data = await response.json();
+        setIsCameraLocked(true);
+        return { ok: false, error: data.message || 'Camera is busy with calibration' };
+      }
+      
+      // Clear locked state on successful response
+      setIsCameraLocked(false);
+      
+      if (!response.ok) {
+        const data = await response.json();
+        return { ok: false, error: data.message || 'Failed to fetch preview' };
+      }
+      
+      return response.json();
+    },
+    enabled: !!activeCamera?.id && !isCameraLocked,
+    refetchInterval: isCameraLocked ? false : 1000,
   });
 
   // Rectified preview - fetch after successful calibration
@@ -101,16 +123,20 @@ export default function Calibration() {
       const data: CalibrationResult = await response.json();
       setCalibrationResult(data);
       setCalibrationStep(1); // Move to step 1: validate QRs visible
+      setIsCameraLocked(false); // Clear lock state
       toast({
         title: "ArUco Calibration Complete",
         description: `Markers detected: ${data.markersDetected}, Error: ${data.reprojectionError.toFixed(2)} px. Now validate slot QR codes.`,
       });
       // Invalidate cameras query to update calibration badge
       queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+      // Resume preview polling
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
       // Fetch rectified preview after successful calibration
       refetchRectified();
     },
     onError: async (error: any) => {
+      setIsCameraLocked(false); // Clear lock state on error
       // Try to extract the server's detailed error message
       let errorMessage = "An error occurred during calibration";
       if (error.response) {
@@ -129,6 +155,8 @@ export default function Calibration() {
         description: errorMessage,
         variant: "destructive",
       });
+      // Resume preview polling even on error
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
     },
   });
 
@@ -237,6 +265,17 @@ export default function Calibration() {
               {/* Live View */}
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-3">Live Camera View</h3>
+                
+                {/* Calibration in progress banner */}
+                {(calibrationMutation.isPending || isCameraLocked) && (
+                  <div className="mb-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      Calibration in progress... Preview paused
+                    </p>
+                  </div>
+                )}
+                
                 <div className="canvas-container">
                   <div className="aspect-[4/3] bg-muted rounded relative overflow-hidden">
                     {preview?.ok && preview?.image ? (
