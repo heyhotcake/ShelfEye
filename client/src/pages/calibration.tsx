@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
@@ -56,6 +56,7 @@ export default function Calibration() {
   const [step2Result, setStep2Result] = useState<ValidationResult | null>(null);
   const [isCameraLocked, setIsCameraLocked] = useState<boolean>(false);
   const [savedTemplateDesigns, setSavedTemplateDesigns] = useState<TemplateDesign[]>([]);
+  const previousCameraIdRef = useRef<string | undefined>(undefined);
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
     const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
@@ -105,24 +106,37 @@ export default function Calibration() {
     return false;
   });
 
-  // Reset calibration when camera changes
+  // Reset calibration when camera ACTUALLY changes (not just refetches)
   useEffect(() => {
-    console.log('[Calibration] Camera change effect running, activeCamera:', activeCamera?.id);
-    setCalibrationResult(null);
-    setCalibrationStep(0);
-    setStep1Result(null);
-    setStep2Result(null);
-    setIsCameraLocked(false);
+    const currentCameraId = activeCamera?.id;
+    const previousCameraId = previousCameraIdRef.current;
     
-    // Auto-select template if only one exists for this camera
-    if (activeCamera && relevantDesigns.length === 1) {
-      console.log('[Calibration] Auto-selecting template:', relevantDesigns[0].timestamp);
-      setSelectedTemplate(relevantDesigns[0].timestamp);
+    console.log('[Calibration] Effect running - current:', currentCameraId, 'previous:', previousCameraId);
+    
+    // Only reset if camera ID actually changed
+    if (currentCameraId !== previousCameraId) {
+      console.log('[Calibration] Camera CHANGED, resetting...');
+      setCalibrationResult(null);
+      setCalibrationStep(0);
+      setStep1Result(null);
+      setStep2Result(null);
+      setIsCameraLocked(false);
+      
+      // Auto-select template if only one exists for this camera
+      if (activeCamera && relevantDesigns.length === 1) {
+        console.log('[Calibration] Auto-selecting template:', relevantDesigns[0].timestamp);
+        setSelectedTemplate(relevantDesigns[0].timestamp);
+      } else {
+        console.log('[Calibration] Clearing template selection');
+        setSelectedTemplate("");
+      }
+      
+      // Update ref to current camera ID
+      previousCameraIdRef.current = currentCameraId;
     } else {
-      console.log('[Calibration] Clearing template selection');
-      setSelectedTemplate("");
+      console.log('[Calibration] Camera same, no reset');
     }
-  }, [activeCamera?.id]);
+  }, [activeCamera?.id, relevantDesigns]);
 
   // Camera preview - poll every 1 second, but pause when camera is locked
   const { data: preview } = useQuery<CameraPreview>({
