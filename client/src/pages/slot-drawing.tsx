@@ -106,7 +106,7 @@ export default function SlotDrawing() {
     'A3-landscape': { width: 1131, height: 800, realWidthMm: 420, realHeightMm: 297 },
     '2xA5-landscape': { width: 1200, height: 424, realWidthMm: 420, realHeightMm: 148 },
     '3xA5-landscape': { width: 1800, height: 424, realWidthMm: 630, realHeightMm: 148 },
-    '6-page-3x2': { width: 1738, height: 1620, realWidthMm: 645, realHeightMm: 601.5 },
+    '6-page-3x2': { width: 2121, height: 1000, realWidthMm: 891, realHeightMm: 420 },
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -338,30 +338,26 @@ export default function SlotDrawing() {
   const getSheetBounds = (xCm: number, yCm: number): { minX: number; maxX: number; minY: number; maxY: number } | null => {
     if (paperSize !== '6-page-3x2') return null;
     
-    const gutterMm = 7.5;
-    const a4WidthMm = 210;
-    const a4HeightMm = 297;
+    const a4WidthMm = 297; // Landscape width
+    const a4HeightMm = 210; // Landscape height
     
     // Convert cm to mm
     const xMm = xCm * 10;
     const yMm = yCm * 10;
     
-    // Determine which sheet (column and row)
-    const totalWidthPerSheet = a4WidthMm + gutterMm;
-    const totalHeightPerSheet = a4HeightMm + gutterMm;
-    
-    const col = Math.floor(xMm / totalWidthPerSheet);
-    const row = Math.floor(yMm / totalHeightPerSheet);
+    // Determine which sheet (column and row) - no gutters, sheets touching
+    const col = Math.floor(xMm / a4WidthMm);
+    const row = Math.floor(yMm / a4HeightMm);
     
     // Clamp to valid sheet range
     const clampedCol = Math.max(0, Math.min(2, col));
     const clampedRow = Math.max(0, Math.min(1, row));
     
     // Calculate sheet boundaries in cm
-    const minXCm = (clampedCol * totalWidthPerSheet) / 10;
-    const maxXCm = (clampedCol * a4WidthMm + clampedCol * gutterMm + a4WidthMm) / 10;
-    const minYCm = (clampedRow * totalHeightPerSheet) / 10;
-    const maxYCm = (clampedRow * a4HeightMm + clampedRow * gutterMm + a4HeightMm) / 10;
+    const minXCm = (clampedCol * a4WidthMm) / 10;
+    const maxXCm = ((clampedCol + 1) * a4WidthMm) / 10;
+    const minYCm = (clampedRow * a4HeightMm) / 10;
+    const maxYCm = ((clampedRow + 1) * a4HeightMm) / 10;
     
     return { minX: minXCm, maxX: maxXCm, minY: minYCm, maxY: maxYCm };
   };
@@ -434,37 +430,25 @@ export default function SlotDrawing() {
     const is6Page = paperSize === '6-page-3x2';
     
     if (is6Page) {
-      // 6-Page (3×2) layout with gutters
-      const gutterMm = 7.5;
-      const gutterPx = gutterMm * pxPerMm;
-      const a4WidthMm = 210;
-      const a4HeightMm = 297;
+      // 6-Page (3×2) layout - landscape sheets touching (no gutters)
+      const a4WidthMm = 297; // Landscape width
+      const a4HeightMm = 210; // Landscape height
       const sheetWidth = a4WidthMm * pxPerMm;
       const sheetHeight = a4HeightMm * pxPerMm;
-      const safeMarginMm = 10; // 1cm safe zone
+      const safeMarginMm = 75; // 7.5cm safety margin
       const safeMarginPx = safeMarginMm * pxPerMm;
       
-      // Draw 6 sheets (3 columns × 2 rows)
+      // Draw 6 sheets (3 columns × 2 rows) - touching, no gaps
       for (let row = 0; row < 2; row++) {
         for (let col = 0; col < 3; col++) {
           const sheetNum = row * 3 + col + 1;
-          const x = canvasMargin + col * (sheetWidth + gutterPx);
-          const y = canvasMargin + row * (sheetHeight + gutterPx);
+          const x = canvasMargin + col * sheetWidth;
+          const y = canvasMargin + row * sheetHeight;
           
           // Draw sheet outline
           ctx.strokeStyle = 'rgba(100, 116, 139, 0.5)';
           ctx.lineWidth = 2 / zoom;
           ctx.strokeRect(x, y, sheetWidth, sheetHeight);
-          
-          // Draw safe zone (grey margin 1cm inset)
-          ctx.strokeStyle = 'rgba(156, 163, 175, 0.3)'; // gray-400
-          ctx.lineWidth = 1 / zoom;
-          ctx.strokeRect(
-            x + safeMarginPx, 
-            y + safeMarginPx, 
-            sheetWidth - 2 * safeMarginPx, 
-            sheetHeight - 2 * safeMarginPx
-          );
           
           // Draw sheet number
           ctx.fillStyle = 'rgba(100, 116, 139, 0.6)';
@@ -475,16 +459,21 @@ export default function SlotDrawing() {
         }
       }
       
-      // Draw gutters (white gaps between sheets)
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      // Vertical gutters
-      for (let i = 0; i < 2; i++) {
-        const x = canvasMargin + (i + 1) * sheetWidth + i * gutterPx;
-        ctx.fillRect(x, canvasMargin, gutterPx, paperHeight);
-      }
-      // Horizontal gutter
-      const y = canvasMargin + sheetHeight + gutterPx / 2;
-      ctx.fillRect(canvasMargin, y - gutterPx / 2, paperWidth, gutterPx);
+      // Draw 7.5cm safety margin (only for outer edges of assembled template)
+      ctx.strokeStyle = 'rgba(234, 88, 12, 0.4)'; // orange for visibility
+      ctx.lineWidth = 1.5 / zoom;
+      ctx.strokeRect(
+        canvasMargin + safeMarginPx,
+        canvasMargin + safeMarginPx,
+        paperWidth - 2 * safeMarginPx,
+        paperHeight - 2 * safeMarginPx
+      );
+      
+      // Label the safety margin
+      ctx.fillStyle = 'rgba(234, 88, 12, 0.6)';
+      ctx.font = `${10 / zoom}px monospace`;
+      ctx.textAlign = 'left';
+      ctx.fillText('7.5cm safety margin', canvasMargin + safeMarginPx + 5, canvasMargin + safeMarginPx + 15);
     } else {
       // Single sheet layout
       ctx.strokeStyle = 'rgba(100, 116, 139, 0.5)'; // slate-500
@@ -495,59 +484,46 @@ export default function SlotDrawing() {
     // ArUco marker size (5cm = 50mm)
     const markerSizeMm = 50;
     const markerSize = markerSizeMm * pxPerMm;
-    const markerInsetMm = 5; // 5mm inset from edge for 6-page format
-    const markerInset = markerInsetMm * pxPerMm;
     
     // Position markers based on format
     let markers: Array<{ x: number; y: number; id: string; arucoId: number; }> = [];
     
     if (is6Page) {
-      // 6-page format: markers only on corner sheets (1, 3, 4, 6)
-      const gutterMm = 7.5;
-      const gutterPx = gutterMm * pxPerMm;
-      const a4WidthMm = 210;
-      const a4HeightMm = 297;
-      const sheetWidth = a4WidthMm * pxPerMm;
-      const sheetHeight = a4HeightMm * pxPerMm;
+      // 6-page format: markers at 7.5cm (75mm) from outer edges
+      const safeMarginMm = 75;
+      const safeMarginPx = safeMarginMm * pxPerMm;
       
-      // Sheet 1 (top-left) - ArUco 17 at top-left corner
-      const sheet1X = canvasMargin;
-      const sheet1Y = canvasMargin;
+      // All markers positioned 75mm from outer edges of assembled template
+      // Top-left (ArUco 17)
       markers.push({ 
-        x: sheet1X + markerInset, 
-        y: sheet1Y + markerInset, 
-        id: '1-A', 
+        x: canvasMargin + safeMarginPx, 
+        y: canvasMargin + safeMarginPx, 
+        id: 'A', 
         arucoId: 17 
       });
       
-      // Sheet 3 (top-right) - ArUco 18 at top-right corner
-      const sheet3X = canvasMargin + 2 * (sheetWidth + gutterPx);
-      const sheet3Y = canvasMargin;
+      // Top-right (ArUco 18)
       markers.push({ 
-        x: sheet3X + sheetWidth - markerSize - markerInset, 
-        y: sheet3Y + markerInset, 
-        id: '3-B', 
+        x: canvasMargin + paperWidth - safeMarginPx - markerSize, 
+        y: canvasMargin + safeMarginPx, 
+        id: 'B', 
         arucoId: 18 
       });
       
-      // Sheet 4 (bottom-left) - ArUco 20 at bottom-left corner
-      const sheet4X = canvasMargin;
-      const sheet4Y = canvasMargin + sheetHeight + gutterPx;
+      // Bottom-right (ArUco 19)
       markers.push({ 
-        x: sheet4X + markerInset, 
-        y: sheet4Y + sheetHeight - markerSize - markerInset, 
-        id: '4-D', 
-        arucoId: 20 
+        x: canvasMargin + paperWidth - safeMarginPx - markerSize, 
+        y: canvasMargin + paperHeight - safeMarginPx - markerSize, 
+        id: 'C', 
+        arucoId: 19 
       });
       
-      // Sheet 6 (bottom-right) - ArUco 19 at bottom-right corner
-      const sheet6X = canvasMargin + 2 * (sheetWidth + gutterPx);
-      const sheet6Y = canvasMargin + sheetHeight + gutterPx;
+      // Bottom-left (ArUco 20)
       markers.push({ 
-        x: sheet6X + sheetWidth - markerSize - markerInset, 
-        y: sheet6Y + sheetHeight - markerSize - markerInset, 
-        id: '6-C', 
-        arucoId: 19 
+        x: canvasMargin + safeMarginPx, 
+        y: canvasMargin + paperHeight - safeMarginPx - markerSize, 
+        id: 'D', 
+        arucoId: 20 
       });
     } else {
       // Standard layout: markers at extreme corners
