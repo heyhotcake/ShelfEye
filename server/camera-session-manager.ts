@@ -43,20 +43,21 @@ class CameraSessionManager {
    * Returns a promise that resolves after a brief delay to ensure camera is released at OS level
    */
   async acquireExclusiveLock(cameraId: string): Promise<void> {
-    // Clear any existing locks
-    this.locks.delete(cameraId);
-    
-    // Wait 5 seconds to ensure any Python preview process has fully released the camera
-    // Preview operations can take 4+ seconds, so we need to wait for them to complete
-    console.log(`[CameraSessionManager] Waiting for camera ${cameraId} to be released...`);
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
+    // Set exclusive lock immediately to block NEW preview requests
     this.locks.set(cameraId, {
       cameraId,
       type: 'exclusive',
       timestamp: Date.now()
     });
-    console.log(`[CameraSessionManager] Exclusive lock acquired for camera ${cameraId}`);
+    console.log(`[CameraSessionManager] Exclusive lock set for camera ${cameraId} - blocking new previews`);
+    
+    // Wait 10 seconds to ensure any IN-FLIGHT Python preview process has fully released the camera
+    // Preview operations take 4-5 seconds, and we need to wait for camera to be fully released at OS level
+    // Even after a subprocess exits, OpenCV may need time before it can reopen the device
+    console.log(`[CameraSessionManager] Waiting for in-flight previews to complete...`);
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    
+    console.log(`[CameraSessionManager] Camera ${cameraId} should now be available for exclusive use`);
   }
 
   /**
