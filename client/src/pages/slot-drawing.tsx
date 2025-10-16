@@ -959,6 +959,7 @@ export default function SlotDrawing() {
       name: templateVersionName,
       timestamp: new Date().toISOString(),
       paperSize: paperSize,
+      cameraId: selectedCameraId,
       templateRectangles: templateRectangles,
       categories: relevantCategories,
     };
@@ -977,9 +978,6 @@ export default function SlotDrawing() {
 
   const loadTemplateVersion = async (version: typeof savedTemplateVersions[0]) => {
     try {
-      // Set paper size first so the query fetches the right templates
-      setPaperSize(version.paperSize);
-
       // First, we need to ensure categories exist in the database
       for (const category of version.categories) {
         // Check if category exists, if not create it
@@ -997,11 +995,20 @@ export default function SlotDrawing() {
       // Refresh categories
       await queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
 
-      // Delete existing template rectangles for this paper size only
-      // templateRectangles are filtered by paperSize, so we delete all current ones
-      for (const rect of templateRectangles) {
+      // Fetch existing template rectangles for the TARGET paper size
+      const response = await fetch(`/api/template-rectangles?paperSize=${version.paperSize}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch existing template rectangles');
+      }
+      const existingRects = await response.json();
+
+      // Delete existing template rectangles for the target paper size
+      for (const rect of existingRects) {
         await apiRequest('DELETE', `/api/template-rectangles/${rect.id}`);
       }
+
+      // Set paper size AFTER deletion so state is consistent
+      setPaperSize(version.paperSize);
 
       // Create new template rectangles
       for (const rect of version.templateRectangles) {

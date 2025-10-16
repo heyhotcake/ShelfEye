@@ -42,6 +42,7 @@ interface TemplateDesign {
   name: string;
   timestamp: string;
   paperSize: string;
+  cameraId: string;
   templateRectangles: any[];
   categories: any[];
 }
@@ -88,29 +89,25 @@ export default function Calibration() {
     }
   }, []);
 
-  // Filter designs that have templates for the active camera
+  // Filter designs that belong to the active camera
   const relevantDesigns = savedTemplateDesigns.filter(design => {
-    // Check if any template rectangle from this design exists for the active camera
-    return templateRectangles?.some((rect: any) => 
-      rect.paperSize === design.paperSize && rect.cameraId === activeCamera?.id
-    );
+    return design.cameraId === activeCamera?.id;
   });
 
-  // Auto-select template if only one relevant design exists
-  useEffect(() => {
-    if (activeCamera && relevantDesigns.length === 1 && !selectedTemplate) {
-      setSelectedTemplate(relevantDesigns[0].timestamp);
-    }
-  }, [activeCamera?.id, relevantDesigns.length]);
-
-  // Clear calibration result and template selection when active camera changes
+  // Clear calibration result and auto-select template when active camera changes
   useEffect(() => {
     setCalibrationResult(null);
-    setSelectedTemplate(""); // Reset template selection for new camera
-    setCalibrationStep(0); // Reset to first step
+    setCalibrationStep(0);
     setStep1Result(null);
     setStep2Result(null);
-  }, [activeCamera?.id]);
+    
+    // Auto-select template if only one relevant design exists
+    if (activeCamera && relevantDesigns.length === 1) {
+      setSelectedTemplate(relevantDesigns[0].timestamp);
+    } else {
+      setSelectedTemplate(""); // Reset template selection
+    }
+  }, [activeCamera?.id, relevantDesigns.length, relevantDesigns[0]?.timestamp]);
 
   // Camera preview - poll every 1 second, but pause when camera is locked
   const { data: preview } = useQuery<CameraPreview>({
