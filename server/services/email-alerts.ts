@@ -1,4 +1,4 @@
-import { getUncachableGmailClient } from './gmail-client';
+import { getGmailClient } from './gmail-client-oauth.js';
 import { storage } from '../storage';
 
 interface AlertEmailData {
@@ -38,8 +38,8 @@ export async function sendAlertEmail(alertData: AlertEmailData): Promise<boolean
     const emailBody = buildEmailBody(alertData);
     const htmlBody = buildHtmlEmailBody(alertData);
 
-    // Get Gmail client
-    const gmail = await getUncachableGmailClient();
+    // Get Gmail client (uses OAuth2 with auto token refresh)
+    const gmail = await getGmailClient();
 
     // Send to each recipient
     for (const recipient of recipients) {

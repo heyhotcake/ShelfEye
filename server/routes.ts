@@ -903,20 +903,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/oauth/google/setup", async (req, res) => {
     try {
-      const { service, clientId, clientSecret } = req.body;
+      const { service, clientId, clientSecret, redirectUri } = req.body;
       
       if (!['gmail', 'sheets'].includes(service)) {
         return res.status(400).json({ message: "Invalid service. Must be 'gmail' or 'sheets'" });
       }
       
-      if (!clientId || !clientSecret) {
-        return res.status(400).json({ message: "Client ID and Client Secret are required" });
+      if (!clientId || !clientSecret || !redirectUri) {
+        return res.status(400).json({ message: "Client ID, Client Secret, and Redirect URI are required" });
       }
 
       await storage.setGoogleOAuthCredential(service, {
         service,
         clientId,
         clientSecret,
+        redirectUri,
         isConfigured: false // Will be set to true after OAuth callback
       });
 
@@ -972,11 +973,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send('Invalid state parameter');
       }
 
-      // Redirect to settings page with success message
-      res.redirect('/?oauth=success&service=' + service);
+      // Redirect to Google OAuth setup page with success message
+      res.redirect('/google-oauth?oauth=success&service=' + service);
     } catch (error) {
       console.error('[OAuth Callback Error]:', error);
-      res.redirect('/?oauth=error&message=' + encodeURIComponent(error instanceof Error ? error.message : 'OAuth failed'));
+      res.redirect('/google-oauth?oauth=error&message=' + encodeURIComponent(error instanceof Error ? error.message : 'OAuth failed'));
     }
   });
 

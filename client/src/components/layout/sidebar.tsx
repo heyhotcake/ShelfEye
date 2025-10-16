@@ -14,7 +14,8 @@ import {
   Bolt,
   LogOut,
   User,
-  Printer
+  Printer,
+  Cloud
 } from "lucide-react";
 
 const navigation = [
@@ -42,6 +43,11 @@ const navigation = [
     name: "Configuration",
     href: "/configuration",
     icon: Settings,
+  },
+  {
+    name: "Google OAuth",
+    href: "/google-oauth",
+    icon: Cloud,
   },
   {
     name: "Scheduler",

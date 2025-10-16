@@ -15,6 +15,7 @@ import { z } from "zod";
 const setupSchema = z.object({
   clientId: z.string().min(1, "Client ID is required"),
   clientSecret: z.string().min(1, "Client Secret is required"),
+  redirectUri: z.string().url("Must be a valid URL"),
 });
 
 type SetupForm = z.infer<typeof setupSchema>;
@@ -40,6 +41,7 @@ export default function GoogleOAuthSetup() {
     defaultValues: {
       clientId: "",
       clientSecret: "",
+      redirectUri: `${window.location.origin}/api/oauth/google/callback`,
     },
   });
 
@@ -269,6 +271,27 @@ export default function GoogleOAuthSetup() {
                           </FormControl>
                           <FormDescription>
                             The secret key associated with your Client ID
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="redirectUri"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Redirect URI</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              placeholder="http://localhost:5000/api/oauth/google/callback"
+                              data-testid="input-redirect-uri"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Must match exactly what you configured in Google Cloud Console
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

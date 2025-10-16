@@ -1,4 +1,4 @@
-import { getUncachableGoogleSheetClient } from './sheets-client';
+import { getSheetsClient } from './sheets-client-oauth.js';
 import type { IStorage } from '../storage';
 
 export interface SheetsLogEntry {
@@ -59,7 +59,7 @@ export class SheetsLogger {
     }
 
     try {
-      const sheets = await getUncachableGoogleSheetClient();
+      const sheets = await getSheetsClient();
       
       const tabName = this.formattingConfig.tabCreation === 'single' ? 'Alert Log' : this.getTabName(new Date());
       const headerRow = this.formattingConfig.columnOrder.map((col: string) => {
@@ -139,7 +139,7 @@ export class SheetsLogger {
     }
 
     try {
-      const sheets = await getUncachableGoogleSheetClient();
+      const sheets = await getSheetsClient();
       const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: this.spreadsheetId });
       
       const tabExists = spreadsheet.data.sheets?.some(sheet => sheet.properties?.title === tabName);
@@ -195,7 +195,7 @@ export class SheetsLogger {
   async logAlert(entry: SheetsLogEntry): Promise<void> {
     try {
       const spreadsheetId = await this.ensureSpreadsheet();
-      const sheets = await getUncachableGoogleSheetClient();
+      const sheets = await getSheetsClient();
 
       // Determine tab name based on creation rules
       const entryDate = new Date(entry.timestamp);

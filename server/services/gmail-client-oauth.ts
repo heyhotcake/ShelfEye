@@ -19,7 +19,7 @@ export async function getGmailClient() {
     const oauth2Client = new google.auth.OAuth2(
       credential.clientId,
       credential.clientSecret,
-      `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/api/oauth/google/callback`
+      credential.redirectUri
     );
 
     oauth2Client.setCredentials({
@@ -46,7 +46,7 @@ export async function getGmailClient() {
     const oauth2Client = new google.auth.OAuth2(
       credential.clientId,
       credential.clientSecret,
-      `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/api/oauth/google/callback`
+      credential.redirectUri
     );
 
     oauth2Client.setCredentials({
@@ -68,7 +68,7 @@ export async function getGmailOAuthUrl(): Promise<string> {
   const oauth2Client = new google.auth.OAuth2(
     credential.clientId,
     credential.clientSecret,
-    `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/api/oauth/google/callback`
+    credential.redirectUri
   );
 
   const scopes = [
@@ -94,7 +94,7 @@ export async function handleGmailOAuthCallback(code: string): Promise<void> {
   const oauth2Client = new google.auth.OAuth2(
     credential.clientId,
     credential.clientSecret,
-    `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/api/oauth/google/callback`
+    credential.redirectUri
   );
 
   const { tokens } = await oauth2Client.getToken(code);

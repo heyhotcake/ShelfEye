@@ -133,6 +133,7 @@ export const googleOAuthCredentials = pgTable("google_oauth_credentials", {
   service: text("service").notNull().unique(), // 'gmail' or 'sheets'
   clientId: text("client_id").notNull(),
   clientSecret: text("client_secret").notNull(),
+  redirectUri: text("redirect_uri").notNull(),
   refreshToken: text("refresh_token"),
   accessToken: text("access_token"),
   expiresAt: timestamp("expires_at"),
