@@ -211,7 +211,7 @@ class ArucoCornerCalibrator:
                     'ok': False,
                     'error': f'Only detected {num_detected}/4 corner markers',
                     'markers_detected': num_detected,
-                    'detected_ids': list(marker_centers.keys())
+                    'detected_ids': [int(k) for k in marker_centers.keys()]
                 }
                 
         except Exception as e:
