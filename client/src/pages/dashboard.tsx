@@ -61,6 +61,43 @@ export default function Dashboard() {
     },
   });
 
+  const { data: cameras } = useQuery<any[]>({
+    queryKey: ['/api/cameras'],
+  });
+
+  const { data: slots } = useQuery<any[]>({
+    queryKey: ['/api/slots'],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const { data: detectionLogs } = useQuery<any[]>({
+    queryKey: ['/api/detection-logs'],
+    queryFn: async () => {
+      const response = await fetch('/api/detection-logs?limit=100');
+      return response.json();
+    },
+    refetchInterval: 30000,
+  });
+
+  // Get active camera (the one with calibration)
+  const activeCamera = cameras?.find((c: any) => c.homographyMatrix);
+  
+  // Filter slots by active camera and get their latest status
+  const activeCameraSlots = slots?.filter((slot: any) => slot.cameraId === activeCamera?.id) || [];
+  
+  // Create a map of latest detection status for each slot
+  const slotStatusMap = new Map();
+  detectionLogs?.forEach((log: any) => {
+    if (!slotStatusMap.has(log.slotId)) {
+      slotStatusMap.set(log.slotId, {
+        status: log.state,
+        qrId: log.qrId,
+        workerName: log.workerName,
+        timestamp: log.timestamp,
+      });
+    }
+  });
+
   const captureMutation = useMutation({
     mutationFn: () => apiRequest('POST', '/api/capture-now'),
     onSuccess: async (response) => {
@@ -144,32 +181,17 @@ export default function Dashboard() {
     return variants[status] || variants.default;
   };
 
-  const generateSlotGrid = () => {
-    const slots = [];
-    const statuses = ['ITEM_PRESENT', 'EMPTY', 'CHECKED_OUT'];
-    const toolNames = ['Scissors', 'Tape Cutter', 'Pliers', 'Wire Cutters', 'Measure Tape', 'Utility Knife', 'Screwdriver', 'Allen Keys', 'Box Cutter', 'Wrench', 'Marker Set', 'Hammer'];
-    
-    for (let row = 0; row < 4; row++) {
-      for (let col = 0; col < 6; col++) {
-        const slotId = `${String.fromCharCode(65 + row)}${col + 1}`;
-        const toolName = toolNames[(row * 6 + col) % toolNames.length];
-        const status = row === 0 && col === 2 ? 'EMPTY' : 
-                     row === 0 && col === 3 ? 'CHECKED_OUT' :
-                     row === 0 && col === 5 ? 'TRAINING_ERROR' : 'ITEM_PRESENT';
-        
-        slots.push({
-          slotId,
-          toolName,
-          status,
-          qrId: status === 'EMPTY' ? null : `${slotId.charAt(0)}${String(row * 6 + col + 1).padStart(3, '0')}`,
-          workerName: status === 'CHECKED_OUT' ? (col === 3 ? 'Y.Tanaka' : 'K.Sato') : null,
-        });
-      }
-    }
-    return slots;
-  };
-
-  const slotGrid = generateSlotGrid();
+  // Merge slots with their latest detection status
+  const slotGrid = activeCameraSlots.map((slot: any) => {
+    const latestStatus = slotStatusMap.get(slot.id);
+    return {
+      slotId: slot.slotId,
+      toolName: slot.toolName,
+      status: latestStatus?.status || 'ITEM_PRESENT',
+      qrId: latestStatus?.qrId || null,
+      workerName: latestStatus?.workerName || null,
+    };
+  }).slice(0, 24); // Show first 24 slots
 
   if (summaryLoading) {
     return (
@@ -195,7 +217,7 @@ export default function Dashboard() {
                 Monitoring Dashboard
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Camera Station A - Last updated: <span className="font-mono">{summary ? formatJSTTimestamp(summary.lastUpdate) : '--'}</span>
+                {activeCamera?.name || 'No Calibrated Camera'} - Last updated: <span className="font-mono">{summary ? formatJSTTimestamp(summary.lastUpdate) : '--'}</span>
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -306,7 +328,7 @@ export default function Dashboard() {
           <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Tool Grid - Station A</CardTitle>
+                <CardTitle>Tool Grid - {activeCamera?.name || 'No Calibrated Camera'}</CardTitle>
                 <div className="flex items-center gap-3">
                   <Select defaultValue="all">
                     <SelectTrigger className="w-40" data-testid="select-filter-status">
@@ -330,74 +352,84 @@ export default function Dashboard() {
             </CardHeader>
             
             <CardContent>
-              <div className="grid grid-cols-6 gap-3">
-                {slotGrid.map((slot) => {
-                  const statusClass = 
-                    slot.status === 'ITEM_PRESENT' ? 'border-green-500' :
-                    slot.status === 'EMPTY' ? 'border-red-500' :
-                    slot.status === 'CHECKED_OUT' ? 'border-blue-500' :
-                    'border-amber-500';
+              {slotGrid.length === 0 ? (
+                <div className="py-12 text-center">
+                  <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-sm text-muted-foreground">No slots available for the calibrated camera</p>
+                  <p className="text-xs text-muted-foreground mt-1">Please calibrate a camera and create slots first</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="grid grid-cols-6 gap-3">
+                    {slotGrid.map((slot) => {
+                      const statusClass = 
+                        slot.status === 'ITEM_PRESENT' ? 'border-green-500' :
+                        slot.status === 'EMPTY' ? 'border-red-500' :
+                        slot.status === 'CHECKED_OUT' ? 'border-blue-500' :
+                        'border-amber-500';
+                      
+                      return (
+                        <div
+                          key={slot.slotId}
+                          className={`grid-slot bg-secondary rounded-lg p-3 border-2 ${statusClass}`}
+                          data-testid={`slot-${slot.slotId}`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-mono text-muted-foreground">{slot.slotId}</span>
+                            <div className={`w-3 h-3 rounded-full ${
+                              slot.status === 'ITEM_PRESENT' ? 'status-present' :
+                              slot.status === 'EMPTY' ? 'status-empty' :
+                              slot.status === 'CHECKED_OUT' ? 'status-checked-out' :
+                              'status-occupied'
+                            }`}></div>
+                          </div>
+                          
+                          <div className="aspect-square bg-muted rounded mb-2 flex items-center justify-center overflow-hidden">
+                            {slot.status === 'EMPTY' && (
+                              <AlertTriangle className="w-8 h-8 text-red-500/30" />
+                            )}
+                            {slot.status === 'CHECKED_OUT' && (
+                              <ClipboardCheck className="w-8 h-8 text-blue-500/30" />
+                            )}
+                            {slot.status === 'ITEM_PRESENT' && (
+                              <div className="w-full h-full bg-gradient-to-br from-green-500/20 to-green-600/10 rounded flex items-center justify-center">
+                                <CheckCircle className="w-6 h-6 text-green-500/50" />
+                              </div>
+                            )}
+                            {slot.status === 'TRAINING_ERROR' && (
+                              <div className="w-full h-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 rounded flex items-center justify-center opacity-50">
+                                <HelpCircle className="w-6 h-6 text-amber-500/50" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <p className="text-xs font-medium text-foreground truncate">{slot.toolName}</p>
+                          
+                          {slot.status === 'EMPTY' && (
+                            <p className="text-xs text-red-500 mt-1">EMPTY</p>
+                          )}
+                          {slot.status === 'CHECKED_OUT' && slot.workerName && (
+                            <p className="text-xs text-blue-500 mt-1">Worker: {slot.workerName}</p>
+                          )}
+                          {slot.status === 'ITEM_PRESENT' && slot.qrId && (
+                            <p className="text-xs text-green-500 mt-1">QR: {slot.qrId}</p>
+                          )}
+                          {slot.status === 'TRAINING_ERROR' && (
+                            <p className="text-xs text-amber-500 mt-1">NO QR DETECTED</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                   
-                  return (
-                    <div
-                      key={slot.slotId}
-                      className={`grid-slot bg-secondary rounded-lg p-3 border-2 ${statusClass}`}
-                      data-testid={`slot-${slot.slotId}`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-mono text-muted-foreground">{slot.slotId}</span>
-                        <div className={`w-3 h-3 rounded-full ${
-                          slot.status === 'ITEM_PRESENT' ? 'status-present' :
-                          slot.status === 'EMPTY' ? 'status-empty' :
-                          slot.status === 'CHECKED_OUT' ? 'status-checked-out' :
-                          'status-occupied'
-                        }`}></div>
-                      </div>
-                      
-                      <div className="aspect-square bg-muted rounded mb-2 flex items-center justify-center overflow-hidden">
-                        {slot.status === 'EMPTY' && (
-                          <AlertTriangle className="w-8 h-8 text-red-500/30" />
-                        )}
-                        {slot.status === 'CHECKED_OUT' && (
-                          <ClipboardCheck className="w-8 h-8 text-blue-500/30" />
-                        )}
-                        {slot.status === 'ITEM_PRESENT' && (
-                          <div className="w-full h-full bg-gradient-to-br from-green-500/20 to-green-600/10 rounded flex items-center justify-center">
-                            <CheckCircle className="w-6 h-6 text-green-500/50" />
-                          </div>
-                        )}
-                        {slot.status === 'TRAINING_ERROR' && (
-                          <div className="w-full h-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 rounded flex items-center justify-center opacity-50">
-                            <HelpCircle className="w-6 h-6 text-amber-500/50" />
-                          </div>
-                        )}
-                      </div>
-                      
-                      <p className="text-xs font-medium text-foreground truncate">{slot.toolName}</p>
-                      
-                      {slot.status === 'EMPTY' && (
-                        <p className="text-xs text-red-500 mt-1">EMPTY</p>
-                      )}
-                      {slot.status === 'CHECKED_OUT' && slot.workerName && (
-                        <p className="text-xs text-blue-500 mt-1">Worker: {slot.workerName}</p>
-                      )}
-                      {slot.status === 'ITEM_PRESENT' && slot.qrId && (
-                        <p className="text-xs text-green-500 mt-1">QR: {slot.qrId}</p>
-                      )}
-                      {slot.status === 'TRAINING_ERROR' && (
-                        <p className="text-xs text-amber-500 mt-1">NO QR DETECTED</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              
-              <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                <p>Showing 24 of {summary?.totalSlots || 60} slots</p>
-                <Button variant="link" className="text-primary p-0" data-testid="link-view-all-slots">
-                  View All Slots →
-                </Button>
-              </div>
+                  <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+                    <p>Showing {slotGrid.length} of {activeCameraSlots.length} slots</p>
+                    <Button variant="link" className="text-primary p-0" data-testid="link-view-all-slots">
+                      View All Slots →
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
           
