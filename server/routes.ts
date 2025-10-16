@@ -231,8 +231,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Two-step calibration validation routes
   app.post("/api/calibrate/:cameraId/validate-qrs-visible", async (req, res) => {
+    const { cameraId } = req.params;
+    
     try {
-      const { cameraId } = req.params;
+      // Acquire exclusive camera lock for validation
+      cameraSessionManager.acquireExclusiveLock(cameraId);
+      
       const camera = await storage.getCamera(cameraId);
       
       if (!camera) {
@@ -278,6 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('error', (err) => {
         if (!responseSent) {
           responseSent = true;
+          cameraSessionManager.releaseLock(cameraId);
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });
@@ -293,31 +298,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('close', (code) => {
         if (responseSent) return;
         
-        if (code === 0) {
-          try {
-            const validationResult = JSON.parse(result);
-            res.json(validationResult);
-          } catch (parseError) {
-            res.status(500).json({ message: "Failed to parse validation result", error: parseError });
+        try {
+          if (code === 0) {
+            try {
+              const validationResult = JSON.parse(result);
+              res.json(validationResult);
+            } catch (parseError) {
+              res.status(500).json({ message: "Failed to parse validation result", error: parseError });
+            }
+          } else {
+            try {
+              const validationResult = JSON.parse(result);
+              res.status(400).json(validationResult);
+            } catch {
+              res.status(500).json({ message: "Validation failed", error });
+            }
           }
-        } else {
-          try {
-            const validationResult = JSON.parse(result);
-            res.status(400).json(validationResult);
-          } catch {
-            res.status(500).json({ message: "Validation failed", error });
-          }
+        } finally {
+          // Always release lock when validation completes
+          cameraSessionManager.releaseLock(cameraId);
         }
       });
       
     } catch (error) {
+      // Release lock on error
+      cameraSessionManager.releaseLock(cameraId);
       res.status(500).json({ message: "Validation error", error });
     }
   });
   
   app.post("/api/calibrate/:cameraId/validate-qrs-covered", async (req, res) => {
+    const { cameraId } = req.params;
+    
     try {
-      const { cameraId } = req.params;
+      // Acquire exclusive camera lock for validation
+      cameraSessionManager.acquireExclusiveLock(cameraId);
+      
       const camera = await storage.getCamera(cameraId);
       
       if (!camera) {
@@ -363,6 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('error', (err) => {
         if (!responseSent) {
           responseSent = true;
+          cameraSessionManager.releaseLock(cameraId);
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });
@@ -378,24 +395,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('close', (code) => {
         if (responseSent) return;
         
-        if (code === 0) {
-          try {
-            const validationResult = JSON.parse(result);
-            res.json(validationResult);
-          } catch (parseError) {
-            res.status(500).json({ message: "Failed to parse validation result", error: parseError });
+        try {
+          if (code === 0) {
+            try {
+              const validationResult = JSON.parse(result);
+              res.json(validationResult);
+            } catch (parseError) {
+              res.status(500).json({ message: "Failed to parse validation result", error: parseError });
+            }
+          } else {
+            try {
+              const validationResult = JSON.parse(result);
+              res.status(400).json(validationResult);
+            } catch {
+              res.status(500).json({ message: "Validation failed", error });
+            }
           }
-        } else {
-          try {
-            const validationResult = JSON.parse(result);
-            res.status(400).json(validationResult);
-          } catch {
-            res.status(500).json({ message: "Validation failed", error });
-          }
+        } finally {
+          // Always release lock when validation completes
+          cameraSessionManager.releaseLock(cameraId);
         }
       });
       
     } catch (error) {
+      // Release lock on error
+      cameraSessionManager.releaseLock(cameraId);
       res.status(500).json({ message: "Validation error", error });
     }
   });

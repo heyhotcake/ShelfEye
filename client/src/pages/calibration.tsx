@@ -165,6 +165,7 @@ export default function Calibration() {
     onSuccess: async (response) => {
       const data: ValidationResult = await response.json();
       setStep1Result(data);
+      setIsCameraLocked(false); // Clear lock state
       
       if (data.success) {
         setCalibrationStep(2); // Move to step 2
@@ -179,8 +180,11 @@ export default function Calibration() {
           variant: "destructive",
         });
       }
+      // Resume preview polling
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
     },
     onError: async (error: any) => {
+      setIsCameraLocked(false); // Clear lock state on error
       let errorMessage = "QR validation failed";
       if (error.response) {
         try {
@@ -195,6 +199,8 @@ export default function Calibration() {
         description: errorMessage,
         variant: "destructive",
       });
+      // Resume preview polling even on error
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
     },
   });
 
@@ -203,6 +209,7 @@ export default function Calibration() {
     onSuccess: async (response) => {
       const data: ValidationResult = await response.json();
       setStep2Result(data);
+      setIsCameraLocked(false); // Clear lock state
       
       if (data.success) {
         toast({
@@ -216,8 +223,11 @@ export default function Calibration() {
           variant: "destructive",
         });
       }
+      // Resume preview polling
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
     },
     onError: async (error: any) => {
+      setIsCameraLocked(false); // Clear lock state on error
       let errorMessage = "QR validation failed";
       if (error.response) {
         try {
@@ -232,6 +242,8 @@ export default function Calibration() {
         description: errorMessage,
         variant: "destructive",
       });
+      // Resume preview polling even on error
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
     },
   });
 
