@@ -49,7 +49,7 @@ export default function TemplatePrint() {
     'A3-landscape': { width: 4961, height: 3508, realWidthMm: 420, realHeightMm: 297 },
     '2xA5-landscape': { width: 4961, height: 1748, realWidthMm: 420, realHeightMm: 148 },
     '3xA5-landscape': { width: 7441, height: 1748, realWidthMm: 630, realHeightMm: 148 },
-    '6-page-3x2': { width: 10701, height: 5049, realWidthMm: 906, realHeightMm: 427.5 },
+    '6-page-3x2': { width: 10525, height: 4961, realWidthMm: 891, realHeightMm: 420 },
   };
 
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -268,7 +268,7 @@ export default function TemplatePrint() {
       // 6-Page format: Create PDF with 6 A4 landscape pages
       const a4WidthMm = 297;  // A4 landscape
       const a4HeightMm = 210;
-      const gutterMm = 7.5;
+      const gutterMm = 0;  // No gutters - sheets touch edge-to-edge
       const markerSizeMm = 50;
       const markerInsetMm = 10;  // Inside safe zone
       const safeMarginMm = 10; // 1cm safe zone
@@ -400,10 +400,10 @@ export default function TemplatePrint() {
           pdf.setTextColor(0, 0, 0);
           const instructions = [
             'Assembly Instructions:',
-            '1. Print all 6 pages on A4 paper',
-            '2. Tape sheets edge-to-edge in 3×2 grid (no gaps/overlaps)',
+            '1. Print all 6 pages on A4 landscape paper',
+            '2. Align sheets edge-to-edge in 3×2 grid (no gaps)',
             '3. Sheets 1,2,3 on top row; sheets 4,5,6 on bottom',
-            '4. White borders create 7.5mm gutters (expected)',
+            '4. Tape sheets together on back side',
           ];
           instructions.forEach((line, i) => {
             pdf.text(line, 10, a4HeightMm - 30 + i * 4);

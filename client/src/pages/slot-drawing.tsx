@@ -106,7 +106,7 @@ export default function SlotDrawing() {
     'A3-landscape': { width: 1131, height: 800, realWidthMm: 420, realHeightMm: 297 },
     '2xA5-landscape': { width: 1200, height: 424, realWidthMm: 420, realHeightMm: 148 },
     '3xA5-landscape': { width: 1800, height: 424, realWidthMm: 630, realHeightMm: 148 },
-    '6-page-3x2': { width: 2437, height: 1150, realWidthMm: 906, realHeightMm: 427.5 },
+    '6-page-3x2': { width: 2400, height: 1131, realWidthMm: 891, realHeightMm: 420 },
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -338,7 +338,7 @@ export default function SlotDrawing() {
   const getSheetBounds = (xCm: number, yCm: number): { minX: number; maxX: number; minY: number; maxY: number } | null => {
     if (paperSize !== '6-page-3x2') return null;
     
-    const gutterMm = 7.5;
+    const gutterMm = 0;  // No gutters - sheets touch edge-to-edge
     const a4WidthMm = 297;  // A4 landscape
     const a4HeightMm = 210;
     
@@ -434,9 +434,9 @@ export default function SlotDrawing() {
     const is6Page = paperSize === '6-page-3x2';
     
     if (is6Page) {
-      // 6-Page (3×2) layout with gutters
-      const gutterMm = 7.5;
-      const gutterPx = gutterMm * pxPerMm;
+      // 6-Page (3×2) layout - sheets touch edge-to-edge
+      const gutterMm = 0;  // No gutters
+      const gutterPx = 0;
       const a4WidthMm = 297;  // A4 landscape
       const a4HeightMm = 210;
       const sheetWidth = a4WidthMm * pxPerMm;
@@ -503,8 +503,8 @@ export default function SlotDrawing() {
     
     if (is6Page) {
       // 6-page format: markers only on corner sheets (1, 3, 4, 6)
-      const gutterMm = 7.5;
-      const gutterPx = gutterMm * pxPerMm;
+      const gutterMm = 0;  // No gutters
+      const gutterPx = 0;
       const a4WidthMm = 297;  // A4 landscape
       const a4HeightMm = 210;
       const sheetWidth = a4WidthMm * pxPerMm;
