@@ -120,7 +120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/calibrate/:cameraId", upload.single('image'), async (req, res) => {
     const { cameraId } = req.params;
     let lockAcquired = false;
-    let uploadedImagePath: string | null = null;
+    
+    // Capture uploaded file path immediately for cleanup in all exit paths
+    const uploadedImagePath = req.file?.path || null;
     
     try {
       const { paperSize } = req.body; // Expected: "6-page-3x2", "A4-landscape", etc.
@@ -163,7 +165,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('[Calibration] LED light turned ON for calibration');
         }
       } else {
-        uploadedImagePath = uploadedFile.path;
         console.log('[Calibration] Using uploaded image:', uploadedImagePath);
       }
 
@@ -197,21 +198,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
           
-          // Clean up uploaded file on Python spawn error
-          if (uploadedImagePath) {
-            try {
-              await fs.unlink(uploadedImagePath);
-              console.log('[Calibration] Cleaned up uploaded image after Python error');
-            } catch (cleanupErr) {
-              console.error('[Calibration] Failed to clean up uploaded image:', cleanupErr);
-            }
-          }
-          
           await turnOffLED(); // Turn off LED on Python spawn error
           res.status(503).json({ 
             message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
             error: err.message 
           });
+          // Note: uploaded file cleanup handled by outer finally block
         }
       });
 
@@ -304,16 +296,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lockAcquired = false;
           }
           
-          // Clean up uploaded file if it exists
-          if (uploadedImagePath) {
-            try {
-              await fs.unlink(uploadedImagePath);
-              console.log('[Calibration] Cleaned up uploaded image:', uploadedImagePath);
-            } catch (err) {
-              console.error('[Calibration] Failed to clean up uploaded image:', err);
-            }
-          }
-          
           // Turn off LED light after calibration
           turnOffLED().catch(err => console.error('[Calibration] LED turnoff error:', err));
         }
@@ -325,18 +307,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cameraSessionManager.releaseLock(cameraId);
       }
       
-      // Clean up uploaded file on error
-      if (uploadedImagePath) {
-        try {
-          await fs.unlink(uploadedImagePath);
-        } catch (err) {
-          console.error('[Calibration] Failed to clean up uploaded image on error:', err);
-        }
-      }
-      
       // Turn off LED on unexpected errors
       await turnOffLED();
       res.status(500).json({ message: "Calibration error", error });
+    } finally {
+      // ALWAYS clean up uploaded file in all exit paths (early returns, errors, success)
+      if (uploadedImagePath) {
+        try {
+          await fs.unlink(uploadedImagePath);
+          console.log('[Calibration] Final cleanup: deleted uploaded image');
+        } catch (err) {
+          console.error('[Calibration] Final cleanup failed:', err);
+        }
+      }
     }
   });
 
