@@ -14,6 +14,17 @@ import crypto from "crypto";
 import { z } from "zod";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertWorkerSchema, insertCaptureRunSchema } from "@shared/schema";
 
+// Helper function to get camera device source (path or index)
+function getCameraDeviceSource(camera: { devicePath?: string | null; deviceIndex?: number | null }): string {
+  if (camera.devicePath) {
+    return camera.devicePath;
+  }
+  if (camera.deviceIndex !== null && camera.deviceIndex !== undefined) {
+    return camera.deviceIndex.toString();
+  }
+  throw new Error('Camera has neither devicePath nor deviceIndex configured');
+}
+
 // Global scheduler instance
 let scheduler: CaptureScheduler;
 
@@ -137,9 +148,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Call Python calibration script with paper size
+      const deviceSource = getCameraDeviceSource(camera);
       const calibrationArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
-        '--camera', camera.deviceIndex.toString(),
+        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
       ];
@@ -322,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Call Python validation script
       const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
-        '--camera', camera.deviceIndex.toString(),
+        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', JSON.stringify(camera.homographyMatrix),
         '--slots', JSON.stringify(expectedSlots),
@@ -449,7 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Call Python validation script
       const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
-        '--camera', camera.deviceIndex.toString(),
+        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', JSON.stringify(camera.homographyMatrix),
         '--slots', JSON.stringify(expectedSlots),
@@ -661,7 +673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const homographyStr = camera.homographyMatrix.join(',');
       const args = [
         path.join(process.cwd(), 'python/rectified_preview.py'),
-        '--camera', camera.deviceIndex.toString(),
+        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', homographyStr,
         '--output-size', '800x600',
@@ -1818,6 +1830,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       },
       lastUpdate: new Date().toISOString()
     });
+  });
+
+  // Camera device detection endpoint
+  app.get("/api/cameras/detect", async (_req, res) => {
+    try {
+      const pythonScript = path.join(process.cwd(), 'python', 'detect_cameras.py');
+      const args = [pythonScript, '--max-index', '10'];
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const childProcess = spawn('python3', args, {
+          env: { ...process.env }
+        });
+
+        let stdout = '';
+        let stderr = '';
+        let isResolved = false;
+
+        // Timeout after 30 seconds to prevent hanging
+        const timeout = setTimeout(() => {
+          if (!isResolved) {
+            isResolved = true;
+            childProcess.kill();
+            reject(new Error('Camera detection timed out after 30 seconds'));
+          }
+        }, 30000);
+
+        childProcess.stdout.on('data', (data) => {
+          stdout += data.toString();
+        });
+
+        childProcess.stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+
+        childProcess.on('close', (code) => {
+          clearTimeout(timeout);
+          if (isResolved) return;
+          isResolved = true;
+
+          if (code !== 0) {
+            console.error('Camera detection error:', stderr);
+            reject(new Error(stderr || 'Camera detection failed'));
+          } else {
+            try {
+              const result = JSON.parse(stdout);
+              resolve(result);
+            } catch (e) {
+              reject(new Error('Failed to parse camera detection output'));
+            }
+          }
+        });
+
+        childProcess.on('error', (error) => {
+          clearTimeout(timeout);
+          if (isResolved) return;
+          isResolved = true;
+          reject(error);
+        });
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to detect cameras',
+        cameras: []
+      });
+    }
   });
 
   const httpServer = createServer(app);

@@ -44,7 +44,8 @@ export class StartupCalibrationService {
 
       const paperSizeFormat = (lastPaperSizeFormat?.value as string) || 'A4-landscape';
 
-      console.log(`[StartupCalibration] Running calibration for camera ${camera.name} (${camera.deviceIndex})`);
+      const deviceInfo = camera.devicePath || `Index ${camera.deviceIndex}`;
+      console.log(`[StartupCalibration] Running calibration for camera ${camera.name} (${deviceInfo})`);
       console.log(`[StartupCalibration] Paper size format: ${paperSizeFormat}`);
       console.log(`[StartupCalibration] Last calibration: ${lastTimestamp?.value || 'unknown'}`);
 
@@ -75,12 +76,19 @@ export class StartupCalibrationService {
       const { getPaperDimensions } = await import('../utils/paper-size.js');
       const paperDims = getPaperDimensions(paperSizeFormat);
 
-      const pythonProcess = spawn('python3', [
+      const args = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
-        '--camera', camera.deviceIndex.toString(),
+        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
-      ]);
+      ];
+
+      // Add device path if available (for Raspberry Pi)
+      if (camera.devicePath) {
+        args.push('--device-path', camera.devicePath);
+      }
+
+      const pythonProcess = spawn('python3', args);
 
       let result = '';
       let error = '';

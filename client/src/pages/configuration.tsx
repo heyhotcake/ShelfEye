@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest, downloadFile, uploadFile } from "@/lib/api";
+import { apiRequest, apiCall, downloadFile, uploadFile } from "@/lib/api";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Download, FileCode, FileText, RotateCcw, X, Plus, Camera, Trash, Power, Lightbulb } from "lucide-react";
+import { Upload, Download, FileCode, FileText, RotateCcw, X, Plus, Camera, Trash, Power, Lightbulb, Search } from "lucide-react";
 
 interface SystemConfig {
   key: string;
@@ -37,9 +38,45 @@ export default function Configuration() {
 
   const [newCameraName, setNewCameraName] = useState("");
   const [newCameraDevice, setNewCameraDevice] = useState("0");
+  const [newCameraDevicePath, setNewCameraDevicePath] = useState("");
+  const [showDetectedCameras, setShowDetectedCameras] = useState(false);
+  const [detectedCameras, setDetectedCameras] = useState<any[]>([]);
+
+  const detectCamerasMutation = useMutation({
+    mutationFn: async () => {
+      const result = await apiCall('GET', '/api/cameras/detect');
+      if (!result.ok || !result.data) {
+        throw new Error(result.error || 'Failed to detect cameras');
+      }
+      return result.data;
+    },
+    onSuccess: (data: any) => {
+      if (data.success && data.cameras && data.cameras.length > 0) {
+        setDetectedCameras(data.cameras);
+        setShowDetectedCameras(true);
+        toast({
+          title: "Cameras Detected",
+          description: `Found ${data.cameras.length} available camera(s)`,
+        });
+      } else {
+        toast({
+          title: "No Cameras Found",
+          description: "No available cameras detected on this system",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Detection Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const createCameraMutation = useMutation({
-    mutationFn: (cameraData: { name: string; deviceIndex: number }) =>
+    mutationFn: (cameraData: { name: string; deviceIndex?: number; devicePath?: string }) =>
       apiRequest('POST', '/api/cameras', cameraData),
     onSuccess: () => {
       toast({
@@ -49,6 +86,7 @@ export default function Configuration() {
       queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
       setNewCameraName("");
       setNewCameraDevice("0");
+      setNewCameraDevicePath("");
     },
     onError: (error) => {
       toast({
@@ -283,10 +321,22 @@ export default function Configuration() {
             {/* Camera Management */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="w-5 h-5" />
-                  Camera Management
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Camera className="w-5 h-5" />
+                    Camera Management
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => detectCamerasMutation.mutate()}
+                    disabled={detectCamerasMutation.isPending}
+                    data-testid="button-detect-cameras"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    {detectCamerasMutation.isPending ? "Detecting..." : "Detect Cameras"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Existing Cameras */}
@@ -302,7 +352,15 @@ export default function Configuration() {
                           <div>
                             <p className="font-medium text-foreground">{camera.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              Device {camera.deviceIndex} • {camera.resolution || '1920x1080'}
+                              {camera.devicePath ? (
+                                <>
+                                  {camera.devicePath} • {camera.resolution || '1920x1080'}
+                                </>
+                              ) : (
+                                <>
+                                  Device {camera.deviceIndex} • {camera.resolution || '1920x1080'}
+                                </>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -373,14 +431,39 @@ export default function Configuration() {
                       />
                     </div>
                   </div>
+                  <div className="mt-3">
+                    <Label htmlFor="device-path">Device Path (Optional - Raspberry Pi)</Label>
+                    <Input
+                      id="device-path"
+                      placeholder="e.g., /dev/video0"
+                      value={newCameraDevicePath}
+                      onChange={(e) => setNewCameraDevicePath(e.target.value)}
+                      data-testid="input-device-path"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      For Raspberry Pi: Use /dev/video0, /dev/video1, etc. Leave empty to use Device Index instead.
+                    </p>
+                  </div>
                   <Button
                     className="w-full mt-3"
-                    onClick={() =>
-                      createCameraMutation.mutate({
-                        name: newCameraName,
-                        deviceIndex: parseInt(newCameraDevice),
-                      })
-                    }
+                    onClick={() => {
+                      const cameraData: any = { name: newCameraName };
+                      
+                      // Include device path if provided
+                      if (newCameraDevicePath) {
+                        cameraData.devicePath = newCameraDevicePath;
+                      }
+                      
+                      // Include device index only if no path or if explicitly set
+                      if (!newCameraDevicePath && newCameraDevice) {
+                        cameraData.deviceIndex = parseInt(newCameraDevice);
+                      } else if (newCameraDevicePath && newCameraDevice !== "0") {
+                        // Include index as fallback if user explicitly changed it
+                        cameraData.deviceIndex = parseInt(newCameraDevice);
+                      }
+                      
+                      createCameraMutation.mutate(cameraData);
+                    }}
                     disabled={!newCameraName || createCameraMutation.isPending}
                     data-testid="button-add-camera"
                   >
@@ -683,6 +766,65 @@ export default function Configuration() {
           </div>
         </div>
       </main>
+
+      {/* Detected Cameras Dialog */}
+      <Dialog open={showDetectedCameras} onOpenChange={setShowDetectedCameras}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detected Cameras</DialogTitle>
+            <DialogDescription>
+              Found {detectedCameras.length} available camera(s). Click on a camera to use its device path.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-4">
+            {detectedCameras.map((cam, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                onClick={() => {
+                  // Prioritize device path for Raspberry Pi, fallback to index
+                  if (cam.devicePath) {
+                    setNewCameraDevicePath(cam.devicePath);
+                    // Also set index if available for fallback
+                    if (cam.deviceIndex !== null && cam.deviceIndex !== undefined) {
+                      setNewCameraDevice(cam.deviceIndex.toString());
+                    }
+                    toast({
+                      title: "Camera Selected",
+                      description: `Device path: ${cam.devicePath}`,
+                    });
+                  } else if (cam.deviceIndex !== null && cam.deviceIndex !== undefined) {
+                    setNewCameraDevice(cam.deviceIndex.toString());
+                    setNewCameraDevicePath(""); // Clear path if only index available
+                    toast({
+                      title: "Camera Selected",
+                      description: `Device index: ${cam.deviceIndex}`,
+                    });
+                  }
+                  setShowDetectedCameras(false);
+                }}
+                data-testid={`detected-camera-${index}`}
+              >
+                <div className="flex items-center gap-3">
+                  <Camera className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-foreground">{cam.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {cam.devicePath && <span className="font-mono">{cam.devicePath}</span>}
+                      {cam.devicePath && cam.deviceIndex !== null && <span> • </span>}
+                      {cam.deviceIndex !== null && <span>Index {cam.deviceIndex}</span>}
+                      {cam.width && cam.height && (
+                        <span> • {cam.width}x{cam.height}</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline">Available</Badge>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
