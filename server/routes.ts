@@ -686,6 +686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/rectified-preview/:cameraId", async (req, res) => {
     try {
       const { cameraId } = req.params;
+      const { templateTimestamp } = req.query; // Optional: specific template to show
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
         return res.status(404).json({ message: "Camera not found" });

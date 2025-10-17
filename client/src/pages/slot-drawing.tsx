@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer } from "lucide-react";
+import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Point {
   x: number;
@@ -93,6 +94,12 @@ export default function SlotDrawing() {
   const [draggingRectId, setDraggingRectId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null);
   const [selectedTemplateRect, setSelectedTemplateRect] = useState<TemplateRectangle | null>(null);
+  
+  // Preview state
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<any>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   
   // Paper size dimensions (width x height in pixels, landscape orientation)
   // ISO A-series aspect ratio is √2:1 (1.414:1)
@@ -1049,6 +1056,50 @@ export default function SlotDrawing() {
       description: versionToDelete ? `"${versionToDelete.paperSize} - ${versionToDelete.name}" removed` : "Design removed",
     });
   };
+  
+  const previewTemplateVersion = async (version: any) => {
+    if (!selectedCameraId) {
+      toast({
+        title: "Camera Required",
+        description: "Please select a camera to preview the template",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Save the template to localStorage so calibration page can use it
+    localStorage.setItem('selectedTemplateForPreview', version.timestamp);
+    
+    setPreviewTemplate(version);
+    setIsLoadingPreview(true);
+    setShowPreviewDialog(true);
+    
+    try {
+      // Fetch rectified preview with the template overlay
+      const url = `/api/rectified-preview/${selectedCameraId}?templateTimestamp=${encodeURIComponent(version.timestamp)}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch preview');
+      }
+      
+      const data = await response.json();
+      if (data.ok && data.image) {
+        setPreviewImageUrl(data.image);
+      } else {
+        throw new Error(data.message || 'Preview not available');
+      }
+    } catch (error) {
+      toast({
+        title: "Preview Error",
+        description: error instanceof Error ? error.message : "Failed to load preview",
+        variant: "destructive",
+      });
+      setShowPreviewDialog(false);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
 
   const addTemplateRectangle = async (categoryId: string) => {
     const category = toolCategories.find((c: any) => c.id === categoryId);
@@ -1458,8 +1509,18 @@ export default function SlotDrawing() {
                                   <Button
                                     size="sm"
                                     variant="outline"
+                                    onClick={() => previewTemplateVersion(version)}
+                                    data-testid={`button-preview-template-version-${version.timestamp}`}
+                                    title="Preview template overlay"
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => loadTemplateVersion(version)}
                                     data-testid={`button-load-template-version-${version.timestamp}`}
+                                    title="Load template"
                                   >
                                     <Download className="w-3 h-3" />
                                   </Button>
@@ -1468,6 +1529,7 @@ export default function SlotDrawing() {
                                     variant="outline"
                                     onClick={() => deleteTemplateVersion(version.timestamp)}
                                     data-testid={`button-delete-template-version-${version.timestamp}`}
+                                    title="Delete template"
                                   >
                                     <Trash className="w-3 h-3" />
                                   </Button>
@@ -1490,6 +1552,49 @@ export default function SlotDrawing() {
         open={showCategoryManager}
         onOpenChange={setShowCategoryManager}
       />
+      
+      {/* Template Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Template Preview: {previewTemplate?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            {isLoadingPreview ? (
+              <div className="aspect-[4/3] bg-muted rounded flex items-center justify-center">
+                <p className="text-sm text-muted-foreground">Loading preview...</p>
+              </div>
+            ) : previewImageUrl ? (
+              <div className="space-y-3">
+                <img 
+                  src={previewImageUrl} 
+                  alt="Template overlay preview" 
+                  className="w-full rounded border"
+                />
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded p-3">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Paper Size:</strong> {previewTemplate?.paperSize}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    <strong>Tools:</strong> {previewTemplate?.templateRectangles?.length || 0} items
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ℹ️ The magenta rectangles show where tools should be placed. Verify they align with your printed template.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="aspect-[4/3] bg-muted rounded flex flex-col items-center justify-center">
+                <p className="text-sm text-muted-foreground">Camera not available for preview</p>
+                <p className="text-xs text-muted-foreground mt-1">Make sure camera is calibrated</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -168,11 +168,18 @@ export default function Calibration() {
 
   // Rectified preview - fetch after successful calibration
   const { data: rectifiedPreview, refetch: refetchRectified, isLoading: isLoadingRectified, error: rectifiedError } = useQuery<CameraPreview>({
-    queryKey: ['/api/rectified-preview', activeCamera?.id],
+    queryKey: ['/api/rectified-preview', activeCamera?.id, selectedTemplate],
     queryFn: async () => {
       if (!activeCamera?.id) throw new Error('No active camera');
       console.log('[Rectified Preview] Fetching for camera:', activeCamera.id);
-      const response = await fetch(`/api/rectified-preview/${activeCamera.id}`);
+      console.log('[Rectified Preview] Selected template:', selectedTemplate);
+      
+      // Add template timestamp to query if selected
+      const url = selectedTemplate 
+        ? `/api/rectified-preview/${activeCamera.id}?templateTimestamp=${encodeURIComponent(selectedTemplate)}`
+        : `/api/rectified-preview/${activeCamera.id}`;
+      
+      const response = await fetch(url);
       if (!response.ok) {
         const errorData = await response.json();
         console.error('[Rectified Preview] Error:', errorData);
