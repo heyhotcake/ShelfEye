@@ -1057,48 +1057,9 @@ export default function SlotDrawing() {
     });
   };
   
-  const previewTemplateVersion = async (version: any) => {
-    if (!selectedCameraId) {
-      toast({
-        title: "Camera Required",
-        description: "Please select a camera to preview the template",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Save the template to localStorage so calibration page can use it
-    localStorage.setItem('selectedTemplateForPreview', version.timestamp);
-    
+  const previewTemplateVersion = (version: any) => {
     setPreviewTemplate(version);
-    setIsLoadingPreview(true);
     setShowPreviewDialog(true);
-    
-    try {
-      // Fetch rectified preview with the template overlay
-      const url = `/api/rectified-preview/${selectedCameraId}?templateTimestamp=${encodeURIComponent(version.timestamp)}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch preview');
-      }
-      
-      const data = await response.json();
-      if (data.ok && data.image) {
-        setPreviewImageUrl(data.image);
-      } else {
-        throw new Error(data.message || 'Preview not available');
-      }
-    } catch (error) {
-      toast({
-        title: "Preview Error",
-        description: error instanceof Error ? error.message : "Failed to load preview",
-        variant: "destructive",
-      });
-      setShowPreviewDialog(false);
-    } finally {
-      setIsLoadingPreview(false);
-    }
   };
 
   const addTemplateRectangle = async (categoryId: string) => {
