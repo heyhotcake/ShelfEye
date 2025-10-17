@@ -100,11 +100,15 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
         }
     
     # Apply lens distortion correction if camera calibration parameters provided
+    # Skip undistortion if all distortion coefficients are zero (to avoid interpolation artifacts)
     if camera_matrix is not None and dist_coeffs is not None:
-        print(f"Applying lens undistortion before warp", file=sys.stderr)
-        K = np.array(camera_matrix).reshape(3, 3)
         D = np.array(dist_coeffs)
-        frame = cv2.undistort(frame, K, D)
+        if np.any(D != 0):
+            print(f"Applying lens undistortion before warp", file=sys.stderr)
+            K = np.array(camera_matrix).reshape(3, 3)
+            frame = cv2.undistort(frame, K, D)
+        else:
+            print(f"Skipping undistortion (all coefficients are zero)", file=sys.stderr)
     
     # Apply homography transformation to get rectified view
     H = np.array(homography_matrix).reshape(3, 3)

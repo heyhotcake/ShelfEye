@@ -41,9 +41,13 @@ def generate_rectified_image_from_frame(
         Rectified image as numpy array
     """
     # Step 1: Undistort the frame if camera parameters are provided
+    # Skip undistortion if all distortion coefficients are zero (to avoid interpolation artifacts)
     if camera_matrix is not None and dist_coeffs is not None:
-        logger.info("Undistorting frame before warping")
-        frame = cv2.undistort(frame, camera_matrix, dist_coeffs)
+        if np.any(dist_coeffs != 0):
+            logger.info("Undistorting frame before warping")
+            frame = cv2.undistort(frame, camera_matrix, dist_coeffs)
+        else:
+            logger.info("Skipping undistortion (all coefficients are zero)")
     
     # Step 2: Apply homography transformation
     # Homography maps cm → pixels (from calibration)
