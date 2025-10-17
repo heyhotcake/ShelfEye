@@ -175,12 +175,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      // Call Python calibration script with paper size
+      // Get template rectangles with category dimensions for preview overlay
+      const templateRectanglesForPreview = await storage.getTemplateRectanglesByCamera(cameraId);
+      const templatesWithDimensions = [];
+      
+      for (const template of templateRectanglesForPreview) {
+        const category = await storage.getToolCategory(template.categoryId);
+        if (category) {
+          templatesWithDimensions.push({
+            xCm: template.xCm,
+            yCm: template.yCm,
+            widthCm: category.widthCm,
+            heightCm: category.heightCm,
+            rotation: template.rotation,
+            label: category.name
+          });
+        }
+      }
+
+      // Call Python calibration script with paper size and preview generation
       const deviceSource = getCameraDeviceSource(camera);
       const calibrationArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
-        '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
+        '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
+        '--generate-preview',
+        '--preview-output-size', '800x600',
+        '--templates', JSON.stringify(templatesWithDimensions)
       ];
       
       // Use device path if available (for Raspberry Pi), otherwise use index
@@ -281,13 +302,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await storage.setConfig('last_calibration_timestamp', new Date().toISOString(), 'Last successful calibration timestamp');
               await storage.setConfig('last_calibration_paper_size_format', paperSize || 'A4-landscape', 'Last calibration paper size format (e.g., 6-page-3x2)');
 
-              res.json({
+              const response: any = {
                 ok: true,
                 homographyMatrix: homographyMatrix,
                 reprojectionError: calibrationData.reprojection_error,
                 markersDetected: calibrationData.markers_detected,
                 slotsCreated: createdSlots.length,
-              });
+              };
+              
+              // Include rectified preview if generated
+              if (calibrationData.rectified_preview) {
+                response.rectifiedPreview = calibrationData.rectified_preview;
+              }
+
+              res.json(response);
             } catch (parseError) {
               res.status(500).json({ message: "Failed to parse calibration result", error: parseError });
             }
