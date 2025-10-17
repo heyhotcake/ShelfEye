@@ -954,18 +954,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Detection logs routes
   app.get("/api/detection-logs", async (req, res) => {
     try {
-      const limit = parseInt(req.query.limit as string) || 100;
-      const offset = parseInt(req.query.offset as string) || 0;
+      // Validate and sanitize query parameters
+      const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 100, 1), 1000); // Between 1-1000
+      const offset = Math.max(parseInt(req.query.offset as string) || 0, 0); // Non-negative
       const { slotId, startDate, endDate } = req.query;
 
       let logs;
       if (slotId) {
         logs = await storage.getDetectionLogsBySlot(slotId as string, limit);
       } else if (startDate && endDate) {
-        logs = await storage.getDetectionLogsByDateRange(
-          new Date(startDate as string),
-          new Date(endDate as string)
-        );
+        // Validate date parameters
+        const start = new Date(startDate as string);
+        const end = new Date(endDate as string);
+        
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          return res.status(400).json({ message: "Invalid date format. Use ISO 8601 format (YYYY-MM-DD)" });
+        }
+        
+        if (start > end) {
+          return res.status(400).json({ message: "Start date must be before end date" });
+        }
+        
+        logs = await storage.getDetectionLogsByDateRange(start, end);
       } else {
         logs = await storage.getDetectionLogs(limit, offset);
       }
@@ -1027,6 +1037,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/qr-generate", async (req, res) => {
     try {
       const { type, id, errorCorrection = 'L', moduleSize = 25 } = req.body;
+
+      // Validate input parameters
+      if (!id || typeof id !== 'string') {
+        return res.status(400).json({ message: "ID is required and must be a string" });
+      }
+      
+      if (!type || !['slot', 'worker'].includes(type)) {
+        return res.status(400).json({ message: "Type must be 'slot' or 'worker'" });
+      }
+      
+      if (!['L', 'M', 'Q', 'H'].includes(errorCorrection)) {
+        return res.status(400).json({ message: "Error correction must be L, M, Q, or H" });
+      }
+      
+      const moduleNum = parseInt(moduleSize);
+      if (isNaN(moduleNum) || moduleNum < 1 || moduleNum > 100) {
+        return res.status(400).json({ message: "Module size must be between 1 and 100" });
+      }
 
       // SIMPLIFIED QR CODE: Just encode the numeric ID
       // Database lookup will retrieve slot/worker details
@@ -1661,7 +1689,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Capture runs history route
   app.get("/api/capture-runs", async (req, res) => {
     try {
-      const limit = parseInt(req.query.limit as string) || 50;
+      // Validate and sanitize limit parameter
+      const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 500); // Between 1-500
       const runs = await storage.getCaptureRuns(limit);
       res.json(runs);
     } catch (error) {
@@ -1672,7 +1701,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Worker checkout report route - shows which worker has which tool at a specific time
   app.get("/api/reports/checkouts", async (req, res) => {
     try {
-      const timestamp = req.query.timestamp ? new Date(req.query.timestamp as string) : new Date();
+      // Validate timestamp if provided
+      let timestamp = new Date();
+      if (req.query.timestamp) {
+        timestamp = new Date(req.query.timestamp as string);
+        if (isNaN(timestamp.getTime())) {
+          return res.status(400).json({ message: "Invalid timestamp format. Use ISO 8601 format" });
+        }
+      }
       const slots = await storage.getSlots();
       const checkouts = [];
 
