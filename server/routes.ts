@@ -137,12 +137,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Call Python calibration script with paper size
-      const pythonProcess = spawn('python3', [
+      const calibrationArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
         '--camera', camera.deviceIndex.toString(),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
-      ]);
+      ];
+      
+      // Add device path if available (for Raspberry Pi)
+      if (camera.devicePath) {
+        calibrationArgs.push('--device-path', camera.devicePath);
+      }
+      
+      const pythonProcess = spawn('python3', calibrationArgs);
 
       let result = '';
       let error = '';
@@ -313,7 +320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Call Python validation script
-      const pythonProcess = spawn('python3', [
+      const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
         '--camera', camera.deviceIndex.toString(),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
@@ -321,7 +328,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--slots', JSON.stringify(expectedSlots),
         '--secret', secret,
         '--should-detect', 'true' // Step 1: QRs should be visible
-      ]);
+      ];
+      
+      // Add device path if available (for Raspberry Pi)
+      if (camera.devicePath) {
+        validationArgs.push('--device-path', camera.devicePath);
+      }
+      
+      const pythonProcess = spawn('python3', validationArgs);
       
       let result = '';
       let error = '';
@@ -433,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Call Python validation script
-      const pythonProcess = spawn('python3', [
+      const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
         '--camera', camera.deviceIndex.toString(),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
@@ -441,7 +455,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--slots', JSON.stringify(expectedSlots),
         '--secret', secret,
         '--should-detect', 'false' // Step 2: QRs should NOT be visible
-      ]);
+      ];
+      
+      // Add device path if available (for Raspberry Pi)
+      if (camera.devicePath) {
+        validationArgs.push('--device-path', camera.devicePath);
+      }
+      
+      const pythonProcess = spawn('python3', validationArgs);
       
       let result = '';
       let error = '';
@@ -537,9 +558,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Call Python preview script
+      // Use device path if available, otherwise use device index
+      const deviceSource = camera.devicePath || camera.deviceIndex.toString();
       const pythonProcess = spawn('python3', [
         path.join(process.cwd(), 'python/camera_preview.py'),
-        camera.deviceIndex.toString(),
+        deviceSource,
         camera.resolution[0].toString(),
         camera.resolution[1].toString()
       ]);
@@ -644,6 +667,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--output-size', '800x600',
         '--paper-size', `${paperDimensions.widthCm}x${paperDimensions.heightCm}`
       ];
+      
+      // Add device path if available (for Raspberry Pi)
+      if (camera.devicePath) {
+        args.push('--device-path', camera.devicePath);
+      }
       
       // Add templates if available
       if (templateData.length > 0) {
@@ -917,29 +945,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // QR code generation route
   app.post("/api/qr-generate", async (req, res) => {
     try {
-      const { type, id, slotName, workerName, errorCorrection = 'L', moduleSize = 25, includeHmac = true } = req.body;
+      const { type, id, errorCorrection = 'L', moduleSize = 25 } = req.body;
 
-      const payload: any = {
-        type,
-        id,
-        slot_name: slotName || undefined,
-        worker_name: workerName || undefined,
-        version: "1.0",
-        ts: Math.floor(Date.now() / 1000),
-        nonce: Math.random().toString(36).substring(2, 8),
-      };
-
-      if (includeHmac) {
-        // In a real implementation, you'd use a proper HMAC with a secret key
-        payload.hmac = Buffer.from(JSON.stringify(payload)).toString('base64').substring(0, 8);
-      }
-
-      // Generate QR code using Node.js library
-      const qrData = JSON.stringify(payload);
+      // SIMPLIFIED QR CODE: Just encode the numeric ID
+      // Database lookup will retrieve slot/worker details
+      const qrData = id;
+      
+      // Simple payload for reference
+      const payload = { type, id };
       
       // Map error correction levels
       const errorCorrectionMap: Record<string, QRCode.QRCodeErrorCorrectionLevel> = {
-        'L': 'L',
+        'L': 'L',  // Low = larger modules = easier scanning
         'M': 'M',
         'Q': 'Q',
         'H': 'H'
@@ -1493,34 +1510,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Worker not found" });
       }
 
-      // Get HMAC secret key from config
-      const secretConfig = await storage.getConfigByKey('QR_SECRET_KEY');
-      const secretKey = secretConfig?.value as string || 'default-secret-key';
+      // SIMPLIFIED QR CODE: Just encode the worker code (numeric ID)
+      // Database lookup will retrieve worker details
+      const qrData = worker.workerCode;
 
-      // Generate QR payload (unique per worker with workerCode as ID)
-      const payload: any = {
-        type: "worker",
-        id: worker.workerCode, // Unique worker identifier for checkout tracking
-        worker_name: worker.name,
-        version: "1.0",
-        ts: Math.floor(Date.now() / 1000),
-        nonce: Math.random().toString(36).substring(2, 8),
-      };
-
-      if (worker.department) {
-        payload.department = worker.department;
-      }
-
-      // Generate proper HMAC-SHA256 signature (matching Python implementation)
-      const message = JSON.stringify(payload, Object.keys(payload).sort());
-      const hmac = crypto.createHmac('sha256', secretKey);
-      hmac.update(message);
-      payload.hmac = hmac.digest('hex');
-
-      // Generate QR code as PNG with RGBA
-      const qrData = JSON.stringify(payload);
+      // Generate QR code as PNG with higher error correction for simpler, larger modules
       const qrCodeBuffer = await QRCode.toBuffer(qrData, {
-        errorCorrectionLevel: 'H',
+        errorCorrectionLevel: 'L', // Low error correction = larger modules = easier scanning
         margin: 1,
         width: 300,
         type: 'png',
@@ -1533,7 +1529,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert to base64
       const qrCodeBase64 = qrCodeBuffer.toString('base64');
 
-      // Save QR payload to worker
+      // Store simple payload for reference
+      const payload = { id: worker.workerCode, type: 'worker' };
       await storage.updateWorker(worker.id, { qrPayload: payload });
 
       res.json({

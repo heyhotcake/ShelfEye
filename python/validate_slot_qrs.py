@@ -105,48 +105,32 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     detected_qrs = decode_qr_codes(rectified)
     
     # Parse detected QR codes and validate
+    # SIMPLIFIED: QR codes now contain just numeric IDs, no JSON or HMAC
     valid_slot_qrs = []
     invalid_qrs = []
     
     for qr in detected_qrs:
         try:
-            # Parse QR data (JSON format with embedded HMAC)
-            qr_payload = json.loads(qr['data'])
+            # QR data is now just a simple string (numeric ID)
+            qr_id = qr['data'].strip()
             
-            # Validate HMAC signature
-            if not validate_hmac_signature(qr_payload, secret_key):
-                invalid_qrs.append({
-                    'data': qr['data'],
-                    'reason': 'Invalid HMAC signature'
-                })
-                continue
-            
-            # Check if this is a slot QR code
-            if qr_payload.get('type') != 'slot':
-                continue
-            
-            # Check if this slot is expected
-            slot_id = qr_payload.get('id')
-            expected_slot = next((s for s in expected_slots if s['id'] == slot_id), None)
+            # Check if this ID matches any expected slot
+            expected_slot = next((s for s in expected_slots if s['id'] == qr_id), None)
             
             if expected_slot:
                 valid_slot_qrs.append({
                     'slotId': expected_slot['slotId'],
                     'toolName': expected_slot['toolName'],
-                    'qrData': qr_payload,
+                    'qrData': {'id': qr_id},  # Simple format for compatibility
                     'rect': qr['rect']
                 })
             else:
+                # ID not in expected slots - might be worker QR or invalid
                 invalid_qrs.append({
                     'data': qr['data'],
-                    'reason': f'Slot {slot_id} not expected for this camera'
+                    'reason': f'QR ID {qr_id} not expected for this camera'
                 })
         
-        except json.JSONDecodeError:
-            invalid_qrs.append({
-                'data': qr['data'],
-                'reason': 'Invalid JSON in QR payload'
-            })
         except Exception as e:
             invalid_qrs.append({
                 'data': qr['data'],
