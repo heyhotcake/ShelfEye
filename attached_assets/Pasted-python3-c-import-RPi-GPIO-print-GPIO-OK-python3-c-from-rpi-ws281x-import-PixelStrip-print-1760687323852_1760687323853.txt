@@ -1,0 +1,22 @@
+python3 -c "import RPi.GPIO; print('GPIO OK')"
+python3 -c "from rpi_ws281x import PixelStrip; print('WS2812 OK')"
+GPIO OK
+WS2812 OK
+naniwa@NaniwaTanaCheck:~ $ curl -X POST http://localhost:5000/api/gpio/light -H "Content-Type: application/json" -d '{"action":"on"}'
+{"ok":true,"success":true,"pin":18,"state":"HIGH","mode":"ws2812","message":"Light turned on successfully"}naniwa@NaniwaTanaCheck:~ $ ps aux | grepps aux | grep -E "alert_led|gpio_controller" | grep -v grep
+root        3454  0.0  0.3  20580  6652 ?        S    13:17   0:00 sudo python3 /home/naniwa/ShelfEye/python/alert_led.py --pin 18 --action flash --pattern slow
+root        3456  0.0  0.1  20580  2552 pts/1    Ss+  13:17   0:00 sudo python3 /home/naniwa/ShelfEye/python/alert_led.py --pin 18 --action flash --pattern slow
+root        3457 17.0  0.6  94320 12064 pts/1    Sl   13:17  35:53 python3 /home/naniwa/ShelfEye/python/alert_led.py --pin 18 --action flash --pattern slow
+root        3541  0.0  0.3  20580  6648 ?        S    13:18   0:00 sudo python3 /home/naniwa/ShelfEye/python/alert_led.py --pin 18 --action flash --pattern slow
+root        3543  0.0  0.1  20580  2548 pts/2    Ss+  13:18   0:00 sudo python3 /home/naniwa/ShelfEye/python/alert_led.py --pin 18 --action flash --pattern slow
+root        3544 17.1  0.6  94320 12056 pts/2    Sl   13:18  35:50 python3 /home/naniwa/ShelfEye/python/alert_led.py --pin 18 --action flash --pattern slow
+root        5895  0.0  0.3  20580  6620 ?        S    16:45   0:00 sudo python3 /home/naniwa/ShelfEye/python/gpio_controller.py --pin 18 --action off
+root        5897 17.2  0.7  96144 13584 ?        Sl   16:45   0:21 python3 /home/naniwa/ShelfEye/python/gpio_controller.py --pin 18 --action off
+naniwa@NaniwaTanaCheck:~ $ sudo pkill -f alert_led.py
+sudo pkill -f gpio_controller.py
+naniwa@NaniwaTanaCheck:~ $ cd ~/ShelfEye
+sudo python3 python/gpio_controller.py --pin 18 --action off
+{"success": true, "pin": 18, "state": "LOW", "mode": "ws2812"}
+naniwa@NaniwaTanaCheck:~/ShelfEye $ cd ~/ShelfEye
+sudo python3 python/alert_led.py --pin 18 --action flash --pattern slow
+{"success": true, "pin": 18, "action": "flash", "pattern": "slow", "flashing": true}
