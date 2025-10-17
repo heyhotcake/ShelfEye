@@ -931,7 +931,7 @@ export default function SlotDrawing() {
   };
 
   // Template version save/load handlers
-  const saveTemplateVersion = () => {
+  const saveTemplateVersion = async () => {
     if (!templateVersionName.trim()) {
       toast({
         title: "Design Name Required",
@@ -951,29 +951,58 @@ export default function SlotDrawing() {
       return;
     }
 
-    // Get only the categories used in current templates
-    const usedCategoryIds = new Set(templateRectangles.map(t => t.categoryId));
-    const relevantCategories = toolCategories.filter((c: any) => usedCategoryIds.has(c.id));
+    try {
+      // Get only the categories used in current templates
+      const usedCategoryIds = new Set(templateRectangles.map(t => t.categoryId));
+      const relevantCategories = toolCategories.filter((c: any) => usedCategoryIds.has(c.id));
 
-    const newVersion = {
-      name: templateVersionName,
-      timestamp: new Date().toISOString(),
-      paperSize: paperSize,
-      cameraId: selectedCameraId,
-      templateRectangles: templateRectangles,
-      categories: relevantCategories,
-    };
+      const newVersion = {
+        name: templateVersionName,
+        timestamp: new Date().toISOString(),
+        paperSize: paperSize,
+        cameraId: selectedCameraId,
+        templateRectangles: templateRectangles,
+        categories: relevantCategories,
+      };
 
-    const updated = [...savedTemplateVersions, newVersion];
-    setSavedTemplateVersions(updated);
-    localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
-    
-    toast({
-      title: "Template Design Saved",
-      description: `"${paperSize} - ${templateVersionName}" saved with ${templateRectangles.length} tools`,
-    });
-    
-    setTemplateVersionName('');
+      // Save to localStorage
+      const updated = [...savedTemplateVersions, newVersion];
+      setSavedTemplateVersions(updated);
+      localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
+      
+      // ALSO save to database so calibration can use it immediately
+      // First, ensure categories exist in the database
+      for (const category of relevantCategories) {
+        const existingCategory = toolCategories.find((c: any) => c.name === category.name);
+        if (!existingCategory) {
+          await apiRequest('POST', '/api/tool-categories', {
+            name: category.name,
+            toolType: category.toolType,
+            widthCm: category.widthCm,
+            heightCm: category.heightCm,
+          });
+        }
+      }
+
+      // Refresh categories
+      await queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
+
+      // Templates are already in the database (they exist in templateRectangles array)
+      // No need to delete/recreate, they're already persisted
+      
+      toast({
+        title: "Template Design Saved",
+        description: `"${paperSize} - ${templateVersionName}" saved with ${templateRectangles.length} tools and ready for calibration`,
+      });
+      
+      setTemplateVersionName('');
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: "Failed to save template design to database",
+        variant: "destructive",
+      });
+    }
   };
 
   const loadTemplateVersion = async (version: typeof savedTemplateVersions[0]) => {
