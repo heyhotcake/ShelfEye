@@ -76,8 +76,20 @@ export class StartupCalibrationService {
       const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
       if (lightStripConfig) {
         const pin = parseInt(lightStripConfig.value as string);
-        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        
+        // Log LED control output for debugging
+        ledProcess.stdout.on('data', (data) => {
+          console.log(`[StartupCalibration] LED control output: ${data}`);
+        });
+        ledProcess.stderr.on('data', (data) => {
+          console.error(`[StartupCalibration] LED control error: ${data}`);
+        });
+        
         console.log('[StartupCalibration] LED light turned ON for calibration');
+        
+        // Wait a moment for LED to fully turn on
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       // Get paper dimensions from format

@@ -159,8 +159,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
       if (lightStripConfig) {
         const pin = parseInt(lightStripConfig.value as string);
-        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        
+        // Log LED control output for debugging
+        ledProcess.stdout.on('data', (data) => {
+          console.log(`[Calibration] LED control output: ${data}`);
+        });
+        ledProcess.stderr.on('data', (data) => {
+          console.error(`[Calibration] LED control error: ${data}`);
+        });
+        
         console.log('[Calibration] LED light turned ON for calibration');
+        
+        // Wait a moment for LED to fully turn on
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       // Call Python calibration script with paper size
@@ -347,7 +359,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
       if (lightConfig) {
         const pin = parseInt(lightConfig.value as string);
-        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        
+        // Log LED control output for debugging
+        ledProcess.stdout.on('data', (data) => {
+          console.log(`[Validation] LED control output: ${data}`);
+        });
+        ledProcess.stderr.on('data', (data) => {
+          console.error(`[Validation] LED control error: ${data}`);
+        });
+        
         console.log('[Validation] LED light turned ON');
       }
       
@@ -478,7 +499,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
       if (lightConfig) {
         const pin = parseInt(lightConfig.value as string);
-        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        
+        // Log LED control output for debugging
+        ledProcess.stdout.on('data', (data) => {
+          console.log(`[Validation] LED control output: ${data}`);
+        });
+        ledProcess.stderr.on('data', (data) => {
+          console.error(`[Validation] LED control error: ${data}`);
+        });
+        
         console.log('[Validation] LED light turned ON');
       }
       
