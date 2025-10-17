@@ -36,6 +36,9 @@ def capture_preview(device_source, width: int = 1920, height: int = 1080):
                 'error': f'Cannot open camera device {device_source}'
             }
         
+        # Set MJPG format for better performance with USB cameras
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        
         # Set resolution
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)

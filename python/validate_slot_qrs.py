@@ -82,6 +82,9 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             'error': f'Failed to open camera {camera_source}'
         }
     
+    # Set MJPG format for better performance with USB cameras
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    
     # Set resolution
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])

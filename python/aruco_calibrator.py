@@ -182,6 +182,9 @@ class ArucoCornerCalibrator:
                 raise Exception(f"Could not open camera {camera_source}")
             
             width, height = resolution
+            
+            # Set MJPG format for better performance with USB cameras
+            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
