@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, CheckCircle, Ruler, X } from "lucide-react";
+import { Camera, CheckCircle, Ruler, X, Upload, Image as ImageIcon } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 
 const TIMEZONE = "Asia/Tokyo";
@@ -56,6 +56,8 @@ export default function Calibration() {
   const [step2Result, setStep2Result] = useState<ValidationResult | null>(null);
   const [isCameraLocked, setIsCameraLocked] = useState<boolean>(false);
   const [savedTemplateDesigns, setSavedTemplateDesigns] = useState<TemplateDesign[]>([]);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
   const previousCameraIdRef = useRef<string | undefined>(undefined);
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
@@ -185,10 +187,43 @@ export default function Calibration() {
     enabled: false, // Don't auto-fetch, trigger manually after calibration
   });
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedImage(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const calibrationMutation = useMutation({
-    mutationFn: ({ cameraId, paperSize }: { cameraId: string; paperSize: string }) => {
+    mutationFn: async ({ cameraId, paperSize }: { cameraId: string; paperSize: string }) => {
       // Lock camera BEFORE starting calibration to stop preview polling
       setIsCameraLocked(true);
+      
+      // If uploaded image exists, send it as multipart/form-data
+      if (uploadedImage) {
+        const formData = new FormData();
+        formData.append('image', uploadedImage);
+        formData.append('paperSize', paperSize);
+        
+        const response = await fetch(`/api/calibrate/${cameraId}`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+        
+        return response;
+      }
+      
+      // Otherwise use camera capture (original behavior)
       return apiRequest('POST', `/api/calibrate/${cameraId}`, { paperSize });
     },
     onSuccess: async (response) => {
@@ -534,13 +569,65 @@ export default function Calibration() {
                     )}
                   </div>
 
+                  {/* Image Upload Section */}
+                  <div className="space-y-3 mb-4">
+                    <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Upload className="w-4 h-4 text-purple-500" />
+                        <span className="text-sm font-medium text-purple-500">Test Mode: Upload Image</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Upload a calibration photo to test ArUco detection and QR validation without using the live camera
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="image-upload"
+                        data-testid="input-upload-image"
+                      />
+                      <label htmlFor="image-upload">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => document.getElementById('image-upload')?.click()}
+                          data-testid="button-select-image"
+                        >
+                          <ImageIcon className="w-4 h-4 mr-2" />
+                          {uploadedImage ? 'Change Image' : 'Select Image'}
+                        </Button>
+                      </label>
+                      {uploadedImagePreview && (
+                        <div className="mt-3">
+                          <img src={uploadedImagePreview} alt="Uploaded preview" className="w-full rounded-md border" />
+                          <div className="flex items-center justify-between mt-2">
+                            <p className="text-xs text-muted-foreground">{uploadedImage?.name}</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setUploadedImage(null);
+                                setUploadedImagePreview(null);
+                              }}
+                              data-testid="button-clear-image"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Step-based calibration buttons */}
                   <div className="space-y-3">
                     {calibrationStep === 0 && (
                       <div className="space-y-2">
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 1:</strong> Position camera to see all 4 ArUco corner markers (A/B/C/D), then run calibration.
+                            <strong>Step 1:</strong> {uploadedImage ? 'Uploaded image will be used for ArUco detection.' : 'Position camera to see all 4 ArUco corner markers (A/B/C/D), then run calibration.'}
                           </p>
                         </div>
                         <Button 
