@@ -7,10 +7,12 @@ Detects 4 corner ArUco markers (IDs 17-20) and computes homography matrix
 import argparse
 import json
 import sys
+import base64
 import logging
 from typing import Optional, Tuple, Dict
 import numpy as np
 import cv2
+from rectified_preview import generate_rectified_image_from_frame
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -159,7 +161,10 @@ class ArucoCornerCalibrator:
     
     def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int], 
                              paper_size_cm: Tuple[float, float] = (29.7, 21.0),
-                             device_path: Optional[str] = None) -> Dict:
+                             device_path: Optional[str] = None,
+                             generate_preview: bool = False,
+                             preview_output_size: Optional[Tuple[int, int]] = None,
+                             templates: Optional[list] = None) -> Dict:
         """
         Capture frame from camera and calculate homography
         
@@ -168,9 +173,12 @@ class ArucoCornerCalibrator:
             resolution: (width, height) tuple
             paper_size_cm: (width_cm, height_cm) of the paper template
             device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
+            generate_preview: Whether to generate rectified preview from calibration frame
+            preview_output_size: (width, height) for rectified preview output
+            templates: Template rectangles for overlay on preview
             
         Returns:
-            Dictionary with calibration results
+            Dictionary with calibration results (and optional rectified preview)
         """
         cap = None
         try:
@@ -203,7 +211,7 @@ class ArucoCornerCalibrator:
                 )
                 
                 if success and homography is not None:
-                    return {
+                    result = {
                         'ok': True,
                         'homography_matrix': homography.flatten().tolist(),
                         'reprojection_error': float(error),
@@ -213,6 +221,24 @@ class ArucoCornerCalibrator:
                             for id, center in marker_centers.items()
                         }
                     }
+                    
+                    # Generate rectified preview if requested
+                    if generate_preview and preview_output_size:
+                        try:
+                            logger.info("Generating rectified preview from calibration frame")
+                            rectified = generate_rectified_image_from_frame(
+                                frame, homography, preview_output_size, paper_size_cm, templates
+                            )
+                            # Encode as base64
+                            _, buffer = cv2.imencode('.jpg', rectified)
+                            image_base64 = base64.b64encode(buffer).decode('utf-8')
+                            result['rectified_preview'] = f'data:image/jpeg;base64,{image_base64}'
+                            logger.info("Rectified preview generated successfully")
+                        except Exception as preview_err:
+                            logger.warning(f"Failed to generate rectified preview: {preview_err}")
+                            # Don't fail calibration if preview generation fails
+                    
+                    return result
                 else:
                     return {
                         'ok': False,
@@ -244,6 +270,9 @@ def main():
     parser.add_argument('--device-path', type=str, help='Camera device path for Raspberry Pi (e.g., /dev/video0)')
     parser.add_argument('--resolution', type=str, default='1920x1080', help='Camera resolution (WxH)')
     parser.add_argument('--paper-size', type=str, default='29.7x21.0', help='Paper size in cm (WidthxHeight)')
+    parser.add_argument('--generate-preview', action='store_true', help='Generate rectified preview from calibration frame')
+    parser.add_argument('--preview-output-size', type=str, help='Preview output size (WxH)')
+    parser.add_argument('--templates', type=str, help='Template rectangles as JSON string')
     
     args = parser.parse_args()
     
@@ -256,12 +285,26 @@ def main():
         paper_width, paper_height = map(float, args.paper_size.split('x'))
         paper_size_cm = (paper_width, paper_height)
         
+        # Parse preview output size if provided
+        preview_output_size = None
+        if args.preview_output_size:
+            prev_width, prev_height = map(int, args.preview_output_size.split('x'))
+            preview_output_size = (prev_width, prev_height)
+        
+        # Parse templates if provided
+        templates = None
+        if args.templates:
+            templates = json.loads(args.templates)
+        
         # Initialize calibrator
         calibrator = ArucoCornerCalibrator()
         
         # Run calibration
         result = calibrator.calibrate_from_camera(
-            args.camera, resolution, paper_size_cm, device_path=args.device_path
+            args.camera, resolution, paper_size_cm, device_path=args.device_path,
+            generate_preview=args.generate_preview,
+            preview_output_size=preview_output_size,
+            templates=templates
         )
         
         # Output JSON result
