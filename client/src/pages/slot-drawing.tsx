@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Point {
   x: number;
@@ -94,12 +93,6 @@ export default function SlotDrawing() {
   const [draggingRectId, setDraggingRectId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null);
   const [selectedTemplateRect, setSelectedTemplateRect] = useState<TemplateRectangle | null>(null);
-  
-  // Preview state
-  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-  const [previewTemplate, setPreviewTemplate] = useState<any>(null);
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   
   // Paper size dimensions (width x height in pixels, landscape orientation)
   // ISO A-series aspect ratio is √2:1 (1.414:1)
@@ -1057,9 +1050,13 @@ export default function SlotDrawing() {
     });
   };
   
-  const previewTemplateVersion = (version: any) => {
-    setPreviewTemplate(version);
-    setShowPreviewDialog(true);
+  const previewTemplateVersion = async (version: any) => {
+    // Just load it onto the canvas - same as the load button
+    await loadTemplateVersion(version);
+    toast({
+      title: "Template Loaded for Preview",
+      description: `"${version.paperSize} - ${version.name}" is now shown on canvas`,
+    });
   };
 
   const addTemplateRectangle = async (categoryId: string) => {
@@ -1513,39 +1510,6 @@ export default function SlotDrawing() {
         open={showCategoryManager}
         onOpenChange={setShowCategoryManager}
       />
-      
-      {/* Template Preview Dialog */}
-      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="w-5 h-5" />
-              Template Preview: {previewTemplate?.name}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            {previewTemplate && (
-              <div className="space-y-3">
-                <TemplatePreviewCanvas 
-                  template={previewTemplate}
-                  paperDimensions={paperDimensions}
-                />
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded p-3">
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Paper Size:</strong> {previewTemplate.paperSize}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    <strong>Tools:</strong> {previewTemplate.templateRectangles?.length || 0} items
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    ℹ️ This shows your template layout. Print the ArUco markers and place tools in the magenta areas.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
