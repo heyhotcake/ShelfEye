@@ -480,29 +480,31 @@ export default function Calibration() {
                   </div>
 
                   <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Template Design (optional)</label>
+                    <label className="text-sm text-muted-foreground mb-2 block">
+                      Template Design {relevantDesigns.length > 0 ? "(required)" : "(no templates available)"}
+                    </label>
                     <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
                       <SelectTrigger data-testid="select-template">
-                        <SelectValue placeholder="Select template to preview" />
+                        <SelectValue placeholder="Select template design for calibration" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">No template overlay</SelectItem>
-                        {relevantDesigns.length > 0 && (
+                        {relevantDesigns.length > 0 ? (
                           relevantDesigns.map((design) => (
                             <SelectItem key={design.timestamp} value={design.timestamp}>
                               {design.paperSize} - {design.name}
                             </SelectItem>
                           ))
-                        )}
-                        {relevantDesigns.length === 0 && (
+                        ) : (
                           <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                            No saved designs for this camera
+                            No saved designs for this camera - create one in Template Designer first
                           </div>
                         )}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Select a template to preview tool positions on the camera feed
+                      {relevantDesigns.length > 0 
+                        ? "Template defines the paper size and tool layout for calibration" 
+                        : "Go to Template Designer to create a template for this camera"}
                     </p>
                   </div>
 
@@ -550,39 +552,45 @@ export default function Calibration() {
                               // Determine paper size from selected template design
                               let paperSize = 'A4-landscape'; // default fallback
                               
-                              // Priority 1: Use selected template design if provided
-                              if (selectedTemplate && selectedTemplate !== 'none') {
-                                const design = relevantDesigns.find(d => d.timestamp === selectedTemplate);
-                                if (design) {
-                                  paperSize = design.paperSize;
-                                } else {
+                              // Template is REQUIRED when templates exist
+                              if (relevantDesigns.length > 0) {
+                                if (!selectedTemplate || selectedTemplate === '') {
                                   toast({
-                                    title: "Invalid Template Design",
-                                    description: "The selected template design is not found. Please select a valid design.",
+                                    title: "Template Design Required",
+                                    description: "Please select a template design before calibrating.",
                                     variant: "destructive",
                                   });
                                   return;
                                 }
-                              } 
-                              // Priority 2: Check if multiple designs exist
-                              else if (relevantDesigns.length > 1) {
-                                // Multiple designs exist but none selected
+                                
+                                const design = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+                                if (!design) {
+                                  toast({
+                                    title: "Invalid Template Design",
+                                    description: "The selected template design is not found.",
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                paperSize = design.paperSize;
+                              } else {
+                                // No templates exist - cannot calibrate
                                 toast({
-                                  title: "Template Design Required",
-                                  description: "Please select a template design before calibrating. This camera has multiple saved designs.",
+                                  title: "No Templates Available",
+                                  description: "Please create a template design in Template Designer first.",
                                   variant: "destructive",
                                 });
                                 return;
-                              } else if (relevantDesigns.length === 1) {
-                                // Exactly one design, automatically use it
-                                paperSize = relevantDesigns[0].paperSize;
                               }
-                              // Priority 3: No designs - use default A4-landscape
                               
                               calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize });
                             }
                           }}
-                          disabled={!activeCamera || calibrationMutation.isPending}
+                          disabled={
+                            !activeCamera || 
+                            calibrationMutation.isPending ||
+                            (relevantDesigns.length > 0 && !selectedTemplate)
+                          }
                           data-testid="button-start-calibration"
                         >
                           <Camera className="w-4 h-4 mr-2" />

@@ -683,18 +683,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Call Python rectified preview script
       const homographyStr = camera.homographyMatrix.join(',');
+      
+      // Calculate output size based on paper dimensions
+      // Use a scale factor to get a reasonable display size (e.g., 10 pixels per cm)
+      const pixelsPerCm = 10;
+      const outputWidth = Math.round(paperDimensions.widthCm * pixelsPerCm);
+      const outputHeight = Math.round(paperDimensions.heightCm * pixelsPerCm);
+      
+      console.log(`[Rectified Preview] Paper: ${paperDimensions.widthCm}x${paperDimensions.heightCm} cm`);
+      console.log(`[Rectified Preview] Output: ${outputWidth}x${outputHeight} px (${pixelsPerCm} px/cm)`);
+      
       const args = [
         path.join(process.cwd(), 'python/rectified_preview.py'),
-        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', homographyStr,
-        '--output-size', '800x600',
+        '--output-size', `${outputWidth}x${outputHeight}`,
         '--paper-size', `${paperDimensions.widthCm}x${paperDimensions.heightCm}`
       ];
       
-      // Add device path if available (for Raspberry Pi)
+      // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
         args.push('--device-path', camera.devicePath);
+        console.log(`[Rectified Preview] Using device path: ${camera.devicePath}`);
+      } else {
+        args.push('--camera', camera.deviceIndex?.toString() || '0');
+        console.log(`[Rectified Preview] Using camera index: ${camera.deviceIndex || 0}`);
       }
       
       // Add templates if available
