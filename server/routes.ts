@@ -175,7 +175,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
-          // Don't turn off LED here - let the 'close' event handle it
+          // Python failed to spawn - turn off LED since 'close' won't fire
+          await turnOffLED();
           res.status(503).json({ 
             message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
             error: err.message 
@@ -364,7 +365,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
-          // Don't turn off LED here - let the 'close' event handle it
+          // Python failed to spawn - turn off LED since 'close' won't fire
+          await turnOffLED();
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });
@@ -494,7 +496,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
-          // Don't turn off LED here - let the 'close' event handle it
+          // Python failed to spawn - turn off LED since 'close' won't fire
+          await turnOffLED();
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });
