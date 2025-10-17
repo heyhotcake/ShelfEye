@@ -176,8 +176,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get template rectangles with category dimensions for preview overlay
-      const templateRectanglesForPreview = await storage.getTemplateRectanglesByCamera(cameraId);
+      // IMPORTANT: Filter by paper size to match the selected template design
+      const allTemplates = await storage.getTemplateRectanglesByCamera(cameraId);
+      const templateRectanglesForPreview = allTemplates.filter(t => t.paperSize === paperSizeFormat);
       const templatesWithDimensions = [];
+      
+      console.log(`[Calibration] Found ${allTemplates.length} total templates, ${templateRectanglesForPreview.length} matching paper size: ${paperSizeFormat}`);
       
       for (const template of templateRectanglesForPreview) {
         const category = await storage.getToolCategory(template.categoryId);
@@ -255,8 +259,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 calibrationTimestamp: new Date(),
               });
 
-              const templateRectangles = await storage.getTemplateRectanglesByCamera(cameraId);
+              // Get template rectangles filtered by the selected paper size
+              const allTemplatesForSlots = await storage.getTemplateRectanglesByCamera(cameraId);
+              const templateRectangles = allTemplatesForSlots.filter(t => t.paperSize === paperSizeFormat);
               const createdSlots: any[] = [];
+              
+              console.log(`[Calibration] Creating slots for ${templateRectangles.length} templates (paper size: ${paperSizeFormat})`);
 
               const { transformTemplateToPixels } = await import('./utils/coordinate-transform.js');
 
