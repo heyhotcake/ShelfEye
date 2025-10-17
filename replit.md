@@ -6,7 +6,8 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- Preferred communication style: Simple, everyday language.
+- **Deployment Context**: User runs the application on a Raspberry Pi at `http://naniwatanacheck.local:5000`. When reporting app issues, they refer to the Pi deployment, NOT the Replit web preview. The Replit environment is for development only; actual hardware features (camera, GPIO) only work on the Raspberry Pi.
 
 ## Recent Changes
 
