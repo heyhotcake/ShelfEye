@@ -18,9 +18,12 @@ import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertA
 // Global scheduler instance
 let scheduler: CaptureScheduler;
 
+// Ensure upload directory exists
+const UPLOAD_DIR = '/tmp/calibration-uploads';
+
 // Multer configuration for file uploads
 const upload = multer({
-  dest: '/tmp/calibration-uploads/',
+  dest: UPLOAD_DIR,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -32,6 +35,14 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Create upload directory if it doesn't exist
+  try {
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+    console.log('[Server] Calibration upload directory ready:', UPLOAD_DIR);
+  } catch (err) {
+    console.error('[Server] Failed to create upload directory:', err);
+  }
+
   scheduler = new CaptureScheduler(storage);
   await scheduler.initialize();
   
@@ -185,6 +196,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
+          
+          // Clean up uploaded file on Python spawn error
+          if (uploadedImagePath) {
+            try {
+              await fs.unlink(uploadedImagePath);
+              console.log('[Calibration] Cleaned up uploaded image after Python error');
+            } catch (cleanupErr) {
+              console.error('[Calibration] Failed to clean up uploaded image:', cleanupErr);
+            }
+          }
+          
           await turnOffLED(); // Turn off LED on Python spawn error
           res.status(503).json({ 
             message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
