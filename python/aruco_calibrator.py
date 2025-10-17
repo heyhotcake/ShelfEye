@@ -2,16 +2,12 @@
 """
 ArUco 4-Corner Calibration Module for Tool Tracking System
 Detects 4 corner ArUco markers (IDs 17-20) and computes homography matrix
-Uses rpicam-still for Raspberry Pi libcamera compatibility
 """
 
 import argparse
 import json
 import sys
 import logging
-import subprocess
-import tempfile
-import os
 from typing import Optional, Tuple, Dict
 import numpy as np
 import cv2
@@ -166,7 +162,6 @@ class ArucoCornerCalibrator:
                              device_path: Optional[str] = None) -> Dict:
         """
         Capture frame from camera and calculate homography
-        Uses rpicam-still for libcamera compatibility on Raspberry Pi
         
         Args:
             camera_index: Camera device index (0, 1, 2, etc.) - used if device_path not provided
@@ -177,35 +172,23 @@ class ArucoCornerCalibrator:
         Returns:
             Dictionary with calibration results
         """
-        temp_file = None
+        cap = None
         try:
-            # Create temporary file for image capture
-            temp_file = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
-            temp_path = temp_file.name
-            temp_file.close()
+            # Initialize camera - use device path if provided, otherwise use index
+            camera_source = device_path if device_path else camera_index
+            logger.info(f"Opening camera: {camera_source}")
+            cap = cv2.VideoCapture(camera_source)
+            if not cap.isOpened():
+                raise Exception(f"Could not open camera {camera_source}")
             
-            # Use rpicam-still for Raspberry Pi libcamera cameras
             width, height = resolution
-            logger.info(f"Capturing with rpicam-still: {width}x{height}")
-            cmd = [
-                'rpicam-still',
-                '-o', temp_path,
-                '--width', str(width),
-                '--height', str(height),
-                '-t', '1',  # 1ms timeout for immediate capture
-                '-n'  # No preview window
-            ]
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-            
-            if result.returncode != 0:
-                logger.error(f"rpicam-still failed: {result.stderr}")
-                raise Exception(f"Camera capture failed: {result.stderr}")
-            
-            # Read captured image with OpenCV
-            frame = cv2.imread(temp_path)
-            if frame is None:
-                raise Exception("Failed to read captured image")
+            # Capture frame
+            ret, frame = cap.read()
+            if not ret:
+                raise Exception("Failed to capture frame from camera")
             
             # Detect corner markers
             marker_centers, num_detected = self.detect_corner_markers(frame)
@@ -241,13 +224,6 @@ class ArucoCornerCalibrator:
                     'detected_ids': [int(k) for k in marker_centers.keys()]
                 }
                 
-        except subprocess.TimeoutExpired:
-            logger.error("Camera capture timeout")
-            return {
-                'ok': False,
-                'error': 'Camera capture timeout',
-                'markers_detected': 0
-            }
         except Exception as e:
             logger.error(f"Error in calibration: {e}")
             return {
@@ -256,12 +232,8 @@ class ArucoCornerCalibrator:
                 'markers_detected': 0
             }
         finally:
-            # Clean up temp file
-            if temp_file and os.path.exists(temp_path):
-                try:
-                    os.unlink(temp_path)
-                except:
-                    pass
+            if cap is not None:
+                cap.release()
 
 def main():
     parser = argparse.ArgumentParser(description='ArUco 4-Corner Calibration')

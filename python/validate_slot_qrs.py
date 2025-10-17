@@ -4,7 +4,6 @@ Validate slot QR codes in calibrated camera view.
 Used for two-step calibration validation:
 1. Verify QR codes ARE readable when slots are empty
 2. Verify QR codes are NOT readable when tools are placed (covering QRs)
-Uses rpicam-still for Raspberry Pi libcamera compatibility
 """
 
 import cv2
@@ -12,9 +11,6 @@ import numpy as np
 import json
 import sys
 import argparse
-import subprocess
-import tempfile
-import os
 from pyzbar import pyzbar
 import hmac
 import hashlib
@@ -62,7 +58,6 @@ def decode_qr_codes(image):
 def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, secret_key, should_detect=True, device_path=None):
     """
     Validate slot QR codes in calibrated camera view.
-    Uses rpicam-still for libcamera compatibility on Raspberry Pi
     
     Args:
         camera_index: Camera device index (fallback if device_path not provided)
@@ -76,57 +71,30 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     Returns:
         JSON with validation results
     """
-    temp_file = None
-    try:
-        # Create temporary file for image capture
-        temp_file = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
-        temp_path = temp_file.name
-        temp_file.close()
-        
-        # Use rpicam-still for Raspberry Pi libcamera cameras
-        print(f"Capturing with rpicam-still: {resolution[0]}x{resolution[1]}", file=sys.stderr)
-        cmd = [
-            'rpicam-still',
-            '-o', temp_path,
-            '--width', str(resolution[0]),
-            '--height', str(resolution[1]),
-            '-t', '1',  # 1ms timeout for immediate capture
-            '-n'  # No preview window
-        ]
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-        
-        if result.returncode != 0:
-            print(f"rpicam-still failed: {result.stderr}", file=sys.stderr)
-            return {
-                'success': False,
-                'error': f'Camera capture failed: {result.stderr}'
-            }
-        
-        # Read captured image with OpenCV
-        frame = cv2.imread(temp_path)
-        if frame is None:
-            return {
-                'success': False,
-                'error': 'Failed to read captured image'
-            }
-    except subprocess.TimeoutExpired:
+    
+    # Open camera - use device path if provided, otherwise use index
+    camera_source = device_path if device_path else camera_index
+    print(f"Opening camera: {camera_source}", file=sys.stderr)
+    cap = cv2.VideoCapture(camera_source)
+    if not cap.isOpened():
         return {
             'success': False,
-            'error': 'Camera capture timeout'
+            'error': f'Failed to open camera {camera_source}'
         }
-    except Exception as e:
+    
+    # Set resolution
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
+    
+    # Capture frame
+    ret, frame = cap.read()
+    cap.release()
+    
+    if not ret:
         return {
             'success': False,
-            'error': f'Capture error: {str(e)}'
+            'error': 'Failed to capture frame'
         }
-    finally:
-        # Clean up temp file
-        if temp_file and os.path.exists(temp_path):
-            try:
-                os.unlink(temp_path)
-            except:
-                pass
     
     # Apply homography transformation to get rectified view
     H = np.array(homography_matrix).reshape(3, 3)

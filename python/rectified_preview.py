@@ -2,7 +2,6 @@
 """
 Rectified Preview Generator for Tool Tracking System
 Applies homography transformation to show top-down view of calibrated area
-Uses rpicam-still for Raspberry Pi libcamera compatibility
 """
 
 import argparse
@@ -10,9 +9,6 @@ import json
 import sys
 import base64
 import logging
-import subprocess
-import tempfile
-import os
 from typing import Tuple, Optional, List
 import numpy as np
 import cv2
@@ -31,7 +27,6 @@ def generate_rectified_preview(
 ) -> dict:
     """
     Generate a rectified preview image using homography transformation
-    Uses rpicam-still for libcamera compatibility on Raspberry Pi
     
     Args:
         camera_index: Camera device index (fallback if device_path not provided)
@@ -44,38 +39,26 @@ def generate_rectified_preview(
     Returns:
         Dictionary with ok status and base64 encoded image or error
     """
-    temp_file = None
+    cap = None
     try:
         # Reshape homography matrix from list to 3x3 numpy array
         H = np.array(homography_matrix).reshape(3, 3)
         
-        # Create temporary file for image capture
-        temp_file = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
-        temp_path = temp_file.name
-        temp_file.close()
+        # Initialize camera - use device path if provided, otherwise use index
+        camera_source = device_path if device_path else camera_index
+        logger.info(f"Opening camera: {camera_source}")
+        cap = cv2.VideoCapture(camera_source)
+        if not cap.isOpened():
+            raise Exception(f"Could not open camera {camera_source}")
         
-        # Use rpicam-still for Raspberry Pi libcamera cameras
         width, height = resolution
-        logger.info(f"Capturing with rpicam-still: {width}x{height}")
-        cmd = [
-            'rpicam-still',
-            '-o', temp_path,
-            '--width', str(width),
-            '--height', str(height),
-            '-t', '1',  # 1ms timeout for immediate capture
-            '-n'  # No preview window
-        ]
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-        
-        if result.returncode != 0:
-            logger.error(f"rpicam-still failed: {result.stderr}")
-            raise Exception(f"Camera capture failed: {result.stderr}")
-        
-        # Read captured image with OpenCV
-        frame = cv2.imread(temp_path)
-        if frame is None:
-            raise Exception("Failed to read captured image")
+        # Capture frame
+        ret, frame = cap.read()
+        if not ret:
+            raise Exception("Failed to capture frame from camera")
         
         # Apply perspective warp using homography
         # H maps from paper coordinates (cm) to camera pixels
@@ -185,12 +168,6 @@ def generate_rectified_preview(
             'height': output_size[1]
         }
         
-    except subprocess.TimeoutExpired:
-        logger.error("Camera capture timeout")
-        return {
-            'ok': False,
-            'error': 'Camera capture timeout'
-        }
     except Exception as e:
         logger.error(f"Error generating rectified preview: {e}")
         return {
@@ -198,12 +175,8 @@ def generate_rectified_preview(
             'error': str(e)
         }
     finally:
-        # Clean up temp file
-        if temp_file and os.path.exists(temp_path):
-            try:
-                os.unlink(temp_path)
-            except:
-                pass
+        if cap is not None:
+            cap.release()
 
 def main():
     parser = argparse.ArgumentParser(description='Generate rectified preview using homography')
