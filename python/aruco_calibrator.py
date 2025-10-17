@@ -132,12 +132,11 @@ class ArucoCornerCalibrator:
             camera_matrix = self.estimate_camera_matrix(image_shape)
             logger.info(f"Estimated camera matrix: {camera_matrix.tolist()}")
             
-            # Estimate typical webcam distortion coefficients
-            # Most webcams have slight barrel distortion (negative k1)
+            # Initialize distortion coefficients to zero (no distortion correction)
+            # The camera may not have significant distortion, or the homography handles it
             # k1, k2, p1, p2, k3
-            # Starting with moderate barrel distortion: k1=-0.2, others zero
-            dist_coeffs = np.array([-0.2, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
-            logger.info(f"Using estimated distortion coefficients (typical webcam barrel distortion): {dist_coeffs.tolist()}")
+            dist_coeffs = np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+            logger.info(f"Using zero distortion coefficients (no distortion correction): {dist_coeffs.tolist()}")
             
             # Destination points: detected marker centers in pixels (in order A, B, C, D)
             # A (17) = top-left
