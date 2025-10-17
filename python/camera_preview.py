@@ -2,6 +2,7 @@
 """
 Camera Preview Script
 Captures a single frame from camera and saves as base64 for web display
+Uses rpicam-still for Raspberry Pi libcamera compatibility
 """
 
 import cv2
@@ -9,6 +10,9 @@ import sys
 import json
 import base64
 import logging
+import subprocess
+import tempfile
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,6 +20,7 @@ logger = logging.getLogger(__name__)
 def capture_preview(device_source, width: int = 1920, height: int = 1080):
     """
     Capture a single frame from camera and return as base64 JPEG
+    Uses rpicam-still for libcamera compatibility on Raspberry Pi
     
     Args:
         device_source: Camera device index (int) or device path (str like /dev/video0)
@@ -25,27 +30,39 @@ def capture_preview(device_source, width: int = 1920, height: int = 1080):
     Returns:
         JSON with base64 image data
     """
-    cap = None
+    temp_file = None
     try:
-        # Open camera
-        logger.info(f"Opening camera: {device_source}")
-        cap = cv2.VideoCapture(device_source)
-        if not cap.isOpened():
+        # Create temporary file for image capture
+        temp_file = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
+        temp_path = temp_file.name
+        temp_file.close()
+        
+        # Use rpicam-still for Raspberry Pi libcamera cameras
+        logger.info(f"Capturing with rpicam-still: {width}x{height}")
+        cmd = [
+            'rpicam-still',
+            '-o', temp_path,
+            '--width', str(width),
+            '--height', str(height),
+            '-t', '1',  # 1ms timeout for immediate capture
+            '-n'  # No preview window
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        
+        if result.returncode != 0:
+            logger.error(f"rpicam-still failed: {result.stderr}")
             return {
                 'ok': False,
-                'error': f'Cannot open camera device {device_source}'
+                'error': f'Camera capture failed: {result.stderr}'
             }
         
-        # Set resolution
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        
-        # Capture frame
-        ret, frame = cap.read()
-        if not ret or frame is None:
+        # Read captured image with OpenCV
+        frame = cv2.imread(temp_path)
+        if frame is None:
             return {
                 'ok': False,
-                'error': 'Failed to capture frame'
+                'error': 'Failed to read captured image'
             }
         
         # Encode as JPEG
@@ -61,6 +78,12 @@ def capture_preview(device_source, width: int = 1920, height: int = 1080):
             'height': frame.shape[0]
         }
         
+    except subprocess.TimeoutExpired:
+        logger.error("Camera capture timeout")
+        return {
+            'ok': False,
+            'error': 'Camera capture timeout'
+        }
     except Exception as e:
         logger.error(f"Preview error: {e}")
         return {
@@ -68,8 +91,12 @@ def capture_preview(device_source, width: int = 1920, height: int = 1080):
             'error': str(e)
         }
     finally:
-        if cap is not None:
-            cap.release()
+        # Clean up temp file
+        if temp_file and os.path.exists(temp_path):
+            try:
+                os.unlink(temp_path)
+            except:
+                pass
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
