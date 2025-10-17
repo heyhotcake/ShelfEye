@@ -18,7 +18,7 @@ export const cameras = pgTable("cameras", {
 export const slots = pgTable("slots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   slotId: text("slot_id").notNull().unique(),
-  cameraId: varchar("camera_id").references(() => cameras.id).notNull(),
+  cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }).notNull(),
   toolName: text("tool_name").notNull(),
   expectedQrId: text("expected_qr_id"),
   priority: text("priority").notNull().default("medium"), // high, medium, low
@@ -31,11 +31,11 @@ export const slots = pgTable("slots", {
 
 export const detectionLogs = pgTable("detection_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  slotId: varchar("slot_id").references(() => slots.id).notNull(),
+  slotId: varchar("slot_id").references(() => slots.id, { onDelete: "cascade" }).notNull(),
   timestamp: timestamp("timestamp").notNull().default(sql`now()`),
   status: text("status").notNull(), // EMPTY, ITEM_PRESENT, CHECKED_OUT, TRAINING_ERROR
   qrId: text("qr_id"),
-  workerId: varchar("worker_id").references(() => workers.id),
+  workerId: varchar("worker_id").references(() => workers.id, { onDelete: "set null" }),
   workerName: text("worker_name"),
   ssimScore: real("ssim_score"),
   poseQuality: real("pose_quality"),
@@ -58,8 +58,8 @@ export const alertRules = pgTable("alert_rules", {
 
 export const alertQueue = pgTable("alert_queue", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  slotId: varchar("slot_id").references(() => slots.id),
-  ruleId: varchar("rule_id").references(() => alertRules.id).notNull(),
+  slotId: varchar("slot_id").references(() => slots.id, { onDelete: "set null" }),
+  ruleId: varchar("rule_id").references(() => alertRules.id, { onDelete: "cascade" }).notNull(),
   alertType: text("alert_type").notNull(),
   message: text("message").notNull(),
   status: text("status").notNull().default("pending"), // pending, sent, failed
@@ -96,14 +96,14 @@ export const toolCategories = pgTable("tool_categories", {
 
 export const templateRectangles = pgTable("template_rectangles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  categoryId: varchar("category_id").references(() => toolCategories.id).notNull(),
-  cameraId: varchar("camera_id").references(() => cameras.id).notNull(),
+  categoryId: varchar("category_id").references(() => toolCategories.id, { onDelete: "cascade" }).notNull(),
+  cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }).notNull(),
   paperSize: text("paper_size").notNull(), // A3, A4, A5, etc.
   xCm: real("x_cm").notNull(),
   yCm: real("y_cm").notNull(),
   rotation: integer("rotation").notNull().default(0), // 0, 45, 90, 135, 180, 225, 270, 315
   autoQrId: text("auto_qr_id"),
-  slotId: varchar("slot_id").references(() => slots.id), // Auto-generated slot
+  slotId: varchar("slot_id").references(() => slots.id, { onDelete: "set null" }), // Auto-generated slot
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
