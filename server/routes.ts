@@ -12,37 +12,12 @@ import fs from "fs/promises";
 import QRCode from "qrcode";
 import crypto from "crypto";
 import { z } from "zod";
-import multer from "multer";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertWorkerSchema, insertCaptureRunSchema } from "@shared/schema";
 
 // Global scheduler instance
 let scheduler: CaptureScheduler;
 
-// Ensure upload directory exists
-const UPLOAD_DIR = '/tmp/calibration-uploads';
-
-// Multer configuration for file uploads
-const upload = multer({
-  dest: UPLOAD_DIR,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed'));
-    }
-  }
-});
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Create upload directory if it doesn't exist
-  try {
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
-    console.log('[Server] Calibration upload directory ready:', UPLOAD_DIR);
-  } catch (err) {
-    console.error('[Server] Failed to create upload directory:', err);
-  }
-
   scheduler = new CaptureScheduler(storage);
   await scheduler.initialize();
   
@@ -116,17 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Calibration routes - supports both camera capture and uploaded image
-  app.post("/api/calibrate/:cameraId", upload.single('image'), async (req, res) => {
+  // Calibration routes
+  app.post("/api/calibrate/:cameraId", async (req, res) => {
     const { cameraId } = req.params;
     let lockAcquired = false;
     
-    // Capture uploaded file path immediately for cleanup in all exit paths
-    const uploadedImagePath = req.file?.path || null;
-    
     try {
       const { paperSize } = req.body; // Expected: "6-page-3x2", "A4-landscape", etc.
-      const uploadedFile = req.file; // Uploaded image (if provided)
       
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
@@ -152,41 +123,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Acquire exclusive camera lock only if using camera (not uploaded image)
-      if (!uploadedFile) {
-        await cameraSessionManager.acquireExclusiveLock(cameraId);
-        lockAcquired = true;
+      // Acquire exclusive camera lock AFTER validation succeeds
+      // This includes a 10-second delay to ensure any preview process has fully released the camera
+      await cameraSessionManager.acquireExclusiveLock(cameraId);
+      lockAcquired = true;
 
-        // Turn on LED light for consistent illumination during calibration
-        const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-        if (lightStripConfig) {
-          const pin = parseInt(lightStripConfig.value as string);
-          spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
-          console.log('[Calibration] LED light turned ON for calibration');
-        }
-      } else {
-        console.log('[Calibration] Using uploaded image:', uploadedImagePath);
+      // Turn on LED light for consistent illumination during calibration
+      const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+      if (lightStripConfig) {
+        const pin = parseInt(lightStripConfig.value as string);
+        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+        console.log('[Calibration] LED light turned ON for calibration');
       }
 
       // Call Python calibration script with paper size
-      const pythonArgs = [
+      const pythonProcess = spawn('python3', [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
-      ];
-      
-      if (uploadedFile) {
-        // Use uploaded image instead of camera
-        pythonArgs.push('--image', uploadedImagePath!);
-      } else {
-        // Use camera capture
-        pythonArgs.push('--camera', camera.deviceIndex.toString());
-      }
-      
-      pythonArgs.push(
+        '--camera', camera.deviceIndex.toString(),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
-      );
-
-      const pythonProcess = spawn('python3', pythonArgs);
+      ]);
 
       let result = '';
       let error = '';
@@ -197,13 +153,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
-          
           await turnOffLED(); // Turn off LED on Python spawn error
           res.status(503).json({ 
             message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
             error: err.message 
           });
-          // Note: uploaded file cleanup handled by outer finally block
         }
       });
 
@@ -306,20 +260,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (lockAcquired) {
         cameraSessionManager.releaseLock(cameraId);
       }
-      
       // Turn off LED on unexpected errors
       await turnOffLED();
       res.status(500).json({ message: "Calibration error", error });
-    } finally {
-      // ALWAYS clean up uploaded file in all exit paths (early returns, errors, success)
-      if (uploadedImagePath) {
-        try {
-          await fs.unlink(uploadedImagePath);
-          console.log('[Calibration] Final cleanup: deleted uploaded image');
-        } catch (err) {
-          console.error('[Calibration] Final cleanup failed:', err);
-        }
-      }
     }
   });
 

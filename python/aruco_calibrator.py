@@ -157,67 +157,6 @@ class ArucoCornerCalibrator:
             logger.error(f"Error calculating homography: {e}")
             return False, None, float('inf')
     
-    def calibrate_from_image(self, image_path: str, paper_size_cm: Tuple[float, float] = (29.7, 21.0)) -> Dict:
-        """
-        Load image from file and calculate homography
-        
-        Args:
-            image_path: Path to image file
-            paper_size_cm: (width_cm, height_cm) of the paper template
-            
-        Returns:
-            Dictionary with calibration results
-        """
-        try:
-            # Load image from file
-            frame = cv2.imread(image_path)
-            if frame is None:
-                raise Exception(f"Could not load image from {image_path}")
-            
-            logger.info(f"Loaded image from {image_path}, shape: {frame.shape}")
-            
-            # Detect corner markers
-            marker_centers, num_detected = self.detect_corner_markers(frame)
-            
-            # Calculate homography if all markers found
-            if num_detected == 4:
-                success, homography, error = self.calculate_homography(
-                    marker_centers, frame.shape[:2], paper_size_cm
-                )
-                
-                if success and homography is not None:
-                    return {
-                        'ok': True,
-                        'homography_matrix': homography.flatten().tolist(),
-                        'reprojection_error': float(error),
-                        'markers_detected': num_detected,
-                        'marker_positions': {
-                            f"marker_{id}": center.tolist() 
-                            for id, center in marker_centers.items()
-                        }
-                    }
-                else:
-                    return {
-                        'ok': False,
-                        'error': 'Failed to calculate homography',
-                        'markers_detected': num_detected
-                    }
-            else:
-                return {
-                    'ok': False,
-                    'error': f'Only detected {num_detected}/4 corner markers',
-                    'markers_detected': num_detected,
-                    'detected_ids': [int(k) for k in marker_centers.keys()]
-                }
-                
-        except Exception as e:
-            logger.error(f"Error in calibration from image: {e}")
-            return {
-                'ok': False,
-                'error': str(e),
-                'markers_detected': 0
-            }
-
     def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int], 
                              paper_size_cm: Tuple[float, float] = (29.7, 21.0)) -> Dict:
         """
@@ -294,14 +233,17 @@ class ArucoCornerCalibrator:
 
 def main():
     parser = argparse.ArgumentParser(description='ArUco 4-Corner Calibration')
-    parser.add_argument('--camera', type=int, help='Camera device index (use either --camera or --image)')
-    parser.add_argument('--image', type=str, help='Path to image file (use either --camera or --image)')
-    parser.add_argument('--resolution', type=str, default='1920x1080', help='Camera resolution (WxH), only used with --camera')
+    parser.add_argument('--camera', type=int, default=0, help='Camera device index')
+    parser.add_argument('--resolution', type=str, default='1920x1080', help='Camera resolution (WxH)')
     parser.add_argument('--paper-size', type=str, default='29.7x21.0', help='Paper size in cm (WidthxHeight)')
     
     args = parser.parse_args()
     
     try:
+        # Parse resolution
+        width, height = map(int, args.resolution.split('x'))
+        resolution = (width, height)
+        
         # Parse paper size
         paper_width, paper_height = map(float, args.paper_size.split('x'))
         paper_size_cm = (paper_width, paper_height)
@@ -309,20 +251,8 @@ def main():
         # Initialize calibrator
         calibrator = ArucoCornerCalibrator()
         
-        # Run calibration based on input type
-        if args.image:
-            # Use uploaded image
-            logger.info(f"Calibrating from image: {args.image}")
-            result = calibrator.calibrate_from_image(args.image, paper_size_cm)
-        elif args.camera is not None:
-            # Use camera capture
-            logger.info(f"Calibrating from camera {args.camera}")
-            # Parse resolution
-            width, height = map(int, args.resolution.split('x'))
-            resolution = (width, height)
-            result = calibrator.calibrate_from_camera(args.camera, resolution, paper_size_cm)
-        else:
-            raise ValueError("Either --camera or --image must be specified")
+        # Run calibration
+        result = calibrator.calibrate_from_camera(args.camera, resolution, paper_size_cm)
         
         # Output JSON result
         print(json.dumps(result))
