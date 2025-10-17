@@ -571,8 +571,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Call Python preview script
       // Use device path if available, otherwise use device index
-      const deviceSource = camera.devicePath || camera.deviceIndex.toString();
-      const pythonProcess = spawn('python3', [
+      const deviceSource = camera.devicePath || camera.deviceIndex?.toString() || '0';
+      const pythonProcess = spawn('python', [
         path.join(process.cwd(), 'python/camera_preview.py'),
         deviceSource,
         camera.resolution[0].toString(),
@@ -690,7 +690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         args.push('--templates', JSON.stringify(templateData));
       }
       
-      const pythonProcess = spawn('python3', args);
+      const pythonProcess = spawn('python', args);
 
       let result = '';
       let error = '';
@@ -747,9 +747,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const slots = await storage.getSlotsByCamera(activeCamera.id);
 
       // Call Python capture and analysis script
-      const pythonProcess = spawn('python3', [
+      const pythonProcess = spawn('python', [
         path.join(process.cwd(), 'python/camera_manager.py'),
-        '--camera', activeCamera.deviceIndex.toString(),
+        '--camera', activeCamera.deviceIndex?.toString() || '0',
         '--slots', JSON.stringify(slots.map(s => ({
           id: s.slotId,
           coords: s.regionCoords,
