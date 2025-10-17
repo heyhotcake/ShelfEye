@@ -55,7 +55,7 @@ def decode_qr_codes(image):
     
     return results
 
-def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, secret_key, should_detect=True, device_path=None):
+def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, secret_key, should_detect=True, device_path=None, camera_matrix=None, dist_coeffs=None):
     """
     Validate slot QR codes in calibrated camera view.
     
@@ -98,6 +98,13 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             'success': False,
             'error': 'Failed to capture frame'
         }
+    
+    # Apply lens distortion correction if camera calibration parameters provided
+    if camera_matrix is not None and dist_coeffs is not None:
+        print(f"Applying lens undistortion before warp", file=sys.stderr)
+        K = np.array(camera_matrix).reshape(3, 3)
+        D = np.array(dist_coeffs)
+        frame = cv2.undistort(frame, K, D)
     
     # Apply homography transformation to get rectified view
     H = np.array(homography_matrix).reshape(3, 3)
@@ -187,6 +194,8 @@ def main():
     parser.add_argument('--secret', type=str, required=True, help='HMAC secret key')
     parser.add_argument('--should-detect', type=str, choices=['true', 'false'], required=True,
                        help='Whether QR codes should be detected (true for step 1, false for step 2)')
+    parser.add_argument('--camera-matrix', type=str, default=None, help='Camera intrinsic matrix as comma-separated values (9 values)')
+    parser.add_argument('--dist-coeffs', type=str, default=None, help='Distortion coefficients as comma-separated values (5 values)')
     
     args = parser.parse_args()
     
@@ -203,6 +212,20 @@ def main():
     # Parse should_detect
     should_detect = args.should_detect == 'true'
     
+    # Parse camera calibration parameters if provided
+    camera_matrix = None
+    dist_coeffs = None
+    if args.camera_matrix:
+        camera_matrix = [float(x) for x in args.camera_matrix.split(',')]
+        if len(camera_matrix) != 9:
+            print(json.dumps({'success': False, 'error': f'Camera matrix must have 9 values, got {len(camera_matrix)}'}))
+            sys.exit(1)
+    if args.dist_coeffs:
+        dist_coeffs = [float(x) for x in args.dist_coeffs.split(',')]
+        if len(dist_coeffs) != 5:
+            print(json.dumps({'success': False, 'error': f'Distortion coefficients must have 5 values, got {len(dist_coeffs)}'}))
+            sys.exit(1)
+    
     # Run validation
     result = validate_slot_qrs(
         args.camera,
@@ -211,7 +234,9 @@ def main():
         expected_slots,
         args.secret,
         should_detect,
-        device_path=args.device_path
+        device_path=args.device_path,
+        camera_matrix=camera_matrix,
+        dist_coeffs=dist_coeffs
     )
     
     # Output JSON result

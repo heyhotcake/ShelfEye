@@ -422,6 +422,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--should-detect', 'true' // Step 1: QRs should be visible
       ];
       
+      // Add camera calibration parameters if available
+      if (camera.cameraMatrix && camera.distCoeffs) {
+        validationArgs.push('--camera-matrix', camera.cameraMatrix.join(','));
+        validationArgs.push('--dist-coeffs', camera.distCoeffs.join(','));
+        console.log(`[Validation] Using camera calibration parameters`);
+      }
+      
       // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
         validationArgs.push('--device-path', camera.devicePath);
@@ -561,6 +568,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--secret', secret,
         '--should-detect', 'false' // Step 2: QRs should NOT be visible
       ];
+      
+      // Add camera calibration parameters if available
+      if (camera.cameraMatrix && camera.distCoeffs) {
+        validationArgs.push('--camera-matrix', camera.cameraMatrix.join(','));
+        validationArgs.push('--dist-coeffs', camera.distCoeffs.join(','));
+        console.log(`[Validation] Using camera calibration parameters`);
+      }
       
       // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
