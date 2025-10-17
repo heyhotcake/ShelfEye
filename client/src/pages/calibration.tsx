@@ -17,6 +17,7 @@ interface CalibrationResult {
   homographyMatrix: number[];
   reprojectionError: number;
   markersDetected: number;
+  rectifiedPreview?: string; // base64 encoded image from calibration
 }
 
 interface CameraPreview {
@@ -201,6 +202,7 @@ export default function Calibration() {
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
       console.log('[Calibration] ArUco calibration SUCCESS, setting step to 1');
+      console.log('[Calibration] Rectified preview included:', !!data.rectifiedPreview);
       setCalibrationResult(data);
       setCalibrationStep(1); // Move to step 1: show rectified preview
       setIsCameraLocked(false); // Clear lock state
@@ -218,8 +220,7 @@ export default function Calibration() {
       queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
       // Resume preview polling
       queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
-      // Fetch rectified preview after successful calibration
-      refetchRectified();
+      // Note: Rectified preview is now included in calibration response, no separate fetch needed
     },
     onError: async (error: any) => {
       setIsCameraLocked(false); // Clear lock state on error
@@ -748,13 +749,9 @@ export default function Calibration() {
                     <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview with Template Overlay</h4>
                     <div className="canvas-container">
                       <div className="aspect-[4/3] bg-muted rounded overflow-hidden">
-                        {isLoadingRectified ? (
-                          <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
-                            <p className="text-sm text-muted-foreground">Loading rectified view...</p>
-                          </div>
-                        ) : rectifiedPreview?.ok && rectifiedPreview?.image ? (
+                        {calibrationResult?.rectifiedPreview ? (
                           <img 
-                            src={rectifiedPreview.image} 
+                            src={calibrationResult.rectifiedPreview} 
                             alt="Rectified preview with template overlay" 
                             className="w-full h-full object-contain"
                             data-testid="img-rectified-preview"
@@ -766,13 +763,9 @@ export default function Calibration() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                               </svg>
                             </div>
-                            <p className="text-sm font-medium text-foreground mb-2">Camera Hardware Required</p>
+                            <p className="text-sm font-medium text-foreground mb-2">Preview Not Available</p>
                             <p className="text-xs text-muted-foreground max-w-md">
-                              {rectifiedError?.message?.includes('Could not open camera') || rectifiedPreview?.error?.includes('Could not open camera')
-                                ? 'This preview requires a physical camera. It will work on your Raspberry Pi after deployment.'
-                                : rectifiedError ? `Error: ${rectifiedError.message}` :
-                                  rectifiedPreview?.error ? `Error: ${rectifiedPreview.error}` : 
-                                  'Loading rectified view...'}
+                              The rectified preview was not generated during calibration. This may indicate a camera or processing issue.
                             </p>
                           </div>
                         )}

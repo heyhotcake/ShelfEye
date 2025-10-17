@@ -183,12 +183,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const category = await storage.getToolCategory(template.categoryId);
         if (category) {
           templatesWithDimensions.push({
-            xCm: template.xCm,
-            yCm: template.yCm,
-            widthCm: category.widthCm,
-            heightCm: category.heightCm,
+            x: template.xCm,
+            y: template.yCm,
+            width: category.widthCm,
+            height: category.heightCm,
             rotation: template.rotation,
-            label: category.name
+            categoryName: category.name
           });
         }
       }
