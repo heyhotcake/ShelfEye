@@ -1,0 +1,76 @@
+ npm run dev
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[Scheduler] Initializing...
+[Scheduler] Reloading configuration...
+[Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+[Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+[Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+[Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+[Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+[Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+[Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+[Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+[Scheduler] Scheduled 4 capture times
+[Scheduler] Initialized successfully
+[StartupCalibration] Starting startup calibration check...
+[StartupCalibration] Running calibration for camera Camera Station A (/dev/video0)
+[StartupCalibration] Paper size format: 6-page-3x2
+[StartupCalibration] Last calibration: 2025-10-17T04:04:07.766Z
+[StartupCalibration] Failed to parse calibration result: error: update or delete on table "slots" violates foreign key constraint "detection_logs_slot_id_slots_id_fk" on table "detection_logs"
+    at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async DbStorage.deleteSlot (/home/naniwa/ShelfEye/server/storage.ts:680:20)
+    at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:130:15) {
+  length: 355,
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (id)=(e4ae9cb3-944f-4b16-868e-f8bf8b50e330) is still referenced from table "detection_logs".',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'detection_logs',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'detection_logs_slot_id_slots_id_fk',
+  file: 'ri_triggers.c',
+  line: '2621',
+  routine: 'ri_ReportViolation'
+}
+[StartupCalibration] Calibration failed - flashing red LED
+[StartupCalibration] Flashing red LED - Calibration failed on startup
+[Alert LED] Started flashing (slow pattern)
+1:19:24 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+1:19:39 PM [express] GET /api/cameras 200 in 724ms :: [{"id":"81ac3d66-faee-458b-b329-aa01daa9003d",…
+1:19:39 PM [express] GET /api/template-rectangles 304 in 716ms :: [{"id":"b8e2d78a-b436-404c-b8eb-57…
+1:19:39 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 673ms :: {"…
+1:19:45 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4359ms :: {…
+1:19:50 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4352ms :: {…
+[CameraSessionManager] Exclusive lock set for camera 77fa17c2-5109-43ed-8f43-b0b1aec5703f - blocking new previews
+[CameraSessionManager] Waiting for in-flight previews to complete...
+[CameraSessionManager] Camera 77fa17c2-5109-43ed-8f43-b0b1aec5703f should now be available for exclusive use
+[Calibration] LED light turned ON for calibration
+[CameraSessionManager] Released exclusive lock for camera 77fa17c2-5109-43ed-8f43-b0b1aec5703f
+1:20:07 PM [express] POST /api/calibrate/77fa17c2-5109-43ed-8f43-b0b1aec5703f 500 in 15316ms :: {"me…
+[LED] Light turned OFF
+1:20:11 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4904ms :: {…
+1:20:17 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4549ms :: {…
+1:20:23 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4488ms :: {…
+1:20:25 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 801ms :: {"…
+1:20:26 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 304 in 655ms :: {"…
+1:20:28 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 304 in 715ms :: {"…
+1:20:34 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4358ms :: {…
+1:20:39 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4342ms :: {…
+1:20:45 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4337ms :: {…
+1:20:50 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4402ms :: {…
+1:20:56 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4358ms :: {…
+1:21:01 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4391ms :: {…
+1:21:07 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 4483ms :: {…

@@ -127,6 +127,8 @@ export class StartupCalibrationService {
             // Delete existing slots for this camera
             const existingSlots = await storage.getSlotsByCamera(camera.id);
             for (const slot of existingSlots) {
+              // First delete all detection logs for this slot to avoid foreign key constraint
+              await storage.deleteDetectionLogsBySlotId(slot.id);
               await storage.deleteSlot(slot.id);
             }
 

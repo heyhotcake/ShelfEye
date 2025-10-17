@@ -24,6 +24,7 @@ export interface IStorage {
   getDetectionLogsByDateRange(startDate: Date, endDate: Date): Promise<DetectionLog[]>;
   getLatestDetectionLogBySlotBeforeTime(slotId: string, timestamp: Date): Promise<DetectionLog | undefined>;
   createDetectionLog(log: InsertDetectionLog): Promise<DetectionLog>;
+  deleteDetectionLogsBySlotId(slotId: string): Promise<number>;
 
   // Alert rule methods
   getAlertRules(): Promise<AlertRule[]>;
@@ -276,6 +277,12 @@ export class MemStorage implements IStorage {
     };
     this.detectionLogs.push(newLog);
     return newLog;
+  }
+
+  async deleteDetectionLogsBySlotId(slotId: string): Promise<number> {
+    const initialLength = this.detectionLogs.length;
+    this.detectionLogs = this.detectionLogs.filter(log => log.slotId !== slotId);
+    return initialLength - this.detectionLogs.length;
   }
 
   // Alert rule methods
@@ -707,6 +714,12 @@ export class DbStorage implements IStorage {
   async createDetectionLog(log: InsertDetectionLog): Promise<DetectionLog> {
     const result = await db.insert(schema.detectionLogs).values(log).returning();
     return result[0];
+  }
+
+  async deleteDetectionLogsBySlotId(slotId: string): Promise<number> {
+    const result = await db.delete(schema.detectionLogs)
+      .where(eq(schema.detectionLogs.slotId, slotId));
+    return result.rowCount || 0;
   }
 
   async getAlertRules(): Promise<AlertRule[]> {
