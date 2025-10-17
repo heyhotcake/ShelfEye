@@ -12,10 +12,24 @@ import fs from "fs/promises";
 import QRCode from "qrcode";
 import crypto from "crypto";
 import { z } from "zod";
+import multer from "multer";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertWorkerSchema, insertCaptureRunSchema } from "@shared/schema";
 
 // Global scheduler instance
 let scheduler: CaptureScheduler;
+
+// Multer configuration for file uploads
+const upload = multer({
+  dest: '/tmp/calibration-uploads/',
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   scheduler = new CaptureScheduler(storage);
@@ -91,13 +105,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Calibration routes
-  app.post("/api/calibrate/:cameraId", async (req, res) => {
+  // Calibration routes - supports both camera capture and uploaded image
+  app.post("/api/calibrate/:cameraId", upload.single('image'), async (req, res) => {
     const { cameraId } = req.params;
     let lockAcquired = false;
+    let uploadedImagePath: string | null = null;
     
     try {
       const { paperSize } = req.body; // Expected: "6-page-3x2", "A4-landscape", etc.
+      const uploadedFile = req.file; // Uploaded image (if provided)
       
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
@@ -123,26 +139,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Acquire exclusive camera lock AFTER validation succeeds
-      // This includes a 10-second delay to ensure any preview process has fully released the camera
-      await cameraSessionManager.acquireExclusiveLock(cameraId);
-      lockAcquired = true;
+      // Acquire exclusive camera lock only if using camera (not uploaded image)
+      if (!uploadedFile) {
+        await cameraSessionManager.acquireExclusiveLock(cameraId);
+        lockAcquired = true;
 
-      // Turn on LED light for consistent illumination during calibration
-      const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-      if (lightStripConfig) {
-        const pin = parseInt(lightStripConfig.value as string);
-        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
-        console.log('[Calibration] LED light turned ON for calibration');
+        // Turn on LED light for consistent illumination during calibration
+        const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+        if (lightStripConfig) {
+          const pin = parseInt(lightStripConfig.value as string);
+          spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
+          console.log('[Calibration] LED light turned ON for calibration');
+        }
+      } else {
+        uploadedImagePath = uploadedFile.path;
+        console.log('[Calibration] Using uploaded image:', uploadedImagePath);
       }
 
       // Call Python calibration script with paper size
-      const pythonProcess = spawn('python3', [
+      const pythonArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
-        '--camera', camera.deviceIndex.toString(),
+      ];
+      
+      if (uploadedFile) {
+        // Use uploaded image instead of camera
+        pythonArgs.push('--image', uploadedImagePath!);
+      } else {
+        // Use camera capture
+        pythonArgs.push('--camera', camera.deviceIndex.toString());
+      }
+      
+      pythonArgs.push(
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
-      ]);
+      );
+
+      const pythonProcess = spawn('python3', pythonArgs);
 
       let result = '';
       let error = '';
@@ -250,6 +282,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lockAcquired = false;
           }
           
+          // Clean up uploaded file if it exists
+          if (uploadedImagePath) {
+            try {
+              await fs.unlink(uploadedImagePath);
+              console.log('[Calibration] Cleaned up uploaded image:', uploadedImagePath);
+            } catch (err) {
+              console.error('[Calibration] Failed to clean up uploaded image:', err);
+            }
+          }
+          
           // Turn off LED light after calibration
           turnOffLED().catch(err => console.error('[Calibration] LED turnoff error:', err));
         }
@@ -260,6 +302,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (lockAcquired) {
         cameraSessionManager.releaseLock(cameraId);
       }
+      
+      // Clean up uploaded file on error
+      if (uploadedImagePath) {
+        try {
+          await fs.unlink(uploadedImagePath);
+        } catch (err) {
+          console.error('[Calibration] Failed to clean up uploaded image on error:', err);
+        }
+      }
+      
       // Turn off LED on unexpected errors
       await turnOffLED();
       res.status(500).json({ message: "Calibration error", error });
