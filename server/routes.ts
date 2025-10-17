@@ -151,14 +151,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deviceSource = getCameraDeviceSource(camera);
       const calibrationArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
-        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
       ];
       
-      // Add device path if available (for Raspberry Pi)
+      // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
         calibrationArgs.push('--device-path', camera.devicePath);
+        console.log(`[Calibration] Using device path: ${camera.devicePath}`);
+      } else {
+        calibrationArgs.push('--camera', camera.deviceIndex?.toString() || '0');
+        console.log(`[Calibration] Using camera index: ${camera.deviceIndex || 0}`);
       }
       
       const pythonProcess = spawn('python3', calibrationArgs);
@@ -172,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
-          await turnOffLED(); // Turn off LED on Python spawn error
+          // Don't turn off LED here - let the 'close' event handle it
           res.status(503).json({ 
             message: "Python environment not available. This feature requires hardware setup on Raspberry Pi.", 
             error: err.message 
@@ -334,7 +337,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Call Python validation script
       const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
-        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', JSON.stringify(camera.homographyMatrix),
         '--slots', JSON.stringify(expectedSlots),
@@ -342,9 +344,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--should-detect', 'true' // Step 1: QRs should be visible
       ];
       
-      // Add device path if available (for Raspberry Pi)
+      // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
         validationArgs.push('--device-path', camera.devicePath);
+        console.log(`[Validation] Using device path: ${camera.devicePath}`);
+      } else {
+        validationArgs.push('--camera', camera.deviceIndex?.toString() || '0');
+        console.log(`[Validation] Using camera index: ${camera.deviceIndex || 0}`);
       }
       
       const pythonProcess = spawn('python3', validationArgs);
@@ -358,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
-          await turnOffLED(); // Turn off LED on Python spawn error
+          // Don't turn off LED here - let the 'close' event handle it
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });
@@ -461,7 +467,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Call Python validation script
       const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
-        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', JSON.stringify(camera.homographyMatrix),
         '--slots', JSON.stringify(expectedSlots),
@@ -469,9 +474,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--should-detect', 'false' // Step 2: QRs should NOT be visible
       ];
       
-      // Add device path if available (for Raspberry Pi)
+      // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
         validationArgs.push('--device-path', camera.devicePath);
+        console.log(`[Validation] Using device path: ${camera.devicePath}`);
+      } else {
+        validationArgs.push('--camera', camera.deviceIndex?.toString() || '0');
+        console.log(`[Validation] Using camera index: ${camera.deviceIndex || 0}`);
       }
       
       const pythonProcess = spawn('python3', validationArgs);
@@ -485,7 +494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
-          await turnOffLED(); // Turn off LED on Python spawn error
+          // Don't turn off LED here - let the 'close' event handle it
           res.status(503).json({ message: "Validation failed", error: err.message });
         }
       });

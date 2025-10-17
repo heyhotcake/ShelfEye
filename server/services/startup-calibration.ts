@@ -86,14 +86,17 @@ export class StartupCalibrationService {
 
       const args = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
-        '--camera', camera.deviceIndex?.toString() || '0', // Fallback for Python script compatibility
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
       ];
 
-      // Add device path if available (for Raspberry Pi)
+      // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
         args.push('--device-path', camera.devicePath);
+        console.log(`[StartupCalibration] Using device path: ${camera.devicePath}`);
+      } else {
+        args.push('--camera', camera.deviceIndex?.toString() || '0');
+        console.log(`[StartupCalibration] Using camera index: ${camera.deviceIndex || 0}`);
       }
 
       const pythonProcess = spawn('python3', args);
