@@ -14,28 +14,49 @@ interface TemplateRectangleWithCategory extends TemplateRectangle {
   category: ToolCategory;
 }
 
+interface TemplateDesign {
+  name: string;
+  timestamp: string;
+  paperSize: string;
+  cameraId?: string;
+  templateRectangles: any[];
+  categories: any[];
+}
+
 export default function TemplatePrint() {
   const [, setLocation] = useLocation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [savedTemplateDesigns, setSavedTemplateDesigns] = useState<TemplateDesign[]>([]);
+  const [selectedDesignTimestamp, setSelectedDesignTimestamp] = useState<string>('');
   const [paperSize, setPaperSize] = useState('A4-landscape');
 
-  // Load paper size from localStorage on mount
+  // Load saved template designs from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('templateConfigVersions');
     if (saved) {
       try {
-        const versions = JSON.parse(saved);
-        if (versions.current) {
-          const currentVersion = versions.versions.find((v: any) => v.id === versions.current);
-          if (currentVersion && currentVersion.paperSize) {
-            setPaperSize(currentVersion.paperSize);
-          }
+        const designs = JSON.parse(saved);
+        setSavedTemplateDesigns(designs);
+        // Auto-select first design if available
+        if (designs.length > 0) {
+          setSelectedDesignTimestamp(designs[0].timestamp);
+          setPaperSize(designs[0].paperSize);
         }
       } catch (error) {
-        console.error('Failed to load paper size from localStorage:', error);
+        console.error('Failed to load template designs from localStorage:', error);
       }
     }
   }, []);
+
+  // Update paper size when design selection changes
+  useEffect(() => {
+    if (selectedDesignTimestamp) {
+      const design = savedTemplateDesigns.find(d => d.timestamp === selectedDesignTimestamp);
+      if (design) {
+        setPaperSize(design.paperSize);
+      }
+    }
+  }, [selectedDesignTimestamp, savedTemplateDesigns]);
 
   // Canvas dimensions at 300 DPI for accurate printing (1mm = 11.811 pixels at 300 DPI)
   const paperDimensions: Record<string, { 
@@ -538,24 +559,28 @@ export default function TemplatePrint() {
                 <CardTitle>Print Settings</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-3">
-                  <Label htmlFor="print-paper-size" className="text-sm font-medium">Paper Size:</Label>
-                  <Select value={paperSize} onValueChange={setPaperSize}>
-                    <SelectTrigger className="w-48" id="print-paper-size" data-testid="select-print-paper-size">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="A5-landscape">A5 Landscape</SelectItem>
-                      <SelectItem value="A4-landscape">A4 Landscape</SelectItem>
-                      <SelectItem value="A3-landscape">A3 Landscape</SelectItem>
-                      <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
-                      <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
-                      <SelectItem value="6-page-3x2">6-Page (3×2 A4)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {templatesWithCategories.length} template{templatesWithCategories.length !== 1 ? 's' : ''} on this paper
-                  </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="template-design" className="text-sm font-medium">Template Design:</Label>
+                    <Select value={selectedDesignTimestamp} onValueChange={setSelectedDesignTimestamp}>
+                      <SelectTrigger className="w-64" id="template-design" data-testid="select-template-design">
+                        <SelectValue placeholder="Select a template design" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {savedTemplateDesigns.map((design) => (
+                          <SelectItem key={design.timestamp} value={design.timestamp}>
+                            {design.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {selectedDesignTimestamp && (
+                    <div className="text-sm text-muted-foreground pl-32">
+                      <p>Paper Size: <span className="font-medium text-foreground">{paperSize}</span></p>
+                      <p>{templatesWithCategories.length} template{templatesWithCategories.length !== 1 ? 's' : ''}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
