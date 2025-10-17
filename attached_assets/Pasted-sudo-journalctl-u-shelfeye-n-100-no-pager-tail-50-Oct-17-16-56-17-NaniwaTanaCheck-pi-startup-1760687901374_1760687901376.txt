@@ -1,0 +1,51 @@
+sudo journalctl -u shelfeye -n 100 --no-pager | tail -50
+Oct 17 16:56:17 NaniwaTanaCheck pi-startup.sh[6118]:   schema: 'public',
+Oct 17 16:56:17 NaniwaTanaCheck pi-startup.sh[6118]:   table: 'slots',
+Oct 17 16:56:17 NaniwaTanaCheck pi-startup.sh[6118]:   column: undefined,
+Oct 17 16:56:17 NaniwaTanaCheck pi-startup.sh[6118]:   dataType: undefined,
+Oct 17 16:56:17 NaniwaTanaCheck pi-startup.sh[6118]:   constraint: 'slots_slot_id_unique',
+Oct 17 16:56:17 NaniwaTanaCheck pi-startup.sh[6118]:   file: 'nbtinsert.c',
+Oct 17 16:56:17 NaniwaTanaCheck pi-startup.sh[6118]:   line: '666',
+Oct 17 16:56:17 NaniwaTanaCheck pi-startup.sh[6118]:   routine: '_bt_check_unique'
+Oct 17 16:56:17 NaniwaTanaCheck pi-startup.sh[6118]: }
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]: Failed to create slot for template 03e4e7e5-ed61-4c7e-88f7-9e3cb90017e1: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:     at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:     at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:     at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:677:20)
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:     at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/routes.ts:258:32) {
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   length: 211,
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   severity: 'ERROR',
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   code: '23505',
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   detail: 'Key (slot_id)=(pen-001) already exists.',
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   hint: undefined,
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   position: undefined,
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   internalPosition: undefined,
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   internalQuery: undefined,
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   where: undefined,
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   schema: 'public',
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   table: 'slots',
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   column: undefined,
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   dataType: undefined,
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   constraint: 'slots_slot_id_unique',
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   file: 'nbtinsert.c',
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   line: '666',
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]:   routine: '_bt_check_unique'
+Oct 17 16:56:18 NaniwaTanaCheck pi-startup.sh[6118]: }
+Oct 17 16:56:20 NaniwaTanaCheck pi-startup.sh[6118]: [CameraSessionManager] Released exclusive lock for camera 77fa17c2-5109-43ed-8f43-b0b1aec5703f
+Oct 17 16:56:20 NaniwaTanaCheck pi-startup.sh[6118]: 4:56:20 PM [express] POST /api/calibrate/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 16616ms :: {"ok…
+Oct 17 16:56:20 NaniwaTanaCheck pi-startup.sh[6118]: [LED] Light turned OFF
+Oct 17 16:56:20 NaniwaTanaCheck sudo[6204]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/gpio_controller.py --pin 18 --action off
+Oct 17 16:56:20 NaniwaTanaCheck sudo[6204]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 17 16:56:20 NaniwaTanaCheck sudo[6204]: pam_unix(sudo:session): session closed for user root
+Oct 17 16:56:21 NaniwaTanaCheck pi-startup.sh[6118]: 4:56:21 PM [express] GET /api/cameras 200 in 720ms :: [{"id":"77fa17c2-5109-43ed-8f43-b0b1aec5703f",…
+Oct 17 16:56:21 NaniwaTanaCheck pi-startup.sh[6118]: [Rectified Preview] Paper: 89.1x42 cm
+Oct 17 16:56:21 NaniwaTanaCheck pi-startup.sh[6118]: [Rectified Preview] Output: 891x420 px (10 px/cm)
+Oct 17 16:56:21 NaniwaTanaCheck pi-startup.sh[6118]: [Rectified Preview] Using device path: /dev/video0
+Oct 17 16:56:22 NaniwaTanaCheck pi-startup.sh[6118]: 4:56:22 PM [express] GET /api/rectified-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 500 in 1933ms :…
+Oct 17 16:56:22 NaniwaTanaCheck pi-startup.sh[6118]: 4:56:22 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 2367ms :: {…
+Oct 17 16:56:25 NaniwaTanaCheck pi-startup.sh[6118]: 4:56:25 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 1599ms :: {…
+Oct 17 16:56:28 NaniwaTanaCheck pi-startup.sh[6118]: 4:56:28 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 1645ms :: {…
+Oct 17 16:56:30 NaniwaTanaCheck pi-startup.sh[6118]: 4:56:30 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 1593ms :: {…
+Oct 17 16:57:09 NaniwaTanaCheck pi-startup.sh[6118]: 4:57:09 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 2458ms :: {…
+Oct 17 16:57:19 NaniwaTanaCheck pi-startup.sh[6118]: 4:57:19 PM [express] GET /api/camera-preview/77fa17c2-5109-43ed-8f43-b0b1aec5703f 200 in 2388ms :: {…
