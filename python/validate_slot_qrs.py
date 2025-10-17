@@ -55,28 +55,31 @@ def decode_qr_codes(image):
     
     return results
 
-def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, secret_key, should_detect=True):
+def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, secret_key, should_detect=True, device_path=None):
     """
     Validate slot QR codes in calibrated camera view.
     
     Args:
-        camera_index: Camera device index
+        camera_index: Camera device index (fallback if device_path not provided)
         resolution: Tuple of (width, height)
         homography_matrix: 3x3 homography matrix for perspective correction
         expected_slots: List of expected slot QR data (id, slotId, etc.)
         secret_key: HMAC secret key for QR validation
         should_detect: True if QRs should be detected, False if they should NOT be detected
+        device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
     
     Returns:
         JSON with validation results
     """
     
-    # Open camera
-    cap = cv2.VideoCapture(camera_index)
+    # Open camera - use device path if provided, otherwise use index
+    camera_source = device_path if device_path else camera_index
+    print(f"Opening camera: {camera_source}", file=sys.stderr)
+    cap = cv2.VideoCapture(camera_source)
     if not cap.isOpened():
         return {
             'success': False,
-            'error': f'Failed to open camera {camera_index}'
+            'error': f'Failed to open camera {camera_source}'
         }
     
     # Set resolution
@@ -189,7 +192,8 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
 
 def main():
     parser = argparse.ArgumentParser(description='Validate slot QR codes in calibrated camera')
-    parser.add_argument('--camera', type=int, required=True, help='Camera device index')
+    parser.add_argument('--camera', type=int, default=0, help='Camera device index (fallback if --device-path not provided)')
+    parser.add_argument('--device-path', type=str, help='Camera device path for Raspberry Pi (e.g., /dev/video0)')
     parser.add_argument('--resolution', type=str, required=True, help='Camera resolution (WxH)')
     parser.add_argument('--homography', type=str, required=True, help='Homography matrix (JSON array)')
     parser.add_argument('--slots', type=str, required=True, help='Expected slots (JSON array)')
@@ -219,7 +223,8 @@ def main():
         homography_matrix,
         expected_slots,
         args.secret,
-        should_detect
+        should_detect,
+        device_path=args.device_path
     )
     
     # Output JSON result

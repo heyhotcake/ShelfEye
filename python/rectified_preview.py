@@ -22,17 +22,19 @@ def generate_rectified_preview(
     homography_matrix: list,
     output_size: Tuple[int, int] = (800, 600),
     templates: Optional[List[dict]] = None,
-    paper_size_cm: Tuple[float, float] = (88.8, 42.0)  # Default for 6-page-3x2
+    paper_size_cm: Tuple[float, float] = (88.8, 42.0),  # Default for 6-page-3x2
+    device_path: Optional[str] = None
 ) -> dict:
     """
     Generate a rectified preview image using homography transformation
     
     Args:
-        camera_index: Camera device index
+        camera_index: Camera device index (fallback if device_path not provided)
         resolution: (width, height) camera resolution
         homography_matrix: Flattened 3x3 homography matrix (9 values)
         output_size: (width, height) of output rectified image
         templates: List of template rectangles with x, y, width, height in cm
+        device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
         
     Returns:
         Dictionary with ok status and base64 encoded image or error
@@ -42,10 +44,12 @@ def generate_rectified_preview(
         # Reshape homography matrix from list to 3x3 numpy array
         H = np.array(homography_matrix).reshape(3, 3)
         
-        # Initialize camera
-        cap = cv2.VideoCapture(camera_index)
+        # Initialize camera - use device path if provided, otherwise use index
+        camera_source = device_path if device_path else camera_index
+        logger.info(f"Opening camera: {camera_source}")
+        cap = cv2.VideoCapture(camera_source)
         if not cap.isOpened():
-            raise Exception(f"Could not open camera {camera_index}")
+            raise Exception(f"Could not open camera {camera_source}")
         
         width, height = resolution
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -176,7 +180,8 @@ def generate_rectified_preview(
 
 def main():
     parser = argparse.ArgumentParser(description='Generate rectified preview using homography')
-    parser.add_argument('--camera', type=int, required=True, help='Camera device index')
+    parser.add_argument('--camera', type=int, default=0, help='Camera device index (fallback if --device-path not provided)')
+    parser.add_argument('--device-path', type=str, help='Camera device path for Raspberry Pi (e.g., /dev/video0)')
     parser.add_argument('--resolution', type=str, required=True, help='Camera resolution (WxH)')
     parser.add_argument('--homography', type=str, required=True, help='Homography matrix as comma-separated values')
     parser.add_argument('--output-size', type=str, default='800x600', help='Output image size (WxH)')
@@ -209,7 +214,9 @@ def main():
         paper_size_cm = (paper_width, paper_height)
         
         # Generate rectified preview
-        result = generate_rectified_preview(args.camera, resolution, homography, output_size, templates, paper_size_cm)
+        result = generate_rectified_preview(
+            args.camera, resolution, homography, output_size, templates, paper_size_cm, device_path=args.device_path
+        )
         
         # Output JSON result
         print(json.dumps(result))

@@ -13,12 +13,12 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def capture_preview(device_index: int, width: int = 1920, height: int = 1080):
+def capture_preview(device_source, width: int = 1920, height: int = 1080):
     """
     Capture a single frame from camera and return as base64 JPEG
     
     Args:
-        device_index: Camera device index
+        device_source: Camera device index (int) or device path (str like /dev/video0)
         width: Frame width
         height: Frame height
         
@@ -28,11 +28,12 @@ def capture_preview(device_index: int, width: int = 1920, height: int = 1080):
     cap = None
     try:
         # Open camera
-        cap = cv2.VideoCapture(device_index)
+        logger.info(f"Opening camera: {device_source}")
+        cap = cv2.VideoCapture(device_source)
         if not cap.isOpened():
             return {
                 'ok': False,
-                'error': f'Cannot open camera device {device_index}'
+                'error': f'Cannot open camera device {device_source}'
             }
         
         # Set resolution
@@ -72,12 +73,18 @@ def capture_preview(device_index: int, width: int = 1920, height: int = 1080):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print(json.dumps({'ok': False, 'error': 'Missing device_index argument'}))
+        print(json.dumps({'ok': False, 'error': 'Missing device argument'}))
         sys.exit(1)
     
-    device_index = int(sys.argv[1])
+    # Check if argument is a device path (starts with /) or device index (integer)
+    device_arg = sys.argv[1]
+    if device_arg.startswith('/'):
+        device_source = device_arg  # Device path like /dev/video0
+    else:
+        device_source = int(device_arg)  # Device index like 0, 1, 2
+    
     width = int(sys.argv[2]) if len(sys.argv) > 2 else 1920
     height = int(sys.argv[3]) if len(sys.argv) > 3 else 1080
     
-    result = capture_preview(device_index, width, height)
+    result = capture_preview(device_source, width, height)
     print(json.dumps(result))

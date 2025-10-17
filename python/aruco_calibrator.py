@@ -158,24 +158,28 @@ class ArucoCornerCalibrator:
             return False, None, float('inf')
     
     def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int], 
-                             paper_size_cm: Tuple[float, float] = (29.7, 21.0)) -> Dict:
+                             paper_size_cm: Tuple[float, float] = (29.7, 21.0),
+                             device_path: Optional[str] = None) -> Dict:
         """
         Capture frame from camera and calculate homography
         
         Args:
-            camera_index: Camera device index (0, 1, 2, etc.)
+            camera_index: Camera device index (0, 1, 2, etc.) - used if device_path not provided
             resolution: (width, height) tuple
             paper_size_cm: (width_cm, height_cm) of the paper template
+            device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
             
         Returns:
             Dictionary with calibration results
         """
         cap = None
         try:
-            # Initialize camera
-            cap = cv2.VideoCapture(camera_index)
+            # Initialize camera - use device path if provided, otherwise use index
+            camera_source = device_path if device_path else camera_index
+            logger.info(f"Opening camera: {camera_source}")
+            cap = cv2.VideoCapture(camera_source)
             if not cap.isOpened():
-                raise Exception(f"Could not open camera {camera_index}")
+                raise Exception(f"Could not open camera {camera_source}")
             
             width, height = resolution
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -233,7 +237,8 @@ class ArucoCornerCalibrator:
 
 def main():
     parser = argparse.ArgumentParser(description='ArUco 4-Corner Calibration')
-    parser.add_argument('--camera', type=int, default=0, help='Camera device index')
+    parser.add_argument('--camera', type=int, default=0, help='Camera device index (fallback if --device-path not provided)')
+    parser.add_argument('--device-path', type=str, help='Camera device path for Raspberry Pi (e.g., /dev/video0)')
     parser.add_argument('--resolution', type=str, default='1920x1080', help='Camera resolution (WxH)')
     parser.add_argument('--paper-size', type=str, default='29.7x21.0', help='Paper size in cm (WidthxHeight)')
     
@@ -252,7 +257,9 @@ def main():
         calibrator = ArucoCornerCalibrator()
         
         # Run calibration
-        result = calibrator.calibrate_from_camera(args.camera, resolution, paper_size_cm)
+        result = calibrator.calibrate_from_camera(
+            args.camera, resolution, paper_size_cm, device_path=args.device_path
+        )
         
         # Output JSON result
         print(json.dumps(result))

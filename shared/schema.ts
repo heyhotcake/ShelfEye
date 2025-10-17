@@ -7,6 +7,7 @@ export const cameras = pgTable("cameras", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   deviceIndex: integer("device_index").notNull().default(0),
+  devicePath: text("device_path"), // For Raspberry Pi: /dev/video0, /dev/video1, etc.
   resolution: json("resolution").$type<[number, number]>().notNull().default([1920, 1080]),
   homographyMatrix: json("homography_matrix").$type<number[]>(),
   calibrationTimestamp: timestamp("calibration_timestamp"),
