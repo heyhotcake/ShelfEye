@@ -745,11 +745,19 @@ export default function Calibration() {
                             data-testid="img-rectified-preview"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
-                            <p className="text-sm text-muted-foreground">
-                              {rectifiedError ? `Error: ${rectifiedError.message}` :
-                               rectifiedPreview?.error ? `Error: ${rectifiedPreview.error}` : 
-                               'Loading rectified view...'}
+                          <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex flex-col items-center justify-center p-6 text-center">
+                            <div className="text-amber-500 mb-3">
+                              <svg className="w-12 h-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <p className="text-sm font-medium text-foreground mb-2">Camera Hardware Required</p>
+                            <p className="text-xs text-muted-foreground max-w-md">
+                              {rectifiedError?.message?.includes('Could not open camera') || rectifiedPreview?.error?.includes('Could not open camera')
+                                ? 'This preview requires a physical camera. It will work on your Raspberry Pi after deployment.'
+                                : rectifiedError ? `Error: ${rectifiedError.message}` :
+                                  rectifiedPreview?.error ? `Error: ${rectifiedPreview.error}` : 
+                                  'Loading rectified view...'}
                             </p>
                           </div>
                         )}
