@@ -104,8 +104,10 @@ export class StartupCalibrationService {
       let result = '';
       let error = '';
 
-      pythonProcess.on('error', (err) => {
+      pythonProcess.on('error', async (err) => {
         console.error('[StartupCalibration] Python process error:', err);
+        // Turn off LED since Python failed to spawn (close event won't fire)
+        await this.turnOffLED();
         resolve(false);
       });
 
