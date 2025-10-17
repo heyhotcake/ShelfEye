@@ -1444,11 +1444,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/template-rectangles/:id", async (req, res) => {
-    const deleted = await storage.deleteTemplateRectangle(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ message: "Template rectangle not found" });
+    try {
+      const deleted = await storage.deleteTemplateRectangle(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Template rectangle not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete template rectangle", error });
     }
-    res.json({ success: true });
   });
 
   // Scheduler configuration routes
@@ -1871,62 +1875,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Analytics routes
   app.get("/api/analytics/summary", async (_req, res) => {
-    const slots = await storage.getSlots();
-    const recentLogs = await storage.getDetectionLogs(1000); // Last 1000 logs
+    try {
+      const slots = await storage.getSlots();
+      const recentLogs = await storage.getDetectionLogs(1000); // Last 1000 logs
 
-    // Calculate summary statistics
-    const totalSlots = slots.length;
-    const activeSlots = slots.filter(s => s.isActive).length;
-    
-    // Get latest status for each slot
-    const slotStatuses = new Map();
-    for (const log of recentLogs) {
-      if (!slotStatuses.has(log.slotId)) {
-        slotStatuses.set(log.slotId, log.status);
+      // Calculate summary statistics
+      const totalSlots = slots.length;
+      const activeSlots = slots.filter(s => s.isActive).length;
+      
+      // Get latest status for each slot
+      const slotStatuses = new Map();
+      for (const log of recentLogs) {
+        if (!slotStatuses.has(log.slotId)) {
+          slotStatuses.set(log.slotId, log.status);
+        }
       }
-    }
 
-    const statusCounts = {
-      present: 0,
-      empty: 0,
-      checkedOut: 0,
-      occupied: 0,
-      error: 0
-    };
+      const statusCounts = {
+        present: 0,
+        empty: 0,
+        checkedOut: 0,
+        occupied: 0,
+        error: 0
+      };
 
-    for (const status of Array.from(slotStatuses.values())) {
-      switch (status) {
-        case 'ITEM_PRESENT':
-          statusCounts.present++;
-          break;
-        case 'EMPTY':
-          statusCounts.empty++;
-          break;
-        case 'CHECKED_OUT':
-          statusCounts.checkedOut++;
-          break;
-        case 'TRAINING_ERROR':
-          statusCounts.error++;
-          break;
-        default:
-          statusCounts.occupied++;
+      for (const status of Array.from(slotStatuses.values())) {
+        switch (status) {
+          case 'ITEM_PRESENT':
+            statusCounts.present++;
+            break;
+          case 'EMPTY':
+            statusCounts.empty++;
+            break;
+          case 'CHECKED_OUT':
+            statusCounts.checkedOut++;
+            break;
+          case 'TRAINING_ERROR':
+            statusCounts.error++;
+            break;
+          default:
+            statusCounts.occupied++;
+        }
       }
+
+      const pendingAlerts = await storage.getPendingAlerts();
+      const failedAlerts = await storage.getFailedAlerts();
+
+      res.json({
+        totalSlots,
+        activeSlots,
+        statusCounts,
+        alertCounts: {
+          pending: pendingAlerts.length,
+          failed: failedAlerts.length,
+          active: pendingAlerts.filter(a => a.status === 'pending').length
+        },
+        lastUpdate: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch analytics summary", error });
     }
-
-    const pendingAlerts = await storage.getPendingAlerts();
-    const failedAlerts = await storage.getFailedAlerts();
-
-    res.json({
-      totalSlots,
-      activeSlots,
-      statusCounts,
-      alertCounts: {
-        pending: pendingAlerts.length,
-        failed: failedAlerts.length,
-        active: pendingAlerts.filter(a => a.status === 'pending').length
-      },
-      lastUpdate: new Date().toISOString()
-    });
   });
 
   // Camera device detection endpoint
