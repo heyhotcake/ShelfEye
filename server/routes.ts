@@ -734,8 +734,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Get paper size from last calibration config
+      const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
+      let paperSizeFormat = 'A4-landscape'; // default
+      if (paperSizeConfig && paperSizeConfig.value) {
+        paperSizeFormat = paperSizeConfig.value as string;
+      }
+
       // Get template rectangles for this camera to overlay on rectified view
-      const templates = await storage.getTemplateRectanglesByCamera(cameraId);
+      // IMPORTANT: Filter by paper size to match the calibration paper size
+      const allTemplates = await storage.getTemplateRectanglesByCamera(cameraId);
+      const templates = allTemplates.filter(t => t.paperSize === paperSizeFormat);
+      
+      console.log(`[Rectified Preview] Found ${allTemplates.length} total templates, ${templates.length} matching paper size: ${paperSizeFormat}`);
       
       // Get categories for dimensions and names
       const categories = await storage.getToolCategories();
@@ -752,13 +763,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           categoryName: category?.name || 'Unknown'
         };
       });
-
-      // Get paper size from last calibration config
-      const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
-      let paperSizeFormat = 'A4-landscape'; // default
-      if (paperSizeConfig && paperSizeConfig.value) {
-        paperSizeFormat = paperSizeConfig.value as string;
-      }
+      
+      console.log(`[Rectified Preview] Template data:`, JSON.stringify(templateData, null, 2));
       
       // Convert paper size format to dimensions in cm
       const { getPaperDimensions } = await import('./utils/paper-size.js');
