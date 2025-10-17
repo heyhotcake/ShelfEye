@@ -794,9 +794,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const previewData = JSON.parse(result);
             res.json(previewData);
           } catch (parseError) {
+            console.error('[Rectified Preview] Parse error:', parseError);
             res.status(500).json({ message: "Failed to parse rectified preview result", error: parseError });
           }
         } else {
+          console.error('[Rectified Preview] Python script failed with code', code);
+          console.error('[Rectified Preview] Error output:', error);
+          console.error('[Rectified Preview] Stdout output:', result);
           res.status(500).json({ message: "Rectified preview failed", error });
         }
       });
