@@ -430,7 +430,7 @@ export class CaptureScheduler {
    */
   private runPythonScript(scriptPath: string, inputData: any): Promise<any> {
     return new Promise((resolve, reject) => {
-      const python = spawn('python3', [scriptPath]);
+      const python = spawn('python', [scriptPath]);
       
       let stdout = '';
       let stderr = '';

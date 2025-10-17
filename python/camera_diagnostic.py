@@ -31,15 +31,19 @@ class CameraDiagnostic:
         Perform diagnostic checks on a single camera
         
         Args:
-            camera_data: Camera configuration dict with id, deviceIndex, resolution, homographyMatrix
+            camera_data: Camera configuration dict with id, deviceIndex, devicePath, resolution, homographyMatrix
             
         Returns:
             Diagnostic result with status and details
         """
         camera_id = camera_data.get('id')
         device_index = camera_data.get('deviceIndex', 0)
+        device_path = camera_data.get('devicePath')
         resolution = camera_data.get('resolution', [1920, 1080])
         homography_matrix = camera_data.get('homographyMatrix')
+        
+        # Use device path if available (Raspberry Pi), otherwise use index
+        camera_source = device_path if device_path else device_index
         
         result = {
             'cameraId': camera_id,
@@ -51,13 +55,13 @@ class CameraDiagnostic:
         
         try:
             # Check 1: Camera is accessible
-            logger.info(f"Checking camera {camera_id} (device {device_index})...")
-            cap = cv2.VideoCapture(device_index)
+            logger.info(f"Checking camera {camera_id} (source {camera_source})...")
+            cap = cv2.VideoCapture(camera_source)
             
             if not cap.isOpened():
                 result['status'] = 'failed'
-                result['errors'].append(f'Cannot open camera device {device_index}')
-                logger.error(f"Camera {camera_id}: Cannot open device {device_index}")
+                result['errors'].append(f'Cannot open camera source {camera_source}')
+                logger.error(f"Camera {camera_id}: Cannot open source {camera_source}")
                 return result
             
             result['details']['accessible'] = True
