@@ -23,7 +23,8 @@ def generate_rectified_preview(
     output_size: Tuple[int, int] = (800, 600),
     templates: Optional[List[dict]] = None,
     paper_size_cm: Tuple[float, float] = (88.8, 42.0),  # Default for 6-page-3x2
-    device_path: Optional[str] = None
+    device_path: Optional[str] = None,
+    led_pin: int = 18
 ) -> dict:
     """
     Generate a rectified preview image using homography transformation
@@ -35,12 +36,29 @@ def generate_rectified_preview(
         output_size: (width, height) of output rectified image
         templates: List of template rectangles with x, y, width, height in cm
         device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
+        led_pin: GPIO pin for LED light control
         
     Returns:
         Dictionary with ok status and base64 encoded image or error
     """
     cap = None
+    led_was_on = False
     try:
+        # Turn on LED light for consistent illumination
+        try:
+            import subprocess
+            import os
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            gpio_script = os.path.join(script_dir, 'gpio_controller.py')
+            subprocess.run(['sudo', 'python3', gpio_script, '--pin', str(led_pin), '--action', 'on'], 
+                         check=True, capture_output=True, timeout=5)
+            led_was_on = True
+            logger.info(f"LED light turned ON (pin {led_pin})")
+            # Brief delay to let LED stabilize
+            import time
+            time.sleep(0.3)
+        except Exception as led_err:
+            logger.warning(f"Could not control LED light: {led_err}")
         # Reshape homography matrix from list to 3x3 numpy array
         H = np.array(homography_matrix).reshape(3, 3)
         
@@ -184,6 +202,19 @@ def generate_rectified_preview(
     finally:
         if cap is not None:
             cap.release()
+        
+        # Turn off LED light
+        if led_was_on:
+            try:
+                import subprocess
+                import os
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                gpio_script = os.path.join(script_dir, 'gpio_controller.py')
+                subprocess.run(['sudo', 'python3', gpio_script, '--pin', str(led_pin), '--action', 'off'], 
+                             check=True, capture_output=True, timeout=5)
+                logger.info(f"LED light turned OFF (pin {led_pin})")
+            except Exception as led_err:
+                logger.warning(f"Could not turn off LED light: {led_err}")
 
 def main():
     parser = argparse.ArgumentParser(description='Generate rectified preview using homography')
