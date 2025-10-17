@@ -1516,7 +1516,7 @@ export default function SlotDrawing() {
       
       {/* Template Preview Dialog */}
       <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="w-5 h-5" />
@@ -1524,33 +1524,23 @@ export default function SlotDrawing() {
             </DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            {isLoadingPreview ? (
-              <div className="aspect-[4/3] bg-muted rounded flex items-center justify-center">
-                <p className="text-sm text-muted-foreground">Loading preview...</p>
-              </div>
-            ) : previewImageUrl ? (
+            {previewTemplate && (
               <div className="space-y-3">
-                <img 
-                  src={previewImageUrl} 
-                  alt="Template overlay preview" 
-                  className="w-full rounded border"
+                <TemplatePreviewCanvas 
+                  template={previewTemplate}
+                  paperDimensions={paperDimensions}
                 />
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded p-3">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Paper Size:</strong> {previewTemplate?.paperSize}
+                    <strong>Paper Size:</strong> {previewTemplate.paperSize}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    <strong>Tools:</strong> {previewTemplate?.templateRectangles?.length || 0} items
+                    <strong>Tools:</strong> {previewTemplate.templateRectangles?.length || 0} items
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    ℹ️ The magenta rectangles show where tools should be placed. Verify they align with your printed template.
+                    ℹ️ This shows your template layout. Print the ArUco markers and place tools in the magenta areas.
                   </p>
                 </div>
-              </div>
-            ) : (
-              <div className="aspect-[4/3] bg-muted rounded flex flex-col items-center justify-center">
-                <p className="text-sm text-muted-foreground">Camera not available for preview</p>
-                <p className="text-xs text-muted-foreground mt-1">Make sure camera is calibrated</p>
               </div>
             )}
           </div>
