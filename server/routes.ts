@@ -362,20 +362,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { cameraId } = req.params;
     let lockAcquired = false;
     
+    console.log(`[Validation] Starting QR validation (visible) for camera ${cameraId}`);
+    
     try {
       const camera = await storage.getCamera(cameraId);
       
       if (!camera) {
+        console.error(`[Validation] Camera ${cameraId} not found`);
         return res.status(404).json({ message: "Camera not found" });
       }
       
+      console.log(`[Validation] Camera found:`, {
+        hasHomography: !!camera.homographyMatrix,
+        hasCameraMatrix: !!camera.cameraMatrix,
+        hasDistCoeffs: !!camera.distCoeffs
+      });
+      
       if (!camera.homographyMatrix) {
+        console.error(`[Validation] Camera not calibrated - no homography matrix`);
         return res.status(400).json({ message: "Camera not calibrated. Run ArUco calibration first." });
       }
       
       // Get slots for this camera
       const slots = await storage.getSlotsByCamera(cameraId);
+      console.log(`[Validation] Found ${slots.length} slots for camera`);
       if (slots.length === 0) {
+        console.error(`[Validation] No slots configured for this camera`);
         return res.status(400).json({ message: "No slots configured for this camera" });
       }
       
