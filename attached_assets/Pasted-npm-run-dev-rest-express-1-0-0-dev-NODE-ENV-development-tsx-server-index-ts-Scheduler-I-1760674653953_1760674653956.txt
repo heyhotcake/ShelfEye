@@ -1,0 +1,48 @@
+npm run dev
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[Scheduler] Initializing...
+[Scheduler] Reloading configuration...
+[Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+[Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+[Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+[Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+[Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+[Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+[Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+[Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+[Scheduler] Scheduled 4 capture times
+[Scheduler] Initialized successfully
+[StartupCalibration] Starting startup calibration check...
+[StartupCalibration] Running calibration for camera Camera Station A (/dev/video0)
+[StartupCalibration] Paper size format: 6-page-3x2
+[StartupCalibration] Last calibration: 2025-10-17T04:04:07.766Z
+[StartupCalibration] Calibration process failed with code 1 : INFO:__main__:Opening camera: /dev/video0
+INFO:__main__:Detected 3/4 corner markers: [np.int32(19), np.int32(17), np.int32(18)]
+
+[StartupCalibration] Calibration failed - flashing red LED
+[StartupCalibration] Flashing red LED - Calibration failed on startup
+[Alert LED] Started flashing (slow pattern)
+node:events:502
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at doListen (node:net:2139:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:83:21)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1944:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 5000
+}
+
+Node.js v20.19.5
+naniwa@NaniwaTanaCheck:~/ShelfEye $
