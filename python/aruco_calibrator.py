@@ -72,11 +72,36 @@ class ArucoCornerCalibrator:
             logger.error(f"Error detecting corner markers: {e}")
             return {}, 0
     
+    def estimate_camera_matrix(self, image_shape: Tuple[int, int]) -> np.ndarray:
+        """
+        Estimate camera intrinsic matrix from image dimensions
+        Assumes typical webcam with ~60-70 degree horizontal FOV
+        
+        Args:
+            image_shape: (height, width) of the image
+            
+        Returns:
+            3x3 camera matrix
+        """
+        height, width = image_shape
+        # Assume focal length is ~0.8 * width for typical webcams
+        focal_length = width * 0.8
+        cx = width / 2.0
+        cy = height / 2.0
+        
+        camera_matrix = np.array([
+            [focal_length, 0, cx],
+            [0, focal_length, cy],
+            [0, 0, 1]
+        ], dtype=np.float32)
+        
+        return camera_matrix
+
     def calculate_homography(self, marker_centers: Dict[int, np.ndarray], 
                             image_shape: Tuple[int, int],
-                            paper_size_cm: Tuple[float, float] = (29.7, 21.0)) -> Tuple[bool, Optional[np.ndarray], float]:
+                            paper_size_cm: Tuple[float, float] = (29.7, 21.0)) -> Tuple[bool, Optional[np.ndarray], float, Optional[np.ndarray], Optional[np.ndarray]]:
         """
-        Calculate homography matrix from 4 corner markers
+        Calculate homography matrix from 4 corner markers with lens distortion correction
         Maps real-world paper coordinates (cm) to camera pixels
         
         Args:
@@ -88,18 +113,31 @@ class ArucoCornerCalibrator:
             success: Whether calculation was successful
             homography: 3x3 homography matrix that maps cm → pixels
             quality: Quality metric (mean reprojection error in pixels)
+            camera_matrix: 3x3 camera intrinsic matrix
+            dist_coeffs: Distortion coefficients (k1, k2, p1, p2, k3)
         """
         try:
             # Verify all 4 markers are detected
             if len(marker_centers) != 4:
                 logger.warning(f"Need all 4 markers, only found {len(marker_centers)}")
-                return False, None, float('inf')
+                return False, None, float('inf'), None, None
             
             # Check that all required IDs are present
             missing_ids = set(self.corner_ids) - set(marker_centers.keys())
             if missing_ids:
                 logger.warning(f"Missing marker IDs: {missing_ids}")
-                return False, None, float('inf')
+                return False, None, float('inf'), None, None
+            
+            # Estimate camera intrinsic matrix
+            camera_matrix = self.estimate_camera_matrix(image_shape)
+            logger.info(f"Estimated camera matrix: {camera_matrix.tolist()}")
+            
+            # Estimate typical webcam distortion coefficients
+            # Most webcams have slight barrel distortion (negative k1)
+            # k1, k2, p1, p2, k3
+            # Starting with moderate barrel distortion: k1=-0.2, others zero
+            dist_coeffs = np.array([-0.2, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+            logger.info(f"Using estimated distortion coefficients (typical webcam barrel distortion): {dist_coeffs.tolist()}")
             
             # Destination points: detected marker centers in pixels (in order A, B, C, D)
             # A (17) = top-left
@@ -132,7 +170,7 @@ class ArucoCornerCalibrator:
             
             if homography is None:
                 logger.error("Failed to calculate homography")
-                return False, None, float('inf')
+                return False, None, float('inf'), None, None
             
             # Calculate quality (reprojection error)
             # Transform source points (cm) using homography to get predicted pixel positions
@@ -152,12 +190,13 @@ class ArucoCornerCalibrator:
             logger.info(f"Point-wise errors: {point_errors.tolist()}")
             logger.info(f"Reprojection error: mean={reprojection_error:.4f} px, max={max_error:.4f} px")
             logger.info(f"Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero")
+            logger.info(f"Camera matrix and distortion coefficients estimated (distortion currently set to zero)")
             
-            return True, homography, reprojection_error
+            return True, homography, reprojection_error, camera_matrix, dist_coeffs
             
         except Exception as e:
             logger.error(f"Error calculating homography: {e}")
-            return False, None, float('inf')
+            return False, None, float('inf'), None, None
     
     def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int], 
                              paper_size_cm: Tuple[float, float] = (29.7, 21.0),
@@ -206,7 +245,7 @@ class ArucoCornerCalibrator:
             
             # Calculate homography if all markers found
             if num_detected == 4:
-                success, homography, error = self.calculate_homography(
+                success, homography, error, camera_matrix, dist_coeffs = self.calculate_homography(
                     marker_centers, frame.shape[:2], paper_size_cm
                 )
                 
@@ -214,6 +253,8 @@ class ArucoCornerCalibrator:
                     result = {
                         'ok': True,
                         'homography_matrix': homography.flatten().tolist(),
+                        'camera_matrix': camera_matrix.flatten().tolist() if camera_matrix is not None else None,
+                        'dist_coeffs': dist_coeffs.flatten().tolist() if dist_coeffs is not None else None,
                         'reprojection_error': float(error),
                         'markers_detected': num_detected,
                         'marker_positions': {
@@ -227,7 +268,8 @@ class ArucoCornerCalibrator:
                         try:
                             logger.info("Generating rectified preview from calibration frame")
                             rectified = generate_rectified_image_from_frame(
-                                frame, homography, preview_output_size, paper_size_cm, templates
+                                frame, homography, preview_output_size, paper_size_cm, templates,
+                                camera_matrix, dist_coeffs
                             )
                             # Encode as base64
                             _, buffer = cv2.imencode('.jpg', rectified)

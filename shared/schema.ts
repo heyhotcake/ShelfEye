@@ -10,6 +10,8 @@ export const cameras = pgTable("cameras", {
   devicePath: text("device_path"), // For Raspberry Pi: /dev/video0, /dev/video1, etc.
   resolution: json("resolution").$type<[number, number]>().notNull().default([1920, 1080]),
   homographyMatrix: json("homography_matrix").$type<number[]>(),
+  cameraMatrix: json("camera_matrix").$type<number[]>(), // 3x3 intrinsic matrix for lens distortion correction
+  distCoeffs: json("dist_coeffs").$type<number[]>(), // Distortion coefficients (k1, k2, p1, p2, k3)
   calibrationTimestamp: timestamp("calibration_timestamp"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").default(sql`now()`),

@@ -21,7 +21,9 @@ def generate_rectified_image_from_frame(
     homography_matrix: np.ndarray,
     output_size: Tuple[int, int],
     paper_size_cm: Tuple[float, float],
-    templates: Optional[List[dict]] = None
+    templates: Optional[List[dict]] = None,
+    camera_matrix: Optional[np.ndarray] = None,
+    dist_coeffs: Optional[np.ndarray] = None
 ) -> np.ndarray:
     """
     Generate rectified image from an existing frame using homography
@@ -32,10 +34,18 @@ def generate_rectified_image_from_frame(
         output_size: (width, height) of output rectified image
         paper_size_cm: (width, height) of paper in cm
         templates: List of template rectangles with x, y, width, height in cm
+        camera_matrix: 3x3 camera intrinsic matrix for lens distortion correction
+        dist_coeffs: Distortion coefficients (k1, k2, p1, p2, k3)
         
     Returns:
         Rectified image as numpy array
     """
+    # Step 1: Undistort the frame if camera parameters are provided
+    if camera_matrix is not None and dist_coeffs is not None:
+        logger.info("Undistorting frame before warping")
+        frame = cv2.undistort(frame, camera_matrix, dist_coeffs)
+    
+    # Step 2: Apply homography transformation
     # Homography maps cm → pixels (from calibration)
     # For warpPerspective, we need: camera pixels → cm → output pixels
     
@@ -135,10 +145,12 @@ def generate_rectified_preview(
     templates: Optional[List[dict]] = None,
     paper_size_cm: Tuple[float, float] = (88.8, 42.0),  # Default for 6-page-3x2
     device_path: Optional[str] = None,
-    led_pin: int = 18
+    led_pin: int = 18,
+    camera_matrix: Optional[list] = None,
+    dist_coeffs: Optional[list] = None
 ) -> dict:
     """
-    Generate a rectified preview image using homography transformation
+    Generate a rectified preview image using homography transformation with lens distortion correction
     
     Args:
         camera_index: Camera device index (fallback if device_path not provided)
@@ -148,6 +160,8 @@ def generate_rectified_preview(
         templates: List of template rectangles with x, y, width, height in cm
         device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
         led_pin: GPIO pin for LED light control
+        camera_matrix: Flattened 3x3 camera intrinsic matrix (9 values)
+        dist_coeffs: Distortion coefficients (k1, k2, p1, p2, k3) as list
         
     Returns:
         Dictionary with ok status and base64 encoded image or error
@@ -173,6 +187,17 @@ def generate_rectified_preview(
         # Reshape homography matrix from list to 3x3 numpy array
         H = np.array(homography_matrix).reshape(3, 3)
         
+        # Parse camera matrix and distortion coefficients if provided
+        cam_mat = np.array(camera_matrix).reshape(3, 3) if camera_matrix else None
+        dist = np.array(dist_coeffs) if dist_coeffs else None
+        
+        if cam_mat is not None and dist is not None:
+            logger.info(f"Using camera matrix and distortion coefficients for undistortion")
+            logger.info(f"Camera matrix: {cam_mat.tolist()}")
+            logger.info(f"Distortion coeffs: {dist.tolist()}")
+        else:
+            logger.info("No camera calibration parameters provided - skipping undistortion")
+        
         # Initialize camera - use device path if provided, otherwise use index
         camera_source = device_path if device_path else camera_index
         logger.info(f"Opening camera: {camera_source}")
@@ -192,9 +217,9 @@ def generate_rectified_preview(
         if not ret:
             raise Exception("Failed to capture frame from camera")
         
-        # Generate rectified image using shared helper
+        # Generate rectified image using shared helper (with undistortion if parameters provided)
         rectified = generate_rectified_image_from_frame(
-            frame, H, output_size, paper_size_cm, templates
+            frame, H, output_size, paper_size_cm, templates, cam_mat, dist
         )
         
         # Encode image as JPEG
@@ -240,6 +265,8 @@ def main():
     parser.add_argument('--output-size', type=str, default='800x600', help='Output image size (WxH)')
     parser.add_argument('--templates', type=str, default=None, help='Template rectangles as JSON string')
     parser.add_argument('--paper-size', type=str, default='88.8x42.0', help='Paper size in cm (WxH)')
+    parser.add_argument('--camera-matrix', type=str, default=None, help='Camera intrinsic matrix as comma-separated values (9 values)')
+    parser.add_argument('--dist-coeffs', type=str, default=None, help='Distortion coefficients as comma-separated values (5 values)')
     
     args = parser.parse_args()
     
@@ -266,9 +293,22 @@ def main():
         paper_width, paper_height = map(float, args.paper_size.split('x'))
         paper_size_cm = (paper_width, paper_height)
         
-        # Generate rectified preview
+        # Parse camera calibration parameters if provided
+        camera_matrix = None
+        dist_coeffs = None
+        if args.camera_matrix:
+            camera_matrix = [float(x) for x in args.camera_matrix.split(',')]
+            if len(camera_matrix) != 9:
+                raise ValueError(f"Camera matrix must have 9 values, got {len(camera_matrix)}")
+        if args.dist_coeffs:
+            dist_coeffs = [float(x) for x in args.dist_coeffs.split(',')]
+            if len(dist_coeffs) != 5:
+                raise ValueError(f"Distortion coefficients must have 5 values, got {len(dist_coeffs)}")
+        
+        # Generate rectified preview (with lens distortion correction if parameters provided)
         result = generate_rectified_preview(
-            args.camera, resolution, homography, output_size, templates, paper_size_cm, device_path=args.device_path
+            args.camera, resolution, homography, output_size, templates, paper_size_cm,
+            device_path=args.device_path, camera_matrix=camera_matrix, dist_coeffs=dist_coeffs
         )
         
         # Output JSON result

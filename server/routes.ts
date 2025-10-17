@@ -253,9 +253,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               const calibrationData = JSON.parse(result);
               const homographyMatrix = calibrationData.homography_matrix;
+              const cameraMatrix = calibrationData.camera_matrix || null;
+              const distCoeffs = calibrationData.dist_coeffs || null;
               
               await storage.updateCamera(cameraId, {
                 homographyMatrix: homographyMatrix,
+                cameraMatrix: cameraMatrix,
+                distCoeffs: distCoeffs,
                 calibrationTimestamp: new Date(),
               });
 
@@ -802,6 +806,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add templates if available
       if (templateData.length > 0) {
         args.push('--templates', JSON.stringify(templateData));
+      }
+      
+      // Add camera calibration parameters for lens distortion correction
+      if (camera.cameraMatrix && camera.distCoeffs) {
+        args.push('--camera-matrix', camera.cameraMatrix.join(','));
+        args.push('--dist-coeffs', camera.distCoeffs.join(','));
+        console.log(`[Rectified Preview] Using camera calibration for undistortion`);
+      } else {
+        console.log(`[Rectified Preview] No camera calibration parameters - skipping undistortion`);
       }
       
       const pythonProcess = spawn('python3', args);
