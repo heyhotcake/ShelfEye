@@ -36,25 +36,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await startupCalibrationService.initialize();
   // Health check
   app.get("/api/health", (_req, res) => {
-    res.json({
-      ok: true,
-      time: new Date().toISOString(),
-      version: "2.1.0"
-    });
+    try {
+      res.json({
+        ok: true,
+        time: new Date().toISOString(),
+        version: "2.1.0"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Health check failed", error });
+    }
   });
 
   // Camera management routes
   app.get("/api/cameras", async (_req, res) => {
-    const cameras = await storage.getCameras();
-    res.json(cameras);
+    try {
+      const cameras = await storage.getCameras();
+      res.json(cameras);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch cameras", error });
+    }
   });
 
   app.get("/api/cameras/:id", async (req, res) => {
-    const camera = await storage.getCamera(req.params.id);
-    if (!camera) {
-      return res.status(404).json({ message: "Camera not found" });
+    try {
+      const camera = await storage.getCamera(req.params.id);
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      res.json(camera);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch camera", error });
     }
-    res.json(camera);
   });
 
   app.post("/api/cameras", async (req, res) => {
@@ -81,11 +93,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/cameras/:id", async (req, res) => {
-    const deleted = await storage.deleteCamera(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ message: "Camera not found" });
+    try {
+      const deleted = await storage.deleteCamera(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete camera", error });
     }
-    res.json({ ok: true });
   });
 
   // Helper function to turn off LED light safely
@@ -889,11 +905,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Slot management routes
   app.get("/api/slots", async (req, res) => {
-    const { cameraId } = req.query;
-    const slots = cameraId 
-      ? await storage.getSlotsByCamera(cameraId as string)
-      : await storage.getSlots();
-    res.json(slots);
+    try {
+      const { cameraId } = req.query;
+      const slots = cameraId 
+        ? await storage.getSlotsByCamera(cameraId as string)
+        : await storage.getSlots();
+      res.json(slots);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch slots", error });
+    }
   });
 
   app.post("/api/slots", async (req, res) => {
@@ -920,38 +940,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/slots/:id", async (req, res) => {
-    const deleted = await storage.deleteSlot(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ message: "Slot not found" });
+    try {
+      const deleted = await storage.deleteSlot(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Slot not found" });
+      }
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete slot", error });
     }
-    res.json({ ok: true });
   });
 
   // Detection logs routes
   app.get("/api/detection-logs", async (req, res) => {
-    const limit = parseInt(req.query.limit as string) || 100;
-    const offset = parseInt(req.query.offset as string) || 0;
-    const { slotId, startDate, endDate } = req.query;
+    try {
+      const limit = parseInt(req.query.limit as string) || 100;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const { slotId, startDate, endDate } = req.query;
 
-    let logs;
-    if (slotId) {
-      logs = await storage.getDetectionLogsBySlot(slotId as string, limit);
-    } else if (startDate && endDate) {
-      logs = await storage.getDetectionLogsByDateRange(
-        new Date(startDate as string),
-        new Date(endDate as string)
-      );
-    } else {
-      logs = await storage.getDetectionLogs(limit, offset);
+      let logs;
+      if (slotId) {
+        logs = await storage.getDetectionLogsBySlot(slotId as string, limit);
+      } else if (startDate && endDate) {
+        logs = await storage.getDetectionLogsByDateRange(
+          new Date(startDate as string),
+          new Date(endDate as string)
+        );
+      } else {
+        logs = await storage.getDetectionLogs(limit, offset);
+      }
+
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch detection logs", error });
     }
-
-    res.json(logs);
   });
 
   // Alert management routes
   app.get("/api/alert-rules", async (_req, res) => {
-    const rules = await storage.getAlertRules();
-    res.json(rules);
+    try {
+      const rules = await storage.getAlertRules();
+      res.json(rules);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch alert rules", error });
+    }
   });
 
   app.post("/api/alert-rules", async (req, res) => {
@@ -965,18 +997,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/alert-queue", async (_req, res) => {
-    const queue = await storage.getAlertQueue();
-    res.json(queue);
+    try {
+      const queue = await storage.getAlertQueue();
+      res.json(queue);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch alert queue", error });
+    }
   });
 
   app.get("/api/alert-queue/pending", async (_req, res) => {
-    const pending = await storage.getPendingAlerts();
-    res.json(pending);
+    try {
+      const pending = await storage.getPendingAlerts();
+      res.json(pending);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch pending alerts", error });
+    }
   });
 
   app.get("/api/alert-queue/failed", async (_req, res) => {
-    const failed = await storage.getFailedAlerts();
-    res.json(failed);
+    try {
+      const failed = await storage.getFailedAlerts();
+      res.json(failed);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch failed alerts", error });
+    }
   });
 
   // QR code generation route
@@ -1093,16 +1137,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // System configuration routes
   app.get("/api/config", async (_req, res) => {
-    const config = await storage.getSystemConfig();
-    res.json(config);
+    try {
+      const config = await storage.getSystemConfig();
+      res.json(config);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch config", error });
+    }
   });
 
   app.get("/api/config/:key", async (req, res) => {
-    const config = await storage.getConfigByKey(req.params.key);
-    if (!config) {
-      return res.status(404).json({ message: "Configuration key not found" });
+    try {
+      const config = await storage.getConfigByKey(req.params.key);
+      if (!config) {
+        return res.status(404).json({ message: "Configuration key not found" });
+      }
+      res.json(config);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch config key", error });
     }
-    res.json(config);
   });
 
   app.post("/api/config", async (req, res) => {
@@ -1263,16 +1315,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Tool category routes
   app.get("/api/tool-categories", async (_req, res) => {
-    const categories = await storage.getToolCategories();
-    res.json(categories);
+    try {
+      const categories = await storage.getToolCategories();
+      res.json(categories);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tool categories", error });
+    }
   });
 
   app.get("/api/tool-categories/:id", async (req, res) => {
-    const category = await storage.getToolCategory(req.params.id);
-    if (!category) {
-      return res.status(404).json({ message: "Tool category not found" });
+    try {
+      const category = await storage.getToolCategory(req.params.id);
+      if (!category) {
+        return res.status(404).json({ message: "Tool category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tool category", error });
     }
-    res.json(category);
   });
 
   app.post("/api/tool-categories", async (req, res) => {
@@ -1299,30 +1359,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/tool-categories/:id", async (req, res) => {
-    const deleted = await storage.deleteToolCategory(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ message: "Tool category not found" });
+    try {
+      const deleted = await storage.deleteToolCategory(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Tool category not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete tool category", error });
     }
-    res.json({ success: true });
   });
 
   // Template rectangle routes
   app.get("/api/template-rectangles", async (req, res) => {
-    const { paperSize } = req.query;
-    if (paperSize && typeof paperSize === 'string') {
-      const rectangles = await storage.getTemplateRectanglesByPaperSize(paperSize);
-      return res.json(rectangles);
+    try {
+      const { paperSize } = req.query;
+      if (paperSize && typeof paperSize === 'string') {
+        const rectangles = await storage.getTemplateRectanglesByPaperSize(paperSize);
+        return res.json(rectangles);
+      }
+      const rectangles = await storage.getTemplateRectangles();
+      res.json(rectangles);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch template rectangles", error });
     }
-    const rectangles = await storage.getTemplateRectangles();
-    res.json(rectangles);
   });
 
   app.get("/api/template-rectangles/:id", async (req, res) => {
-    const rectangle = await storage.getTemplateRectangle(req.params.id);
-    if (!rectangle) {
-      return res.status(404).json({ message: "Template rectangle not found" });
+    try {
+      const rectangle = await storage.getTemplateRectangle(req.params.id);
+      if (!rectangle) {
+        return res.status(404).json({ message: "Template rectangle not found" });
+      }
+      res.json(rectangle);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch template rectangle", error });
     }
-    res.json(rectangle);
   });
 
   app.post("/api/template-rectangles", async (req, res) => {
