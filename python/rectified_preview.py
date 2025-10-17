@@ -81,22 +81,30 @@ def generate_rectified_image_from_frame(
                 logger.warning(f"Skipping template {label} with zero dimensions")
                 continue
             
-            # Define rectangle corners in cm (unrotated)
-            corners_cm = np.array([
-                [x_cm, y_cm],
-                [x_cm + w_cm, y_cm],
-                [x_cm + w_cm, y_cm + h_cm],
-                [x_cm, y_cm + h_cm]
+            # x_cm, y_cm represent the CENTER of the rectangle (from database)
+            # Define rectangle corners relative to center
+            half_w = w_cm / 2
+            half_h = h_cm / 2
+            center_cm = np.array([x_cm, y_cm])
+            
+            # Define corners relative to center (unrotated)
+            corners_relative = np.array([
+                [-half_w, -half_h],  # Top-left
+                [half_w, -half_h],   # Top-right
+                [half_w, half_h],    # Bottom-right
+                [-half_w, half_h]    # Bottom-left
             ], dtype=np.float32)
             
             # Apply rotation if specified
             if rotation_deg != 0:
-                center_cm = np.array([x_cm + w_cm/2, y_cm + h_cm/2])
                 angle_rad = np.deg2rad(rotation_deg)
                 cos_a = np.cos(angle_rad)
                 sin_a = np.sin(angle_rad)
                 R = np.array([[cos_a, -sin_a], [sin_a, cos_a]])
-                corners_cm = (R @ (corners_cm - center_cm).T).T + center_cm
+                corners_relative = (R @ corners_relative.T).T
+            
+            # Translate to world position
+            corners_cm = corners_relative + center_cm
             
             # Convert cm to pixels
             corners_px = corners_cm * np.array([scale_x, scale_y])
