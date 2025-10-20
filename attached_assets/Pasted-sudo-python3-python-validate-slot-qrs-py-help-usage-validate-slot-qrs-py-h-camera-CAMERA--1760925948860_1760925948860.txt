@@ -1,0 +1,50 @@
+sudo python3 python/validate_slot_qrs.py --help
+usage: validate_slot_qrs.py [-h] [--camera CAMERA] [--device-path DEVICE_PATH] --resolution RESOLUTION
+                            --homography HOMOGRAPHY --slots SLOTS --secret SECRET --should-detect {true,false}
+                            [--camera-matrix CAMERA_MATRIX] [--dist-coeffs DIST_COEFFS]
+
+Validate slot QR codes in calibrated camera
+
+options:
+  -h, --help            show this help message and exit
+  --camera CAMERA       Camera device index (fallback if --device-path not provided)
+  --device-path DEVICE_PATH
+                        Camera device path for Raspberry Pi (e.g., /dev/video0)
+  --resolution RESOLUTION
+                        Camera resolution (WxH)
+  --homography HOMOGRAPHY
+                        Homography matrix (JSON array)
+  --slots SLOTS         Expected slots (JSON array)
+  --secret SECRET       HMAC secret key
+  --should-detect {true,false}
+                        Whether QR codes should be detected (true for step 1, false for step 2)
+  --camera-matrix CAMERA_MATRIX
+                        Camera intrinsic matrix as comma-separated values (9 values)
+  --dist-coeffs DIST_COEFFS
+                        Distortion coefficients as comma-separated values (5 values)
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo python3 python/validate_slot_qrs.py \
+  --device-path /dev/video0 \
+  --resolution 1920x1080 \
+  --homography '[1,0,0,0,1,0,0,0,1]' \
+  --slots '[]' \
+  --secret 'test' \
+  --should-detect true
+Opening camera: /dev/video0
+[ WARN:0@0.856] global cap_gstreamer.cpp:2839 handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module source reported: Could not read from resource.
+[ WARN:0@0.857] global cap_gstreamer.cpp:1698 open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@0.858] global cap_gstreamer.cpp:1173 isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+Traceback (most recent call last):
+  File "/home/naniwa/ShelfEye/python/validate_slot_qrs.py", line 252, in <module>
+    main()
+    ~~~~^^
+  File "/home/naniwa/ShelfEye/python/validate_slot_qrs.py", line 234, in main
+    result = validate_slot_qrs(
+        args.camera,
+    ...<7 lines>...
+        dist_coeffs=dist_coeffs
+    )
+  File "/home/naniwa/ShelfEye/python/validate_slot_qrs.py", line 116, in validate_slot_qrs
+    rectified = cv2.warpPerspective(frame, H, (w, h))
+cv2.error: OpenCV(4.10.0) ./modules/imgproc/src/imgwarp.cpp:3400: error: (-215:Assertion failed) (M0.type() == CV_32F || M0.type() == CV_64F) && M0.rows == 3 && M0.cols == 3 in function 'warpPerspective'
+
+naniwa@NaniwaTanaCheck:~/ShelfEye $

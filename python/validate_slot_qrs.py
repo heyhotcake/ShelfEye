@@ -111,7 +111,7 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             print(f"Skipping undistortion (all coefficients are zero)", file=sys.stderr)
     
     # Apply homography transformation to get rectified view
-    H = np.array(homography_matrix).reshape(3, 3)
+    H = np.array(homography_matrix, dtype=np.float32).reshape(3, 3)
     h, w = frame.shape[:2]
     rectified = cv2.warpPerspective(frame, H, (w, h))
     
