@@ -525,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             try {
               const validationResult = JSON.parse(result);
-              res.status(400).json(validationResult);
+              res.json(validationResult); // Return 200 even on validation failure so frontend can show detailed message
             } catch {
               res.status(500).json({ message: "Validation failed", error });
             }
@@ -674,7 +674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             try {
               const validationResult = JSON.parse(result);
-              res.status(400).json(validationResult);
+              res.json(validationResult); // Return 200 even on validation failure so frontend can show detailed message
             } catch {
               res.status(500).json({ message: "Validation failed", error });
             }
