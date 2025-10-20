@@ -1,0 +1,38 @@
+sudo apt-get update
+sudo apt-get install -y libzbar0
+pip3 install pyzbar
+Hit:1 http://deb.debian.org/debian trixie InRelease
+Hit:2 https://deb.nodesource.com/node_20.x nodistro InRelease
+Get:3 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
+Get:4 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]
+Get:5 http://deb.debian.org/debian-security trixie-security/main arm64 Packages [58.4 kB]
+Get:6 http://deb.debian.org/debian-security trixie-security/main armhf Packages [55.7 kB]
+Get:7 http://deb.debian.org/debian-security trixie-security/main Translation-en [36.9 kB]
+Get:8 http://archive.raspberrypi.com/debian trixie InRelease [54.7 kB]
+Get:9 http://archive.raspberrypi.com/debian trixie/main armhf Packages [351 kB]
+Get:10 http://archive.raspberrypi.com/debian trixie/main arm64 Packages [351 kB]
+Fetched 999 kB in 3s (329 kB/s)
+Reading package lists... Done
+W: https://deb.nodesource.com/node_20.x/dists/nodistro/InRelease: Policy will reject signature within a year, see --audit for details
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+Note, selecting 'libzbar0t64' instead of 'libzbar0'
+libzbar0t64 is already the newest version (0.23.93-8).
+0 upgraded, 0 newly installed, 0 to remove and 21 not upgraded.
+error: externally-managed-environment
+
+× This environment is externally managed
+╰─> To install Python packages system-wide, try apt install
+    python3-xyz, where xyz is the package you are trying to
+    install.
+
+    If you wish to install a non-Debian-packaged Python package,
+    create a virtual environment using python3 -m venv path/to/venv.
+    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make
+    sure you have python3-full installed.
+
+    For more information visit http://rptl.io/venv
+
+note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
+hint: See PEP 668 for the detailed specification.
