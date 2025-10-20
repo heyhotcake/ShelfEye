@@ -200,8 +200,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get template rectangles with category dimensions for preview overlay
       // IMPORTANT: Filter by paper size AND template timestamp to match the exact selected template design
-      const allTemplates = await storage.getTemplateRectanglesByCamera(cameraId);
-      let templateRectanglesForPreview = allTemplates.filter(t => t.paperSize === paperSizeFormat);
+      // Templates are now camera-independent - filter by paper size only
+      let templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
       
       // Further filter by template timestamp if provided (to distinguish between multiple templates with same paper size)
       // Use a 5-second window because template rectangles are created sequentially with slightly different timestamps
@@ -220,7 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const templatesWithDimensions = [];
       
-      console.log(`[Calibration] Found ${allTemplates.length} total templates, ${templateRectanglesForPreview.length} matching paper size: ${paperSizeFormat}`);
+      console.log(`[Calibration] Found ${templateRectanglesForPreview.length} templates matching paper size: ${paperSizeFormat}`);
       
       for (const template of templateRectanglesForPreview) {
         const category = await storage.getToolCategory(template.categoryId);
@@ -318,8 +318,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`[Calibration] Deleted ${existingSlots.length} existing slots`);
 
               // Get template rectangles filtered by paper size AND template timestamp
-              const allTemplatesForSlots = await storage.getTemplateRectanglesByCamera(cameraId);
-              let templateRectangles = allTemplatesForSlots.filter(t => t.paperSize === paperSizeFormat);
+              // Templates are now camera-independent - filter by paper size only
+              let templateRectangles = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
               
               // Further filter by template timestamp if provided (use 5-second window)
               if (templateTimestamp) {
@@ -888,8 +888,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get template rectangles for this camera to overlay on rectified view
       // IMPORTANT: Filter by paper size AND template timestamp to match the exact selected template design
-      const allTemplates = await storage.getTemplateRectanglesByCamera(cameraId);
-      let templates = allTemplates.filter(t => t.paperSize === paperSizeFormat);
+      // Templates are now camera-independent - filter by paper size only
+      let templates = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
       
       // Further filter by template timestamp if provided (to distinguish between multiple templates with same paper size)
       if (templateTimestamp && typeof templateTimestamp === 'string') {
@@ -900,7 +900,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Rectified Preview] Filtered to ${templates.length} templates matching timestamp: ${templateTimestamp}`);
       }
       
-      console.log(`[Rectified Preview] Found ${allTemplates.length} total templates, ${templates.length} matching paper size: ${paperSizeFormat}`);
+      console.log(`[Rectified Preview] Found ${templates.length} templates matching paper size: ${paperSizeFormat}`);
       
       // Get categories for dimensions and names
       const categories = await storage.getToolCategories();
@@ -1673,10 +1673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const rectangleData = insertTemplateRectangleSchema.parse(req.body);
       
-      const camera = await storage.getCamera(rectangleData.cameraId);
-      if (!camera) {
-        return res.status(400).json({ message: "Camera not found" });
-      }
+      // Templates are now camera-independent - no camera validation needed
       
       const category = await storage.getToolCategory(rectangleData.categoryId);
       if (!category) {

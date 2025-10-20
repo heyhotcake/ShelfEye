@@ -63,7 +63,6 @@ export interface IStorage {
   // Template rectangle methods
   getTemplateRectangles(): Promise<TemplateRectangle[]>;
   getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]>;
-  getTemplateRectanglesByCamera(cameraId: string): Promise<TemplateRectangle[]>;
   getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined>;
   createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle>;
   updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined>;
@@ -449,12 +448,7 @@ export class MemStorage implements IStorage {
 
   async getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]> {
     return Array.from(this.templateRectangles.values())
-      .filter(rect => rect.paperSize === paperSize);
-  }
-
-  async getTemplateRectanglesByCamera(cameraId: string): Promise<TemplateRectangle[]> {
-    return Array.from(this.templateRectangles.values())
-      .filter(rect => rect.cameraId === cameraId)
+      .filter(rect => rect.paperSize === paperSize)
       .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0)); // Order by creation time
   }
 
@@ -847,12 +841,8 @@ export class DbStorage implements IStorage {
   }
 
   async getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]> {
-    return await db.select().from(schema.templateRectangles).where(eq(schema.templateRectangles.paperSize, paperSize));
-  }
-
-  async getTemplateRectanglesByCamera(cameraId: string): Promise<TemplateRectangle[]> {
     return await db.select().from(schema.templateRectangles)
-      .where(eq(schema.templateRectangles.cameraId, cameraId))
+      .where(eq(schema.templateRectangles.paperSize, paperSize))
       .orderBy(schema.templateRectangles.createdAt); // Order by creation time for consistency
   }
 

@@ -104,7 +104,6 @@ export const toolCategories = pgTable("tool_categories", {
 export const templateRectangles = pgTable("template_rectangles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   categoryId: varchar("category_id").references(() => toolCategories.id, { onDelete: "cascade" }).notNull(),
-  cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }).notNull(),
   paperSize: text("paper_size").notNull(), // A3, A4, A5, etc.
   xCm: real("x_cm").notNull(),
   yCm: real("y_cm").notNull(),
@@ -112,6 +111,7 @@ export const templateRectangles = pgTable("template_rectangles", {
   autoQrId: text("auto_qr_id"),
   slotId: varchar("slot_id").references(() => slots.id, { onDelete: "set null" }), // Auto-generated slot
   createdAt: timestamp("created_at").default(sql`now()`),
+  // Templates are now camera-independent - assigned to cameras during calibration via slots
 });
 
 export const workers = pgTable("workers", {
