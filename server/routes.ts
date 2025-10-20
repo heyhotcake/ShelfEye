@@ -447,10 +447,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No slots configured for this camera" });
       }
       
-      // Get HMAC secret
-      const secretConfig = await storage.getConfigByKey('QR_SECRET_KEY');
-      const secret = secretConfig?.value as string || 'default-secret-key';
-      
       // Prepare expected slots data with full geometry for spatial validation and overlay
       const expectedSlots = slots.map(slot => ({
         id: slot.expectedQrId, // This matches the 'id' field in QR payload
@@ -503,7 +499,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', JSON.stringify(camera.homographyMatrix),
         '--slots', JSON.stringify(expectedSlots),
-        '--secret', secret,
         '--should-detect', 'true' // Step 1: QRs should be visible
       ];
       
@@ -619,10 +614,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No slots configured for this camera" });
       }
       
-      // Get HMAC secret
-      const secretConfig = await storage.getConfigByKey('QR_SECRET_KEY');
-      const secret = secretConfig?.value as string || 'default-secret-key';
-      
       // Prepare expected slots data with full geometry for spatial validation and overlay
       const expectedSlots = slots.map(slot => ({
         id: slot.expectedQrId, // This matches the 'id' field in QR payload
@@ -675,7 +666,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', JSON.stringify(camera.homographyMatrix),
         '--slots', JSON.stringify(expectedSlots),
-        '--secret', secret,
         '--should-detect', 'false' // Step 2: QRs should NOT be visible
       ];
       

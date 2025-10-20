@@ -1111,7 +1111,6 @@ export default function SlotDrawing() {
         toolType: category.toolType,
         errorCorrection: 'L',
         moduleSize: 25,
-        includeHmac: true,
       });
 
       const qrData = await qrResponse.json();

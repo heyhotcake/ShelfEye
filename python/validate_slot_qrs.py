@@ -12,30 +12,6 @@ import json
 import sys
 import argparse
 from pyzbar import pyzbar
-import hmac
-import hashlib
-
-def validate_hmac_signature(qr_data: dict, secret_key: str) -> bool:
-    """Validate HMAC signature of QR code payload"""
-    try:
-        # Extract HMAC from data
-        provided_hmac = qr_data.get('hmac')
-        if not provided_hmac:
-            return False
-        
-        # Create a copy without the HMAC for verification
-        data_copy = {k: v for k, v in qr_data.items() if k != 'hmac'}
-        
-        # Create message for HMAC calculation
-        message = json.dumps(data_copy, sort_keys=True).encode('utf-8')
-        
-        # Calculate expected HMAC
-        expected_hmac = hmac.new(secret_key.encode(), message, hashlib.sha256).hexdigest()
-        
-        # Compare HMACs
-        return hmac.compare_digest(provided_hmac, expected_hmac)
-    except Exception as e:
-        return False
 
 def decode_qr_codes(image):
     """Decode all QR codes in image with preprocessing for better detection"""
@@ -108,7 +84,7 @@ def point_in_rotated_rect(point, center_cm, width_cm, height_cm, rotation_deg, s
     half_h = height_cm / 2
     return abs(local_point[0]) <= half_w and abs(local_point[1]) <= half_h
 
-def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, secret_key, should_detect=True, device_path=None, camera_matrix=None, dist_coeffs=None, paper_width_cm=None, paper_height_cm=None):
+def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, should_detect=True, device_path=None, camera_matrix=None, dist_coeffs=None, paper_width_cm=None, paper_height_cm=None):
     """
     Validate slot QR codes in calibrated camera view.
     
@@ -117,7 +93,6 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
         resolution: Tuple of (width, height)
         homography_matrix: 3x3 homography matrix for perspective correction
         expected_slots: List of expected slot QR data (id, slotId, etc.)
-        secret_key: HMAC secret key for QR validation
         should_detect: True if QRs should be detected, False if they should NOT be detected
         device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
         paper_width_cm: Paper width in cm for output size calculation
@@ -383,7 +358,6 @@ def main():
     parser.add_argument('--resolution', type=str, required=True, help='Camera resolution (WxH)')
     parser.add_argument('--homography', type=str, required=True, help='Homography matrix (JSON array)')
     parser.add_argument('--slots', type=str, required=True, help='Expected slots (JSON array)')
-    parser.add_argument('--secret', type=str, required=True, help='HMAC secret key')
     parser.add_argument('--should-detect', type=str, choices=['true', 'false'], required=True,
                        help='Whether QR codes should be detected (true for step 1, false for step 2)')
     parser.add_argument('--camera-matrix', type=str, default=None, help='Camera intrinsic matrix as comma-separated values (9 values)')
@@ -426,7 +400,6 @@ def main():
         resolution,
         homography_matrix,
         expected_slots,
-        args.secret,
         should_detect,
         device_path=args.device_path,
         camera_matrix=camera_matrix,
