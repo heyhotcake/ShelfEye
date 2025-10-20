@@ -224,7 +224,30 @@ export class StartupCalibrationService {
       const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
       if (lightStripConfig) {
         const pin = parseInt(lightStripConfig.value as string);
-        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'off']);
+        
+        // Wait for LED to turn off and release hardware resources
+        await new Promise<void>((resolve) => {
+          const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'off']);
+          
+          ledProcess.on('close', () => {
+            resolve();
+          });
+          
+          ledProcess.on('error', (err) => {
+            console.error('[StartupCalibration] LED off error:', err);
+            resolve(); // Continue even if error
+          });
+          
+          // Timeout after 2 seconds
+          setTimeout(() => {
+            ledProcess.kill('SIGTERM');
+            resolve();
+          }, 2000);
+        });
+        
+        // Small delay to ensure DMA channel is released
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
         console.log('[StartupCalibration] LED light turned OFF');
       }
     } catch (err) {

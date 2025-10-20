@@ -75,7 +75,17 @@ class LEDStripController:
     
     def turn_off(self):
         """Turn off all LEDs"""
-        return self.set_all((0, 0, 0))
+        result = self.set_all((0, 0, 0))
+        # Clean up strip to release hardware resources (DMA channel)
+        # This allows other scripts to control the same LED strip
+        if self.strip:
+            try:
+                # Delete the strip object to release DMA channel
+                del self.strip
+                self.strip = None
+            except Exception as e:
+                print(f"Error cleaning up LED strip: {e}", file=sys.stderr)
+        return result
 
 class GPIOController:
     def __init__(self):

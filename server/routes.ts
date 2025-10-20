@@ -110,7 +110,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
       if (lightConfig) {
         const pin = parseInt(lightConfig.value as string);
-        spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'off']);
+        
+        // Wait for LED to turn off and release hardware resources
+        await new Promise<void>((resolve) => {
+          const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'off']);
+          
+          ledProcess.on('close', () => {
+            resolve();
+          });
+          
+          ledProcess.on('error', (err) => {
+            console.error('[LED] LED off error:', err);
+            resolve(); // Continue even if error
+          });
+          
+          // Timeout after 2 seconds
+          setTimeout(() => {
+            ledProcess.kill('SIGTERM');
+            resolve();
+          }, 2000);
+        });
+        
+        // Small delay to ensure DMA channel is released
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
         console.log('[LED] Light turned OFF');
       }
     } catch (err) {
