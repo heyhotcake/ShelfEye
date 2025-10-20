@@ -50,10 +50,34 @@ def decode_qr_codes(image):
             'data': data,
             'type': qr.type,
             'rect': {'x': x, 'y': y, 'width': w, 'height': h},
-            'polygon': [(point.x, point.y) for point in qr.polygon]
+            'polygon': [(point.x, point.y) for point in qr.polygon],
+            'center': (x + w / 2, y + h / 2)  # QR code center position
         })
     
     return results
+
+def point_in_rotated_rect(point, center_cm, width_cm, height_cm, rotation_deg, scale_x, scale_y):
+    """Check if point (in pixels) is inside a rotated rectangle (defined in cm)"""
+    # Convert point to cm space
+    point_cm = np.array([point[0] / scale_x, point[1] / scale_y])
+    
+    # Translate to rectangle's local coordinate system (center at origin)
+    local_point = point_cm - center_cm
+    
+    # Rotate point by negative rotation to align with rectangle axes
+    if rotation_deg != 0:
+        angle_rad = -np.deg2rad(rotation_deg)
+        cos_a = np.cos(angle_rad)
+        sin_a = np.sin(angle_rad)
+        local_point = np.array([
+            cos_a * local_point[0] - sin_a * local_point[1],
+            sin_a * local_point[0] + cos_a * local_point[1]
+        ])
+    
+    # Check if point is within rectangle bounds
+    half_w = width_cm / 2
+    half_h = height_cm / 2
+    return abs(local_point[0]) <= half_w and abs(local_point[1]) <= half_h
 
 def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, secret_key, should_detect=True, device_path=None, camera_matrix=None, dist_coeffs=None, paper_width_cm=None, paper_height_cm=None):
     """
@@ -149,34 +173,117 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
         print(f"Using camera resolution as output size: {output_width}x{output_height}", file=sys.stderr)
         rectified = cv2.warpPerspective(frame, H, (output_width, output_height))
     
-    # Save rectified image for debugging
+    # Draw template slot overlays on rectified image (for visual verification)
+    debug_image = rectified.copy()
+    if paper_width_cm and paper_height_cm:
+        scale_x = output_width / paper_width_cm
+        scale_y = output_height / paper_height_cm
+        
+        for slot in expected_slots:
+            x_cm = slot.get('x', 0)
+            y_cm = slot.get('y', 0)
+            w_cm = slot.get('width', 0)
+            h_cm = slot.get('height', 0)
+            rotation_deg = slot.get('rotation', 0)
+            label = slot.get('toolName', '')
+            
+            if w_cm == 0 or h_cm == 0:
+                continue
+            
+            # Define rectangle corners (center-based)
+            half_w = w_cm / 2
+            half_h = h_cm / 2
+            center_cm = np.array([x_cm, y_cm])
+            
+            corners_relative = np.array([
+                [-half_w, -half_h],  # Top-left
+                [half_w, -half_h],   # Top-right
+                [half_w, half_h],    # Bottom-right
+                [-half_w, half_h]    # Bottom-left
+            ], dtype=np.float32)
+            
+            # Apply rotation if specified
+            if rotation_deg != 0:
+                angle_rad = np.deg2rad(rotation_deg)
+                cos_a = np.cos(angle_rad)
+                sin_a = np.sin(angle_rad)
+                R = np.array([[cos_a, -sin_a], [sin_a, cos_a]])
+                corners_relative = (R @ corners_relative.T).T
+            
+            # Translate to world position
+            corners_cm = corners_relative + center_cm
+            
+            # Convert cm to pixels
+            corners_px = corners_cm * np.array([scale_x, scale_y])
+            corners_px = corners_px.astype(np.int32)
+            
+            # Draw rectangle
+            cv2.polylines(debug_image, [corners_px], True, (255, 0, 255), 2)  # Magenta
+            
+            # Draw label
+            center_px = (center_cm * np.array([scale_x, scale_y])).astype(np.int32)
+            cv2.putText(debug_image, label, tuple(center_px), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 1)
+    
+    # Save debug image with overlays
     debug_path = '/tmp/validation_rectified_debug.jpg'
-    cv2.imwrite(debug_path, rectified)
-    print(f"Saved rectified image to: {debug_path}", file=sys.stderr)
-    print(f"Rectified image size: {rectified.shape[1]}x{rectified.shape[0]}", file=sys.stderr)
+    cv2.imwrite(debug_path, debug_image)
+    print(f"Saved rectified image with overlays to: {debug_path}", file=sys.stderr)
+    print(f"Rectified image size: {debug_image.shape[1]}x{debug_image.shape[0]}", file=sys.stderr)
     
     # Decode QR codes in rectified image
     detected_qrs = decode_qr_codes(rectified)
     print(f"Total QR codes detected in image: {len(detected_qrs)}", file=sys.stderr)
     
-    # Parse detected QR codes and validate
-    # SIMPLIFIED: QR codes now contain just numeric IDs, no JSON or HMAC
+    # Parse detected QR codes and validate with spatial checking
     valid_slot_qrs = []
     invalid_qrs = []
+    
+    # Calculate scale factors for spatial validation
+    if paper_width_cm and paper_height_cm:
+        scale_x = output_width / paper_width_cm
+        scale_y = output_height / paper_height_cm
+    else:
+        scale_x = scale_y = None
     
     for qr in detected_qrs:
         try:
             # QR data is now just a simple string (numeric ID)
             qr_id = qr['data'].strip()
+            qr_center = qr['center']
             
             # Check if this ID matches any expected slot
             expected_slot = next((s for s in expected_slots if s['id'] == qr_id), None)
             
-            if expected_slot:
+            if expected_slot and scale_x and scale_y:
+                # Spatial validation: check if QR code is inside its expected slot region
+                is_in_region = point_in_rotated_rect(
+                    qr_center,
+                    np.array([expected_slot.get('x', 0), expected_slot.get('y', 0)]),
+                    expected_slot.get('width', 0),
+                    expected_slot.get('height', 0),
+                    expected_slot.get('rotation', 0),
+                    scale_x,
+                    scale_y
+                )
+                
+                if is_in_region:
+                    valid_slot_qrs.append({
+                        'slotId': expected_slot['slotId'],
+                        'toolName': expected_slot['toolName'],
+                        'qrData': {'id': qr_id},  # Simple format for compatibility
+                        'rect': qr['rect']
+                    })
+                else:
+                    invalid_qrs.append({
+                        'data': qr['data'],
+                        'reason': f'QR ID {qr_id} found but NOT in expected slot region (spatial mismatch)'
+                    })
+            elif expected_slot:
+                # Fallback if no spatial data - just match by ID
                 valid_slot_qrs.append({
                     'slotId': expected_slot['slotId'],
                     'toolName': expected_slot['toolName'],
-                    'qrData': {'id': qr_id},  # Simple format for compatibility
+                    'qrData': {'id': qr_id},
                     'rect': qr['rect']
                 })
             else:

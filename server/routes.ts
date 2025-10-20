@@ -429,11 +429,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const secretConfig = await storage.getConfigByKey('QR_SECRET_KEY');
       const secret = secretConfig?.value as string || 'default-secret-key';
       
-      // Prepare expected slots data - use expectedQrId to match against QR payload
+      // Prepare expected slots data with full geometry for spatial validation and overlay
       const expectedSlots = slots.map(slot => ({
         id: slot.expectedQrId, // This matches the 'id' field in QR payload
         slotId: slot.slotId,
-        toolName: slot.toolName
+        toolName: slot.toolName,
+        x: slot.x, // Center position in cm
+        y: slot.y,
+        width: slot.width, // Dimensions in cm
+        height: slot.height,
+        rotation: slot.rotation || 0 // Rotation in degrees
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
@@ -596,11 +601,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const secretConfig = await storage.getConfigByKey('QR_SECRET_KEY');
       const secret = secretConfig?.value as string || 'default-secret-key';
       
-      // Prepare expected slots data - use expectedQrId to match against QR payload
+      // Prepare expected slots data with full geometry for spatial validation and overlay
       const expectedSlots = slots.map(slot => ({
         id: slot.expectedQrId, // This matches the 'id' field in QR payload
         slotId: slot.slotId,
-        toolName: slot.toolName
+        toolName: slot.toolName,
+        x: slot.x, // Center position in cm
+        y: slot.y,
+        width: slot.width, // Dimensions in cm
+        height: slot.height,
+        rotation: slot.rotation || 0 // Rotation in degrees
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
