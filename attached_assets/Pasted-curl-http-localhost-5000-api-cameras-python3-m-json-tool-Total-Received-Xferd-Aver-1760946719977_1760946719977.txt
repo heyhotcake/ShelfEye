@@ -1,0 +1,99 @@
+curl http://localhost:5000/api/cameras | python3 -m json.tool
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   497  100   497    0     0    424      0  0:00:01  0:00:01 --:--:--   424
+[
+    {
+        "id": "f50ebeba-5cf1-4c2d-9ff0-85e09fdac780",
+        "name": "Web-cam 1",
+        "deviceIndex": null,
+        "devicePath": "/dev/video0",
+        "resolution": [
+            1920,
+            1080
+        ],
+        "homographyMatrix": [
+            -18.881777217809862,
+            1.7571908900406754,
+            1729.3942376504338,
+            -1.0917917361040372,
+            -17.096318966393515,
+            1025.3898812800178,
+            -0.0006796219489554445,
+            0.0010553541343585064,
+            1
+        ],
+        "cameraMatrix": [
+            1536,
+            0,
+            960,
+            0,
+            1536,
+            540,
+            0,
+            0,
+            1
+        ],
+        "distCoeffs": [
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "calibrationTimestamp": "2025-10-20T07:39:24.914Z",
+        "isActive": true,
+        "createdAt": "2025-10-20T04:25:05.399Z"
+    }
+]
+naniwa@NaniwaTanaCheck:~ $ curl http://localhost:5000/api/config | python3 -m json.tool | grep -A5 "last_calibration"
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  5168  100  5168    0     0  28010      0 --:--:-- --:--:-- --:--:-- 28086
+        "key": "last_calibration_camera_id",
+        "value": "f50ebeba-5cf1-4c2d-9ff0-85e09fdac780",
+        "description": "Last successfully calibrated camera ID",
+        "updatedAt": "2025-10-20T07:39:25.619Z"
+    },
+    {
+--
+        "key": "last_calibration_timestamp",
+        "value": "2025-10-20T07:39:25.791Z",
+        "description": "Last successful calibration timestamp",
+        "updatedAt": "2025-10-20T07:39:25.966Z"
+    },
+    {
+--
+        "key": "last_calibration_paper_size_format",
+        "value": "6-page-3x2",
+        "description": "Last calibration paper size format (e.g., 6-page-3x2)",
+        "updatedAt": "2025-10-20T07:39:26.319Z"
+    }
+]
+naniwa@NaniwaTanaCheck:~ $ curl http://localhost:5000/api/template-rectangles | python3 -m json.tool | head -20
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  1682  100  1682    0     0   9760      0 --:--:-- --:--:-- --:--:--  9779
+[
+    {
+        "id": "c877b414-4b16-4223-b178-d7d6003e95ef",
+        "categoryId": "bc81120b-cc37-4b7c-b41e-adb6cbdc48b3",
+        "cameraId": "f50ebeba-5cf1-4c2d-9ff0-85e09fdac780",
+        "paperSize": "6-page-3x2",
+        "xCm": 21.5,
+        "yCm": 15.5,
+        "rotation": 0,
+        "autoQrId": "pen-001",
+        "slotId": null,
+        "createdAt": "2025-10-20T07:47:37.957Z"
+    },
+    {
+        "id": "45c2cf48-dc1c-4467-8a89-269d975dabfd",
+        "categoryId": "360d6b3c-6203-4eda-a057-dfed918cb566",
+        "cameraId": "f50ebeba-5cf1-4c2d-9ff0-85e09fdac780",
+        "paperSize": "6-page-3x2",
+        "xCm": 44.5,
+        "yCm": 6.5,
+naniwa@NaniwaTanaCheck:~ $ echo "Slots count:" && curl -s http://localhost:5000/api/slots | python3 -c "import sys, json; print(len(json.load(sys.stdin)))"
+Slots count:
+0
