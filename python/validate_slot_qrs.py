@@ -225,9 +225,18 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             cv2.putText(debug_image, label, tuple(center_px), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 1)
     
     # Save debug image with overlays
-    debug_path = '/tmp/validation_rectified_debug.jpg'
+    # Use current directory so file persists and has correct permissions
+    import os
+    debug_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'debug_images')
+    os.makedirs(debug_dir, exist_ok=True)
+    debug_path = os.path.join(debug_dir, 'validation_rectified_debug.jpg')
     cv2.imwrite(debug_path, debug_image)
     print(f"Saved rectified image with overlays to: {debug_path}", file=sys.stderr)
+    
+    # Also save to /tmp for backward compatibility
+    tmp_path = '/tmp/validation_rectified_debug.jpg'
+    cv2.imwrite(tmp_path, debug_image)
+    print(f"Also saved to: {tmp_path}", file=sys.stderr)
     print(f"Rectified image size: {debug_image.shape[1]}x{debug_image.shape[0]}", file=sys.stderr)
     
     # Decode QR codes in rectified image
