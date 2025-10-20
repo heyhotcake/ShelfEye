@@ -400,14 +400,14 @@ export default function TemplatePrint() {
             );
 
             if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-              const qrSizeMm = 50;
+              const qrSizeMm = 30;
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
 
             if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-              const qrSizeMm = 50;
+              const qrSizeMm = 30;
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
           }

@@ -38,21 +38,50 @@ def validate_hmac_signature(qr_data: dict, secret_key: str) -> bool:
         return False
 
 def decode_qr_codes(image):
-    """Decode all QR codes in image"""
-    qr_codes = pyzbar.decode(image)
+    """Decode all QR codes in image with preprocessing for better detection"""
     results = []
     
-    for qr in qr_codes:
-        data = qr.data.decode('utf-8')
-        x, y, w, h = qr.rect
+    # Try multiple preprocessing techniques to improve detection
+    preprocessing_methods = [
+        ('original', image),
+        ('grayscale', cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image),
+    ]
+    
+    # Add adaptive thresholding on grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
+    adaptive_thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    preprocessing_methods.append(('adaptive_threshold', adaptive_thresh))
+    
+    # Add contrast enhancement
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    enhanced = clahe.apply(gray)
+    preprocessing_methods.append(('enhanced', enhanced))
+    
+    # Track which QR codes we've already found (by data) to avoid duplicates
+    found_qr_data = set()
+    
+    for method_name, processed_image in preprocessing_methods:
+        qr_codes = pyzbar.decode(processed_image)
         
-        results.append({
-            'data': data,
-            'type': qr.type,
-            'rect': {'x': x, 'y': y, 'width': w, 'height': h},
-            'polygon': [(point.x, point.y) for point in qr.polygon],
-            'center': (x + w / 2, y + h / 2)  # QR code center position
-        })
+        for qr in qr_codes:
+            data = qr.data.decode('utf-8')
+            
+            # Skip if we already found this QR code
+            if data in found_qr_data:
+                continue
+            
+            found_qr_data.add(data)
+            x, y, w, h = qr.rect
+            
+            results.append({
+                'data': data,
+                'type': qr.type,
+                'rect': {'x': x, 'y': y, 'width': w, 'height': h},
+                'polygon': [(point.x, point.y) for point in qr.polygon],
+                'center': (x + w / 2, y + h / 2),  # QR code center position
+                'detection_method': method_name
+            })
+            print(f"QR detected via {method_name}: {data}", file=sys.stderr)
     
     return results
 
