@@ -901,13 +901,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Templates are now camera-independent - filter by paper size only
       let templates = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
       
-      // Further filter by template timestamp if provided (to distinguish between multiple templates with same paper size)
+      // Further filter by template timestamp if provided (use 5-second window because rectangles created sequentially)
       if (templateTimestamp && typeof templateTimestamp === 'string') {
         const selectedTimestamp = new Date(templateTimestamp);
-        templates = templates.filter(t => 
-          t.createdAt && new Date(t.createdAt).getTime() === selectedTimestamp.getTime()
-        );
-        console.log(`[Rectified Preview] Filtered to ${templates.length} templates matching timestamp: ${templateTimestamp}`);
+        const timeWindow = 5000; // 5 seconds in milliseconds
+        const minTime = selectedTimestamp.getTime() - timeWindow;
+        const maxTime = selectedTimestamp.getTime() + timeWindow;
+        
+        templates = templates.filter(t => {
+          if (!t.createdAt) return false;
+          const rectTime = new Date(t.createdAt).getTime();
+          return rectTime >= minTime && rectTime <= maxTime;
+        });
+        console.log(`[Rectified Preview] Filtered to ${templates.length} templates within 5s of timestamp: ${templateTimestamp}`);
       }
       
       console.log(`[Rectified Preview] Found ${templates.length} templates matching paper size: ${paperSizeFormat}`);
