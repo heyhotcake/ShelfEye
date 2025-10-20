@@ -1,0 +1,35 @@
+sudo journalctl -u shelfeye --since "07:38:00" --until "07:41:00" --no-pager
+-- No entries --
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -u shelfeye --since "07:38:00" --until "07:41:00" --no-pager | grep -i "calibration\|Creating slots"
+naniwa@NaniwaTanaCheck:~ $ psql $DATABASE_URL -c "\d slots"
+                                   Table "public.slots"
+     Column     |            Type             | Collation | Nullable |       Default
+----------------+-----------------------------+-----------+----------+---------------------
+ id             | character varying           |           | not null | gen_random_uuid()
+ slot_id        | text                        |           | not null |
+ camera_id      | character varying           |           | not null |
+ tool_name      | text                        |           | not null |
+ expected_qr_id | text                        |           |          |
+ priority       | text                        |           | not null | 'medium'::text
+ region_coords  | json                        |           | not null |
+ allow_checkout | boolean                     |           | not null | true
+ grace_window   | text                        |           |          | '08:30-16:30'::text
+ is_active      | boolean                     |           | not null | true
+ created_at     | timestamp without time zone |           |          | now()
+ x_cm           | real                        |           | not null |
+ y_cm           | real                        |           | not null |
+ width_cm       | real                        |           | not null |
+ height_cm      | real                        |           | not null |
+ rotation_deg   | integer                     |           | not null | 0
+Indexes:
+    "slots_pkey" PRIMARY KEY, btree (id)
+    "slots_slot_id_unique" UNIQUE CONSTRAINT, btree (slot_id)
+Foreign-key constraints:
+    "slots_camera_id_cameras_id_fk" FOREIGN KEY (camera_id) REFERENCES cameras(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "alert_queue" CONSTRAINT "alert_queue_slot_id_slots_id_fk" FOREIGN KEY (slot_id) REFERENCES slots(id) ON DELETE SET NULL
+    TABLE "detection_logs" CONSTRAINT "detection_logs_slot_id_slots_id_fk" FOREIGN KEY (slot_id) REFERENCES slots(id) ON DELETE CASCADE
+    TABLE "template_rectangles" CONSTRAINT "template_rectangles_slot_id_slots_id_fk" FOREIGN KEY (slot_id) REFERENCES slots(id) ON DELETE SET NULL
+
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -u shelfeye --since "07:38:00" --until "07:41:00" -n 200
+-- No entries --
