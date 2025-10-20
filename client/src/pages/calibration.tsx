@@ -35,8 +35,10 @@ interface ValidationResult {
   expected_count: number;
   message: string;
   valid_qrs?: any[];
+  invalid_qrs?: any[];
   missing_slots?: any[];
   visible_qrs?: any[];
+  total_qrs_detected?: number;
 }
 
 interface TemplateDesign {
