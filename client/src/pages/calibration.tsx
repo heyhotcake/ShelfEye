@@ -760,7 +760,7 @@ export default function Calibration() {
                       'A3-landscape': { w: 42.0, h: 29.7 },
                       '2xA5-landscape': { w: 42.0, h: 14.8 },
                       '3xA5-landscape': { w: 63.0, h: 14.8 },
-                      '6-page-3x2': { w: 89.1, h: 42.0 },
+                      '6-page-3x2': { w: 88.8, h: 42.0 },
                     };
                     const dim = dimensions[paperSize] || { w: 29.7, h: 21.0 }; // Default A4
                     return dim.w / dim.h;
