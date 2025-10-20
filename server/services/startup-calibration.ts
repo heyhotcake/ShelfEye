@@ -201,19 +201,24 @@ export class StartupCalibrationService {
               await storage.setConfig('last_calibration_paper_size_format', paperSizeFormat, 'Last calibration paper size format (e.g., 6-page-3x2)');
 
               console.log(`[StartupCalibration] Calibration completed: ${calibrationData.markers_detected}/4 markers, error: ${calibrationData.reprojection_error.toFixed(2)}px`);
+              
+              // Turn off LED light after SUCCESSFUL calibration
+              await this.turnOffLED();
+              
               resolve(true);
 
             } catch (parseError) {
               console.error('[StartupCalibration] Failed to parse calibration result:', parseError);
+              // Turn off LED light on error
+              await this.turnOffLED();
               resolve(false);
             }
           } else {
             console.error('[StartupCalibration] Calibration process failed with code', code, ':', error);
+            // DON'T turn off LED on failure - red flash should continue
+            // The finally block was killing the flash process
             resolve(false);
           }
-        } finally {
-          // Turn off LED light after calibration completes
-          await this.turnOffLED();
         }
       });
     });
