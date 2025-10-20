@@ -1,0 +1,29 @@
+~/ShelfEye $ sudo systemctl status shelfeye
+● shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; enabled; preset: enabled)
+     Active: active (running) since Mon 2025-10-20 10:46:22 JST; 14min ago
+ Invocation: 479d66c5297d46e9bb9923d627619237
+   Main PID: 1149 (pi-startup.sh)
+      Tasks: 52 (limit: 1579)
+        CPU: 1min 13.056s
+     CGroup: /system.slice/shelfeye.service
+             ├─1149 /bin/bash /home/naniwa/ShelfEye/pi-startup.sh
+             ├─1252 "npm run dev"
+             ├─1253 tee -a /home/naniwa/ShelfEye/logs/startup.log
+             ├─1264 sh -c "NODE_ENV=development tsx server/index.ts"
+             ├─1265 node /home/naniwa/ShelfEye/node_modules/.bin/tsx server/index.ts
+             ├─1276 /usr/bin/node --require /home/naniwa/ShelfEye/node_modules/tsx/dist/preflight.cjs --import file:///>
+             ├─1288 /home/naniwa/ShelfEye/node_modules/@esbuild/linux-arm64/bin/esbuild --service=0.25.9 --ping
+             └─1309 /home/naniwa/ShelfEye/node_modules/vite/node_modules/@esbuild/linux-arm64/bin/esbuild --service=0.2>
+
+Oct 20 11:00:00 NaniwaTanaCheck pi-startup.sh[1253]: [Scheduler] Running scheduled capture at 11:00 JST
+Oct 20 11:00:00 NaniwaTanaCheck pi-startup.sh[1253]: [Scheduler] Starting scheduled capture...
+Oct 20 11:00:01 NaniwaTanaCheck sudo[1504]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3>
+Oct 20 11:00:01 NaniwaTanaCheck sudo[1504]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 20 11:00:01 NaniwaTanaCheck sudo[1504]: pam_unix(sudo:session): session closed for user root
+Oct 20 11:00:06 NaniwaTanaCheck sudo[1511]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3>
+Oct 20 11:00:06 NaniwaTanaCheck sudo[1511]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 20 11:00:06 NaniwaTanaCheck sudo[1511]: pam_unix(sudo:session): session closed for user root
+Oct 20 11:00:08 NaniwaTanaCheck pi-startup.sh[1253]: [SheetsLogger] Logged alert: CAPTURE_RUN at 2025-10-20 11:00:06 to>
+Oct 20 11:00:09 NaniwaTanaCheck pi-startup.sh[1253]: [Scheduler] Capture complete: success (6641ms)
+lines 1-27/27 (END)
