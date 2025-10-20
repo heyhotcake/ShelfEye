@@ -194,10 +194,10 @@ export default function Calibration() {
   });
 
   const calibrationMutation = useMutation({
-    mutationFn: ({ cameraId, paperSize }: { cameraId: string; paperSize: string }) => {
+    mutationFn: ({ cameraId, paperSize, templateTimestamp }: { cameraId: string; paperSize: string; templateTimestamp?: string }) => {
       // Lock camera BEFORE starting calibration to stop preview polling
       setIsCameraLocked(true);
-      return apiRequest('POST', `/api/calibrate/${cameraId}`, { paperSize });
+      return apiRequest('POST', `/api/calibrate/${cameraId}`, { paperSize, templateTimestamp });
     },
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
@@ -598,7 +598,7 @@ export default function Calibration() {
                                 return;
                               }
                               
-                              calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize });
+                              calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize, templateTimestamp: selectedTemplate });
                             }
                           }}
                           disabled={

@@ -147,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let lockAcquired = false;
     
     try {
-      const { paperSize } = req.body; // Expected: "6-page-3x2", "A4-landscape", etc.
+      const { paperSize, templateTimestamp } = req.body; // Expected: paperSize: "6-page-3x2", templateTimestamp: ISO string
       
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
@@ -199,9 +199,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get template rectangles with category dimensions for preview overlay
-      // IMPORTANT: Filter by paper size to match the selected template design
+      // IMPORTANT: Filter by paper size AND template timestamp to match the exact selected template design
       const allTemplates = await storage.getTemplateRectanglesByCamera(cameraId);
-      const templateRectanglesForPreview = allTemplates.filter(t => t.paperSize === paperSizeFormat);
+      let templateRectanglesForPreview = allTemplates.filter(t => t.paperSize === paperSizeFormat);
+      
+      // Further filter by template timestamp if provided (to distinguish between multiple templates with same paper size)
+      if (templateTimestamp) {
+        const selectedTimestamp = new Date(templateTimestamp);
+        templateRectanglesForPreview = templateRectanglesForPreview.filter(t => 
+          t.createdAt && new Date(t.createdAt).getTime() === selectedTimestamp.getTime()
+        );
+        console.log(`[Calibration] Filtered to ${templateRectanglesForPreview.length} templates matching timestamp: ${templateTimestamp}`);
+      }
       const templatesWithDimensions = [];
       
       console.log(`[Calibration] Found ${allTemplates.length} total templates, ${templateRectanglesForPreview.length} matching paper size: ${paperSizeFormat}`);
@@ -297,9 +306,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               console.log(`[Calibration] Deleted ${existingSlots.length} existing slots`);
 
-              // Get template rectangles filtered by the selected paper size
+              // Get template rectangles filtered by paper size AND template timestamp
               const allTemplatesForSlots = await storage.getTemplateRectanglesByCamera(cameraId);
-              const templateRectangles = allTemplatesForSlots.filter(t => t.paperSize === paperSizeFormat);
+              let templateRectangles = allTemplatesForSlots.filter(t => t.paperSize === paperSizeFormat);
+              
+              // Further filter by template timestamp if provided
+              if (templateTimestamp) {
+                const selectedTimestamp = new Date(templateTimestamp);
+                templateRectangles = templateRectangles.filter(t => 
+                  t.createdAt && new Date(t.createdAt).getTime() === selectedTimestamp.getTime()
+                );
+              }
               const createdSlots: any[] = [];
               
               console.log(`[Calibration] Creating slots for ${templateRectangles.length} templates (paper size: ${paperSizeFormat})`);
@@ -863,9 +880,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get template rectangles for this camera to overlay on rectified view
-      // IMPORTANT: Filter by paper size to match the calibration paper size
+      // IMPORTANT: Filter by paper size AND template timestamp to match the exact selected template design
       const allTemplates = await storage.getTemplateRectanglesByCamera(cameraId);
-      const templates = allTemplates.filter(t => t.paperSize === paperSizeFormat);
+      let templates = allTemplates.filter(t => t.paperSize === paperSizeFormat);
+      
+      // Further filter by template timestamp if provided (to distinguish between multiple templates with same paper size)
+      if (templateTimestamp && typeof templateTimestamp === 'string') {
+        const selectedTimestamp = new Date(templateTimestamp);
+        templates = templates.filter(t => 
+          t.createdAt && new Date(t.createdAt).getTime() === selectedTimestamp.getTime()
+        );
+        console.log(`[Rectified Preview] Filtered to ${templates.length} templates matching timestamp: ${templateTimestamp}`);
+      }
       
       console.log(`[Rectified Preview] Found ${allTemplates.length} total templates, ${templates.length} matching paper size: ${paperSizeFormat}`);
       
