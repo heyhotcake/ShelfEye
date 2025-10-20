@@ -24,7 +24,12 @@ export const slots = pgTable("slots", {
   toolName: text("tool_name").notNull(),
   expectedQrId: text("expected_qr_id"),
   priority: text("priority").notNull().default("medium"), // high, medium, low
-  regionCoords: json("region_coords").$type<number[][]>().notNull(), // polygon coordinates
+  regionCoords: json("region_coords").$type<number[][]>().notNull(), // polygon coordinates in pixels
+  xCm: real("x_cm").notNull(), // center X position in cm
+  yCm: real("y_cm").notNull(), // center Y position in cm
+  widthCm: real("width_cm").notNull(), // slot width in cm
+  heightCm: real("height_cm").notNull(), // slot height in cm
+  rotationDeg: integer("rotation_deg").notNull().default(0), // rotation in degrees
   allowCheckout: boolean("allow_checkout").notNull().default(true),
   graceWindow: text("grace_window").default("08:30-16:30"),
   isActive: boolean("is_active").notNull().default(true),

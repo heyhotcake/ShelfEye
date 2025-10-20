@@ -329,6 +329,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     expectedQrId: template.autoQrId || '',
                     priority: 'high',
                     regionCoords: pixelCoords,
+                    xCm: template.xCm,
+                    yCm: template.yCm,
+                    widthCm: category.widthCm,
+                    heightCm: category.heightCm,
+                    rotationDeg: template.rotation,
                     allowCheckout: true,
                     graceWindow: '08:00-17:00',
                   });
@@ -434,11 +439,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: slot.expectedQrId, // This matches the 'id' field in QR payload
         slotId: slot.slotId,
         toolName: slot.toolName,
-        x: slot.x, // Center position in cm
-        y: slot.y,
-        width: slot.width, // Dimensions in cm
-        height: slot.height,
-        rotation: slot.rotation || 0 // Rotation in degrees
+        x: slot.xCm, // Center position in cm
+        y: slot.yCm,
+        width: slot.widthCm, // Dimensions in cm
+        height: slot.heightCm,
+        rotation: slot.rotationDeg || 0 // Rotation in degrees
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
@@ -606,11 +611,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: slot.expectedQrId, // This matches the 'id' field in QR payload
         slotId: slot.slotId,
         toolName: slot.toolName,
-        x: slot.x, // Center position in cm
-        y: slot.y,
-        width: slot.width, // Dimensions in cm
-        height: slot.height,
-        rotation: slot.rotation || 0 // Rotation in degrees
+        x: slot.xCm, // Center position in cm
+        y: slot.yCm,
+        width: slot.widthCm, // Dimensions in cm
+        height: slot.heightCm,
+        rotation: slot.rotationDeg || 0 // Rotation in degrees
       }));
 
       // Acquire exclusive camera lock AFTER validation succeeds
