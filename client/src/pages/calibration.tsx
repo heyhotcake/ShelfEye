@@ -775,7 +775,7 @@ export default function Calibration() {
                   <div className="mt-6">
                     <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview with Template Overlay</h4>
                     <div className="canvas-container">
-                      <div className="bg-muted rounded overflow-hidden" style={{ aspectRatio: aspectRatio.toFixed(2) }}>
+                      <div className="bg-muted rounded overflow-hidden" style={{ aspectRatio: `${aspectRatio.toFixed(3)} / 1` }}>
                         {calibrationResult?.rectifiedPreview ? (
                           <img 
                             src={calibrationResult.rectifiedPreview} 
