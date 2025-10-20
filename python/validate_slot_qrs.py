@@ -143,7 +143,7 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     # Calculate output size based on paper dimensions (if provided)
     if paper_width_cm and paper_height_cm:
         # Use same pixels-per-cm as rectified preview
-        pixels_per_cm = 20  # Standard conversion
+        pixels_per_cm = 40  # Higher resolution for better QR detection
         output_width = int(paper_width_cm * pixels_per_cm)
         output_height = int(paper_height_cm * pixels_per_cm)
         print(f"Using paper-based output size: {output_width}x{output_height} ({paper_width_cm}x{paper_height_cm} cm)", file=sys.stderr)
