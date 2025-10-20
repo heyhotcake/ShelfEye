@@ -115,6 +115,12 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     h, w = frame.shape[:2]
     rectified = cv2.warpPerspective(frame, H, (w, h))
     
+    # Save rectified image for debugging
+    debug_path = '/tmp/validation_rectified_debug.jpg'
+    cv2.imwrite(debug_path, rectified)
+    print(f"Saved rectified image to: {debug_path}", file=sys.stderr)
+    print(f"Rectified image size: {rectified.shape[1]}x{rectified.shape[0]}", file=sys.stderr)
+    
     # Decode QR codes in rectified image
     detected_qrs = decode_qr_codes(rectified)
     print(f"Total QR codes detected in image: {len(detected_qrs)}", file=sys.stderr)
