@@ -204,12 +204,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let templateRectanglesForPreview = allTemplates.filter(t => t.paperSize === paperSizeFormat);
       
       // Further filter by template timestamp if provided (to distinguish between multiple templates with same paper size)
+      // Use a 5-second window because template rectangles are created sequentially with slightly different timestamps
       if (templateTimestamp) {
         const selectedTimestamp = new Date(templateTimestamp);
-        templateRectanglesForPreview = templateRectanglesForPreview.filter(t => 
-          t.createdAt && new Date(t.createdAt).getTime() === selectedTimestamp.getTime()
-        );
-        console.log(`[Calibration] Filtered to ${templateRectanglesForPreview.length} templates matching timestamp: ${templateTimestamp}`);
+        const timeWindow = 5000; // 5 seconds in milliseconds
+        const minTime = selectedTimestamp.getTime() - timeWindow;
+        const maxTime = selectedTimestamp.getTime() + timeWindow;
+        
+        templateRectanglesForPreview = templateRectanglesForPreview.filter(t => {
+          if (!t.createdAt) return false;
+          const rectTime = new Date(t.createdAt).getTime();
+          return rectTime >= minTime && rectTime <= maxTime;
+        });
+        console.log(`[Calibration] Filtered to ${templateRectanglesForPreview.length} templates within 5s of timestamp: ${templateTimestamp}`);
       }
       const templatesWithDimensions = [];
       
@@ -226,8 +233,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rotation: template.rotation,
             categoryName: category.name
           });
+        } else {
+          console.warn(`[Calibration] Template ${template.id} has missing category ${template.categoryId}`);
         }
       }
+      
+      console.log(`[Calibration] Built ${templatesWithDimensions.length} templates with dimensions for preview overlay`);
 
       // Call Python calibration script with paper size and preview generation
       const deviceSource = getCameraDeviceSource(camera);
@@ -310,12 +321,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const allTemplatesForSlots = await storage.getTemplateRectanglesByCamera(cameraId);
               let templateRectangles = allTemplatesForSlots.filter(t => t.paperSize === paperSizeFormat);
               
-              // Further filter by template timestamp if provided
+              // Further filter by template timestamp if provided (use 5-second window)
               if (templateTimestamp) {
                 const selectedTimestamp = new Date(templateTimestamp);
-                templateRectangles = templateRectangles.filter(t => 
-                  t.createdAt && new Date(t.createdAt).getTime() === selectedTimestamp.getTime()
-                );
+                const timeWindow = 5000; // 5 seconds in milliseconds
+                const minTime = selectedTimestamp.getTime() - timeWindow;
+                const maxTime = selectedTimestamp.getTime() + timeWindow;
+                
+                templateRectangles = templateRectangles.filter(t => {
+                  if (!t.createdAt) return false;
+                  const rectTime = new Date(t.createdAt).getTime();
+                  return rectTime >= minTime && rectTime <= maxTime;
+                });
               }
               const createdSlots: any[] = [];
               
