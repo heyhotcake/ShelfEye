@@ -266,10 +266,17 @@ export default function Calibration() {
           duration: 8000, // Show longer to ensure user sees the instruction
         });
       } else {
+        const invalidQrsInfo = data.invalid_qrs && data.invalid_qrs.length > 0 
+          ? ` (Found ${data.invalid_qrs.length} non-matching QR code(s): ${data.invalid_qrs.map((qr: any) => qr.data).join(', ')})`
+          : '';
+        const totalQrsInfo = data.total_qrs_detected !== undefined 
+          ? ` Total QRs detected: ${data.total_qrs_detected}.` 
+          : '';
         toast({
           title: "QR Validation Failed",
-          description: data.message || `Only ${data.detected_count}/${data.expected_count} QR codes detected`,
+          description: `${data.message || `Only ${data.detected_count}/${data.expected_count} QR codes matched.`}${totalQrsInfo}${invalidQrsInfo}`,
           variant: "destructive",
+          duration: 10000,
         });
       }
       // Resume preview polling

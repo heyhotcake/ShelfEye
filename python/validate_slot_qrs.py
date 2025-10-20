@@ -117,6 +117,7 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     
     # Decode QR codes in rectified image
     detected_qrs = decode_qr_codes(rectified)
+    print(f"Total QR codes detected in image: {len(detected_qrs)}", file=sys.stderr)
     
     # Parse detected QR codes and validate
     # SIMPLIFIED: QR codes now contain just numeric IDs, no JSON or HMAC
@@ -165,15 +166,17 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
                 if s['id'] not in detected_slot_ids
             ]
         
+        total_qrs = len(valid_slot_qrs) + len(invalid_qrs)
         return {
             'success': success,
             'step': 'validate_qrs_visible',
             'detected_count': len(valid_slot_qrs),
             'expected_count': len(expected_slots),
+            'total_qrs_detected': total_qrs,
             'valid_qrs': valid_slot_qrs,
             'missing_slots': missing_slots,
             'invalid_qrs': invalid_qrs,
-            'message': f'Detected {len(valid_slot_qrs)}/{len(expected_slots)} expected slot QR codes'
+            'message': f'Detected {len(valid_slot_qrs)}/{len(expected_slots)} expected slot QR codes (total QRs found: {total_qrs})'
         }
     else:
         # Step 2: QR codes should NOT be detected (tools covering them)
