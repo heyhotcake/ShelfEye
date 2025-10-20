@@ -454,7 +454,8 @@ export class MemStorage implements IStorage {
 
   async getTemplateRectanglesByCamera(cameraId: string): Promise<TemplateRectangle[]> {
     return Array.from(this.templateRectangles.values())
-      .filter(rect => rect.cameraId === cameraId);
+      .filter(rect => rect.cameraId === cameraId)
+      .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0)); // Order by creation time
   }
 
   async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {
@@ -850,7 +851,9 @@ export class DbStorage implements IStorage {
   }
 
   async getTemplateRectanglesByCamera(cameraId: string): Promise<TemplateRectangle[]> {
-    return await db.select().from(schema.templateRectangles).where(eq(schema.templateRectangles.cameraId, cameraId));
+    return await db.select().from(schema.templateRectangles)
+      .where(eq(schema.templateRectangles.cameraId, cameraId))
+      .orderBy(schema.templateRectangles.createdAt); // Order by creation time for consistency
   }
 
   async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {
