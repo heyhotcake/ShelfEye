@@ -55,7 +55,7 @@ def decode_qr_codes(image):
     
     return results
 
-def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, secret_key, should_detect=True, device_path=None, camera_matrix=None, dist_coeffs=None):
+def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, secret_key, should_detect=True, device_path=None, camera_matrix=None, dist_coeffs=None, paper_width_cm=None, paper_height_cm=None):
     """
     Validate slot QR codes in calibrated camera view.
     
@@ -67,6 +67,8 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
         secret_key: HMAC secret key for QR validation
         should_detect: True if QRs should be detected, False if they should NOT be detected
         device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
+        paper_width_cm: Paper width in cm for output size calculation
+        paper_height_cm: Paper height in cm for output size calculation
     
     Returns:
         JSON with validation results
@@ -112,8 +114,21 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     
     # Apply homography transformation to get rectified view
     H = np.array(homography_matrix, dtype=np.float32).reshape(3, 3)
-    h, w = frame.shape[:2]
-    rectified = cv2.warpPerspective(frame, H, (w, h))
+    
+    # Calculate output size based on paper dimensions (if provided)
+    if paper_width_cm and paper_height_cm:
+        # Use same pixels-per-cm as rectified preview
+        pixels_per_cm = 20  # Standard conversion
+        output_width = int(paper_width_cm * pixels_per_cm)
+        output_height = int(paper_height_cm * pixels_per_cm)
+        print(f"Using paper-based output size: {output_width}x{output_height} ({paper_width_cm}x{paper_height_cm} cm)", file=sys.stderr)
+    else:
+        # Fallback to camera resolution
+        h, w = frame.shape[:2]
+        output_width, output_height = w, h
+        print(f"Using camera resolution as output size: {output_width}x{output_height}", file=sys.stderr)
+    
+    rectified = cv2.warpPerspective(frame, H, (output_width, output_height))
     
     # Save rectified image for debugging
     debug_path = '/tmp/validation_rectified_debug.jpg'
@@ -209,6 +224,8 @@ def main():
                        help='Whether QR codes should be detected (true for step 1, false for step 2)')
     parser.add_argument('--camera-matrix', type=str, default=None, help='Camera intrinsic matrix as comma-separated values (9 values)')
     parser.add_argument('--dist-coeffs', type=str, default=None, help='Distortion coefficients as comma-separated values (5 values)')
+    parser.add_argument('--paper-width-cm', type=float, default=None, help='Paper width in cm for output size calculation')
+    parser.add_argument('--paper-height-cm', type=float, default=None, help='Paper height in cm for output size calculation')
     
     args = parser.parse_args()
     
@@ -249,7 +266,9 @@ def main():
         should_detect,
         device_path=args.device_path,
         camera_matrix=camera_matrix,
-        dist_coeffs=dist_coeffs
+        dist_coeffs=dist_coeffs,
+        paper_width_cm=args.paper_width_cm,
+        paper_height_cm=args.paper_height_cm
     )
     
     # Output JSON result

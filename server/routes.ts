@@ -458,6 +458,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('[Validation] LED light turned ON');
       }
       
+      // Get paper dimensions from calibration config
+      const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
+      let paperWidthCm, paperHeightCm;
+      
+      if (paperSizeConfig?.value) {
+        const { getPaperDimensions } = await import('./utils/paper-size.js');
+        const paperDimensions = getPaperDimensions(paperSizeConfig.value as string);
+        paperWidthCm = paperDimensions.widthCm;
+        paperHeightCm = paperDimensions.heightCm;
+        console.log(`[Validation] Using paper dimensions: ${paperWidthCm}x${paperHeightCm} cm`);
+      }
+      
       // Call Python validation script
       const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
@@ -467,6 +479,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--secret', secret,
         '--should-detect', 'true' // Step 1: QRs should be visible
       ];
+      
+      // Add paper dimensions if available
+      if (paperWidthCm && paperHeightCm) {
+        validationArgs.push('--paper-width-cm', paperWidthCm.toString());
+        validationArgs.push('--paper-height-cm', paperHeightCm.toString());
+      }
       
       // Add camera calibration parameters if available
       if (camera.cameraMatrix && camera.distCoeffs) {
@@ -607,6 +625,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('[Validation] LED light turned ON');
       }
       
+      // Get paper dimensions from calibration config
+      const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
+      let paperWidthCm, paperHeightCm;
+      
+      if (paperSizeConfig?.value) {
+        const { getPaperDimensions } = await import('./utils/paper-size.js');
+        const paperDimensions = getPaperDimensions(paperSizeConfig.value as string);
+        paperWidthCm = paperDimensions.widthCm;
+        paperHeightCm = paperDimensions.heightCm;
+        console.log(`[Validation] Using paper dimensions: ${paperWidthCm}x${paperHeightCm} cm`);
+      }
+      
       // Call Python validation script
       const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
@@ -616,6 +646,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--secret', secret,
         '--should-detect', 'false' // Step 2: QRs should NOT be visible
       ];
+      
+      // Add paper dimensions if available
+      if (paperWidthCm && paperHeightCm) {
+        validationArgs.push('--paper-width-cm', paperWidthCm.toString());
+        validationArgs.push('--paper-height-cm', paperHeightCm.toString());
+      }
       
       // Add camera calibration parameters if available
       if (camera.cameraMatrix && camera.distCoeffs) {
