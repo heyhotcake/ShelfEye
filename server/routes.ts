@@ -890,8 +890,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const homographyStr = camera.homographyMatrix.join(',');
       
       // Calculate output size based on paper dimensions
-      // Use a scale factor to get a reasonable display size (e.g., 10 pixels per cm)
-      const pixelsPerCm = 10;
+      // Use a scale factor to get a reasonable display size (e.g., 20 pixels per cm)
+      const pixelsPerCm = 20;
       const outputWidth = Math.round(paperDimensions.widthCm * pixelsPerCm);
       const outputHeight = Math.round(paperDimensions.heightCm * pixelsPerCm);
       
