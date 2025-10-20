@@ -309,6 +309,8 @@ export default function Calibration() {
           title: "Calibration Complete",
           description: "All tools are properly covering QR codes. System is ready!",
         });
+        // Invalidate calibration-info query to immediately show Active Camera card on dashboard
+        queryClient.invalidateQueries({ queryKey: ['/api/config/calibration-info'] });
       } else {
         toast({
           title: "Tools Not Covering QRs",
