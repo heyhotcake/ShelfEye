@@ -113,6 +113,7 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             print(f"Skipping undistortion (all coefficients are zero)", file=sys.stderr)
     
     # Apply homography transformation to get rectified view
+    # Use SAME transformation logic as rectified_preview.py
     H = np.array(homography_matrix, dtype=np.float32).reshape(3, 3)
     
     # Calculate output size based on paper dimensions (if provided)
@@ -122,13 +123,31 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
         output_width = int(paper_width_cm * pixels_per_cm)
         output_height = int(paper_height_cm * pixels_per_cm)
         print(f"Using paper-based output size: {output_width}x{output_height} ({paper_width_cm}x{paper_height_cm} cm)", file=sys.stderr)
+        
+        # Build transformation matrix like rectified_preview.py
+        scale_x = output_width / paper_width_cm
+        scale_y = output_height / paper_height_cm
+        
+        # Scaling matrix: cm → output pixels
+        S = np.array([
+            [scale_x, 0, 0],
+            [0, scale_y, 0],
+            [0, 0, 1]
+        ], dtype=np.float32)
+        
+        # Invert homography: camera pixels → cm
+        H_inv = np.linalg.inv(H)
+        
+        # Combined warp: camera_pixel → cm → output_pixel
+        M = S @ H_inv
+        
+        rectified = cv2.warpPerspective(frame, M, (output_width, output_height))
     else:
-        # Fallback to camera resolution
+        # Fallback to camera resolution (use H directly - legacy behavior)
         h, w = frame.shape[:2]
         output_width, output_height = w, h
         print(f"Using camera resolution as output size: {output_width}x{output_height}", file=sys.stderr)
-    
-    rectified = cv2.warpPerspective(frame, H, (output_width, output_height))
+        rectified = cv2.warpPerspective(frame, H, (output_width, output_height))
     
     # Save rectified image for debugging
     debug_path = '/tmp/validation_rectified_debug.jpg'

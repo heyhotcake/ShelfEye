@@ -751,11 +751,31 @@ export default function Calibration() {
                 </div>
                 
                 {/* Rectified Preview - Show after ArUco calibration (Step 2) */}
-                {calibrationStep >= 1 && (
+                {calibrationStep >= 1 && (() => {
+                  // Calculate aspect ratio from paper size
+                  const getPaperAspectRatio = (paperSize: string): number => {
+                    const dimensions: Record<string, { w: number; h: number }> = {
+                      'A5-landscape': { w: 21.0, h: 14.8 },
+                      'A4-landscape': { w: 29.7, h: 21.0 },
+                      'A3-landscape': { w: 42.0, h: 29.7 },
+                      '2xA5-landscape': { w: 42.0, h: 14.8 },
+                      '3xA5-landscape': { w: 63.0, h: 14.8 },
+                      '6-page-3x2': { w: 89.1, h: 42.0 },
+                    };
+                    const dim = dimensions[paperSize] || { w: 29.7, h: 21.0 }; // Default A4
+                    return dim.w / dim.h;
+                  };
+                  
+                  // Get paper size from selected template
+                  const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+                  const paperSize = selectedDesign?.paperSize || 'A4-landscape';
+                  const aspectRatio = getPaperAspectRatio(paperSize);
+                  
+                  return (
                   <div className="mt-6">
                     <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview with Template Overlay</h4>
                     <div className="canvas-container">
-                      <div className="aspect-[4/3] bg-muted rounded overflow-hidden">
+                      <div className="bg-muted rounded overflow-hidden" style={{ aspectRatio: aspectRatio.toFixed(2) }}>
                         {calibrationResult?.rectifiedPreview ? (
                           <img 
                             src={calibrationResult.rectifiedPreview} 
@@ -784,7 +804,8 @@ export default function Calibration() {
                       </p>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           </div>
