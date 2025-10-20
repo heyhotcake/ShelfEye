@@ -343,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     slotId: template.autoQrId || `${category.name}_${template.id.slice(0, 4)}`,
                     cameraId: cameraId,
                     toolName: category.name,
-                    expectedQrId: template.autoQrId || '',
+                    expectedQrId: template.autoQrId || `${category.name}_${template.id.slice(0, 4)}`,
                     priority: 'high',
                     regionCoords: pixelCoords,
                     xCm: template.xCm,
