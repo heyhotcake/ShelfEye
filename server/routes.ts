@@ -265,7 +265,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
+        const errStr = data.toString();
+        console.error(`[Validation] Python stderr: ${errStr}`);
+        error += errStr;
       });
 
       pythonProcess.on('close', async (code) => {
@@ -504,7 +506,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
+        const errStr = data.toString();
+        console.error(`[Validation] Python stderr: ${errStr}`);
+        error += errStr;
       });
       
       pythonProcess.on('close', (code) => {
@@ -651,7 +655,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
+        const errStr = data.toString();
+        console.error(`[Validation] Python stderr: ${errStr}`);
+        error += errStr;
       });
       
       pythonProcess.on('close', (code) => {
@@ -754,7 +760,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
+        const errStr = data.toString();
+        console.error(`[Validation] Python stderr: ${errStr}`);
+        error += errStr;
       });
 
       pythonProcess.on('close', (code) => {
@@ -896,7 +904,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
+        const errStr = data.toString();
+        console.error(`[Validation] Python stderr: ${errStr}`);
+        error += errStr;
       });
 
       pythonProcess.on('close', (code) => {
@@ -966,7 +976,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
+        const errStr = data.toString();
+        console.error(`[Validation] Python stderr: ${errStr}`);
+        error += errStr;
       });
 
       pythonProcess.on('close', async (code) => {
@@ -1938,7 +1950,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
+        const errStr = data.toString();
+        console.error(`[Validation] Python stderr: ${errStr}`);
+        error += errStr;
       });
 
       pythonProcess.on('close', (code) => {
