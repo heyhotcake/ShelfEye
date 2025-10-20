@@ -286,6 +286,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 calibrationTimestamp: new Date(),
               });
 
+              // Delete existing slots for this camera to avoid duplicates
+              const existingSlots = await storage.getSlotsByCamera(cameraId);
+              for (const slot of existingSlots) {
+                // First delete all detection logs for this slot to avoid foreign key constraint
+                await storage.deleteDetectionLogsBySlotId(slot.id);
+                await storage.deleteSlot(slot.id);
+              }
+              console.log(`[Calibration] Deleted ${existingSlots.length} existing slots`);
+
               // Get template rectangles filtered by the selected paper size
               const allTemplatesForSlots = await storage.getTemplateRectanglesByCamera(cameraId);
               const templateRectangles = allTemplatesForSlots.filter(t => t.paperSize === paperSizeFormat);
