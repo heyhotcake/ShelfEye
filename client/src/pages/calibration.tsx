@@ -93,21 +93,9 @@ export default function Calibration() {
     }
   }, []);
 
-  // Filter designs that belong to the active camera
-  // Include designs without cameraId (backward compatibility for old saved designs)
-  const relevantDesigns = savedTemplateDesigns.filter(design => {
-    // New designs: match by cameraId
-    if (design.cameraId) {
-      return design.cameraId === activeCamera?.id;
-    }
-    // Old designs without cameraId: check if paper size exists in camera's templates
-    if (!design.cameraId && templateRectangles && activeCamera) {
-      return templateRectangles.some((rect: any) => 
-        rect.paperSize === design.paperSize && rect.cameraId === activeCamera.id
-      );
-    }
-    return false;
-  });
+  // Show all saved template designs (camera-independent)
+  // Templates are now standalone designs that can be used with any camera
+  const relevantDesigns = savedTemplateDesigns;
 
   // Reset calibration when camera ACTUALLY changes (not just refetches)
   useEffect(() => {
