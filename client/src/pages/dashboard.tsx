@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, Clock, CheckCircle, AlertTriangle, HelpCircle, ClipboardCheck, Users, Activity, XCircle, BellOff } from "lucide-react";
+import { Camera, Clock, CheckCircle, AlertTriangle, HelpCircle, ClipboardCheck, Users, Activity, XCircle, BellOff, Ruler } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 import type { CaptureRun } from "@shared/schema";
 
@@ -74,6 +74,17 @@ export default function Dashboard() {
     queryKey: ['/api/detection-logs'],
     queryFn: async () => {
       const response = await fetch('/api/detection-logs?limit=100');
+      return response.json();
+    },
+    refetchInterval: 30000,
+  });
+
+  // Get calibration config for active camera card
+  const { data: calibrationConfig } = useQuery<any>({
+    queryKey: ['/api/config/calibration-info'],
+    queryFn: async () => {
+      const response = await fetch('/api/config/calibration-info');
+      if (!response.ok) return null;
       return response.json();
     },
     refetchInterval: 30000,
@@ -260,6 +271,48 @@ export default function Dashboard() {
         </header>
         
         <div className="flex-1 overflow-auto p-6">
+          
+          {/* Active Camera Card - Only show when fully calibrated */}
+          {calibrationConfig && (
+            <Card className="mb-6 border-2 border-primary/50" data-testid="card-active-camera">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <Camera className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground">Active Camera & Template</h3>
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Camera className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-foreground font-medium" data-testid="text-active-camera-name">
+                          {calibrationConfig.cameraName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Ruler className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-foreground font-medium" data-testid="text-active-template">
+                          {calibrationConfig.paperSize}
+                        </span>
+                      </div>
+                      {calibrationConfig.timestamp && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground font-mono text-xs" data-testid="text-calibration-timestamp">
+                            {formatJSTTimestamp(calibrationConfig.timestamp)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/20">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span className="text-sm font-medium text-green-500">Calibrated</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <Card>

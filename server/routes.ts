@@ -382,10 +382,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
 
-              // Store last successful calibration configuration
-              await storage.setConfig('last_calibration_camera_id', cameraId, 'Last successfully calibrated camera ID');
-              await storage.setConfig('last_calibration_timestamp', new Date().toISOString(), 'Last successful calibration timestamp');
-              await storage.setConfig('last_calibration_paper_size_format', paperSize || 'A4-landscape', 'Last calibration paper size format (e.g., 6-page-3x2)');
+              // Note: last_calibration_* configs are now saved only after ALL 3 stages complete
+              // (in validate-qrs-covered endpoint), not here after just ArUco calibration
 
               const response: any = {
                 ok: true,
@@ -735,13 +733,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error += errStr;
       });
       
-      pythonProcess.on('close', (code) => {
+      pythonProcess.on('close', async (code) => {
         if (responseSent) return;
         
         try {
           if (code === 0) {
             try {
               const validationResult = JSON.parse(result);
+              
+              // If all 3 stages complete successfully, save calibration config
+              if (validationResult.success) {
+                const paperSize = paperSizeConfig?.value as string || 'A4-landscape';
+                
+                await storage.setConfig('last_calibration_camera_id', cameraId, 'Last successfully calibrated camera ID');
+                await storage.setConfig('last_calibration_timestamp', new Date().toISOString(), 'Last successful calibration timestamp');
+                await storage.setConfig('last_calibration_paper_size_format', paperSize, 'Last calibration paper size format (e.g., 6-page-3x2)');
+                
+                console.log('[Validation] Full calibration complete - config saved');
+              }
+              
               res.json(validationResult);
             } catch (parseError) {
               res.status(500).json({ message: "Failed to parse validation result", error: parseError });
@@ -1721,6 +1731,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete template rectangle", error });
+    }
+  });
+
+  // Get calibration configuration for active camera card
+  app.get("/api/config/calibration-info", async (_req, res) => {
+    try {
+      const cameraIdConfig = await storage.getConfigByKey("last_calibration_camera_id");
+      const timestampConfig = await storage.getConfigByKey("last_calibration_timestamp");
+      const paperSizeConfig = await storage.getConfigByKey("last_calibration_paper_size_format");
+
+      // If no calibration exists, return null
+      if (!cameraIdConfig?.value) {
+        return res.json(null);
+      }
+
+      // Get camera details
+      const camera = await storage.getCamera(cameraIdConfig.value as string);
+
+      res.json({
+        cameraId: cameraIdConfig.value,
+        cameraName: camera?.name || 'Unknown Camera',
+        timestamp: timestampConfig?.value || null,
+        paperSize: paperSizeConfig?.value || 'Unknown',
+      });
+    } catch (error) {
+      console.error('Error fetching calibration info:', error);
+      res.status(500).json({ message: "Failed to get calibration info", error });
     }
   });
 
