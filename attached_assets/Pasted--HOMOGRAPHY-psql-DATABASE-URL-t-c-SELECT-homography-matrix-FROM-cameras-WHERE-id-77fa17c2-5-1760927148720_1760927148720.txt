@@ -1,0 +1,19 @@
+ HOMOGRAPHY=$(psql $DATABASE_URL -t -c "SELECT homography_matrix FROM cameras WHERE id = '77fa17c2-5109-43ed-8f43-b0b1aec5703f';" | tr -d ' \n')
+SLOTS=$(psql $DATABASE_URL -t -c "SELECT json_agg(json_build_object('id', expected_qr_id, 'slotId', slot_id, 'toolName', tool_name)) FROM slots WHERE camera_id = '77fa17c2-5109-43ed-8f43-b0b1aec5703f';" | tr -d ' \n')
+echo "Homography: $HOMOGRAPHY"
+echo "Slots: $SLOTS"
+Homography: [19.05671752628537,-2.0439786616753723,120.63437043228816,0.9325112508866242,17.0706438042488,220.94805724749,0.0006466969337112407,-0.0014632899763703583,1]
+Slots: [{"id":"5x5-002","slotId":"5x5-002","toolName":"5x5"},{"id":"5x5-001","slotId":"5x5-001","toolName":"5x5"},{"id":"pen-001","slotId":"pen-001","toolName":"pen"},{"id":"pen-002","slotId":"pen-002","toolName":"pen"},{"id":"pen-003","slotId":"pen-003","toolName":"pen"},{"id":"pen-004","slotId":"pen-004","toolName":"pen"}]
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo python3 python/validate_slot_qrs.py \
+  --device-path /dev/video0 \
+  --resolution 1920x1080 \
+  --homography "$HOMOGRAPHY" \
+  --slots "$SLOTS" \
+  --secret 'test' \
+  --should-detect true
+Opening camera: /dev/video0
+[ WARN:0@0.507] global cap_gstreamer.cpp:2839 handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module source reported: Could not read from resource.
+[ WARN:0@0.508] global cap_gstreamer.cpp:1698 open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0@0.508] global cap_gstreamer.cpp:1173 isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+{"success": false, "step": "validate_qrs_visible", "detected_count": 0, "expected_count": 6, "valid_qrs": [], "missing_slots": [{"slotId": "5x5-002", "toolName": "5x5"}, {"slotId": "5x5-001", "toolName": "5x5"}, {"slotId": "pen-001", "toolName": "pen"}, {"slotId": "pen-002", "toolName": "pen"}, {"slotId": "pen-003", "toolName": "pen"}, {"slotId": "pen-004", "toolName": "pen"}], "invalid_qrs": [], "message": "Detected 0/6 expected slot QR codes"}
+naniwa@NaniwaTanaCheck:~/ShelfEye $
