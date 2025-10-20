@@ -2203,6 +2203,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to view validation rectified image
+  app.get("/api/debug/validation-image", (_req, res) => {
+    const debugImagePath = '/tmp/validation_rectified_debug.jpg';
+    res.sendFile(debugImagePath, (err) => {
+      if (err) {
+        res.status(404).json({ error: 'Debug image not found. Run QR validation first.' });
+      }
+    });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
