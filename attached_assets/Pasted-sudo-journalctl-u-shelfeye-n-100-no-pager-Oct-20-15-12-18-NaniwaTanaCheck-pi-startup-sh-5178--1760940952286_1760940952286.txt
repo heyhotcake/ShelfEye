@@ -1,0 +1,114 @@
+sudo journalctl -u shelfeye -n 100 --no-pager
+Oct 20 15:12:18 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:19 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:19 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:19 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:19 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:19 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:19 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:19 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:19 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:20 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:20 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:20 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:20 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:20 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:20 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:20 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:20 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:21 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:21 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:21 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:21 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:21 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:21 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:21 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:22 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:22 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:22 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:22 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:22 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:22 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:22 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:22 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:23 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:23 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:23 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:23 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:23 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:23 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:23 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:23 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:24 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:24 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:24 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:24 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:24 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:24 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:24 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:24 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:25 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:25 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:25 NaniwaTanaCheck pi-startup.sh[5178]: [45B blob data]
+Oct 20 15:12:25 NaniwaTanaCheck pi-startup.sh[5178]: [i] No changes detected
+Oct 20 15:12:25 NaniwaTanaCheck pi-startup.sh[5210]: [2025-10-20 15:12:25] 🚀 Starting ShelfEye application...
+Oct 20 15:12:25 NaniwaTanaCheck pi-startup.sh[5213]: [2025-10-20 15:12:25] Access at: http://naniwatanacheck.local:5000
+Oct 20 15:12:25 NaniwaTanaCheck pi-startup.sh[5216]: [2025-10-20 15:12:25] =========================================
+Oct 20 15:12:25 NaniwaTanaCheck pi-startup.sh[5219]: > rest-express@1.0.0 dev
+Oct 20 15:12:25 NaniwaTanaCheck pi-startup.sh[5219]: > NODE_ENV=development tsx server/index.ts
+Oct 20 15:12:37 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Initializing...
+Oct 20 15:12:38 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Reloading configuration...
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Scheduled 4 capture times
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [Scheduler] Initialized successfully
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Starting startup calibration check...
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Running calibration for camera Web-cam 1 (/dev/video0)
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Paper size format: 6-page-3x2
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Last calibration: 2025-10-20T06:03:59.447Z
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] LED light turned ON for calibration
+Oct 20 15:12:40 NaniwaTanaCheck sudo[5262]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/gpio_controller.py --pin 18 --action on
+Oct 20 15:12:40 NaniwaTanaCheck sudo[5262]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+Oct 20 15:12:40 NaniwaTanaCheck sudo[5262]: pam_unix(sudo:session): session closed for user root
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Using device path: /dev/video0
+Oct 20 15:12:42 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Calibration process failed with code 1 : INFO:__main__:Opening camera: /dev/video0
+Oct 20 15:12:42 NaniwaTanaCheck pi-startup.sh[5219]: INFO:__main__:Detected 3/4 corner markers: [np.int32(18), np.int32(19), np.int32(20)]
+Oct 20 15:12:42 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Calibration failed - flashing red LED
+Oct 20 15:12:42 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Flashing red LED - Calibration failed on startup
+Oct 20 15:12:42 NaniwaTanaCheck sudo[5270]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/alert_led.py --pin 18 --action flash --pattern slow
+Oct 20 15:12:42 NaniwaTanaCheck sudo[5270]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 20 15:12:42 NaniwaTanaCheck sudo[5271]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/gpio_controller.py --pin 18 --action off
+Oct 20 15:12:42 NaniwaTanaCheck sudo[5271]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 20 15:12:42 NaniwaTanaCheck pi-startup.sh[5219]: [Alert LED] Started flashing (slow pattern)
+Oct 20 15:12:43 NaniwaTanaCheck sudo[5271]: pam_unix(sudo:session): session closed for user root
+Oct 20 15:12:43 NaniwaTanaCheck pi-startup.sh[5219]: 3:12:43 PM [express] serving on port 5000
+Oct 20 15:12:44 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] LED light turned OFF
+Oct 20 15:13:07 NaniwaTanaCheck pi-startup.sh[5219]: Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+Oct 20 15:13:07 NaniwaTanaCheck pi-startup.sh[5219]:   npx update-browserslist-db@latest
+Oct 20 15:13:07 NaniwaTanaCheck pi-startup.sh[5219]:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Oct 20 15:13:14 NaniwaTanaCheck pi-startup.sh[5219]: 3:13:14 PM [express] GET /api/cameras 304 in 704ms :: [{"id":"f50ebeba-5cf1-4c2d-9ff0-85e09fdac780",…
+Oct 20 15:13:14 NaniwaTanaCheck pi-startup.sh[5219]: 3:13:14 PM [express] GET /api/template-rectangles 200 in 725ms :: [{"id":"b13c49c5-c3a2-4b23-9f86-cf…
+Oct 20 15:13:14 NaniwaTanaCheck pi-startup.sh[5219]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 20 15:13:15 NaniwaTanaCheck pi-startup.sh[5219]: 3:13:15 PM [express] GET /api/camera-preview/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 200 in 1835ms :: {…
+Oct 20 15:13:17 NaniwaTanaCheck pi-startup.sh[5219]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 20 15:13:18 NaniwaTanaCheck pi-startup.sh[5219]: 3:13:18 PM [express] GET /api/camera-preview/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 200 in 1638ms :: {…
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -u shelfeye --since "5 minutes ago" | grep -i "StartupCalibration\|Calibration\|ArUco"
+Oct 20 15:12:39 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Starting startup calibration check...
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Running calibration for camera Web-cam 1 (/dev/video0)
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Paper size format: 6-page-3x2
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Last calibration: 2025-10-20T06:03:59.447Z
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] LED light turned ON for calibration
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+Oct 20 15:12:40 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Using device path: /dev/video0
+Oct 20 15:12:42 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Calibration process failed with code 1 : INFO:__main__:Opening camera: /dev/video0
+Oct 20 15:12:42 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Calibration failed - flashing red LED
+Oct 20 15:12:42 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] Flashing red LED - Calibration failed on startup
+Oct 20 15:12:44 NaniwaTanaCheck pi-startup.sh[5219]: [StartupCalibration] LED light turned OFF
+naniwa@NaniwaTanaCheck:~ $
