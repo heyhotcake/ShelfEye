@@ -1,0 +1,38 @@
+sudo journalctl -u shelfeye -f
+Oct 20 13:47:31 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 20 13:47:33 NaniwaTanaCheck pi-startup.sh[3405]: 1:47:33 PM [express] GET /api/camera-preview/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 200 in 1588ms :: {…
+Oct 20 13:47:36 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 20 13:47:37 NaniwaTanaCheck pi-startup.sh[3405]: 1:47:37 PM [express] GET /api/camera-preview/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 200 in 1807ms :: {…
+Oct 20 13:47:39 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 20 13:47:40 NaniwaTanaCheck pi-startup.sh[3405]: 1:47:40 PM [express] GET /api/camera-preview/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 200 in 1621ms :: {…
+Oct 20 13:48:29 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 20 13:48:30 NaniwaTanaCheck pi-startup.sh[3405]: 1:48:30 PM [express] GET /api/camera-preview/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 200 in 2459ms :: {…
+Oct 20 13:48:32 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 20 13:48:33 NaniwaTanaCheck pi-startup.sh[3405]: 1:48:33 PM [express] GET /api/camera-preview/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 200 in 1588ms :: {…
+Oct 20 13:49:48 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 20 13:49:50 NaniwaTanaCheck pi-startup.sh[3405]: 1:49:50 PM [express] GET /api/camera-preview/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 200 in 2439ms :: {…
+Oct 20 13:49:51 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Starting QR validation (visible) for camera f50ebeba-5cf1-4c2d-9ff0-85e09fdac780
+Oct 20 13:49:51 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Camera found: { hasHomography: true, hasCameraMatrix: true, hasDistCoeffs: true }
+Oct 20 13:49:51 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Found 6 slots for camera
+Oct 20 13:49:51 NaniwaTanaCheck pi-startup.sh[3405]: [CameraSessionManager] Exclusive lock set for camera f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 - blocking new previews
+Oct 20 13:49:51 NaniwaTanaCheck pi-startup.sh[3405]: [CameraSessionManager] Waiting for in-flight previews to complete...
+Oct 20 13:50:01 NaniwaTanaCheck pi-startup.sh[3405]: [CameraSessionManager] Camera f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 should now be available for exclusive use
+Oct 20 13:50:02 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] LED light turned ON
+Oct 20 13:50:02 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Using camera calibration parameters
+Oct 20 13:50:02 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Using device path: /dev/video0
+Oct 20 13:50:02 NaniwaTanaCheck sudo[3950]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/gpio_controller.py --pin 18 --action on
+Oct 20 13:50:02 NaniwaTanaCheck sudo[3950]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 20 13:50:02 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+Oct 20 13:50:02 NaniwaTanaCheck sudo[3950]: pam_unix(sudo:session): session closed for user root
+Oct 20 13:50:02 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: Opening camera: /dev/video0
+Oct 20 13:50:04 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: Skipping undistortion (all coefficients are zero)
+Oct 20 13:50:04 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: Total QR codes detected in image: 0
+Oct 20 13:50:04 NaniwaTanaCheck pi-startup.sh[3405]: [CameraSessionManager] Released exclusive lock for camera f50ebeba-5cf1-4c2d-9ff0-85e09fdac780
+Oct 20 13:50:04 NaniwaTanaCheck pi-startup.sh[3405]: 1:50:04 PM [express] POST /api/calibrate/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780/validate-qrs-visible 2…
+Oct 20 13:50:04 NaniwaTanaCheck sudo[3959]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/gpio_controller.py --pin 18 --action off
+Oct 20 13:50:04 NaniwaTanaCheck sudo[3959]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 20 13:50:04 NaniwaTanaCheck sudo[3959]: pam_unix(sudo:session): session closed for user root
+Oct 20 13:50:04 NaniwaTanaCheck pi-startup.sh[3405]: [LED] Light turned OFF
+Oct 20 13:50:05 NaniwaTanaCheck pi-startup.sh[3405]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 20 13:50:06 NaniwaTanaCheck pi-startup.sh[3405]: 1:50:06 PM [express] GET /api/camera-preview/f50ebeba-5cf1-4c2d-9ff0-85e09fdac780 200 in 2106ms :: {…
+Oct
