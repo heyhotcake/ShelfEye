@@ -978,15 +978,48 @@ export default function SlotDrawing() {
         }
       }
 
-      // Refresh categories
+      // Refresh categories to get updated IDs
       await queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
+      
+      // Wait for categories query to refresh
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Re-fetch categories to get the latest with correct IDs
+      const categoriesResponse = await fetch('/api/tool-categories');
+      const latestCategories = await categoriesResponse.json();
 
-      // Templates are already in the database (they exist in templateRectangles array)
-      // No need to delete/recreate, they're already persisted
+      // Save template rectangles to database so they're available for calibration
+      // Delete any existing template rectangles for this paper size first
+      const existingRectsResponse = await fetch(`/api/template-rectangles?paperSize=${paperSize}`);
+      if (existingRectsResponse.ok) {
+        const existingRects = await existingRectsResponse.json();
+        for (const rect of existingRects) {
+          await apiRequest('DELETE', `/api/template-rectangles/${rect.id}`);
+        }
+      }
+
+      // Create new template rectangles in the database
+      for (const rect of templateRectangles) {
+        // Find the category in the latest list to ensure we have the correct ID
+        const category = latestCategories.find((c: any) => c.id === rect.categoryId);
+        if (category) {
+          await apiRequest('POST', '/api/template-rectangles', {
+            categoryId: category.id,
+            paperSize: paperSize,
+            xCm: rect.xCm,
+            yCm: rect.yCm,
+            rotation: rect.rotation,
+            autoQrId: rect.autoQrId,
+          });
+        }
+      }
+
+      // Refresh template rectangles
+      await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
       
       toast({
         title: "Template Design Saved",
-        description: `"${paperSize} - ${templateVersionName}" saved with ${templateRectangles.length} tools and ready for calibration`,
+        description: `"${paperSize} - ${templateVersionName}" saved with ${templateRectangles.length} tools to database and ready for calibration`,
       });
       
       setTemplateVersionName('');
