@@ -658,7 +658,7 @@ export default function Calibration() {
                                 if (selectedDesign) {
                                   // Update template rectangles with adjusted positions
                                   const updatedRectangles = selectedDesign.templateRectangles.map((rect: any) => {
-                                    const adjusted = adjustedTemplates.find(t => t.id === rect.id);
+                                    const adjusted = adjustedTemplates.find(t => t.autoQrId === rect.autoQrId);
                                     if (adjusted) {
                                       return { ...rect, xCm: adjusted.xCm, yCm: adjusted.yCm };
                                     }
@@ -673,18 +673,28 @@ export default function Calibration() {
                                   localStorage.setItem('templateConfigVersions', JSON.stringify(updatedDesigns));
                                   setSavedTemplateDesigns(updatedDesigns);
                                   
-                                  // Update database template rectangles
-                                  for (const adjusted of adjustedTemplates) {
-                                    await apiRequest('PUT', `/api/template-rectangles/${adjusted.id}`, {
-                                      xCm: adjusted.xCm,
-                                      yCm: adjusted.yCm,
+                                  // Fetch actual database template rectangles by paper size
+                                  const paperSize = selectedDesign.paperSize;
+                                  const dbRectsResponse = await fetch(`/api/template-rectangles?paperSize=${paperSize}`);
+                                  if (dbRectsResponse.ok) {
+                                    const dbRects = await dbRectsResponse.json();
+                                    
+                                    // Match adjusted templates to database rectangles by autoQrId
+                                    for (const adjusted of adjustedTemplates) {
+                                      const dbRect = dbRects.find((r: any) => r.autoQrId === adjusted.autoQrId);
+                                      if (dbRect) {
+                                        await apiRequest('PUT', `/api/template-rectangles/${dbRect.id}`, {
+                                          xCm: adjusted.xCm,
+                                          yCm: adjusted.yCm,
+                                        });
+                                      }
+                                    }
+                                    
+                                    toast({
+                                      title: "Positions Saved",
+                                      description: `Updated ${adjustedTemplates.length} template positions in database.`,
                                     });
                                   }
-                                  
-                                  toast({
-                                    title: "Positions Saved",
-                                    description: `Updated ${adjustedTemplates.length} template positions.`,
-                                  });
                                 }
                               } catch (error) {
                                 console.error('Failed to save adjusted positions:', error);
