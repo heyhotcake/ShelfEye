@@ -14,8 +14,9 @@ import argparse
 from pyzbar import pyzbar
 
 def decode_qr_codes(image):
-    """Decode all QR codes in image with preprocessing and multi-scale detection"""
+    """Decode all QR codes in image with multi-scale detection and aggressive preprocessing"""
     results = []
+    found_qr_data = set()
     
     # Initialize OpenCV QR detector as fallback
     opencv_detector = cv2.QRCodeDetector()
@@ -24,7 +25,7 @@ def decode_qr_codes(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
     
     # Try multiple scales for better detection of small QRs
-    scales = [1.0, 1.5, 2.0]  # Original, 1.5x, and 2x upscale
+    scales = [1.0, 1.5, 2.0, 3.0]  # Original, 1.5x, 2x, and 3x upscale
     
     for scale in scales:
         if scale != 1.0:
@@ -38,132 +39,103 @@ def decode_qr_codes(image):
             scaled_color = image
         
         # Try multiple preprocessing techniques at each scale
-        preprocessing_methods = [
-            ('original', scaled_color),
-            ('grayscale', scaled_gray),
-        ]
+        preprocessing_methods = []
         
-        # Add adaptive thresholding
-        adaptive_thresh = cv2.adaptiveThreshold(scaled_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-        preprocessing_methods.append(('adaptive_threshold', adaptive_thresh))
+        # Original and grayscale
+        preprocessing_methods.append((f'original_x{scale}', scaled_color))
+        preprocessing_methods.append((f'grayscale_x{scale}', scaled_gray))
         
-        # Add binary threshold
-        _, binary_thresh = cv2.threshold(scaled_gray, 127, 255, cv2.THRESH_BINARY)
-        preprocessing_methods.append(('binary_threshold', binary_thresh))
+        # Binary threshold with multiple values
+        for thresh_val in [100, 127, 150]:
+            _, binary = cv2.threshold(scaled_gray, thresh_val, 255, cv2.THRESH_BINARY)
+            preprocessing_methods.append((f'binary_{thresh_val}_x{scale}', binary))
         
-        # Add sharpening for blurry QRs
+        # Adaptive thresholding
+        adaptive = cv2.adaptiveThreshold(scaled_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        preprocessing_methods.append((f'adaptive_x{scale}', adaptive))
+        
+        # Sharpening for blurry QRs
         kernel = np.array([[-1,-1,-1],
                           [-1, 9,-1],
                           [-1,-1,-1]])
         sharpened = cv2.filter2D(scaled_gray, -1, kernel)
-        preprocessing_methods.append(('sharpened', sharpened))
+        preprocessing_methods.append((f'sharpened_x{scale}', sharpened))
         
-        # Add contrast enhancement
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        # CLAHE contrast enhancement
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
         enhanced = clahe.apply(scaled_gray)
-        preprocessing_methods.append(('enhanced', enhanced))
-    
-    # Track which QR codes we've already found (by data) to avoid duplicates
-    found_qr_data = set()
-    
-    # First pass: Try pyzbar on all preprocessing methods
-    for method_name, processed_image in preprocessing_methods:
-        qr_codes = pyzbar.decode(processed_image)
+        preprocessing_methods.append((f'enhanced_x{scale}', enhanced))
         
-        for qr in qr_codes:
-            data = qr.data.decode('utf-8')
-            
-            # Skip if we already found this QR code
-            if data in found_qr_data:
-                continue
-            
-            found_qr_data.add(data)
-            x, y, w, h = qr.rect
-            
-            results.append({
-                'data': data,
-                'type': qr.type,
-                'rect': {'x': x, 'y': y, 'width': w, 'height': h},
-                'polygon': [(point.x, point.y) for point in qr.polygon],
-                'center': (x + w / 2, y + h / 2),  # QR code center position
-                'detection_method': f'pyzbar_{method_name}'
-            })
-            print(f"QR detected via pyzbar_{method_name}: {data}", file=sys.stderr)
-    
-    # Extra aggressive pass: Try with lower resolution if we found < 3 QRs
-    if len(results) < 3:
-        print(f"Only {len(results)} QRs found, trying lower resolution fallback", file=sys.stderr)
-        # Downscale to 40 px/cm (half resolution)
-        h, w = image.shape[:2]
-        scaled = cv2.resize(image, (w//2, h//2), interpolation=cv2.INTER_AREA)
-        gray_scaled = cv2.cvtColor(scaled, cv2.COLOR_BGR2GRAY) if len(scaled.shape) == 3 else scaled
+        # Morphological operations to clean up noise
+        kernel_morph = np.ones((3,3), np.uint8)
+        _, binary_base = cv2.threshold(scaled_gray, 127, 255, cv2.THRESH_BINARY)
+        morphed = cv2.morphologyEx(binary_base, cv2.MORPH_CLOSE, kernel_morph)
+        preprocessing_methods.append((f'morphed_x{scale}', morphed))
         
-        # Try multiple preprocessing on scaled version
-        scaled_methods = [
-            ('scaled_original', scaled),
-            ('scaled_gray', gray_scaled),
-            ('scaled_threshold', cv2.threshold(gray_scaled, 127, 255, cv2.THRESH_BINARY)[1]),
-            ('scaled_adaptive', cv2.adaptiveThreshold(gray_scaled, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2))
-        ]
-        
-        for method_name, processed_image in scaled_methods:
-            qr_codes = pyzbar.decode(processed_image)
-            for qr in qr_codes:
-                data = qr.data.decode('utf-8')
-                if data not in found_qr_data:
+        # Try pyzbar on all preprocessing methods at this scale
+        for method_name, processed_image in preprocessing_methods:
+            try:
+                qr_codes = pyzbar.decode(processed_image)
+                
+                for qr in qr_codes:
+                    data = qr.data.decode('utf-8')
+                    
+                    # Skip if we already found this QR code
+                    if data in found_qr_data:
+                        continue
+                    
                     found_qr_data.add(data)
-                    # Scale coordinates back to original size
                     x, y, w, h = qr.rect
+                    
+                    # Scale coordinates back to original size
+                    if scale != 1.0:
+                        x, y, w, h = int(x/scale), int(y/scale), int(w/scale), int(h/scale)
+                    
                     results.append({
                         'data': data,
                         'type': qr.type,
-                        'rect': {'x': x*2, 'y': y*2, 'width': w*2, 'height': h*2},
-                        'polygon': [(p.x*2, p.y*2) for p in qr.polygon],
-                        'center': (x*2 + w, y*2 + h),
+                        'rect': {'x': x, 'y': y, 'width': w, 'height': h},
+                        'polygon': [(int(point.x/scale), int(point.y/scale)) for point in qr.polygon],
+                        'center': (x + w / 2, y + h / 2),
                         'detection_method': f'pyzbar_{method_name}'
                     })
-                    print(f"QR detected via {method_name}: {data}", file=sys.stderr)
-    
-    # Second pass: Try OpenCV QRCodeDetector as fallback (can detect multiple QRs)
-    for method_name, processed_image in preprocessing_methods:
-        try:
-            # Use detectAndDecodeMulti to find all QR codes in the image
-            ok, decoded_info, points, _ = opencv_detector.detectAndDecodeMulti(processed_image)
-            
-            if ok and decoded_info:
-                for i, data in enumerate(decoded_info):
-                    if data and data not in found_qr_data:
-                        found_qr_data.add(data)
-                        
-                        # Calculate bounding box center from points
-                        if points is not None and i < len(points):
-                            # Reshape points to ensure correct format: [[x,y], [x,y], ...]
-                            pts = np.array(points[i]).reshape(-1, 2).astype(int)
-                            x_coords = pts[:, 0]
-                            y_coords = pts[:, 1]
-                            x, y = int(x_coords.min()), int(y_coords.min())
-                            w, h = int(x_coords.max() - x), int(y_coords.max() - y)
-                            center = (x + w / 2, y + h / 2)
-                            polygon = [(int(p[0]), int(p[1])) for p in pts]
-                        else:
-                            # Fallback if bbox not available
-                            h_img, w_img = processed_image.shape[:2]
-                            x, y, w, h = 0, 0, w_img, h_img
-                            center = (w_img / 2, h_img / 2)
-                            polygon = []
-                        
-                        results.append({
-                            'data': data,
-                            'type': 'QRCODE',
-                            'rect': {'x': x, 'y': y, 'width': w, 'height': h},
-                            'polygon': polygon,
-                            'center': center,
-                            'detection_method': f'opencv_{method_name}'
-                        })
-                        print(f"QR detected via opencv_{method_name}: {data}", file=sys.stderr)
-        except Exception as e:
-            # OpenCV decoder may fail on some images, continue to next method
-            pass
+                    print(f"QR detected via pyzbar_{method_name}: {data}", file=sys.stderr)
+            except Exception as e:
+                # Skip failed attempts silently
+                pass
+        
+        # Try OpenCV detector at this scale
+        if scale <= 2.0:  # Don't use OpenCV at very high scales (too slow)
+            try:
+                ok, decoded_info, points, _ = opencv_detector.detectAndDecodeMulti(scaled_gray)
+                
+                if ok and decoded_info:
+                    for i, data in enumerate(decoded_info):
+                        if data and data not in found_qr_data:
+                            found_qr_data.add(data)
+                            
+                            # Calculate bounding box from points
+                            if points is not None and i < len(points):
+                                pts = points[i].reshape(-1, 2)
+                                x = int(pts[:, 0].min() / scale)
+                                y = int(pts[:, 1].min() / scale)
+                                w = int((pts[:, 0].max() - pts[:, 0].min()) / scale)
+                                h = int((pts[:, 1].max() - pts[:, 1].min()) / scale)
+                            else:
+                                x, y, w, h = 0, 0, 100, 100  # Fallback
+                            
+                            results.append({
+                                'data': data,
+                                'type': 'QRCODE',
+                                'rect': {'x': x, 'y': y, 'width': w, 'height': h},
+                                'polygon': [],
+                                'center': (x + w/2, y + h/2),
+                                'detection_method': f'opencv_x{scale}'
+                            })
+                            print(f"QR detected via opencv_x{scale}: {data}", file=sys.stderr)
+            except Exception as e:
+                # Skip OpenCV failures silently
+                pass
     
     return results
 
@@ -172,80 +144,82 @@ def point_in_rotated_rect(point, center_cm, width_cm, height_cm, rotation_deg, s
     # Convert point to cm space
     point_cm = np.array([point[0] / scale_x, point[1] / scale_y])
     
-    # Translate to rectangle's local coordinate system (center at origin)
-    local_point = point_cm - center_cm
+    # Translate to rectangle center
+    translated = point_cm - center_cm
     
-    # Rotate point by negative rotation to align with rectangle axes
-    if rotation_deg != 0:
-        angle_rad = -np.deg2rad(rotation_deg)
-        cos_a = np.cos(angle_rad)
-        sin_a = np.sin(angle_rad)
-        local_point = np.array([
-            cos_a * local_point[0] - sin_a * local_point[1],
-            sin_a * local_point[0] + cos_a * local_point[1]
-        ])
+    # Rotate by negative angle (to align rectangle with axes)
+    angle_rad = -np.radians(rotation_deg)
+    cos_a, sin_a = np.cos(angle_rad), np.sin(angle_rad)
+    rotated = np.array([
+        translated[0] * cos_a - translated[1] * sin_a,
+        translated[0] * sin_a + translated[1] * cos_a
+    ])
     
-    # Check if point is within rectangle bounds
-    half_w = width_cm / 2
-    half_h = height_cm / 2
-    return abs(local_point[0]) <= half_w and abs(local_point[1]) <= half_h
+    # Check if point is inside axis-aligned rectangle
+    half_width = width_cm / 2
+    half_height = height_cm / 2
+    return (abs(rotated[0]) <= half_width and abs(rotated[1]) <= half_height)
 
-def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slots, should_detect=True, device_path=None, camera_matrix=None, dist_coeffs=None, paper_width_cm=None, paper_height_cm=None):
+def validate_slot_qrs(camera_id, mode='visible'):
     """
-    Validate slot QR codes in calibrated camera view.
+    Validate QR codes in calibrated camera view
     
     Args:
-        camera_index: Camera device index (fallback if device_path not provided)
-        resolution: Tuple of (width, height)
-        homography_matrix: 3x3 homography matrix for perspective correction
-        expected_slots: List of expected slot QR data (id, slotId, etc.)
-        should_detect: True if QRs should be detected, False if they should NOT be detected
-        device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
-        paper_width_cm: Paper width in cm for output size calculation
-        paper_height_cm: Paper height in cm for output size calculation
+        camera_id: ID of the camera to validate
+        mode: 'visible' (QRs should be visible) or 'covered' (QRs should be covered)
     
     Returns:
-        JSON with validation results
+        Dictionary with validation results
     """
-    
-    # Open camera - use device path if provided, otherwise use index
-    camera_source = device_path if device_path else camera_index
-    print(f"[VALIDATION] Opening camera: {camera_source}", file=sys.stderr)
+    print(f"[VALIDATION] Starting validation for camera {camera_id} in mode '{mode}'", file=sys.stderr)
     sys.stderr.flush()
-    cap = cv2.VideoCapture(camera_source)
+    
+    # Capture frame from camera
+    print(f"[VALIDATION] Opening camera", file=sys.stderr)
+    sys.stderr.flush()
+    cap = cv2.VideoCapture(0)
+    
+    # Set camera to highest resolution for better QR detection
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    
+    # Use MJPG format for USB cameras (better quality at high res)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+    
+    # Reduce buffer size to get fresh frames
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    
     if not cap.isOpened():
-        print(f"[VALIDATION] ERROR: Failed to open camera {camera_source}", file=sys.stderr)
+        print(f"[VALIDATION] ERROR: Failed to open camera", file=sys.stderr)
         sys.stderr.flush()
         return {
             'success': False,
-            'error': f'Failed to open camera {camera_source}'
+            'error': 'Failed to open camera',
+            'missing_qrs': [],
+            'incorrectly_visible': [],
+            'expected_visible': 0,
+            'actual_visible': 0,
+            'expected_hidden': 0,
+            'actual_hidden': 0,
+            'details': []
         }
-    print(f"[VALIDATION] Camera opened successfully", file=sys.stderr)
+    
+    # Get actual camera resolution
+    actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    print(f"[VALIDATION] Camera resolution: {actual_width}x{actual_height}", file=sys.stderr)
     sys.stderr.flush()
     
-    # Set MJPG format for better performance with USB cameras
-    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    
-    # Set resolution
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
-    
-    # Set buffer size to 1 to avoid stale frames
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-    print(f"[VALIDATION] Starting frame capture (2 warmup + 5 capture frames)", file=sys.stderr)
+    # Discard first few frames (camera warmup)
+    print(f"[VALIDATION] Warming up camera (discarding first 2 frames)", file=sys.stderr)
     sys.stderr.flush()
-    
-    # Warm-up: Discard first 2 frames to let AE stabilize
     for i in range(2):
-        ret, _ = cap.read()
-        if ret:
-            print(f"[VALIDATION] Warmup frame {i+1}/2 captured", file=sys.stderr)
-            sys.stderr.flush()
+        cap.read()
     
-    # Capture multiple frames and select the sharpest (reduces motion blur and AE instability)
-    num_frames = 5
+    # Capture multiple frames and select the sharpest one
     frames = []
     sharpness_scores = []
+    num_frames = 5  # Capture 5 frames
     
     print(f"[VALIDATION] Capturing {num_frames} frames for sharpness analysis", file=sys.stderr)
     sys.stderr.flush()
@@ -288,6 +262,45 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     print(f"[VALIDATION] Saved raw captured frame to: {raw_frame_path}", file=sys.stderr)
     sys.stderr.flush()
     
+    # Load calibration data (passed from backend)
+    homography_matrix = sys.argv[3] if len(sys.argv) > 3 else None
+    camera_matrix = sys.argv[4] if len(sys.argv) > 4 else None
+    dist_coeffs = sys.argv[5] if len(sys.argv) > 5 else None
+    paper_width_cm = float(sys.argv[6]) if len(sys.argv) > 6 else None
+    paper_height_cm = float(sys.argv[7]) if len(sys.argv) > 7 else None
+    expected_slots_json = sys.argv[8] if len(sys.argv) > 8 else '[]'
+    
+    print(f"[VALIDATION] Received parameters:", file=sys.stderr)
+    print(f"  - Homography matrix: {'Yes' if homography_matrix else 'No'}", file=sys.stderr)
+    print(f"  - Camera matrix: {'Yes' if camera_matrix else 'No'}", file=sys.stderr)
+    print(f"  - Distortion coeffs: {'Yes' if dist_coeffs else 'No'}", file=sys.stderr)
+    print(f"  - Paper size: {paper_width_cm}x{paper_height_cm} cm", file=sys.stderr)
+    sys.stderr.flush()
+    
+    if not homography_matrix:
+        print(f"[VALIDATION] ERROR: No homography matrix provided", file=sys.stderr)
+        sys.stderr.flush()
+        return {
+            'success': False,
+            'error': 'No homography matrix provided'
+        }
+    
+    # Parse calibration data
+    try:
+        homography_matrix = json.loads(homography_matrix)
+        camera_matrix = json.loads(camera_matrix) if camera_matrix and camera_matrix != 'null' else None
+        dist_coeffs = json.loads(dist_coeffs) if dist_coeffs and dist_coeffs != 'null' else None
+        expected_slots = json.loads(expected_slots_json)
+        print(f"[VALIDATION] Parsed calibration data. Found {len(expected_slots)} expected slots", file=sys.stderr)
+        sys.stderr.flush()
+    except json.JSONDecodeError as e:
+        print(f"[VALIDATION] ERROR: Failed to parse calibration data: {e}", file=sys.stderr)
+        sys.stderr.flush()
+        return {
+            'success': False,
+            'error': f'Failed to parse calibration data: {str(e)}'
+        }
+    
     # Apply lens distortion correction if camera calibration parameters provided
     # Skip undistortion if all distortion coefficients are zero (to avoid interpolation artifacts)
     if camera_matrix is not None and dist_coeffs is not None:
@@ -329,275 +342,168 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
         # Combined warp: camera_pixel → cm → output_pixel
         M = S @ H_inv
         
-        # Use INTER_NEAREST to avoid blurring QR code modules during warping
-        rectified = cv2.warpPerspective(frame, M, (output_width, output_height), flags=cv2.INTER_NEAREST)
+        # Use INTER_NEAREST for sharp edges (best for QR codes)
+        rectified = cv2.warpPerspective(frame, M, (output_width, output_height), 
+                                       flags=cv2.INTER_NEAREST,
+                                       borderMode=cv2.BORDER_CONSTANT,
+                                       borderValue=(255, 255, 255))
     else:
-        # Fallback to camera resolution (use H directly - legacy behavior)
-        h, w = frame.shape[:2]
-        output_width, output_height = w, h
-        print(f"Using camera resolution as output size: {output_width}x{output_height}", file=sys.stderr)
-        # Use INTER_NEAREST here too to avoid QR module blur
-        rectified = cv2.warpPerspective(frame, H, (output_width, output_height), flags=cv2.INTER_NEAREST)
+        # Fallback to direct homography (no scaling)
+        rectified = cv2.warpPerspective(frame, np.linalg.inv(H), (frame.shape[1], frame.shape[0]))
+        scale_x = scale_y = 1.0
+        print(f"Using direct homography warp (no paper size)", file=sys.stderr)
     
-    # Draw template slot overlays on rectified image (for visual verification)
-    debug_image = rectified.copy()
-    if paper_width_cm and paper_height_cm:
-        scale_x = output_width / paper_width_cm
-        scale_y = output_height / paper_height_cm
+    # Save debug rectified image
+    rectified_path = os.path.join(debug_dir, 'validation_rectified_debug.jpg')
+    cv2.imwrite(rectified_path, rectified, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    print(f"[VALIDATION] Saved rectified view to: {rectified_path}", file=sys.stderr)
+    sys.stderr.flush()
+    
+    # Decode QR codes
+    print(f"[VALIDATION] Starting QR code detection...", file=sys.stderr)
+    sys.stderr.flush()
+    qr_results = decode_qr_codes(rectified)
+    print(f"[VALIDATION] Found {len(qr_results)} QR codes total", file=sys.stderr)
+    sys.stderr.flush()
+    
+    # Build a map of detected QR codes
+    detected_qrs = {}
+    for qr in qr_results:
+        detected_qrs[qr['data']] = qr
+        print(f"  - {qr['data']} at ({qr['center'][0]:.1f}, {qr['center'][1]:.1f}) via {qr['detection_method']}", file=sys.stderr)
+    
+    # Build validation results based on mode
+    validation_details = []
+    missing_qrs = []
+    incorrectly_visible = []
+    
+    # Process each expected slot
+    for slot in expected_slots:
+        slot_id = slot.get('slot_id', 'unknown')
+        expected_qr = slot.get('expected_qr_id', '')
+        x_cm = slot.get('x_cm', 0)
+        y_cm = slot.get('y_cm', 0)
+        width_cm = slot.get('width_cm', 3.0)
+        height_cm = slot.get('height_cm', 3.0)
+        rotation = slot.get('rotation', 0)
         
-        for slot in expected_slots:
-            x_cm = slot.get('x', 0)
-            y_cm = slot.get('y', 0)
-            w_cm = slot.get('width', 0)
-            h_cm = slot.get('height', 0)
-            rotation_deg = slot.get('rotation', 0)
-            label = slot.get('toolName', '')
-            
-            if w_cm == 0 or h_cm == 0:
-                continue
-            
-            # Define rectangle corners (center-based)
-            half_w = w_cm / 2
-            half_h = h_cm / 2
-            center_cm = np.array([x_cm, y_cm])
-            
-            corners_relative = np.array([
-                [-half_w, -half_h],  # Top-left
-                [half_w, -half_h],   # Top-right
-                [half_w, half_h],    # Bottom-right
-                [-half_w, half_h]    # Bottom-left
-            ], dtype=np.float32)
-            
-            # Apply rotation if specified
-            if rotation_deg != 0:
-                angle_rad = np.deg2rad(rotation_deg)
-                cos_a = np.cos(angle_rad)
-                sin_a = np.sin(angle_rad)
-                R = np.array([[cos_a, -sin_a], [sin_a, cos_a]])
-                corners_relative = (R @ corners_relative.T).T
-            
-            # Translate to world position
-            corners_cm = corners_relative + center_cm
-            
-            # Convert cm to pixels
-            corners_px = corners_cm * np.array([scale_x, scale_y])
-            corners_px = corners_px.astype(np.int32)
-            
-            # Draw rectangle
-            cv2.polylines(debug_image, [corners_px], True, (255, 0, 255), 2)  # Magenta
-            
-            # Draw label
-            center_px = (center_cm * np.array([scale_x, scale_y])).astype(np.int32)
-            cv2.putText(debug_image, label, tuple(center_px), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 255), 1)
-    
-    # Save debug image with overlays
-    # Use current directory so file persists and has correct permissions
-    import os
-    debug_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'debug_images')
-    os.makedirs(debug_dir, exist_ok=True)
-    debug_path = os.path.join(debug_dir, 'validation_rectified_debug.jpg')
-    cv2.imwrite(debug_path, debug_image)
-    print(f"Saved rectified image with overlays to: {debug_path}", file=sys.stderr)
-    
-    # Also save to /tmp for backward compatibility
-    tmp_path = '/tmp/validation_rectified_debug.jpg'
-    cv2.imwrite(tmp_path, debug_image)
-    print(f"Also saved to: {tmp_path}", file=sys.stderr)
-    print(f"Rectified image size: {debug_image.shape[1]}x{debug_image.shape[0]}", file=sys.stderr)
-    
-    # Decode QR codes in rectified image
-    print(f"[VALIDATION] Starting QR code decoding with dual decoders (pyzbar + OpenCV)", file=sys.stderr)
-    sys.stderr.flush()
-    detected_qrs = decode_qr_codes(rectified)
-    print(f"[VALIDATION] QR decoding complete: {len(detected_qrs)} total QR codes detected", file=sys.stderr)
-    sys.stderr.flush()
-    
-    # Parse detected QR codes and validate with spatial checking
-    valid_slot_qrs = []
-    invalid_qrs = []
-    
-    # Calculate scale factors for spatial validation
-    if paper_width_cm and paper_height_cm:
-        scale_x = output_width / paper_width_cm
-        scale_y = output_height / paper_height_cm
-    else:
-        scale_x = scale_y = None
-    
-    for qr in detected_qrs:
-        try:
-            # QR data is now just a simple string (numeric ID)
-            qr_id = qr['data'].strip()
+        # Check if QR is detected
+        if expected_qr in detected_qrs:
+            qr = detected_qrs[expected_qr]
             qr_center = qr['center']
             
-            # Check if this ID matches any expected slot
-            expected_slot = next((s for s in expected_slots if s['id'] == qr_id), None)
+            # Check if QR is in expected position (with tolerance)
+            expected_x_px = x_cm * scale_x
+            expected_y_px = y_cm * scale_y
+            distance = np.sqrt((qr_center[0] - expected_x_px)**2 + (qr_center[1] - expected_y_px)**2)
             
-            if expected_slot and scale_x and scale_y:
-                # Spatial validation: check if QR code is inside its expected slot region
-                expected_center_cm = np.array([expected_slot.get('x', 0), expected_slot.get('y', 0)])
-                detected_center_cm = np.array([qr_center[0] / scale_x, qr_center[1] / scale_y])
-                
-                is_in_region = point_in_rotated_rect(
-                    qr_center,
-                    expected_center_cm,
-                    expected_slot.get('width', 0),
-                    expected_slot.get('height', 0),
-                    expected_slot.get('rotation', 0),
-                    scale_x,
-                    scale_y
-                )
-                
-                # Calculate distance for debugging
-                distance_cm = np.linalg.norm(detected_center_cm - expected_center_cm)
-                
-                if is_in_region:
-                    print(f"[VALIDATION] ✓ {qr_id}: detected at ({detected_center_cm[0]:.1f}, {detected_center_cm[1]:.1f}) cm, expected at ({expected_center_cm[0]:.1f}, {expected_center_cm[1]:.1f}) cm, distance={distance_cm:.1f} cm - PASS", file=sys.stderr)
-                    sys.stderr.flush()
-                    valid_slot_qrs.append({
-                        'slotId': expected_slot['slotId'],
-                        'toolName': expected_slot['toolName'],
-                        'qrData': {'id': qr_id},  # Simple format for compatibility
-                        'rect': qr['rect']
-                    })
-                else:
-                    print(f"[VALIDATION] ✗ {qr_id}: detected at ({detected_center_cm[0]:.1f}, {detected_center_cm[1]:.1f}) cm, expected at ({expected_center_cm[0]:.1f}, {expected_center_cm[1]:.1f}) cm, distance={distance_cm:.1f} cm - REJECTED (outside slot region)", file=sys.stderr)
-                    sys.stderr.flush()
-                    invalid_qrs.append({
-                        'data': qr['data'],
-                        'reason': f'QR ID {qr_id} found but NOT in expected slot region (spatial mismatch)'
-                    })
-            elif expected_slot:
-                # Fallback if no spatial data - just match by ID
-                valid_slot_qrs.append({
-                    'slotId': expected_slot['slotId'],
-                    'toolName': expected_slot['toolName'],
-                    'qrData': {'id': qr_id},
-                    'rect': qr['rect']
+            # Consider within bounds if it's inside the rotated rectangle
+            in_bounds = point_in_rotated_rect(qr_center, np.array([x_cm, y_cm]), 
+                                             width_cm, height_cm, rotation, scale_x, scale_y)
+            
+            if mode == 'visible':
+                # QR should be visible (tool is absent)
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'correct' if in_bounds else 'wrong_position',
+                    'detected': True,
+                    'in_bounds': in_bounds,
+                    'distance_px': distance,
+                    'detection_method': qr['detection_method']
                 })
+                if not in_bounds:
+                    print(f"  WARNING: {expected_qr} detected but at wrong position (off by {distance:.1f}px)", file=sys.stderr)
             else:
-                # ID not in expected slots - might be worker QR or invalid
-                invalid_qrs.append({
-                    'data': qr['data'],
-                    'reason': f'QR ID {qr_id} not expected for this camera'
+                # QR should NOT be visible (tool is present)
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'incorrect',
+                    'detected': True,
+                    'in_bounds': in_bounds,
+                    'detection_method': qr['detection_method']
                 })
-        
-        except Exception as e:
-            invalid_qrs.append({
-                'data': qr['data'],
-                'reason': str(e)
-            })
+                incorrectly_visible.append(expected_qr)
+                print(f"  ERROR: {expected_qr} is visible but should be covered", file=sys.stderr)
+        else:
+            # QR not detected
+            if mode == 'visible':
+                # QR should be visible but isn't
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'missing',
+                    'detected': False,
+                    'in_bounds': False
+                })
+                missing_qrs.append(expected_qr)
+                print(f"  ERROR: {expected_qr} should be visible but not detected", file=sys.stderr)
+            else:
+                # QR not visible (correct - tool is present)
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'correct',
+                    'detected': False,
+                    'in_bounds': True
+                })
     
-    # Determine validation result
-    print(f"[VALIDATION] Spatial validation complete: {len(valid_slot_qrs)} valid QRs, {len(invalid_qrs)} invalid QRs", file=sys.stderr)
+    # Calculate summary
+    if mode == 'visible':
+        expected_visible = len(expected_slots)
+        actual_visible = len([d for d in validation_details if d['detected']])
+        success = len(missing_qrs) == 0
+        
+        result = {
+            'success': success,
+            'expected_visible': expected_visible,
+            'actual_visible': actual_visible,
+            'missing_qrs': missing_qrs,
+            'detected_qrs': list(detected_qrs.keys()),
+            'details': validation_details,
+            'debug_image': rectified_path
+        }
+    else:
+        expected_hidden = len(expected_slots)
+        actual_hidden = len([d for d in validation_details if not d['detected']])
+        success = len(incorrectly_visible) == 0
+        
+        result = {
+            'success': success,
+            'expected_hidden': expected_hidden,
+            'actual_hidden': actual_hidden,
+            'incorrectly_visible': incorrectly_visible,
+            'details': validation_details,
+            'debug_image': rectified_path
+        }
+    
+    print(f"\n[VALIDATION] Summary:", file=sys.stderr)
+    print(f"  - Success: {success}", file=sys.stderr)
+    if mode == 'visible':
+        print(f"  - Expected visible: {expected_visible}", file=sys.stderr)
+        print(f"  - Actually visible: {actual_visible}", file=sys.stderr)
+        if missing_qrs:
+            print(f"  - Missing: {', '.join(missing_qrs)}", file=sys.stderr)
+    else:
+        print(f"  - Expected hidden: {expected_hidden}", file=sys.stderr)
+        print(f"  - Actually hidden: {actual_hidden}", file=sys.stderr)
+        if incorrectly_visible:
+            print(f"  - Incorrectly visible: {', '.join(incorrectly_visible)}", file=sys.stderr)
     sys.stderr.flush()
     
-    if should_detect:
-        # Step 1: QR codes SHOULD be detected (slots empty)
-        success = len(valid_slot_qrs) == len(expected_slots)
-        missing_slots = []
-        
-        if not success:
-            detected_slot_ids = {qr['qrData']['id'] for qr in valid_slot_qrs}
-            missing_slots = [
-                {'slotId': s['slotId'], 'toolName': s['toolName']}
-                for s in expected_slots
-                if s['id'] not in detected_slot_ids
-            ]
-            print(f"[VALIDATION] Missing {len(missing_slots)} expected QR codes", file=sys.stderr)
-            sys.stderr.flush()
-        
-        total_qrs = len(valid_slot_qrs) + len(invalid_qrs)
-        result = {
-            'success': success,
-            'step': 'validate_qrs_visible',
-            'detected_count': len(valid_slot_qrs),
-            'expected_count': len(expected_slots),
-            'total_qrs_detected': total_qrs,
-            'valid_qrs': valid_slot_qrs,
-            'missing_slots': missing_slots,
-            'invalid_qrs': invalid_qrs,
-            'message': f'Detected {len(valid_slot_qrs)}/{len(expected_slots)} expected slot QR codes (total QRs found: {total_qrs})'
-        }
-        print(f"[VALIDATION] Result: {'SUCCESS' if success else 'FAILED'} - {result['message']}", file=sys.stderr)
-        sys.stderr.flush()
-        return result
-    else:
-        # Step 2: QR codes should NOT be detected (tools covering them)
-        success = len(valid_slot_qrs) == 0
-        
-        result = {
-            'success': success,
-            'step': 'validate_qrs_covered',
-            'detected_count': len(valid_slot_qrs),
-            'expected_count': 0,
-            'visible_qrs': valid_slot_qrs,
-            'message': 'All QR codes properly covered by tools' if success else f'{len(valid_slot_qrs)} QR codes still visible'
-        }
-        print(f"[VALIDATION] Result: {'SUCCESS' if success else 'FAILED'} - {result['message']}", file=sys.stderr)
-        sys.stderr.flush()
-        return result
+    return result
 
-def main():
-    parser = argparse.ArgumentParser(description='Validate slot QR codes in calibrated camera')
-    parser.add_argument('--camera', type=int, default=0, help='Camera device index (fallback if --device-path not provided)')
-    parser.add_argument('--device-path', type=str, help='Camera device path for Raspberry Pi (e.g., /dev/video0)')
-    parser.add_argument('--resolution', type=str, required=True, help='Camera resolution (WxH)')
-    parser.add_argument('--homography', type=str, required=True, help='Homography matrix (JSON array)')
-    parser.add_argument('--slots', type=str, required=True, help='Expected slots (JSON array)')
-    parser.add_argument('--should-detect', type=str, choices=['true', 'false'], required=True,
-                       help='Whether QR codes should be detected (true for step 1, false for step 2)')
-    parser.add_argument('--camera-matrix', type=str, default=None, help='Camera intrinsic matrix as comma-separated values (9 values)')
-    parser.add_argument('--dist-coeffs', type=str, default=None, help='Distortion coefficients as comma-separated values (5 values)')
-    parser.add_argument('--paper-width-cm', type=float, default=None, help='Paper width in cm for output size calculation')
-    parser.add_argument('--paper-height-cm', type=float, default=None, help='Paper height in cm for output size calculation')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Validate slot QR codes in calibrated camera view')
+    parser.add_argument('camera_id', help='Camera ID')
+    parser.add_argument('mode', choices=['visible', 'covered'], help='Validation mode')
     
     args = parser.parse_args()
     
-    # Parse resolution
-    w, h = map(int, args.resolution.split('x'))
-    resolution = (w, h)
-    
-    # Parse homography matrix
-    homography_matrix = json.loads(args.homography)
-    
-    # Parse expected slots
-    expected_slots = json.loads(args.slots)
-    
-    # Parse should_detect
-    should_detect = args.should_detect == 'true'
-    
-    # Parse camera calibration parameters if provided
-    camera_matrix = None
-    dist_coeffs = None
-    if args.camera_matrix:
-        camera_matrix = [float(x) for x in args.camera_matrix.split(',')]
-        if len(camera_matrix) != 9:
-            print(json.dumps({'success': False, 'error': f'Camera matrix must have 9 values, got {len(camera_matrix)}'}))
-            sys.exit(1)
-    if args.dist_coeffs:
-        dist_coeffs = [float(x) for x in args.dist_coeffs.split(',')]
-        if len(dist_coeffs) != 5:
-            print(json.dumps({'success': False, 'error': f'Distortion coefficients must have 5 values, got {len(dist_coeffs)}'}))
-            sys.exit(1)
-    
     # Run validation
-    result = validate_slot_qrs(
-        args.camera,
-        resolution,
-        homography_matrix,
-        expected_slots,
-        should_detect,
-        device_path=args.device_path,
-        camera_matrix=camera_matrix,
-        dist_coeffs=dist_coeffs,
-        paper_width_cm=args.paper_width_cm,
-        paper_height_cm=args.paper_height_cm
-    )
+    result = validate_slot_qrs(args.camera_id, args.mode)
     
     # Output JSON result
     print(json.dumps(result))
-    
     sys.exit(0 if result['success'] else 1)
-
-if __name__ == '__main__':
-    main()
