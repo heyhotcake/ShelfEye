@@ -145,6 +145,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Turn on LED light for consistent illumination during calibration (unified controller)
       await setWhiteLight();
+      
+      // Small delay to ensure LED process completes and releases stdout
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Get template rectangles with category dimensions for preview overlay
       // Templates are camera-independent and filtered by paper size only
@@ -410,6 +413,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Turn on LED light for consistent illumination during validation (unified controller)
       await setWhiteLight();
       
+      // Small delay to ensure LED process completes and releases stdout
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Get paper dimensions from calibration config
       const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
       let paperWidthCm, paperHeightCm;
@@ -582,6 +588,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Turn on LED light for consistent illumination during validation (unified controller)
       await setWhiteLight();
+      
+      // Small delay to ensure LED process completes and releases stdout
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Get paper dimensions from calibration config
       const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
