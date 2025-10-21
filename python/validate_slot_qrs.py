@@ -157,13 +157,18 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     
     # Open camera - use device path if provided, otherwise use index
     camera_source = device_path if device_path else camera_index
-    print(f"Opening camera: {camera_source}", file=sys.stderr)
+    print(f"[VALIDATION] Opening camera: {camera_source}", file=sys.stderr)
+    sys.stderr.flush()
     cap = cv2.VideoCapture(camera_source)
     if not cap.isOpened():
+        print(f"[VALIDATION] ERROR: Failed to open camera {camera_source}", file=sys.stderr)
+        sys.stderr.flush()
         return {
             'success': False,
             'error': f'Failed to open camera {camera_source}'
         }
+    print(f"[VALIDATION] Camera opened successfully", file=sys.stderr)
+    sys.stderr.flush()
     
     # Set MJPG format for better performance with USB cameras
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
@@ -174,15 +179,23 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     
     # Set buffer size to 1 to avoid stale frames
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    print(f"[VALIDATION] Starting frame capture (2 warmup + 5 capture frames)", file=sys.stderr)
+    sys.stderr.flush()
     
     # Warm-up: Discard first 2 frames to let AE stabilize
-    for _ in range(2):
-        cap.read()
+    for i in range(2):
+        ret, _ = cap.read()
+        if ret:
+            print(f"[VALIDATION] Warmup frame {i+1}/2 captured", file=sys.stderr)
+            sys.stderr.flush()
     
     # Capture multiple frames and select the sharpest (reduces motion blur and AE instability)
     num_frames = 5
     frames = []
     sharpness_scores = []
+    
+    print(f"[VALIDATION] Capturing {num_frames} frames for sharpness analysis", file=sys.stderr)
+    sys.stderr.flush()
     
     for i in range(num_frames):
         ret, frame = cap.read()
@@ -192,10 +205,16 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
             frames.append(frame)
             sharpness_scores.append(sharpness)
+            print(f"[VALIDATION] Frame {i+1}/{num_frames} captured, sharpness={sharpness:.2f}", file=sys.stderr)
+            sys.stderr.flush()
     
     cap.release()
+    print(f"[VALIDATION] Camera released, captured {len(frames)} frames", file=sys.stderr)
+    sys.stderr.flush()
     
     if not frames:
+        print(f"[VALIDATION] ERROR: Failed to capture any frames", file=sys.stderr)
+        sys.stderr.flush()
         return {
             'success': False,
             'error': 'Failed to capture any frames'
@@ -204,7 +223,8 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     # Select the sharpest frame
     best_frame_idx = np.argmax(sharpness_scores)
     frame = frames[best_frame_idx]
-    print(f"Selected frame {best_frame_idx+1}/{num_frames} with sharpness {sharpness_scores[best_frame_idx]:.2f}", file=sys.stderr)
+    print(f"[VALIDATION] Selected frame {best_frame_idx+1}/{num_frames} with sharpness {sharpness_scores[best_frame_idx]:.2f}", file=sys.stderr)
+    sys.stderr.flush()
     
     # Apply lens distortion correction if camera calibration parameters provided
     # Skip undistortion if all distortion coefficients are zero (to avoid interpolation artifacts)
@@ -323,8 +343,11 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     print(f"Rectified image size: {debug_image.shape[1]}x{debug_image.shape[0]}", file=sys.stderr)
     
     # Decode QR codes in rectified image
+    print(f"[VALIDATION] Starting QR code decoding with dual decoders (pyzbar + OpenCV)", file=sys.stderr)
+    sys.stderr.flush()
     detected_qrs = decode_qr_codes(rectified)
-    print(f"Total QR codes detected in image: {len(detected_qrs)}", file=sys.stderr)
+    print(f"[VALIDATION] QR decoding complete: {len(detected_qrs)} total QR codes detected", file=sys.stderr)
+    sys.stderr.flush()
     
     # Parse detected QR codes and validate with spatial checking
     valid_slot_qrs = []
@@ -392,6 +415,9 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             })
     
     # Determine validation result
+    print(f"[VALIDATION] Spatial validation complete: {len(valid_slot_qrs)} valid QRs, {len(invalid_qrs)} invalid QRs", file=sys.stderr)
+    sys.stderr.flush()
+    
     if should_detect:
         # Step 1: QR codes SHOULD be detected (slots empty)
         success = len(valid_slot_qrs) == len(expected_slots)
@@ -404,9 +430,11 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
                 for s in expected_slots
                 if s['id'] not in detected_slot_ids
             ]
+            print(f"[VALIDATION] Missing {len(missing_slots)} expected QR codes", file=sys.stderr)
+            sys.stderr.flush()
         
         total_qrs = len(valid_slot_qrs) + len(invalid_qrs)
-        return {
+        result = {
             'success': success,
             'step': 'validate_qrs_visible',
             'detected_count': len(valid_slot_qrs),
@@ -417,11 +445,14 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             'invalid_qrs': invalid_qrs,
             'message': f'Detected {len(valid_slot_qrs)}/{len(expected_slots)} expected slot QR codes (total QRs found: {total_qrs})'
         }
+        print(f"[VALIDATION] Result: {'SUCCESS' if success else 'FAILED'} - {result['message']}", file=sys.stderr)
+        sys.stderr.flush()
+        return result
     else:
         # Step 2: QR codes should NOT be detected (tools covering them)
         success = len(valid_slot_qrs) == 0
         
-        return {
+        result = {
             'success': success,
             'step': 'validate_qrs_covered',
             'detected_count': len(valid_slot_qrs),
@@ -429,6 +460,9 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             'visible_qrs': valid_slot_qrs,
             'message': 'All QR codes properly covered by tools' if success else f'{len(valid_slot_qrs)} QR codes still visible'
         }
+        print(f"[VALIDATION] Result: {'SUCCESS' if success else 'FAILED'} - {result['message']}", file=sys.stderr)
+        sys.stderr.flush()
+        return result
 
 def main():
     parser = argparse.ArgumentParser(description='Validate slot QR codes in calibrated camera')
