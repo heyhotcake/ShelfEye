@@ -445,8 +445,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add camera calibration parameters if available
       if (camera.cameraMatrix && camera.distCoeffs) {
-        validationArgs.push('--camera-matrix', camera.cameraMatrix.join(','));
-        validationArgs.push('--dist-coeffs', camera.distCoeffs.join(','));
+        validationArgs.push('--camera-matrix', JSON.stringify(camera.cameraMatrix));
+        validationArgs.push('--dist-coeffs', JSON.stringify(camera.distCoeffs));
         console.log(`[Validation] Using camera calibration parameters`);
       }
       
@@ -621,8 +621,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add camera calibration parameters if available
       if (camera.cameraMatrix && camera.distCoeffs) {
-        validationArgs.push('--camera-matrix', camera.cameraMatrix.join(','));
-        validationArgs.push('--dist-coeffs', camera.distCoeffs.join(','));
+        validationArgs.push('--camera-matrix', JSON.stringify(camera.cameraMatrix));
+        validationArgs.push('--dist-coeffs', JSON.stringify(camera.distCoeffs));
         console.log(`[Validation] Using camera calibration parameters`);
       }
       
