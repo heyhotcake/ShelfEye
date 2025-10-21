@@ -6,12 +6,17 @@ Used for two-step calibration validation:
 2. Verify QR codes are NOT readable when tools are placed (covering QRs)
 """
 
+import os
 import cv2
 import numpy as np
 import json
 import sys
 import argparse
 from pyzbar import pyzbar
+
+# Suppress OpenCV warnings/info to prevent polluting stdout
+os.environ['OPENCV_LOG_LEVEL'] = 'FATAL'
+cv2.setLogLevel(0)
 
 def decode_qr_codes(image):
     """Decode all QR codes in image with multi-scale detection and aggressive preprocessing"""
