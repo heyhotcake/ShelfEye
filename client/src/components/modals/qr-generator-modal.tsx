@@ -41,7 +41,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
     toolType: '',
     workerName: '',
     errorCorrection: 'L',
-    moduleSize: 30,
+    moduleSize: 25,
     includeHmac: true,
   });
   const [generatedQR, setGeneratedQR] = useState<QRGenerationResult | null>(null);

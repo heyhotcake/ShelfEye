@@ -25,7 +25,8 @@ def decode_qr_codes(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
     
     # Try multiple scales for better detection of small QRs
-    scales = [1.0, 1.5, 2.0, 3.0]  # Original, 1.5x, 2x, and 3x upscale
+    # With high-res camera (2560×1440), aggressive upscaling is viable
+    scales = [1.0, 1.5, 2.0, 3.0, 4.0]  # Up to 4x upscaling for 30mm QRs
     
     for scale in scales:
         if scale != 1.0:
@@ -180,8 +181,8 @@ def validate_slot_qrs(camera_id, mode='visible'):
     cap = cv2.VideoCapture(0)
     
     # Set camera to highest resolution for better QR detection
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
     
     # Use MJPG format for USB cameras (better quality at high res)
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
@@ -318,9 +319,9 @@ def validate_slot_qrs(camera_id, mode='visible'):
     
     # Calculate output size based on paper dimensions (if provided)
     if paper_width_cm and paper_height_cm:
-        # Increased from 40 to 160 for much better QR detection at 40mm size
-        # At 160 px/cm, a 40mm QR gets 64 pixels (vs 48 pixels for 30mm)
-        pixels_per_cm = 160  # Double resolution for better detection
+        # Increased to 200 px/cm for reliable 30mm QR detection with high-res camera
+        # At 200 px/cm, a 30mm QR gets 60 pixels base, 240 pixels at 4x upscaling
+        pixels_per_cm = 200  # High resolution for small QR codes
         output_width = int(paper_width_cm * pixels_per_cm)
         output_height = int(paper_height_cm * pixels_per_cm)
         print(f"Using paper-based output size: {output_width}x{output_height} ({paper_width_cm}x{paper_height_cm} cm) @ {pixels_per_cm}px/cm", file=sys.stderr)

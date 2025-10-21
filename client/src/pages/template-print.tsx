@@ -103,7 +103,7 @@ export default function TemplatePrint() {
                 type: 'slot',
                 id: rect.autoQrId,
                 errorCorrection: 'L',
-                moduleSize: 20,
+                moduleSize: 15,
                 includeHmac: true,
               }),
             });
@@ -259,9 +259,9 @@ export default function TemplatePrint() {
         ctx.lineWidth = 2;
         ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
 
-        // Draw QR code centered within the rectangle (4x4 cm)
+        // Draw QR code centered within the rectangle (3x3 cm)
         if (rect.autoQrId && qrImageCache[rect.autoQrId]) {
-          const qrSizeCm = 4;
+          const qrSizeCm = 3;
           const qrSizePx = cmToPixels(qrSizeCm, true);
           ctx.drawImage(qrImageCache[rect.autoQrId], -qrSizePx / 2, -qrSizePx / 2, qrSizePx, qrSizePx);
         }
@@ -400,14 +400,14 @@ export default function TemplatePrint() {
             );
 
             if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-              const qrSizeMm = 40;
+              const qrSizeMm = 30;
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
 
             if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-              const qrSizeMm = 40;
+              const qrSizeMm = 30;
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
           }
