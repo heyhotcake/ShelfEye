@@ -1,0 +1,94 @@
+tail -100 ~/ShelfEye/app.log | grep -i validation
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Starting QR validation (visible) for camera f0302a62-d361-4134-86cc-f8c8558226c0
+[Validation] Camera found: { hasHomography: true, hasCameraMatrix: true, hasDistCoeffs: true }
+[Validation] Found 7 slots for camera
+[Validation] LED light turned ON
+[Validation] Using paper dimensions: 89.1x42 cm
+[Validation] Using camera calibration parameters
+[Validation] Using device path: /dev/video0
+[Validation] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+[Validation] Python stderr: [VALIDATION] Opening camera: /dev/video0
+[Validation] Python stderr: [VALIDATION] Camera opened successfully
+[Validation] Python stderr: [VALIDATION] Starting frame capture (2 warmup + 5 capture frames)
+[Validation] Python stderr: [VALIDATION] Warmup frame 1/2 captured
+[Validation] Python stderr: [VALIDATION] Warmup frame 2/2 captured
+[VALIDATION] Capturing 5 frames for sharpness analysis
+[Validation] Python stderr: [VALIDATION] Frame 1/5 captured, sharpness=549.25
+[Validation] Python stderr: [VALIDATION] Frame 2/5 captured, sharpness=512.19
+[Validation] Python stderr: [VALIDATION] Frame 3/5 captured, sharpness=511.53
+[Validation] Python stderr: [VALIDATION] Frame 4/5 captured, sharpness=509.40
+[Validation] Python stderr: [VALIDATION] Frame 5/5 captured, sharpness=503.90
+[Validation] Python stderr: [VALIDATION] Camera released, captured 5 frames
+[Validation] Python stderr: [VALIDATION] Selected frame 1/5 with sharpness 549.25
+[Validation] Python stderr: [VALIDATION] Saved raw captured frame to: /home/naniwa/ShelfEye/debug_images/validation_raw_frame.jpg
+[Validation] Python stderr: Skipping undistortion (all coefficients are zero)
+[Validation] Python stderr: Saved rectified image with overlays to: /home/naniwa/ShelfEye/debug_images/validation_rectified_debug.jpg
+[Validation] Python stderr: Also saved to: /tmp/validation_rectified_debug.jpg
+[VALIDATION] Starting QR code decoding with dual decoders (pyzbar + OpenCV)
+[Validation] Python stderr: QR detected via pyzbar_original: pen-004
+[Validation] Python stderr: QR detected via pyzbar_grayscale: pen-002
+[Validation] Python stderr: QR detected via pyzbar_enhanced: 5x5-001
+[Validation] Python stderr: [VALIDATION] QR decoding complete: 4 total QR codes detected
+[Validation] Python stderr: [VALIDATION] ✗ pen-004: detected at (44.0, 39.8) cm, expected at (67.0, 15.5) cm, distance=33.4 cm - REJECTED (outside slot region)
+[VALIDATION] ✓ 5x5-003: detected at (65.4, 27.9) cm, expected at (65.0, 27.5) cm, distance=0.6 cm - PASS
+[Validation] Python stderr: [VALIDATION] ✗ pen-002: detected at (67.5, 15.2) cm, expected at (44.0, 39.0) cm, distance=33.4 cm - REJECTED (outside slot region)
+[VALIDATION] ✗ 5x5-001: detected at (44.0, 28.8) cm, expected at (24.0, 27.5) cm, distance=20.1 cm - REJECTED (outside slot region)
+[VALIDATION] Spatial validation complete: 1 valid QRs, 3 invalid QRs
+[VALIDATION] Missing 6 expected QR codes
+[Validation] Python stderr: [VALIDATION] Result: FAILED - Detected 1/7 expected slot QR codes (total QRs found: 4)
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+11:05:39 AM [express] GET /api/debug-images/validation_rectified_debug.jpg 200 in 8ms
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+naniwa@NaniwaTanaCheck:~/ShelfEye/debug_images $ sudo journalctl -u shelfeye -n 100 --no-pager | grep -i validation
+Oct 21 16:14:11 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 21 16:14:16 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 21 16:14:29 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Parsed 7 templates for preview overlay
+Oct 21 16:14:29 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Templates: [{'x': 24, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 65, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 19.5, 'y': 15, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 67, 'y': 15.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 16.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44, 'y': 39, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44, 'y': 28.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}]
+Oct 21 16:14:30 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Detected 4/4 corner markers: [np.int32(17), np.int32(20), np.int32(18), np.int32(19)]
+Oct 21 16:14:30 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[1536.0, 0.0, 960.0], [0.0, 1536.0, 540.0], [0.0, 0.0, 1.0]]
+Oct 21 16:14:30 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+Oct 21 16:14:30 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Paper size: 89.1cm × 42.0cm
+Oct 21 16:14:30 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero
+Oct 21 16:14:30 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Oct 21 16:14:30 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:rectified_preview:Drawing 7 template overlays
+Oct 21 16:14:30 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 24, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 65, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 19.5, 'y': 15, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 67, 'y': 15.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 16.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44, 'y': 39, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44, 'y': 28.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}]
+Oct 21 16:14:30 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Oct 21 16:14:38 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 21 16:14:43 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 21 16:14:48 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 21 16:14:49 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Starting QR validation (visible) for camera 840adc60-46d1-4c89-968e-0e5e9ecb96d3
+Oct 21 16:14:49 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Camera found: { hasHomography: true, hasCameraMatrix: true, hasDistCoeffs: true }
+Oct 21 16:14:50 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Found 7 slots for camera
+Oct 21 16:15:00 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Using paper dimensions: 89.1x42 cm
+Oct 21 16:15:00 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Using camera calibration parameters
+Oct 21 16:15:00 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Using device path: /dev/video0
+Oct 21 16:15:01 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Starting validation for camera /dev/video0 in mode 'visible'
+Oct 21 16:15:01 NaniwaTanaCheck pi-startup.sh[35791]: [VALIDATION] Opening camera
+Oct 21 16:15:01 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Camera resolution: 1920x1080
+Oct 21 16:15:01 NaniwaTanaCheck pi-startup.sh[35791]: [VALIDATION] Warming up camera (discarding first 2 frames)
+Oct 21 16:15:02 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Capturing 5 frames for sharpness analysis (memory-optimized)
+Oct 21 16:15:02 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Frame 1/5 captured, sharpness=440.52
+Oct 21 16:15:02 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Frame 2/5 captured, sharpness=442.13
+Oct 21 16:15:02 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Frame 3/5 captured, sharpness=442.95
+Oct 21 16:15:02 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Frame 4/5 captured, sharpness=441.88
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Frame 5/5 captured, sharpness=439.71
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Camera released
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Selected frame 3/5 with sharpness 442.95
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Saved raw captured frame to: /home/naniwa/ShelfEye/debug_images/validation_raw_frame.jpg
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [VALIDATION] Received parameters:
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr:   - Distortion coeffs: Yes
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [VALIDATION] Parsed calibration data. Found 7 expected slots
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Converted rectified image to grayscale (saves 75MB)
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: [VALIDATION] Saved rectified view to: /home/naniwa/ShelfEye/debug_images/validation_rectified_debug.jpg
+Oct 21 16:15:03 NaniwaTanaCheck pi-startup.sh[35791]: [VALIDATION] Starting QR code detection...
+Oct 21 16:15:07 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: QR detected via pyzbar_grayscale_x1.0: 5x5-002
+Oct 21 16:15:07 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: QR detected via pyzbar_grayscale_x1.0: pen-001
+Oct 21 16:19:19 NaniwaTanaCheck pi-startup.sh[35791]: [Validation] Python stderr: QR detected via pyzbar_grayscale_x3.0: 5x5-001
+naniwa@NaniwaTanaCheck:~/ShelfEye/debug_images $ ps aux | grep validate_slot_qrs
+naniwa     35861  107 66.2 1632748 1251348 ?     Rl   16:15   4:47 python3 /home/naniwa/ShelfEye/python/validate_slot_qrs.py --resolution 2560x1440 --homography [19.285844176349755,-0.7458423644968707,120.17859206524423,1.091731221640012,18.288469059667854,126.5923399280365,0.0005329842540333415,0.00013732334266199778,1] --slots [{"id":"5x5-002","slotId":"5x5-002","toolName":"5x5","x":24,"y":27.5,"width":5,"height":5,"rotation":0},{"id":"5x5-003","slotId":"5x5-003","toolName":"5x5","x":65,"y":27.5,"width":5,"height":5,"rotation":0},{"id":"pen-001","slotId":"pen-001","toolName":"pen","x":19.5,"y":15,"width":7,"height":4,"rotation":0},{"id":"pen-002","slotId":"pen-002","toolName":"pen","x":67,"y":15.5,"width":7,"height":4,"rotation":0},{"id":"pen-003","slotId":"pen-003","toolName":"pen","x":44.5,"y":16.5,"width":7,"height":4,"rotation":0},{"id":"pen-004","slotId":"pen-004","toolName":"pen","x":44,"y":39,"width":7,"height":4,"rotation":0},{"id":"5x5-001","slotId":"5x5-001","toolName":"5x5","x":44,"y":28.5,"width":5,"height":5,"rotation":0}] --should-detect true --paper-width-cm 89.1 --paper-height-cm 42 --camera-matrix [1536,0,960,0,1536,540,0,0,1] --dist-coeffs [0,0,0,0,0] --device-path /dev/video0
+naniwa     35880  0.0  0.1   6384  1996 pts/0    S+   16:19   0:00 grep --color=auto validate_slot_qrs
+naniwa@NaniwaTanaCheck:~/ShelfEye/debug_images $
