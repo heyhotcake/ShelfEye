@@ -172,23 +172,9 @@ def generate_rectified_preview(
         Dictionary with ok status and base64 encoded image or error
     """
     cap = None
-    led_was_on = False
     try:
-        # Turn on LED light for consistent illumination
-        try:
-            import subprocess
-            import os
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            gpio_script = os.path.join(script_dir, 'gpio_controller.py')
-            subprocess.run(['sudo', 'python3', gpio_script, '--pin', str(led_pin), '--action', 'on'], 
-                         check=True, capture_output=True, timeout=5)
-            led_was_on = True
-            logger.info(f"LED light turned ON (pin {led_pin})")
-            # Brief delay to let LED stabilize
-            import time
-            time.sleep(0.3)
-        except Exception as led_err:
-            logger.warning(f"Could not control LED light: {led_err}")
+        # LED control disabled for preview to avoid constant flashing
+        # User can manually control LED via Config page if needed
         # Reshape homography matrix from list to 3x3 numpy array
         H = np.array(homography_matrix).reshape(3, 3)
         
@@ -247,19 +233,6 @@ def generate_rectified_preview(
     finally:
         if cap is not None:
             cap.release()
-        
-        # Turn off LED light
-        if led_was_on:
-            try:
-                import subprocess
-                import os
-                script_dir = os.path.dirname(os.path.abspath(__file__))
-                gpio_script = os.path.join(script_dir, 'gpio_controller.py')
-                subprocess.run(['sudo', 'python3', gpio_script, '--pin', str(led_pin), '--action', 'off'], 
-                             check=True, capture_output=True, timeout=5)
-                logger.info(f"LED light turned OFF (pin {led_pin})")
-            except Exception as led_err:
-                logger.warning(f"Could not turn off LED light: {led_err}")
 
 def main():
     parser = argparse.ArgumentParser(description='Generate rectified preview using homography')
