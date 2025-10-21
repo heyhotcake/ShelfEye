@@ -184,6 +184,11 @@ export class StartupCalibrationService {
                   expectedQrId: template.autoQrId || '',
                   priority: 'high',
                   regionCoords: pixelCoords,
+                  xCm: template.xCm,
+                  yCm: template.yCm,
+                  widthCm: category.widthCm,
+                  heightCm: category.heightCm,
+                  rotationDeg: template.rotation || 0,
                   allowCheckout: true,
                   graceWindow: '08:00-17:00',
                 });

@@ -1,0 +1,461 @@
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[Scheduler] Initializing...
+[Scheduler] Reloading configuration...
+[Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+[Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+[Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+[Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+[Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+[Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+[Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+[Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+[Scheduler] Scheduled 4 capture times
+[Scheduler] Initialized successfully
+[StartupCalibration] Starting startup calibration check...
+[StartupCalibration] Running calibration for camera Webcam One (/dev/video0)
+[StartupCalibration] Paper size format: 6-page-3x2
+[StartupCalibration] Last calibration: 2025-10-21T00:14:19.072Z
+[StartupCalibration] LED light turned ON for calibration
+[StartupCalibration] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+
+[StartupCalibration] Using device path: /dev/video0
+[StartupCalibration] Failed to create slot for template accb266a-84b1-44d7-b933-c4f22d6c8f46: error: null value in column "x_cm" of relation "slots" violates not-null constraint
+    at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:672:20)
+    at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:180:30) {
+  length: 426,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (10394e95-796e-4caa-838b-51889d9518b8, 5x5_accb, f0302a62-d361-4134-86cc-f8c8558226c0, 5x5, , high, [[482.4119984383542,673.3218396908284],[577.7610809478533,676.61..., t, 08:00-17:00, t, 2025-10-21 00:15:24.813491, null, null, null, null, 0).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'slots',
+  column: 'x_cm',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2021',
+  routine: 'ExecConstraints'
+}
+[StartupCalibration] Failed to create slot for template a8716bbf-0b6c-493f-bab1-3864589e3dad: error: null value in column "x_cm" of relation "slots" violates not-null constraint
+    at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:672:20)
+    at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:180:30) {
+  length: 426,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (1cc8b774-08da-4958-be80-2a767cd8b458, 5x5_a871, f0302a62-d361-4134-86cc-f8c8558226c0, 5x5, , high, [[1243.7531475382652,699.6008058241032],[1333.4971021130284,702...., t, 08:00-17:00, t, 2025-10-21 00:15:25.184389, null, null, null, null, 0).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'slots',
+  column: 'x_cm',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2021',
+  routine: 'ExecConstraints'
+}
+[StartupCalibration] Failed to create slot for template 9a746523-bca9-452b-ae46-ce4d11352ffd: error: null value in column "x_cm" of relation "slots" violates not-null constraint
+    at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:672:20)
+    at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:180:30) {
+  length: 426,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (9735007c-3020-4c59-a551-5a9ba46e844e, pen_9a74, f0302a62-d361-4134-86cc-f8c8558226c0, pen, , high, [[391.81630198441144,451.00633523474903],[524.5175610858528,456...., t, 08:00-17:00, t, 2025-10-21 00:15:26.051769, null, null, null, null, 0).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'slots',
+  column: 'x_cm',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2021',
+  routine: 'ExecConstraints'
+}
+[StartupCalibration] Failed to create slot for template a45a31df-7ca1-467b-9ddf-50d010fa7d3d: error: null value in column "x_cm" of relation "slots" violates not-null constraint
+    at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:672:20)
+    at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:180:30) {
+  length: 426,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (431d590d-ea00-4cfb-a032-3a77f69deb92, pen_a45a, f0302a62-d361-4134-86cc-f8c8558226c0, pen, , high, [[1265.8535912288887,497.3937117182455],[1389.7155443641834,502...., t, 08:00-17:00, t, 2025-10-21 00:15:26.933245, null, null, null, null, 0).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'slots',
+  column: 'x_cm',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2021',
+  routine: 'ExecConstraints'
+}
+[StartupCalibration] Failed to create slot for template 4300a15d-9ef8-4190-b712-427937cfa314: error: null value in column "x_cm" of relation "slots" violates not-null constraint
+    at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:672:20)
+    at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:180:30) {
+  length: 426,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (1586d0e4-d41b-40fc-9710-1075babbdf46, pen_4300, f0302a62-d361-4134-86cc-f8c8558226c0, pen, , high, [[858.364402399424,497.7383206498653],[986.4607812291923,503.122..., t, 08:00-17:00, t, 2025-10-21 00:15:27.873763, null, null, null, null, 0).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'slots',
+  column: 'x_cm',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2021',
+  routine: 'ExecConstraints'
+}
+[StartupCalibration] Failed to create slot for template 6e129e01-9527-468b-9b6f-cf98bf850e9f: error: null value in column "x_cm" of relation "slots" violates not-null constraint
+    at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:672:20)
+    at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:180:30) {
+  length: 426,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (0c5407cb-3a69-4f2d-9bd6-0d57e40f0d27, pen_6e12, f0302a62-d361-4134-86cc-f8c8558226c0, pen, , high, [[831.4131964873438,905.856737376596],[962.6017248716087,909.233..., t, 08:00-17:00, t, 2025-10-21 00:15:28.870753, null, null, null, null, 0).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'slots',
+  column: 'x_cm',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2021',
+  routine: 'ExecConstraints'
+}
+[StartupCalibration] Failed to create slot for template 40f9e3f8-0d68-45c8-9f0a-5d800aeb1b2c: error: null value in column "x_cm" of relation "slots" violates not-null constraint
+    at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:672:20)
+    at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:180:30) {
+  length: 426,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (db78ba10-39b9-473f-ac3c-00816e8f793f, 5x5_40f9, f0302a62-d361-4134-86cc-f8c8558226c0, 5x5, , high, [[858.8032207498907,704.4717579804238],[951.4495654936941,707.60..., t, 08:00-17:00, t, 2025-10-21 00:15:29.739992, null, null, null, null, 0).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'slots',
+  column: 'x_cm',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2021',
+  routine: 'ExecConstraints'
+}
+[StartupCalibration] Calibration completed: 4/4 markers, error: 0.00px
+[StartupCalibration] LED light turned OFF
+[StartupCalibration] Calibration successful!
+9:15:32 AM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+9:15:48 AM [express] GET /api/cameras 200 in 713ms :: [{"id":"f0302a62-d361-4134-86cc-f8c8558226c0",…
+9:15:48 AM [express] GET /api/template-rectangles 304 in 705ms :: [{"id":"accb266a-84b1-44d7-b933-c4…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:15:50 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1911ms :: {…
+[CameraSessionManager] Exclusive lock set for camera f0302a62-d361-4134-86cc-f8c8558226c0 - blocking new previews
+[CameraSessionManager] Waiting for in-flight previews to complete...
+[CameraSessionManager] Camera f0302a62-d361-4134-86cc-f8c8558226c0 should now be available for exclusive use
+[Calibration] LED light turned ON for calibration
+[Calibration] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+
+[Calibration] Filtered to 0 templates within 10s of timestamp: 2025-10-20T08:29:08.774Z
+[Calibration] Found 0 templates matching paper size: 6-page-3x2
+[Calibration] Built 0 templates with dimensions for preview overlay
+[Calibration] Using device path: /dev/video0
+[Validation] Python stderr: INFO:__main__:Parsed 0 templates for preview overlay
+
+[Validation] Python stderr: INFO:__main__:Templates: []
+INFO:__main__:Opening camera: /dev/video0
+
+[Validation] Python stderr: INFO:__main__:Detected 3/4 corner markers: [np.int32(17), np.int32(19), np.int32(18)]
+
+[CameraSessionManager] Released exclusive lock for camera f0302a62-d361-4134-86cc-f8c8558226c0
+9:16:03 AM [express] POST /api/calibrate/f0302a62-d361-4134-86cc-f8c8558226c0 500 in 13336ms :: {"me…
+[LED] Light turned OFF
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:16:05 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 2137ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:16:07 AM [express] GET /api/capture-runs 304 in 715ms :: [{"id":"30dd0c76-43ad-47f0-9789-6fa5a8546…
+9:16:07 AM [express] GET /api/detection-logs 304 in 696ms :: []
+9:16:07 AM [express] GET /api/slots 304 in 731ms :: []
+9:16:07 AM [express] GET /api/config/calibration-info 404 in 705ms :: {"message":"Configuration key …
+9:16:07 AM [express] GET /api/analytics/summary 200 in 769ms :: {"totalSlots":0,"activeSlots":0,"sta…
+9:16:08 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1627ms :: {…
+9:16:29 AM [express] POST /api/aruco-generate 200 in 828ms :: {"ok":true,"markerId":17,"image":"iVBO…
+9:16:29 AM [express] GET /api/template-rectangles 304 in 822ms :: []
+9:16:29 AM [express] GET /api/tool-categories 304 in 850ms :: [{"id":"bc81120b-cc37-4b7c-b41e-adb6cb…
+9:16:29 AM [express] POST /api/aruco-generate 200 in 882ms :: {"ok":true,"markerId":18,"image":"iVBO…
+9:16:29 AM [express] POST /api/aruco-generate 200 in 1013ms :: {"ok":true,"markerId":19,"image":"iVB…
+9:16:29 AM [express] POST /api/aruco-generate 200 in 1001ms :: {"ok":true,"markerId":20,"image":"iVB…
+9:16:29 AM [express] GET /api/template-rectangles 304 in 178ms :: [{"id":"accb266a-84b1-44d7-b933-c4…
+9:16:30 AM [express] POST /api/aruco-generate 200 in 839ms :: {"ok":true,"markerId":18,"image":"iVBO…
+9:16:30 AM [express] POST /api/aruco-generate 200 in 1138ms :: {"ok":true,"markerId":17,"image":"iVB…
+9:16:30 AM [express] POST /api/aruco-generate 200 in 959ms :: {"ok":true,"markerId":20,"image":"iVBO…
+9:16:30 AM [express] POST /api/aruco-generate 200 in 1078ms :: {"ok":true,"markerId":19,"image":"iVB…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:16:31 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 2295ms :: {…
+[CameraSessionManager] Exclusive lock set for camera f0302a62-d361-4134-86cc-f8c8558226c0 - blocking new previews
+[CameraSessionManager] Waiting for in-flight previews to complete...
+[CameraSessionManager] Camera f0302a62-d361-4134-86cc-f8c8558226c0 should now be available for exclusive use
+[Calibration] LED light turned ON for calibration
+[Calibration] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+
+[Calibration] Filtered to 0 templates within 10s of timestamp: 2025-10-20T08:29:08.774Z
+[Calibration] Found 0 templates matching paper size: 6-page-3x2
+[Calibration] Built 0 templates with dimensions for preview overlay
+[Calibration] Using device path: /dev/video0
+[Validation] Python stderr: INFO:__main__:Parsed 0 templates for preview overlay
+
+[Validation] Python stderr: INFO:__main__:Templates: []
+INFO:__main__:Opening camera: /dev/video0
+
+[Validation] Python stderr: INFO:__main__:Detected 4/4 corner markers: [np.int32(20), np.int32(17), np.int32(19), np.int32(18)]
+
+[Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[1536.0, 0.0, 960.0], [0.0, 1536.0, 540.0], [0.0, 0.0, 1.0]]
+INFO:__main__:Using zero distortion coefficients (no distortion correction): [0.0, 0.0, 0.0, 0.0, 0.0]
+
+[Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+INFO:__main__:Paper size: 89.1cm × 42.0cm
+INFO:__main__:Detected points: [[148.25, 251.25], [1669.25, 328.0], [1671.0, 972.75], [90.75, 935.0]]
+
+[Validation] Python stderr: INFO:__main__:Projected points: [[148.2499999999998, 251.25000000000026], [1669.25, 328.0000000000002], [1671.0000000000002, 972.7499999999999], [90.74999999999974, 934.9999999999999]]
+INFO:__main__:Point-wise errors: [3.2405734631855066e-13, 2.2737367544323206e-13, 2.5421149729252077e-13, 2.799213746640164e-13]
+INFO:__main__:Reprojection error: mean=0.0000 px, max=0.0000 px
+INFO:__main__:Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero
+INFO:__main__:Camera matrix and distortion coefficients estimated (distortion currently set to zero)
+INFO:__main__:Generating rectified preview from calibration frame
+INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+
+[Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+
+[Calibration] Deleted 0 existing slots
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:36 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:37 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:37 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:37 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:38 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:38 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:38 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered to 0 templates within 10s of 2025-10-20T08:29:08.774Z
+[Calibration] Creating slots for 0 templates (paper size: 6-page-3x2)
+[CameraSessionManager] Released exclusive lock for camera f0302a62-d361-4134-86cc-f8c8558226c0
+9:16:45 AM [express] POST /api/calibrate/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 13797ms :: {"ok…
+[LED] Light turned OFF
+9:16:46 AM [express] GET /api/cameras 200 in 704ms :: [{"id":"f0302a62-d361-4134-86cc-f8c8558226c0",…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:16:47 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1081ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:16:50 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1673ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:16:52 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1588ms :: {…
+9:16:56 AM [express] POST /api/alert-led/stop 200 in 4ms :: {"ok":true,"message":"Alert LED stopped"}
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:01 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1812ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:04 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1607ms :: {…
+[CameraSessionManager] Exclusive lock set for camera f0302a62-d361-4134-86cc-f8c8558226c0 - blocking new previews
+[CameraSessionManager] Waiting for in-flight previews to complete...
+[CameraSessionManager] Camera f0302a62-d361-4134-86cc-f8c8558226c0 should now be available for exclusive use
+[Calibration] LED light turned ON for calibration
+[Calibration] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+
+[Calibration] Filtered to 0 templates within 10s of timestamp: 2025-10-20T08:29:08.774Z
+[Calibration] Found 0 templates matching paper size: 6-page-3x2
+[Calibration] Built 0 templates with dimensions for preview overlay
+[Calibration] Using device path: /dev/video0
+[Validation] Python stderr: INFO:__main__:Parsed 0 templates for preview overlay
+
+[Validation] Python stderr: INFO:__main__:Templates: []
+INFO:__main__:Opening camera: /dev/video0
+
+[Validation] Python stderr: INFO:__main__:Detected 4/4 corner markers: [np.int32(20), np.int32(17), np.int32(19), np.int32(18)]
+INFO:__main__:Estimated camera matrix: [[1536.0, 0.0, 960.0], [0.0, 1536.0, 540.0], [0.0, 0.0, 1.0]]
+INFO:__main__:Using zero distortion coefficients (no distortion correction): [0.0, 0.0, 0.0, 0.0, 0.0]
+
+[Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+
+[Validation] Python stderr: INFO:__main__:Paper size: 89.1cm × 42.0cm
+
+[Validation] Python stderr: INFO:__main__:Detected points: [[147.5, 251.25], [1669.5, 327.75], [1671.0, 972.75], [90.5, 934.75]]
+
+[Validation] Python stderr: INFO:__main__:Projected points: [[147.50000000000023, 251.24999999999997], [1669.4999999999993, 327.75000000000006], [1670.9999999999995, 972.75], [90.50000000000027, 934.7500000000001]]
+
+[Validation] Python stderr: INFO:__main__:Point-wise errors: [2.2914314707516465e-13, 6.844854043943255e-13, 4.547473508864641e-13, 2.929642751054232e-13]
+INFO:__main__:Reprojection error: mean=0.0000 px, max=0.0000 px
+INFO:__main__:Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero
+INFO:__main__:Camera matrix and distortion coefficients estimated (distortion currently set to zero)
+INFO:__main__:Generating rectified preview from calibration frame
+INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+
+[Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+
+[Calibration] Deleted 0 existing slots
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:36 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:37 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:37 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:37 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:38 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:38 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:38 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered to 0 templates within 10s of 2025-10-20T08:29:08.774Z
+[Calibration] Creating slots for 0 templates (paper size: 6-page-3x2)
+[CameraSessionManager] Released exclusive lock for camera f0302a62-d361-4134-86cc-f8c8558226c0
+9:17:18 AM [express] POST /api/calibrate/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 14032ms :: {"ok…
+9:17:18 AM [express] GET /api/cameras 200 in 171ms :: [{"id":"f0302a62-d361-4134-86cc-f8c8558226c0",…
+[LED] Light turned OFF
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:20 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 2591ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:23 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1880ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:26 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1698ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:29 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1693ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:32 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1624ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:35 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1993ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:38 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1589ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+[Validation] Starting QR validation (visible) for camera f0302a62-d361-4134-86cc-f8c8558226c0
+[Validation] Camera found: { hasHomography: true, hasCameraMatrix: true, hasDistCoeffs: true }
+[Validation] Found 0 slots for camera
+[Validation] No slots configured for this camera
+9:17:40 AM [express] POST /api/calibrate/f0302a62-d361-4134-86cc-f8c8558226c0/validate-qrs-visible 4…
+9:17:40 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1627ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:43 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1650ms :: {…
+9:17:44 AM [express] GET /api/template-rectangles 304 in 178ms :: [{"id":"accb266a-84b1-44d7-b933-c4…
+9:17:45 AM [express] GET /api/cameras 200 in 737ms :: [{"id":"f0302a62-d361-4134-86cc-f8c8558226c0",…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:47 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 2008ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:17:50 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1602ms :: {…
+[CameraSessionManager] Exclusive lock set for camera f0302a62-d361-4134-86cc-f8c8558226c0 - blocking new previews
+[CameraSessionManager] Waiting for in-flight previews to complete...
+[CameraSessionManager] Camera f0302a62-d361-4134-86cc-f8c8558226c0 should now be available for exclusive use
+[Calibration] LED light turned ON for calibration
+[Calibration] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+
+[Calibration] Filtered to 0 templates within 10s of timestamp: 2025-10-20T08:29:08.774Z
+[Calibration] Found 0 templates matching paper size: 6-page-3x2
+[Calibration] Built 0 templates with dimensions for preview overlay
+[Calibration] Using device path: /dev/video0
+[Validation] Python stderr: INFO:__main__:Parsed 0 templates for preview overlay
+
+[Validation] Python stderr: INFO:__main__:Templates: []
+INFO:__main__:Opening camera: /dev/video0
+
+[Validation] Python stderr: INFO:__main__:Detected 4/4 corner markers: [np.int32(20), np.int32(17), np.int32(19), np.int32(18)]
+
+[Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[1536.0, 0.0, 960.0], [0.0, 1536.0, 540.0], [0.0, 0.0, 1.0]]
+
+[Validation] Python stderr: INFO:__main__:Using zero distortion coefficients (no distortion correction): [0.0, 0.0, 0.0, 0.0, 0.0]
+
+[Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+
+[Validation] Python stderr: INFO:__main__:Paper size: 89.1cm × 42.0cm
+INFO:__main__:Detected points: [[147.5, 251.5], [1669.25, 327.75], [1671.0, 972.0], [90.5, 935.25]]
+INFO:__main__:Projected points: [[147.50000000000017, 251.50000000000017], [1669.2499999999998, 327.75000000000017], [1670.9999999999998, 972.0000000000001], [90.50000000000024, 935.2500000000001]]
+
+[Validation] Python stderr: INFO:__main__:Point-wise errors: [2.4116620165382783e-13, 2.8421709430404007e-13, 2.5421149729252077e-13, 2.669977196213713e-13]
+INFO:__main__:Reprojection error: mean=0.0000 px, max=0.0000 px
+INFO:__main__:Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero
+
+[Validation] Python stderr: INFO:__main__:Camera matrix and distortion coefficients estimated (distortion currently set to zero)
+
+[Validation] Python stderr: INFO:__main__:Generating rectified preview from calibration frame
+
+[Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+
+[Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+
+[Calibration] Deleted 0 existing slots
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:36 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:37 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:37 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:37 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:38 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:38 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered out template created at Tue Oct 21 2025 08:45:38 GMT+0900 (Japan Standard Time) (outside window 2025-10-20T08:28:58.774Z to 2025-10-20T08:29:18.774Z)
+[Calibration] Filtered to 0 templates within 10s of 2025-10-20T08:29:08.774Z
+[Calibration] Creating slots for 0 templates (paper size: 6-page-3x2)
+[CameraSessionManager] Released exclusive lock for camera f0302a62-d361-4134-86cc-f8c8558226c0
+9:18:04 AM [express] POST /api/calibrate/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 13836ms :: {"ok…
+[LED] Light turned OFF
+9:18:05 AM [express] GET /api/cameras 200 in 730ms :: [{"id":"f0302a62-d361-4134-86cc-f8c8558226c0",…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:18:06 AM [express] GET /api/camera-preview/f0302a62-d361-4134-86cc-f8c8558226c0 200 in 1631ms :: {…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+
+9:18:08 AM

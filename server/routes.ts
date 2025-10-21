@@ -199,25 +199,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get template rectangles with category dimensions for preview overlay
-      // IMPORTANT: Filter by paper size AND template timestamp to match the exact selected template design
-      // Templates are now camera-independent - filter by paper size only
-      let templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
-      
-      // Filter by template timestamp if provided (find all rectangles from the same template batch)
-      // Use a small 10-second window since rectangles are created sequentially in one batch
-      if (templateTimestamp) {
-        const selectedTimestamp = new Date(templateTimestamp);
-        const timeWindow = 10000; // 10 seconds - templates created in one batch are within seconds of each other
-        const minTime = selectedTimestamp.getTime() - timeWindow;
-        const maxTime = selectedTimestamp.getTime() + timeWindow;
-        
-        templateRectanglesForPreview = templateRectanglesForPreview.filter(t => {
-          if (!t.createdAt) return false;
-          const rectTime = new Date(t.createdAt).getTime();
-          return rectTime >= minTime && rectTime <= maxTime;
-        });
-        console.log(`[Calibration] Filtered to ${templateRectanglesForPreview.length} templates within 10s of timestamp: ${templateTimestamp}`);
-      }
+      // Templates are camera-independent and filtered by paper size only
+      // User explicitly selects template in UI, no timestamp filtering needed
+      const templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
       const templatesWithDimensions = [];
       
       console.log(`[Calibration] Found ${templateRectanglesForPreview.length} templates matching paper size: ${paperSizeFormat}`);
@@ -317,29 +301,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               console.log(`[Calibration] Deleted ${existingSlots.length} existing slots`);
 
-              // Get template rectangles filtered by paper size AND template timestamp
-              // Templates are now camera-independent - filter by paper size only
-              let templateRectangles = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
-              
-              // Filter by template timestamp if provided (find all rectangles from the same template batch)
-              // Use a small 10-second window since rectangles are created sequentially in one batch
-              if (templateTimestamp) {
-                const selectedTimestamp = new Date(templateTimestamp);
-                const timeWindow = 10000; // 10 seconds - templates created in one batch are within seconds of each other
-                const minTime = selectedTimestamp.getTime() - timeWindow;
-                const maxTime = selectedTimestamp.getTime() + timeWindow;
-                
-                templateRectangles = templateRectangles.filter(t => {
-                  if (!t.createdAt) return false;
-                  const rectTime = new Date(t.createdAt).getTime();
-                  const inWindow = rectTime >= minTime && rectTime <= maxTime;
-                  if (!inWindow) {
-                    console.log(`[Calibration] Filtered out template created at ${t.createdAt} (outside window ${new Date(minTime).toISOString()} to ${new Date(maxTime).toISOString()})`);
-                  }
-                  return inWindow;
-                });
-                console.log(`[Calibration] Filtered to ${templateRectangles.length} templates within 10s of ${templateTimestamp}`);
-              }
+              // Get template rectangles filtered by paper size only
+              // Templates are camera-independent and selected explicitly by user in UI
+              // No timestamp filtering needed - user chooses template by name
+              const templateRectangles = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
               const createdSlots: any[] = [];
               
               console.log(`[Calibration] Creating slots for ${templateRectangles.length} templates (paper size: ${paperSizeFormat})`);
@@ -903,25 +868,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get template rectangles for this camera to overlay on rectified view
-      // IMPORTANT: Filter by paper size AND template timestamp to match the exact selected template design
-      // Templates are now camera-independent - filter by paper size only
-      let templates = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
-      
-      // Filter by template timestamp if provided (find all rectangles from the same template batch)
-      // Use a small 10-second window since rectangles are created sequentially in one batch
-      if (templateTimestamp && typeof templateTimestamp === 'string') {
-        const selectedTimestamp = new Date(templateTimestamp);
-        const timeWindow = 10000; // 10 seconds - templates created in one batch are within seconds of each other
-        const minTime = selectedTimestamp.getTime() - timeWindow;
-        const maxTime = selectedTimestamp.getTime() + timeWindow;
-        
-        templates = templates.filter(t => {
-          if (!t.createdAt) return false;
-          const rectTime = new Date(t.createdAt).getTime();
-          return rectTime >= minTime && rectTime <= maxTime;
-        });
-        console.log(`[Rectified Preview] Filtered to ${templates.length} templates within 10s of timestamp: ${templateTimestamp}`);
-      }
+      // Templates are camera-independent and filtered by paper size only
+      // User explicitly selects template in UI, no timestamp filtering needed
+      const templates = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
       
       console.log(`[Rectified Preview] Found ${templates.length} templates matching paper size: ${paperSizeFormat}`);
       
