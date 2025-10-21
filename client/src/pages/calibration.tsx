@@ -916,9 +916,16 @@ export default function Calibration() {
                   const paperDimensions = getPaperDimensions(paperSize);
                   const aspectRatio = paperDimensions.width / paperDimensions.height;
                   
-                  // Get templates with categories for the canvas
-                  const templatesWithCategories = selectedDesign?.templateRectangles.map((rect: any) => {
-                    const category = selectedDesign.categories.find((c: any) => c.id === rect.categoryId);
+                  // Fetch templates from DATABASE (not localStorage) to get latest adjusted positions
+                  const { data: dbTemplateRectangles } = useQuery({
+                    queryKey: ['/api/template-rectangles', { paperSize }],
+                    enabled: calibrationStep >= 1 && !!paperSize,
+                  });
+                  
+                  // Get templates with categories for the canvas - use DB data if available, fallback to localStorage
+                  const templatesWithCategories = (dbTemplateRectangles || selectedDesign?.templateRectangles || []).map((rect: any) => {
+                    // Match category from selectedDesign for dimension info
+                    const category = selectedDesign?.categories?.find((c: any) => c.id === rect.categoryId);
                     return {
                       id: rect.id,
                       categoryId: rect.categoryId,
@@ -930,7 +937,7 @@ export default function Calibration() {
                       rotation: rect.rotation || 0,
                       autoQrId: rect.autoQrId,
                     };
-                  }) || [];
+                  });
                   
                   return (
                   <div className="mt-6">
