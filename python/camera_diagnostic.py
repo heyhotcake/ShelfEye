@@ -39,7 +39,7 @@ class CameraDiagnostic:
         camera_id = camera_data.get('id')
         device_index = camera_data.get('deviceIndex', 0)
         device_path = camera_data.get('devicePath')
-        resolution = camera_data.get('resolution', [1920, 1080])
+        resolution = camera_data.get('resolution', [2560, 1440])
         homography_matrix = camera_data.get('homographyMatrix')
         
         # Use device path if available (Raspberry Pi), otherwise use index

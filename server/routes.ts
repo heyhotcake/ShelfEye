@@ -14,6 +14,7 @@ import QRCode from "qrcode";
 import crypto from "crypto";
 import { z } from "zod";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertWorkerSchema, insertCaptureRunSchema } from "@shared/schema";
+import { setWhiteLight, turnOffLED } from "./utils/led-control";
 
 // Helper function to get camera device source (path or index)
 function getCameraDeviceSource(camera: { devicePath?: string | null; deviceIndex?: number | null }): string {
@@ -105,43 +106,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Helper function to turn off LED light safely
-  const turnOffLED = async () => {
-    try {
-      const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-      if (lightConfig) {
-        const pin = parseInt(lightConfig.value as string);
-        
-        // Wait for LED to turn off and release hardware resources
-        await new Promise<void>((resolve) => {
-          const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'off']);
-          
-          ledProcess.on('close', () => {
-            resolve();
-          });
-          
-          ledProcess.on('error', (err) => {
-            console.error('[LED] LED off error:', err);
-            resolve(); // Continue even if error
-          });
-          
-          // Timeout after 2 seconds
-          setTimeout(() => {
-            ledProcess.kill('SIGTERM');
-            resolve();
-          }, 2000);
-        });
-        
-        // Small delay to ensure DMA channel is released
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        console.log('[LED] Light turned OFF');
-      }
-    } catch (err) {
-      console.error('[LED] Failed to turn off light:', err);
-    }
-  };
-
   // Calibration routes
   app.post("/api/calibrate/:cameraId", async (req, res) => {
     const { cameraId } = req.params;
@@ -179,25 +143,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
 
-      // Turn on LED light for consistent illumination during calibration
-      const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-      if (lightStripConfig) {
-        const pin = parseInt(lightStripConfig.value as string);
-        const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
-        
-        // Log LED control output for debugging
-        ledProcess.stdout.on('data', (data) => {
-          console.log(`[Calibration] LED control output: ${data}`);
-        });
-        ledProcess.stderr.on('data', (data) => {
-          console.error(`[Calibration] LED control error: ${data}`);
-        });
-        
-        console.log('[Calibration] LED light turned ON for calibration');
-        
-        // Wait a moment for LED to fully turn on
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+      // Turn on LED light for consistent illumination during calibration (unified controller)
+      await setWhiteLight();
 
       // Get template rectangles with category dimensions for preview overlay
       // Templates are camera-independent and filtered by paper size only
@@ -460,22 +407,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
       
-      // Turn on LED light for consistent illumination during validation
-      const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-      if (lightConfig) {
-        const pin = parseInt(lightConfig.value as string);
-        const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
-        
-        // Log LED control output for debugging
-        ledProcess.stdout.on('data', (data) => {
-          console.log(`[Validation] LED control output: ${data}`);
-        });
-        ledProcess.stderr.on('data', (data) => {
-          console.error(`[Validation] LED control error: ${data}`);
-        });
-        
-        console.log('[Validation] LED light turned ON');
-      }
+      // Turn on LED light for consistent illumination during validation (unified controller)
+      await setWhiteLight();
       
       // Get paper dimensions from calibration config
       const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
@@ -647,22 +580,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
       
-      // Turn on LED light for consistent illumination during validation
-      const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-      if (lightConfig) {
-        const pin = parseInt(lightConfig.value as string);
-        const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
-        
-        // Log LED control output for debugging
-        ledProcess.stdout.on('data', (data) => {
-          console.log(`[Validation] LED control output: ${data}`);
-        });
-        ledProcess.stderr.on('data', (data) => {
-          console.error(`[Validation] LED control error: ${data}`);
-        });
-        
-        console.log('[Validation] LED light turned ON');
-      }
+      // Turn on LED light for consistent illumination during validation (unified controller)
+      await setWhiteLight();
       
       // Get paper dimensions from calibration config
       const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');

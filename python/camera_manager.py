@@ -35,8 +35,8 @@ class CameraManager:
                 return False
             
             # Set camera properties
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
             self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
             
             logger.info(f"Camera {self.camera_index} initialized successfully")

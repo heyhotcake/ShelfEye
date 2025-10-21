@@ -24,7 +24,7 @@ interface CalibrationResult {
 export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) {
   const { toast } = useToast();
   const [errorThreshold, setErrorThreshold] = useState([1.5]);
-  const [selectedResolution, setSelectedResolution] = useState("1920x1080");
+  const [selectedResolution, setSelectedResolution] = useState("2560x1440");
 
   const { data: cameras } = useQuery({
     queryKey: ['/api/cameras'],
@@ -161,9 +161,9 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1920x1080">1920 x 1080 (Recommended)</SelectItem>
+                    <SelectItem value="2560x1440">2560 x 1440 (Recommended)</SelectItem>
+                    <SelectItem value="1920x1080">1920 x 1080</SelectItem>
                     <SelectItem value="1280x720">1280 x 720</SelectItem>
-                    <SelectItem value="2560x1440">2560 x 1440</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

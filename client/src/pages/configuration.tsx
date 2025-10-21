@@ -354,11 +354,11 @@ export default function Configuration() {
                             <p className="text-xs text-muted-foreground">
                               {camera.devicePath ? (
                                 <>
-                                  {camera.devicePath} • {camera.resolution || '1920x1080'}
+                                  {camera.devicePath} • {camera.resolution || '2560x1440'}
                                 </>
                               ) : (
                                 <>
-                                  Device {camera.deviceIndex} • {camera.resolution || '1920x1080'}
+                                  Device {camera.deviceIndex} • {camera.resolution || '2560x1440'}
                                 </>
                               )}
                             </p>

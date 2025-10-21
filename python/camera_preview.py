@@ -13,7 +13,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def capture_preview(device_source, width: int = 1920, height: int = 1080):
+def capture_preview(device_source, width: int = 2560, height: int = 1440):
     """
     Capture a single frame from camera and return as base64 JPEG
     
@@ -86,8 +86,8 @@ if __name__ == "__main__":
     else:
         device_source = int(device_arg)  # Device index like 0, 1, 2
     
-    width = int(sys.argv[2]) if len(sys.argv) > 2 else 1920
-    height = int(sys.argv[3]) if len(sys.argv) > 3 else 1080
+    width = int(sys.argv[2]) if len(sys.argv) > 2 else 2560
+    height = int(sys.argv[3]) if len(sys.argv) > 3 else 1440
     
     result = capture_preview(device_source, width, height)
     print(json.dumps(result))

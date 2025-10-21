@@ -260,7 +260,7 @@ class CameraProcessor:
         """
         camera_id = camera_data.get('id')
         device_index = camera_data.get('deviceIndex', 0)
-        resolution = camera_data.get('resolution', [1920, 1080])
+        resolution = camera_data.get('resolution', [2560, 1440])
         homography = camera_data.get('homographyMatrix')
         
         logger.info(f"Processing camera: {camera_id} (device {device_index})")

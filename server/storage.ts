@@ -106,7 +106,7 @@ export class MemStorage implements IStorage {
     const defaultCamera = await this.createCamera({
       name: "Camera Station A",
       deviceIndex: 0,
-      resolution: [1920, 1080],
+      resolution: [2560, 1440],
       isActive: true,
     });
 
@@ -578,7 +578,7 @@ export class DbStorage implements IStorage {
       await this.createCamera({
         name: "Camera Station A",
         deviceIndex: 0,
-        resolution: [1920, 1080],
+        resolution: [2560, 1440],
         isActive: true,
       });
 
