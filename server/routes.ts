@@ -365,6 +365,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Verify adjusted template positions by regenerating rectified preview
+  app.post("/api/calibrate/:cameraId/verify-positions", async (req, res) => {
+    const { cameraId } = req.params;
+    
+    try {
+      const { adjustedTemplates, paperSize } = req.body;
+      
+      const camera = await storage.getCamera(cameraId);
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      
+      if (!camera.homographyMatrix) {
+        return res.status(400).json({ message: "Camera not calibrated. Run ArUco calibration first." });
+      }
+      
+      // Get paper dimensions from format
+      const { getPaperDimensions } = await import('./utils/paper-size.js');
+      const paperSizeFormat = paperSize || 'A4-landscape';
+      const paperDims = getPaperDimensions(paperSizeFormat);
+      
+      // Convert adjusted templates to Python format
+      const templatesForPython = adjustedTemplates.map((t: any) => ({
+        x: t.xCm,
+        y: t.yCm,
+        width: t.widthCm,
+        height: t.heightCm,
+        rotation: t.rotation || 0,
+        categoryName: t.categoryName || t.autoQrId || 'Tool'
+      }));
+      
+      const previewArgs = [
+        path.join(process.cwd(), 'python', 'rectified_preview.py'),
+        '--camera', camera.index?.toString() || '0',
+        '--resolution', `${camera.width}x${camera.height}`,
+        '--homography', camera.homographyMatrix.join(','),
+        '--output-size', '1200x600',
+        '--templates', JSON.stringify(templatesForPython),
+        '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
+      ];
+      
+      if (camera.devicePath) {
+        previewArgs.push('--device-path', camera.devicePath);
+      }
+      
+      if (camera.cameraMatrix) {
+        previewArgs.push('--camera-matrix', camera.cameraMatrix.join(','));
+      }
+      
+      if (camera.distCoeffs) {
+        previewArgs.push('--dist-coeffs', camera.distCoeffs.join(','));
+      }
+      
+      console.log('[VerifyPositions] Generating rectified preview with adjusted templates...');
+      const pythonProcess = spawn('python3', previewArgs);
+      
+      let result = '';
+      let error = '';
+      
+      pythonProcess.stdout.on('data', (data) => {
+        result += data.toString();
+      });
+      
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          try {
+            const previewData = JSON.parse(result);
+            if (previewData.ok) {
+              res.json({
+                ok: true,
+                rectifiedPreview: previewData.image
+              });
+            } else {
+              res.status(500).json({ message: "Failed to generate preview", error: previewData.error });
+            }
+          } catch (parseError) {
+            res.status(500).json({ message: "Failed to parse preview result", error: parseError });
+          }
+        } else {
+          res.status(500).json({ message: "Preview generation failed", error });
+        }
+      });
+      
+    } catch (error) {
+      console.error('[VerifyPositions] Error:', error);
+      res.status(500).json({ message: "Verification error", error });
+    }
+  });
+
   // Two-step calibration validation routes
   app.post("/api/calibrate/:cameraId/validate-qrs-visible", async (req, res) => {
     const { cameraId } = req.params;
