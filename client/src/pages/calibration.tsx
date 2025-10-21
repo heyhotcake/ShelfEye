@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Camera, CheckCircle, Ruler, X } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
+import { RectifiedPreviewCanvas } from "@/components/canvas/rectified-preview-canvas";
 
 const TIMEZONE = "Asia/Tokyo";
 
@@ -59,6 +60,8 @@ export default function Calibration() {
   const [step2Result, setStep2Result] = useState<ValidationResult | null>(null);
   const [isCameraLocked, setIsCameraLocked] = useState<boolean>(false);
   const [savedTemplateDesigns, setSavedTemplateDesigns] = useState<TemplateDesign[]>([]);
+  const [adjustedTemplates, setAdjustedTemplates] = useState<any[]>([]);
+  const [hasTemplateAdjustments, setHasTemplateAdjustments] = useState<boolean>(false);
   const previousCameraIdRef = useRef<string | undefined>(undefined);
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
@@ -775,36 +778,56 @@ export default function Calibration() {
                 
                 {/* Rectified Preview - Show after ArUco calibration (Step 2) */}
                 {calibrationStep >= 1 && (() => {
-                  // Calculate aspect ratio from paper size
-                  const getPaperAspectRatio = (paperSize: string): number => {
-                    const dimensions: Record<string, { w: number; h: number }> = {
-                      'A5-landscape': { w: 21.0, h: 14.8 },
-                      'A4-landscape': { w: 29.7, h: 21.0 },
-                      'A3-landscape': { w: 42.0, h: 29.7 },
-                      '2xA5-landscape': { w: 42.0, h: 14.8 },
-                      '3xA5-landscape': { w: 63.0, h: 14.8 },
-                      '6-page-3x2': { w: 89.1, h: 42.0 },
-                    };
-                    const dim = dimensions[paperSize] || { w: 29.7, h: 21.0 }; // Default A4
-                    return dim.w / dim.h;
-                  };
-                  
-                  // Get paper size from selected template
+                  // Get paper dimensions from selected template
                   const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
                   const paperSize = selectedDesign?.paperSize || 'A4-landscape';
-                  const aspectRatio = getPaperAspectRatio(paperSize);
+                  
+                  const getPaperDimensions = (paperSize: string): { width: number; height: number } => {
+                    const dimensions: Record<string, { width: number; height: number }> = {
+                      'A5-landscape': { width: 21.0, height: 14.8 },
+                      'A4-landscape': { width: 29.7, height: 21.0 },
+                      'A3-landscape': { width: 42.0, height: 29.7 },
+                      '2xA5-landscape': { width: 42.0, height: 14.8 },
+                      '3xA5-landscape': { width: 63.0, height: 14.8 },
+                      '6-page-3x2': { width: 89.1, height: 42.0 },
+                    };
+                    return dimensions[paperSize] || { width: 29.7, height: 21.0 }; // Default A4
+                  };
+                  
+                  const paperDimensions = getPaperDimensions(paperSize);
+                  const aspectRatio = paperDimensions.width / paperDimensions.height;
+                  
+                  // Get templates with categories for the canvas
+                  const templatesWithCategories = selectedDesign?.templateRectangles.map((rect: any) => {
+                    const category = selectedDesign.categories.find((c: any) => c.id === rect.categoryId);
+                    return {
+                      id: rect.id,
+                      categoryId: rect.categoryId,
+                      categoryName: category?.name || 'Unknown',
+                      xCm: rect.xCm,
+                      yCm: rect.yCm,
+                      widthCm: category?.widthCm || 0,
+                      heightCm: category?.heightCm || 0,
+                      rotation: rect.rotation || 0,
+                      autoQrId: rect.autoQrId,
+                    };
+                  }) || [];
                   
                   return (
                   <div className="mt-6">
                     <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview with Template Overlay</h4>
                     <div className="canvas-container">
                       <div className="bg-muted rounded overflow-hidden" style={{ aspectRatio: `${aspectRatio.toFixed(3)} / 1` }}>
-                        {calibrationResult?.rectifiedPreview ? (
-                          <img 
-                            src={calibrationResult.rectifiedPreview} 
-                            alt="Rectified preview with template overlay" 
-                            className="w-full h-full object-contain"
-                            data-testid="img-rectified-preview"
+                        {calibrationResult?.rectifiedPreview && templatesWithCategories.length > 0 ? (
+                          <RectifiedPreviewCanvas
+                            baseImage={calibrationResult.rectifiedPreview}
+                            templates={adjustedTemplates.length > 0 ? adjustedTemplates : templatesWithCategories}
+                            paperWidthCm={paperDimensions.width}
+                            paperHeightCm={paperDimensions.height}
+                            onTemplatesAdjusted={(templates) => {
+                              setAdjustedTemplates(templates);
+                              setHasTemplateAdjustments(true);
+                            }}
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex flex-col items-center justify-center p-6 text-center">
@@ -820,11 +843,6 @@ export default function Calibration() {
                           </div>
                         )}
                       </div>
-                    </div>
-                    <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded">
-                      <p className="text-xs text-muted-foreground">
-                        ℹ️ Verify that the tool outlines (magenta rectangles) align with your physical tool layout. If they don't align, the QR codes may be in the wrong positions.
-                      </p>
                     </div>
                   </div>
                   );
