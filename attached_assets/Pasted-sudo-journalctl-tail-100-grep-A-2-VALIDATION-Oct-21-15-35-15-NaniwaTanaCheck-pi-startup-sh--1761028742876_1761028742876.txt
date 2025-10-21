@@ -1,0 +1,48 @@
+sudo journalctl | tail -100 | grep -A 2 "VALIDATION"
+Oct 21 15:35:15 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Starting validation for camera /dev/video0 in mode 'visible'
+Oct 21 15:35:15 NaniwaTanaCheck pi-startup.sh[35399]: [VALIDATION] Opening camera
+Oct 21 15:35:15 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Camera resolution: 1920x1080
+Oct 21 15:35:15 NaniwaTanaCheck pi-startup.sh[35399]: [VALIDATION] Warming up camera (discarding first 2 frames)
+Oct 21 15:35:16 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Capturing 5 frames for sharpness analysis
+Oct 21 15:35:16 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Frame 1/5 captured, sharpness=579.24
+Oct 21 15:35:16 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Frame 2/5 captured, sharpness=533.81
+Oct 21 15:35:16 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Frame 3/5 captured, sharpness=512.36
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Frame 4/5 captured, sharpness=513.31
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Frame 5/5 captured, sharpness=506.62
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Camera released, captured 5 frames
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Selected frame 1/5 with sharpness 579.24
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Saved raw captured frame to: /home/naniwa/ShelfEye/debug_images/validation_raw_frame.jpg
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: [VALIDATION] Received parameters:
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]:   - Homography matrix: Yes
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]:   - Camera matrix: Yes
+--
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: [VALIDATION] Parsed calibration data. Found 7 expected slots
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: Skipping undistortion (all coefficients are zero)
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: Using paper-based output size: 4455x2100 (89.1x42.0 cm) @ 50px/cm
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Saved rectified view to: /home/naniwa/ShelfEye/debug_images/validation_rectified_debug.jpg
+Oct 21 15:35:17 NaniwaTanaCheck pi-startup.sh[35399]: [VALIDATION] Starting QR code detection...
+Oct 21 15:35:19 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: QR detected via pyzbar_binary_127_x1.0: 5x5-002
+Oct 21 15:35:23 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: QR detected via pyzbar_binary_100_x1.0: pen-003
+--
+Oct 21 15:36:48 NaniwaTanaCheck pi-startup.sh[35399]: [Validation] Python stderr: [VALIDATION] Found 5 QR codes total
+Oct 21 15:36:48 NaniwaTanaCheck pi-startup.sh[35399]:   - 5x5-002 at (1177.0, 1391.0) via pyzbar_binary_127_x1.0
+Oct 21 15:36:48 NaniwaTanaCheck pi-startup.sh[35399]:   - pen-003 at (2222.5, 813.0) via pyzbar_binary_100_x1.0
+--
+Oct 21 15:36:48 NaniwaTanaCheck pi-startup.sh[35399]: [VALIDATION] Summary:
+Oct 21 15:36:48 NaniwaTanaCheck pi-startup.sh[35399]:   - Success: False
+Oct 21 15:36:48 NaniwaTanaCheck pi-startup.sh[35399]:   - Expected visible: 7
+naniwa@NaniwaTanaCheck:~ $ ls -lh ~/ShelfEye/debug_images/
+total 1.6M
+-rw-rw-r-- 1 naniwa naniwa  46K Oct 21 11:19 roi_5x5-001.jpg
+-rw-rw-r-- 1 naniwa naniwa  44K Oct 21 11:19 roi_5x5-002.jpg
+-rw-rw-r-- 1 naniwa naniwa  41K Oct 21 11:19 roi_5x5-003.jpg
+-rw-rw-r-- 1 naniwa naniwa  51K Oct 21 11:19 roi_pen-001.jpg
+-rw-rw-r-- 1 naniwa naniwa  88K Oct 21 11:19 roi_pen-002_adaptive.jpg
+-rw-rw-r-- 1 naniwa naniwa  47K Oct 21 11:19 roi_pen-002.jpg
+-rw-rw-r-- 1 naniwa naniwa  32K Oct 21 11:19 roi_pen-002_thresh.jpg
+-rw-rw-r-- 1 naniwa naniwa  83K Oct 21 11:19 roi_pen-003_adaptive.jpg
+-rw-rw-r-- 1 naniwa naniwa  48K Oct 21 11:19 roi_pen-003.jpg
+-rw-rw-r-- 1 naniwa naniwa  33K Oct 21 11:19 roi_pen-003_thresh.jpg
+-rw-rw-r-- 1 naniwa naniwa  47K Oct 21 11:19 roi_pen-004.jpg
+-rw-rw-r-- 1 naniwa naniwa 219K Oct 21 15:35 validation_raw_frame.jpg
+-rw-r--r-- 1 naniwa naniwa 772K Oct 21 15:35 validation_rectified_debug.jpg
