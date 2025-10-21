@@ -144,7 +144,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       lockAcquired = true;
 
       // Turn on LED light for consistent illumination during calibration (unified controller)
-      await setWhiteLight();
+      console.log('[Calibration] Turning on white LED light...');
+      const ledResult = await setWhiteLight();
+      console.log('[Calibration] LED white light result:', ledResult);
       
       // Small delay to ensure LED process completes and releases stdout
       await new Promise(resolve => setTimeout(resolve, 100));
