@@ -90,6 +90,14 @@ export default function Calibration() {
   const { data: dbTemplateRectangles } = useQuery<any[]>({
     queryKey: ['/api/template-rectangles', { paperSize: paperSizeForQuery }],
     enabled: calibrationStep >= 1 && !!paperSizeForQuery,
+    queryFn: async () => {
+      console.log('[CalibrationOverlay] Fetching templates for paper size:', paperSizeForQuery);
+      const response = await fetch(`/api/template-rectangles?paperSize=${paperSizeForQuery}`);
+      const data = await response.json();
+      console.log('[CalibrationOverlay] DB templates loaded:', data.length, 'templates');
+      console.log('[CalibrationOverlay] First template:', data[0]);
+      return data;
+    },
   });
 
   // Load saved template designs from localStorage on mount
