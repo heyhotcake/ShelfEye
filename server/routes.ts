@@ -372,6 +372,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { adjustedTemplates, paperSize } = req.body;
       
+      // Validate adjusted templates payload
+      if (!adjustedTemplates || !Array.isArray(adjustedTemplates) || adjustedTemplates.length === 0) {
+        return res.status(400).json({ message: "Invalid adjusted templates: must be a non-empty array" });
+      }
+      
+      // Validate each template has required numeric fields
+      for (const template of adjustedTemplates) {
+        if (typeof template.xCm !== 'number' || typeof template.yCm !== 'number' || 
+            typeof template.widthCm !== 'number' || typeof template.heightCm !== 'number') {
+          return res.status(400).json({ 
+            message: "Invalid template data: xCm, yCm, widthCm, and heightCm must be numbers" 
+          });
+        }
+      }
+      
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
         return res.status(404).json({ message: "Camera not found" });
@@ -398,8 +413,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const previewArgs = [
         path.join(process.cwd(), 'python', 'rectified_preview.py'),
-        '--camera', camera.index?.toString() || '0',
-        '--resolution', `${camera.width}x${camera.height}`,
+        '--camera', camera.deviceIndex?.toString() || '0',
+        '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', camera.homographyMatrix.join(','),
         '--output-size', '1200x600',
         '--templates', JSON.stringify(templatesForPython),

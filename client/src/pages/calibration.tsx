@@ -240,6 +240,30 @@ export default function Calibration() {
     },
   });
 
+  const verifyAdjustedPositionsMutation = useMutation({
+    mutationFn: ({ cameraId, adjustedTemplates, paperSize }: { cameraId: string; adjustedTemplates: any[]; paperSize: string }) => {
+      return apiRequest('POST', `/api/calibrate/${cameraId}/verify-positions`, { adjustedTemplates, paperSize });
+    },
+    onSuccess: async (response) => {
+      const data = await response.json();
+      if (data.ok && data.rectifiedPreview) {
+        // Update the calibration result with the new verified preview
+        setCalibrationResult(prev => prev ? { ...prev, rectifiedPreview: data.rectifiedPreview } : null);
+        toast({
+          title: "Verification Complete",
+          description: "Preview regenerated with adjusted coordinates. Verify the alignment matches your expectations.",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Failed to regenerate preview with adjusted positions.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const validateQRsVisibleMutation = useMutation({
     mutationFn: (cameraId: string) => {
       // Lock camera BEFORE starting validation to stop preview polling
@@ -647,6 +671,30 @@ export default function Calibration() {
                             <strong>Step 2:</strong> Verify template alignment below in the rectified preview. Check that tool outlines match your physical layout. {hasTemplateAdjustments && <span className="text-green-600 font-semibold">Adjustments detected - they will be saved when you proceed.</span>}
                           </p>
                         </div>
+                        
+                        {/* Verify button - appears when adjustments are made */}
+                        {hasTemplateAdjustments && adjustedTemplates.length > 0 && activeCamera && (
+                          <Button 
+                            variant="outline"
+                            className="w-full border-amber-500/50 hover:bg-amber-500/10"
+                            onClick={() => {
+                              const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+                              if (selectedDesign && activeCamera) {
+                                verifyAdjustedPositionsMutation.mutate({
+                                  cameraId: activeCamera.id,
+                                  adjustedTemplates: adjustedTemplates,
+                                  paperSize: selectedDesign.paperSize
+                                });
+                              }
+                            }}
+                            disabled={verifyAdjustedPositionsMutation.isPending}
+                            data-testid="button-verify-adjusted-positions"
+                          >
+                            <Ruler className="w-4 h-4 mr-2" />
+                            {verifyAdjustedPositionsMutation.isPending ? 'Verifying...' : 'Verify Adjusted Positions (Re-run with new coordinates)'}
+                          </Button>
+                        )}
+                        
                         <Button 
                           className="w-full"
                           onClick={async () => {
