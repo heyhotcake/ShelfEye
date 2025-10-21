@@ -485,6 +485,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Diagnostic endpoint to show current slot coordinates (for debugging)
+  app.get("/api/slots/diagnostic/:cameraId", async (req, res) => {
+    try {
+      const { cameraId } = req.params;
+      const slots = await storage.getSlotsByCamera(cameraId);
+      
+      const diagnosticData = {
+        cameraId,
+        slotCount: slots.length,
+        slots: slots.map(slot => ({
+          id: slot.expectedQrId,
+          toolName: slot.toolName,
+          xCm: slot.xCm,
+          yCm: slot.yCm,
+          widthCm: slot.widthCm,
+          heightCm: slot.heightCm,
+          rotation: slot.rotationDeg || 0
+        }))
+      };
+      
+      res.json(diagnosticData);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
   // Two-step calibration validation routes
   app.post("/api/calibrate/:cameraId/validate-qrs-visible", async (req, res) => {
     const { cameraId } = req.params;
@@ -520,16 +546,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Prepare expected slots data with full geometry for spatial validation and overlay
+      // IMPORTANT: These coordinates come from the DATABASE which contains ADJUSTED coordinates after save
       const expectedSlots = slots.map(slot => ({
         id: slot.expectedQrId, // This matches the 'id' field in QR payload
         slotId: slot.slotId,
         toolName: slot.toolName,
-        x: slot.xCm, // Center position in cm
+        x: slot.xCm, // Center position in cm (FROM DATABASE - ADJUSTED if saved)
         y: slot.yCm,
         width: slot.widthCm, // Dimensions in cm
         height: slot.heightCm,
         rotation: slot.rotationDeg || 0 // Rotation in degrees
       }));
+      
+      console.log(`[Validation] ====== SLOT COORDINATES BEING USED FOR VALIDATION ======`);
+      expectedSlots.forEach((slot, idx) => {
+        console.log(`[Validation] ${idx + 1}. ${slot.id} (${slot.toolName}): x=${slot.x.toFixed(2)}cm, y=${slot.y.toFixed(2)}cm, size=${slot.width}x${slot.height}cm, rot=${slot.rotation}°`);
+      });
+      console.log(`[Validation] ==================================================`);
 
       // Acquire exclusive camera lock AFTER validation succeeds
       // This includes a 10-second delay to ensure any preview process has fully released the camera
@@ -703,16 +736,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Prepare expected slots data with full geometry for spatial validation and overlay
+      // IMPORTANT: These coordinates come from the DATABASE which contains ADJUSTED coordinates after save
       const expectedSlots = slots.map(slot => ({
         id: slot.expectedQrId, // This matches the 'id' field in QR payload
         slotId: slot.slotId,
         toolName: slot.toolName,
-        x: slot.xCm, // Center position in cm
+        x: slot.xCm, // Center position in cm (FROM DATABASE - ADJUSTED if saved)
         y: slot.yCm,
         width: slot.widthCm, // Dimensions in cm
         height: slot.heightCm,
         rotation: slot.rotationDeg || 0 // Rotation in degrees
       }));
+      
+      console.log(`[Validation] ====== SLOT COORDINATES BEING USED FOR VALIDATION ======`);
+      expectedSlots.forEach((slot, idx) => {
+        console.log(`[Validation] ${idx + 1}. ${slot.id} (${slot.toolName}): x=${slot.x.toFixed(2)}cm, y=${slot.y.toFixed(2)}cm, size=${slot.width}x${slot.height}cm, rot=${slot.rotation}°`);
+      });
+      console.log(`[Validation] ==================================================`);
 
       // Acquire exclusive camera lock AFTER validation succeeds
       // This includes a 10-second delay to ensure any preview process has fully released the camera
