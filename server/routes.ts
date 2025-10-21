@@ -1841,11 +1841,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[API] PUT /api/template-rectangles/${req.params.id}`, req.body);
       const updates = insertTemplateRectangleSchema.partial().parse(req.body);
       const rectangle = await storage.updateTemplateRectangle(req.params.id, updates);
-      console.log(`[API] Updated template rectangle:`, { id: rectangle.id, autoQrId: rectangle.autoQrId, xCm: rectangle.xCm, yCm: rectangle.yCm });
       
       if (!rectangle) {
         return res.status(404).json({ message: "Template rectangle not found" });
       }
+      
+      console.log(`[API] Updated template rectangle:`, { id: rectangle.id, autoQrId: rectangle.autoQrId, xCm: rectangle.xCm, yCm: rectangle.yCm });
       
       res.json(rectangle);
     } catch (error) {

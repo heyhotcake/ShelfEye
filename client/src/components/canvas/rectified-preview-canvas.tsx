@@ -44,6 +44,12 @@ export function RectifiedPreviewCanvas({
   const [adjustedTemplates, setAdjustedTemplates] = useState<TemplateRect[]>(templates);
   const [hasAdjustments, setHasAdjustments] = useState(false);
 
+  // Sync adjustedTemplates when templates prop changes (e.g., when DB templates are loaded)
+  useEffect(() => {
+    setAdjustedTemplates(templates);
+    setHasAdjustments(false);
+  }, [templates]);
+
   // Load base image
   useEffect(() => {
     const img = new Image();
