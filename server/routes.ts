@@ -354,8 +354,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
 
-              // Note: last_calibration_* configs are now saved only after ALL 3 stages complete
-              // (in validate-qrs-covered endpoint), not here after just ArUco calibration
+              // Save paper size format immediately after ArUco calibration succeeds
+              // This ensures it's available for validation steps 2 and 3
+              await storage.setConfig('last_calibration_paper_size_format', paperSizeFormat, 'Last calibration paper size format (e.g., 6-page-3x2)');
+              console.log('[Calibration] Saved paper size format to config:', paperSizeFormat);
 
               const response: any = {
                 ok: true,
