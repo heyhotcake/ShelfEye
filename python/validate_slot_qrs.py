@@ -14,35 +14,54 @@ import argparse
 from pyzbar import pyzbar
 
 def decode_qr_codes(image):
-    """Decode all QR codes in image with preprocessing for better detection"""
+    """Decode all QR codes in image with preprocessing and multi-scale detection"""
     results = []
     
     # Initialize OpenCV QR detector as fallback
     opencv_detector = cv2.QRCodeDetector()
     
-    # Try multiple preprocessing techniques to improve detection
-    preprocessing_methods = [
-        ('original', image),
-        ('grayscale', cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image),
-    ]
-    
-    # Add adaptive thresholding on grayscale
+    # Convert to grayscale once
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
-    adaptive_thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-    preprocessing_methods.append(('adaptive_threshold', adaptive_thresh))
     
-    # Add inverted binary threshold (helps with certain lighting)
-    _, binary_inv = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
-    preprocessing_methods.append(('inverted_binary', binary_inv))
+    # Try multiple scales for better detection of small QRs
+    scales = [1.0, 1.5, 2.0]  # Original, 1.5x, and 2x upscale
     
-    # Add Otsu-based inverted threshold (more robust across lighting conditions)
-    _, otsu_inv = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    preprocessing_methods.append(('otsu_inverted', otsu_inv))
-    
-    # Add contrast enhancement
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-    enhanced = clahe.apply(gray)
-    preprocessing_methods.append(('enhanced', enhanced))
+    for scale in scales:
+        if scale != 1.0:
+            # Upscale for better small QR detection
+            scaled_width = int(gray.shape[1] * scale)
+            scaled_height = int(gray.shape[0] * scale)
+            scaled_gray = cv2.resize(gray, (scaled_width, scaled_height), interpolation=cv2.INTER_CUBIC)
+            scaled_color = cv2.resize(image, (scaled_width, scaled_height), interpolation=cv2.INTER_CUBIC) if len(image.shape) == 3 else scaled_gray
+        else:
+            scaled_gray = gray
+            scaled_color = image
+        
+        # Try multiple preprocessing techniques at each scale
+        preprocessing_methods = [
+            ('original', scaled_color),
+            ('grayscale', scaled_gray),
+        ]
+        
+        # Add adaptive thresholding
+        adaptive_thresh = cv2.adaptiveThreshold(scaled_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        preprocessing_methods.append(('adaptive_threshold', adaptive_thresh))
+        
+        # Add binary threshold
+        _, binary_thresh = cv2.threshold(scaled_gray, 127, 255, cv2.THRESH_BINARY)
+        preprocessing_methods.append(('binary_threshold', binary_thresh))
+        
+        # Add sharpening for blurry QRs
+        kernel = np.array([[-1,-1,-1],
+                          [-1, 9,-1],
+                          [-1,-1,-1]])
+        sharpened = cv2.filter2D(scaled_gray, -1, kernel)
+        preprocessing_methods.append(('sharpened', sharpened))
+        
+        # Add contrast enhancement
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        enhanced = clahe.apply(scaled_gray)
+        preprocessing_methods.append(('enhanced', enhanced))
     
     # Track which QR codes we've already found (by data) to avoid duplicates
     found_qr_data = set()
@@ -286,8 +305,9 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     
     # Calculate output size based on paper dimensions (if provided)
     if paper_width_cm and paper_height_cm:
-        # Increased from 40 to 80 for much better QR detection at 30mm size
-        pixels_per_cm = 80  # Higher resolution prevents module blur
+        # Increased from 40 to 160 for much better QR detection at 30mm size
+        # At 160 px/cm, a 30mm QR gets 48 pixels instead of just 24
+        pixels_per_cm = 160  # Double resolution for better detection
         output_width = int(paper_width_cm * pixels_per_cm)
         output_height = int(paper_height_cm * pixels_per_cm)
         print(f"Using paper-based output size: {output_width}x{output_height} ({paper_width_cm}x{paper_height_cm} cm) @ {pixels_per_cm}px/cm", file=sys.stderr)
