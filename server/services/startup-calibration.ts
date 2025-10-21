@@ -73,6 +73,9 @@ export class StartupCalibrationService {
     return new Promise(async (resolve) => {
       // Turn on LED light for consistent illumination during calibration (unified controller)
       await setWhiteLight();
+      
+      // Small delay to ensure LED process completes and releases stdout
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Get paper dimensions from format
       const { getPaperDimensions } = await import('../utils/paper-size.js');
