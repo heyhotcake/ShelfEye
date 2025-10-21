@@ -17,6 +17,9 @@ def decode_qr_codes(image):
     """Decode all QR codes in image with preprocessing for better detection"""
     results = []
     
+    # Initialize OpenCV QR detector as fallback
+    opencv_detector = cv2.QRCodeDetector()
+    
     # Try multiple preprocessing techniques to improve detection
     preprocessing_methods = [
         ('original', image),
@@ -28,6 +31,14 @@ def decode_qr_codes(image):
     adaptive_thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
     preprocessing_methods.append(('adaptive_threshold', adaptive_thresh))
     
+    # Add inverted binary threshold (helps with certain lighting)
+    _, binary_inv = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+    preprocessing_methods.append(('inverted_binary', binary_inv))
+    
+    # Add Otsu-based inverted threshold (more robust across lighting conditions)
+    _, otsu_inv = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    preprocessing_methods.append(('otsu_inverted', otsu_inv))
+    
     # Add contrast enhancement
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
     enhanced = clahe.apply(gray)
@@ -36,6 +47,7 @@ def decode_qr_codes(image):
     # Track which QR codes we've already found (by data) to avoid duplicates
     found_qr_data = set()
     
+    # First pass: Try pyzbar on all preprocessing methods
     for method_name, processed_image in preprocessing_methods:
         qr_codes = pyzbar.decode(processed_image)
         
@@ -55,9 +67,50 @@ def decode_qr_codes(image):
                 'rect': {'x': x, 'y': y, 'width': w, 'height': h},
                 'polygon': [(point.x, point.y) for point in qr.polygon],
                 'center': (x + w / 2, y + h / 2),  # QR code center position
-                'detection_method': method_name
+                'detection_method': f'pyzbar_{method_name}'
             })
-            print(f"QR detected via {method_name}: {data}", file=sys.stderr)
+            print(f"QR detected via pyzbar_{method_name}: {data}", file=sys.stderr)
+    
+    # Second pass: Try OpenCV QRCodeDetector as fallback (can detect multiple QRs)
+    for method_name, processed_image in preprocessing_methods:
+        try:
+            # Use detectAndDecodeMulti to find all QR codes in the image
+            ok, decoded_info, points, _ = opencv_detector.detectAndDecodeMulti(processed_image)
+            
+            if ok and decoded_info:
+                for i, data in enumerate(decoded_info):
+                    if data and data not in found_qr_data:
+                        found_qr_data.add(data)
+                        
+                        # Calculate bounding box center from points
+                        if points is not None and i < len(points):
+                            # Reshape points to ensure correct format: [[x,y], [x,y], ...]
+                            pts = np.array(points[i]).reshape(-1, 2).astype(int)
+                            x_coords = pts[:, 0]
+                            y_coords = pts[:, 1]
+                            x, y = int(x_coords.min()), int(y_coords.min())
+                            w, h = int(x_coords.max() - x), int(y_coords.max() - y)
+                            center = (x + w / 2, y + h / 2)
+                            polygon = [(int(p[0]), int(p[1])) for p in pts]
+                        else:
+                            # Fallback if bbox not available
+                            h_img, w_img = processed_image.shape[:2]
+                            x, y, w, h = 0, 0, w_img, h_img
+                            center = (w_img / 2, h_img / 2)
+                            polygon = []
+                        
+                        results.append({
+                            'data': data,
+                            'type': 'QRCODE',
+                            'rect': {'x': x, 'y': y, 'width': w, 'height': h},
+                            'polygon': polygon,
+                            'center': center,
+                            'detection_method': f'opencv_{method_name}'
+                        })
+                        print(f"QR detected via opencv_{method_name}: {data}", file=sys.stderr)
+        except Exception as e:
+            # OpenCV decoder may fail on some images, continue to next method
+            pass
     
     return results
 
@@ -119,15 +172,39 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
     
-    # Capture frame
-    ret, frame = cap.read()
+    # Set buffer size to 1 to avoid stale frames
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    
+    # Warm-up: Discard first 2 frames to let AE stabilize
+    for _ in range(2):
+        cap.read()
+    
+    # Capture multiple frames and select the sharpest (reduces motion blur and AE instability)
+    num_frames = 5
+    frames = []
+    sharpness_scores = []
+    
+    for i in range(num_frames):
+        ret, frame = cap.read()
+        if ret:
+            # Calculate sharpness using Laplacian variance (higher = sharper)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
+            frames.append(frame)
+            sharpness_scores.append(sharpness)
+    
     cap.release()
     
-    if not ret:
+    if not frames:
         return {
             'success': False,
-            'error': 'Failed to capture frame'
+            'error': 'Failed to capture any frames'
         }
+    
+    # Select the sharpest frame
+    best_frame_idx = np.argmax(sharpness_scores)
+    frame = frames[best_frame_idx]
+    print(f"Selected frame {best_frame_idx+1}/{num_frames} with sharpness {sharpness_scores[best_frame_idx]:.2f}", file=sys.stderr)
     
     # Apply lens distortion correction if camera calibration parameters provided
     # Skip undistortion if all distortion coefficients are zero (to avoid interpolation artifacts)
@@ -146,11 +223,11 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     
     # Calculate output size based on paper dimensions (if provided)
     if paper_width_cm and paper_height_cm:
-        # Use same pixels-per-cm as rectified preview
-        pixels_per_cm = 40  # Higher resolution for better QR detection
+        # Increased from 40 to 80 for much better QR detection at 30mm size
+        pixels_per_cm = 80  # Higher resolution prevents module blur
         output_width = int(paper_width_cm * pixels_per_cm)
         output_height = int(paper_height_cm * pixels_per_cm)
-        print(f"Using paper-based output size: {output_width}x{output_height} ({paper_width_cm}x{paper_height_cm} cm)", file=sys.stderr)
+        print(f"Using paper-based output size: {output_width}x{output_height} ({paper_width_cm}x{paper_height_cm} cm) @ {pixels_per_cm}px/cm", file=sys.stderr)
         
         # Build transformation matrix like rectified_preview.py
         scale_x = output_width / paper_width_cm
@@ -169,13 +246,15 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
         # Combined warp: camera_pixel → cm → output_pixel
         M = S @ H_inv
         
-        rectified = cv2.warpPerspective(frame, M, (output_width, output_height))
+        # Use INTER_NEAREST to avoid blurring QR code modules during warping
+        rectified = cv2.warpPerspective(frame, M, (output_width, output_height), flags=cv2.INTER_NEAREST)
     else:
         # Fallback to camera resolution (use H directly - legacy behavior)
         h, w = frame.shape[:2]
         output_width, output_height = w, h
         print(f"Using camera resolution as output size: {output_width}x{output_height}", file=sys.stderr)
-        rectified = cv2.warpPerspective(frame, H, (output_width, output_height))
+        # Use INTER_NEAREST here too to avoid QR module blur
+        rectified = cv2.warpPerspective(frame, H, (output_width, output_height), flags=cv2.INTER_NEAREST)
     
     # Draw template slot overlays on rectified image (for visual verification)
     debug_image = rectified.copy()
