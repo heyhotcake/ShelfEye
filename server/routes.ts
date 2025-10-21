@@ -392,8 +392,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Camera not found" });
       }
       
-      if (!camera.homographyMatrix) {
-        return res.status(400).json({ message: "Camera not calibrated. Run ArUco calibration first." });
+      if (!camera.homographyMatrix || !Array.isArray(camera.homographyMatrix) || camera.homographyMatrix.length !== 9) {
+        console.error('[VerifyPositions] Invalid homography matrix:', camera.homographyMatrix);
+        return res.status(400).json({ message: "Camera not calibrated or homography matrix is invalid. Run ArUco calibration first." });
       }
       
       // Get paper dimensions from format
@@ -411,11 +412,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         categoryName: t.categoryName || t.autoQrId || 'Tool'
       }));
       
+      const homographyString = camera.homographyMatrix.join(',');
+      console.log('[VerifyPositions] Camera info:', {
+        deviceIndex: camera.deviceIndex,
+        resolution: camera.resolution,
+        homographyLength: camera.homographyMatrix.length,
+        homographyString: homographyString.substring(0, 50) + '...'
+      });
+      
       const previewArgs = [
         path.join(process.cwd(), 'python', 'rectified_preview.py'),
         '--camera', camera.deviceIndex?.toString() || '0',
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
-        '--homography', camera.homographyMatrix.join(','),
+        '--homography', homographyString,
         '--output-size', '1200x600',
         '--templates', JSON.stringify(templatesForPython),
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,

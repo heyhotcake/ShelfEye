@@ -701,33 +701,15 @@ export default function Calibration() {
                             // Save adjusted template positions if any
                             if (hasTemplateAdjustments && adjustedTemplates.length > 0) {
                               try {
-                                // Update localStorage design
                                 const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
                                 if (selectedDesign) {
-                                  // Update template rectangles with adjusted positions
-                                  const updatedRectangles = selectedDesign.templateRectangles.map((rect: any) => {
-                                    const adjusted = adjustedTemplates.find(t => t.autoQrId === rect.autoQrId);
-                                    if (adjusted) {
-                                      return { ...rect, xCm: adjusted.xCm, yCm: adjusted.yCm };
-                                    }
-                                    return rect;
-                                  });
-                                  
-                                  // Update design in localStorage
-                                  const updatedDesign = { ...selectedDesign, templateRectangles: updatedRectangles };
-                                  const updatedDesigns = savedTemplateDesigns.map(d => 
-                                    d.timestamp === selectedTemplate ? updatedDesign : d
-                                  );
-                                  localStorage.setItem('templateConfigVersions', JSON.stringify(updatedDesigns));
-                                  setSavedTemplateDesigns(updatedDesigns);
-                                  
                                   // Fetch actual database template rectangles by paper size
                                   const paperSize = selectedDesign.paperSize;
                                   const dbRectsResponse = await fetch(`/api/template-rectangles?paperSize=${paperSize}`);
                                   if (dbRectsResponse.ok) {
                                     const dbRects = await dbRectsResponse.json();
                                     
-                                    // Match adjusted templates to database rectangles by autoQrId
+                                    // Match adjusted templates to database rectangles by autoQrId and update DB
                                     for (const adjusted of adjustedTemplates) {
                                       const dbRect = dbRects.find((r: any) => r.autoQrId === adjusted.autoQrId);
                                       if (dbRect) {
@@ -738,19 +720,39 @@ export default function Calibration() {
                                       }
                                     }
                                     
+                                    // Only update localStorage AFTER database save succeeds
+                                    const updatedRectangles = selectedDesign.templateRectangles.map((rect: any) => {
+                                      const adjusted = adjustedTemplates.find(t => t.autoQrId === rect.autoQrId);
+                                      if (adjusted) {
+                                        return { ...rect, xCm: adjusted.xCm, yCm: adjusted.yCm };
+                                      }
+                                      return rect;
+                                    });
+                                    
+                                    const updatedDesign = { ...selectedDesign, templateRectangles: updatedRectangles };
+                                    const updatedDesigns = savedTemplateDesigns.map(d => 
+                                      d.timestamp === selectedTemplate ? updatedDesign : d
+                                    );
+                                    localStorage.setItem('templateConfigVersions', JSON.stringify(updatedDesigns));
+                                    setSavedTemplateDesigns(updatedDesigns);
+                                    
                                     toast({
                                       title: "Positions Saved",
-                                      description: `Updated ${adjustedTemplates.length} template positions in database.`,
+                                      description: `Updated ${adjustedTemplates.length} template positions in database and localStorage.`,
                                     });
+                                  } else {
+                                    throw new Error('Failed to fetch database template rectangles');
                                   }
                                 }
                               } catch (error) {
                                 console.error('Failed to save adjusted positions:', error);
                                 toast({
                                   title: "Save Failed",
-                                  description: "Failed to save adjusted positions. Proceeding anyway.",
+                                  description: "Failed to save adjusted positions. LocalStorage NOT updated to prevent inconsistency.",
                                   variant: "destructive",
                                 });
+                                // Don't proceed if save failed
+                                return;
                               }
                             }
                             
