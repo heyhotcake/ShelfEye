@@ -644,18 +644,64 @@ export default function Calibration() {
                       <div className="space-y-2">
                         <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 2:</strong> Verify template alignment below in the rectified preview. Check that tool outlines match your physical layout. If alignment is correct, proceed to QR validation.
+                            <strong>Step 2:</strong> Verify template alignment below in the rectified preview. Check that tool outlines match your physical layout. {hasTemplateAdjustments && <span className="text-green-600 font-semibold">Adjustments detected - they will be saved when you proceed.</span>}
                           </p>
                         </div>
                         <Button 
                           className="w-full"
-                          onClick={() => {
+                          onClick={async () => {
+                            // Save adjusted template positions if any
+                            if (hasTemplateAdjustments && adjustedTemplates.length > 0) {
+                              try {
+                                // Update localStorage design
+                                const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+                                if (selectedDesign) {
+                                  // Update template rectangles with adjusted positions
+                                  const updatedRectangles = selectedDesign.templateRectangles.map((rect: any) => {
+                                    const adjusted = adjustedTemplates.find(t => t.id === rect.id);
+                                    if (adjusted) {
+                                      return { ...rect, xCm: adjusted.xCm, yCm: adjusted.yCm };
+                                    }
+                                    return rect;
+                                  });
+                                  
+                                  // Update design in localStorage
+                                  const updatedDesign = { ...selectedDesign, templateRectangles: updatedRectangles };
+                                  const updatedDesigns = savedTemplateDesigns.map(d => 
+                                    d.timestamp === selectedTemplate ? updatedDesign : d
+                                  );
+                                  localStorage.setItem('templateConfigVersions', JSON.stringify(updatedDesigns));
+                                  setSavedTemplateDesigns(updatedDesigns);
+                                  
+                                  // Update database template rectangles
+                                  for (const adjusted of adjustedTemplates) {
+                                    await apiRequest('PUT', `/api/template-rectangles/${adjusted.id}`, {
+                                      xCm: adjusted.xCm,
+                                      yCm: adjusted.yCm,
+                                    });
+                                  }
+                                  
+                                  toast({
+                                    title: "Positions Saved",
+                                    description: `Updated ${adjustedTemplates.length} template positions.`,
+                                  });
+                                }
+                              } catch (error) {
+                                console.error('Failed to save adjusted positions:', error);
+                                toast({
+                                  title: "Save Failed",
+                                  description: "Failed to save adjusted positions. Proceeding anyway.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }
+                            
                             setCalibrationStep(2); // Move to QR validation step
                           }}
                           data-testid="button-proceed-qr-validation"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          Proceed to QR Validation
+                          {hasTemplateAdjustments ? 'Save Adjustments & Proceed to QR Validation' : 'Proceed to QR Validation'}
                         </Button>
                       </div>
                     )}
