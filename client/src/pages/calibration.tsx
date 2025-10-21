@@ -88,7 +88,7 @@ export default function Calibration() {
   const selectedDesignForQuery = savedTemplateDesigns.find(d => d.timestamp === selectedTemplate);
   const paperSizeForQuery = selectedDesignForQuery?.paperSize || '6-page-3x2';
   const { data: dbTemplateRectangles } = useQuery<any[]>({
-    queryKey: ['/api/template-rectangles', { paperSize: paperSizeForQuery }],
+    queryKey: ['/api/template-rectangles', paperSizeForQuery], // Fixed: use string instead of object
     enabled: calibrationStep >= 1 && !!paperSizeForQuery,
     queryFn: async () => {
       console.log('[CalibrationOverlay] Fetching templates for paper size:', paperSizeForQuery);
