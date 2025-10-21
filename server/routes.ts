@@ -526,7 +526,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let error = '';
       let responseSent = false;
       
+      // Set timeout for validation (10 minutes max for high-res processing)
+      const validationTimeout = setTimeout(async () => {
+        if (!responseSent) {
+          responseSent = true;
+          clearTimeout(validationTimeout);
+          pythonProcess.kill('SIGTERM'); // Try graceful termination first
+          setTimeout(() => pythonProcess.kill('SIGKILL'), 5000); // Force kill after 5s if still running
+          if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
+          lockAcquired = false;
+          await turnOffLED();
+          console.error('[Validation] Process timed out after 10 minutes');
+          res.status(408).json({ 
+            message: "Validation timed out. Process took longer than expected (>10 minutes).",
+            error: "Timeout - validation process exceeded 600 seconds"
+          });
+        }
+      }, 600000); // 10 minutes in milliseconds
+      
       pythonProcess.on('error', async (err) => {
+        clearTimeout(validationTimeout);
         if (!responseSent) {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
@@ -548,6 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       pythonProcess.on('close', (code) => {
+        clearTimeout(validationTimeout);
         if (responseSent) return;
         
         try {
@@ -693,7 +713,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let error = '';
       let responseSent = false;
       
+      // Set timeout for validation (10 minutes max for high-res processing)
+      const validationTimeout = setTimeout(async () => {
+        if (!responseSent) {
+          responseSent = true;
+          clearTimeout(validationTimeout);
+          pythonProcess.kill('SIGTERM'); // Try graceful termination first
+          setTimeout(() => pythonProcess.kill('SIGKILL'), 5000); // Force kill after 5s if still running
+          if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
+          lockAcquired = false;
+          await turnOffLED();
+          console.error('[Validation] Process timed out after 10 minutes (covered step)');
+          res.status(408).json({ 
+            message: "Validation timed out. Process took longer than expected (>10 minutes).",
+            error: "Timeout - validation process exceeded 600 seconds"
+          });
+        }
+      }, 600000); // 10 minutes in milliseconds
+      
       pythonProcess.on('error', async (err) => {
+        clearTimeout(validationTimeout);
         if (!responseSent) {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
@@ -715,6 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       pythonProcess.on('close', async (code) => {
+        clearTimeout(validationTimeout);
         if (responseSent) return;
         
         try {

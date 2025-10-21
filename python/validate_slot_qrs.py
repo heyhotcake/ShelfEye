@@ -18,24 +18,35 @@ from pyzbar import pyzbar
 os.environ['OPENCV_LOG_LEVEL'] = 'FATAL'
 cv2.setLogLevel(0)
 
-def decode_qr_codes(image):
-    """Decode all QR codes in image with multi-scale detection and aggressive preprocessing"""
+def decode_qr_codes(image, expected_count=None):
+    """Decode all QR codes in image with multi-scale detection and aggressive preprocessing
+    
+    Args:
+        image: Input image to scan for QR codes
+        expected_count: If provided, exit early once this many QRs are found (optimization)
+    """
     results = []
     found_qr_data = set()
     
-    # Initialize OpenCV QR detector as fallback
+    # Initialize OpenCV QR detector once (reuse across scales)
     opencv_detector = cv2.QRCodeDetector()
     
     # Convert to grayscale once
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
     
-    # Try multiple scales for better detection of small QRs
-    # With high-res camera (2560×1440), aggressive upscaling is viable
-    scales = [1.0, 1.5, 2.0, 3.0, 4.0]  # Up to 4x upscaling for 30mm QRs
+    # Optimized scales for memory efficiency on Pi 2GB
+    # Reduced from [1.0, 1.5, 2.0, 3.0, 4.0] to save ~800MB RAM
+    # 30mm at 200px/cm × 3x = 180 pixels (excellent for detection)
+    scales = [1.0, 2.0, 3.0]  # Balanced detection/memory trade-off
     
     for scale in scales:
+        # Early exit if we found all expected QRs (optimization)
+        if expected_count and len(found_qr_data) >= expected_count:
+            print(f"[DECODE] Early exit: found {len(found_qr_data)}/{expected_count} QRs at scale {scale}", file=sys.stderr)
+            break
+        
+        # Upscale image for this scale level
         if scale != 1.0:
-            # Upscale for better small QR detection
             scaled_width = int(gray.shape[1] * scale)
             scaled_height = int(gray.shape[0] * scale)
             scaled_gray = cv2.resize(gray, (scaled_width, scaled_height), interpolation=cv2.INTER_CUBIC)
@@ -44,71 +55,81 @@ def decode_qr_codes(image):
             scaled_gray = gray
             scaled_color = image
         
-        # Try multiple preprocessing techniques at each scale
-        preprocessing_methods = []
-        
-        # Original and grayscale
-        preprocessing_methods.append((f'original_x{scale}', scaled_color))
-        preprocessing_methods.append((f'grayscale_x{scale}', scaled_gray))
-        
-        # Binary threshold with multiple values
-        for thresh_val in [100, 127, 150]:
-            _, binary = cv2.threshold(scaled_gray, thresh_val, 255, cv2.THRESH_BINARY)
-            preprocessing_methods.append((f'binary_{thresh_val}_x{scale}', binary))
-        
-        # Adaptive thresholding
-        adaptive = cv2.adaptiveThreshold(scaled_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-        preprocessing_methods.append((f'adaptive_x{scale}', adaptive))
-        
-        # Sharpening for blurry QRs
-        kernel = np.array([[-1,-1,-1],
-                          [-1, 9,-1],
-                          [-1,-1,-1]])
-        sharpened = cv2.filter2D(scaled_gray, -1, kernel)
-        preprocessing_methods.append((f'sharpened_x{scale}', sharpened))
-        
-        # CLAHE contrast enhancement
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-        enhanced = clahe.apply(scaled_gray)
-        preprocessing_methods.append((f'enhanced_x{scale}', enhanced))
-        
-        # Morphological operations to clean up noise
-        kernel_morph = np.ones((3,3), np.uint8)
-        _, binary_base = cv2.threshold(scaled_gray, 127, 255, cv2.THRESH_BINARY)
-        morphed = cv2.morphologyEx(binary_base, cv2.MORPH_CLOSE, kernel_morph)
-        preprocessing_methods.append((f'morphed_x{scale}', morphed))
-        
-        # Try pyzbar on all preprocessing methods at this scale
-        for method_name, processed_image in preprocessing_methods:
+        # Helper function to try pyzbar decode and add results
+        def try_decode(img, method_name):
             try:
-                qr_codes = pyzbar.decode(processed_image)
-                
+                qr_codes = pyzbar.decode(img)
                 for qr in qr_codes:
                     data = qr.data.decode('utf-8')
-                    
-                    # Skip if we already found this QR code
-                    if data in found_qr_data:
-                        continue
-                    
-                    found_qr_data.add(data)
-                    x, y, w, h = qr.rect
-                    
-                    # Scale coordinates back to original size
-                    if scale != 1.0:
-                        x, y, w, h = int(x/scale), int(y/scale), int(w/scale), int(h/scale)
-                    
-                    results.append({
-                        'data': data,
-                        'type': qr.type,
-                        'rect': {'x': x, 'y': y, 'width': w, 'height': h},
-                        'polygon': [(int(point.x/scale), int(point.y/scale)) for point in qr.polygon],
-                        'center': (x + w / 2, y + h / 2),
-                        'detection_method': f'pyzbar_{method_name}'
-                    })
-                    print(f"QR detected via pyzbar_{method_name}: {data}", file=sys.stderr)
-            except Exception as e:
-                # Skip failed attempts silently
+                    if data not in found_qr_data:
+                        found_qr_data.add(data)
+                        x, y, w, h = qr.rect
+                        # Scale coordinates back to original size
+                        if scale != 1.0:
+                            x, y, w, h = int(x/scale), int(y/scale), int(w/scale), int(h/scale)
+                        results.append({
+                            'data': data,
+                            'type': qr.type,
+                            'rect': {'x': x, 'y': y, 'width': w, 'height': h},
+                            'polygon': [(int(point.x/scale), int(point.y/scale)) for point in qr.polygon],
+                            'center': (x + w / 2, y + h / 2),
+                            'detection_method': f'pyzbar_{method_name}'
+                        })
+                        print(f"QR detected via pyzbar_{method_name}: {data}", file=sys.stderr)
+                        
+                        # Early exit check after each QR found
+                        if expected_count and len(found_qr_data) >= expected_count:
+                            return True
+            except:
                 pass
+            return False
+        
+        # Try preprocessing methods in order, with early exit
+        # Process and discard immediately to save memory
+        
+        # 1. Original and grayscale
+        if try_decode(scaled_color, f'original_x{scale}'): continue
+        if try_decode(scaled_gray, f'grayscale_x{scale}'): continue
+        
+        # 2. Binary threshold - try most effective value first
+        _, binary_127 = cv2.threshold(scaled_gray, 127, 255, cv2.THRESH_BINARY)
+        if try_decode(binary_127, f'binary_127_x{scale}'): continue
+        del binary_127  # Free memory
+        
+        # 3. Adaptive thresholding (usually very effective)
+        adaptive = cv2.adaptiveThreshold(scaled_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        if try_decode(adaptive, f'adaptive_x{scale}'): continue
+        del adaptive
+        
+        # 4. CLAHE contrast enhancement
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        enhanced = clahe.apply(scaled_gray)
+        if try_decode(enhanced, f'enhanced_x{scale}'): continue
+        del enhanced
+        
+        # Only try additional preprocessing at scale 1.0 and 2.0 (not at 3.0 to save time/memory)
+        if scale <= 2.0:
+            # 5. Sharpening for blurry QRs
+            kernel = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]])
+            sharpened = cv2.filter2D(scaled_gray, -1, kernel)
+            if try_decode(sharpened, f'sharpened_x{scale}'): continue
+            del sharpened
+            
+            # 6. Try other binary thresholds
+            _, binary_100 = cv2.threshold(scaled_gray, 100, 255, cv2.THRESH_BINARY)
+            if try_decode(binary_100, f'binary_100_x{scale}'): continue
+            del binary_100
+            
+            _, binary_150 = cv2.threshold(scaled_gray, 150, 255, cv2.THRESH_BINARY)
+            if try_decode(binary_150, f'binary_150_x{scale}'): continue
+            del binary_150
+            
+            # 7. Morphological operations
+            kernel_morph = np.ones((3,3), np.uint8)
+            _, binary_base = cv2.threshold(scaled_gray, 127, 255, cv2.THRESH_BINARY)
+            morphed = cv2.morphologyEx(binary_base, cv2.MORPH_CLOSE, kernel_morph)
+            if try_decode(morphed, f'morphed_x{scale}'): continue
+            del morphed, binary_base
         
         # Try OpenCV detector at this scale
         if scale <= 2.0:  # Don't use OpenCV at very high scales (too slow)
@@ -142,6 +163,10 @@ def decode_qr_codes(image):
             except Exception as e:
                 # Skip OpenCV failures silently
                 pass
+        
+        # Clean up scaled images to free memory (except scale 1.0 which references original)
+        if scale != 1.0:
+            del scaled_gray, scaled_color
     
     return results
 
@@ -365,10 +390,11 @@ def validate_slot_qrs(camera_id, mode='visible'):
     print(f"[VALIDATION] Saved rectified view to: {rectified_path}", file=sys.stderr)
     sys.stderr.flush()
     
-    # Decode QR codes
+    # Decode QR codes with early exit optimization
     print(f"[VALIDATION] Starting QR code detection...", file=sys.stderr)
     sys.stderr.flush()
-    qr_results = decode_qr_codes(rectified)
+    expected_count = len(expected_slots) if expected_slots else None
+    qr_results = decode_qr_codes(rectified, expected_count=expected_count)
     print(f"[VALIDATION] Found {len(qr_results)} QR codes total", file=sys.stderr)
     sys.stderr.flush()
     
