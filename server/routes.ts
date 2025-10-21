@@ -203,11 +203,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Templates are now camera-independent - filter by paper size only
       let templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
       
-      // Further filter by template timestamp if provided (to distinguish between multiple templates with same paper size)
-      // Use a 5-minute window to allow time between saving template and running calibration
+      // Filter by template timestamp if provided (find all rectangles from the same template batch)
+      // Use a small 10-second window since rectangles are created sequentially in one batch
       if (templateTimestamp) {
         const selectedTimestamp = new Date(templateTimestamp);
-        const timeWindow = 300000; // 5 minutes in milliseconds (was 5 seconds, too strict)
+        const timeWindow = 10000; // 10 seconds - templates created in one batch are within seconds of each other
         const minTime = selectedTimestamp.getTime() - timeWindow;
         const maxTime = selectedTimestamp.getTime() + timeWindow;
         
@@ -216,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const rectTime = new Date(t.createdAt).getTime();
           return rectTime >= minTime && rectTime <= maxTime;
         });
-        console.log(`[Calibration] Filtered to ${templateRectanglesForPreview.length} templates within 5min of timestamp: ${templateTimestamp}`);
+        console.log(`[Calibration] Filtered to ${templateRectanglesForPreview.length} templates within 10s of timestamp: ${templateTimestamp}`);
       }
       const templatesWithDimensions = [];
       
@@ -321,18 +321,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Templates are now camera-independent - filter by paper size only
               let templateRectangles = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
               
-              // Further filter by template timestamp if provided (use 5-minute window to allow time between saving and calibrating)
+              // Filter by template timestamp if provided (find all rectangles from the same template batch)
+              // Use a small 10-second window since rectangles are created sequentially in one batch
               if (templateTimestamp) {
                 const selectedTimestamp = new Date(templateTimestamp);
-                const timeWindow = 300000; // 5 minutes in milliseconds (was 5 seconds, too strict)
+                const timeWindow = 10000; // 10 seconds - templates created in one batch are within seconds of each other
                 const minTime = selectedTimestamp.getTime() - timeWindow;
                 const maxTime = selectedTimestamp.getTime() + timeWindow;
                 
                 templateRectangles = templateRectangles.filter(t => {
                   if (!t.createdAt) return false;
                   const rectTime = new Date(t.createdAt).getTime();
-                  return rectTime >= minTime && rectTime <= maxTime;
+                  const inWindow = rectTime >= minTime && rectTime <= maxTime;
+                  if (!inWindow) {
+                    console.log(`[Calibration] Filtered out template created at ${t.createdAt} (outside window ${new Date(minTime).toISOString()} to ${new Date(maxTime).toISOString()})`);
+                  }
+                  return inWindow;
                 });
+                console.log(`[Calibration] Filtered to ${templateRectangles.length} templates within 10s of ${templateTimestamp}`);
               }
               const createdSlots: any[] = [];
               
@@ -901,10 +907,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Templates are now camera-independent - filter by paper size only
       let templates = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
       
-      // Further filter by template timestamp if provided (use 5-minute window to allow time between saving and calibrating)
+      // Filter by template timestamp if provided (find all rectangles from the same template batch)
+      // Use a small 10-second window since rectangles are created sequentially in one batch
       if (templateTimestamp && typeof templateTimestamp === 'string') {
         const selectedTimestamp = new Date(templateTimestamp);
-        const timeWindow = 300000; // 5 minutes in milliseconds (was 5 seconds, too strict)
+        const timeWindow = 10000; // 10 seconds - templates created in one batch are within seconds of each other
         const minTime = selectedTimestamp.getTime() - timeWindow;
         const maxTime = selectedTimestamp.getTime() + timeWindow;
         
@@ -913,7 +920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const rectTime = new Date(t.createdAt).getTime();
           return rectTime >= minTime && rectTime <= maxTime;
         });
-        console.log(`[Rectified Preview] Filtered to ${templates.length} templates within 5min of timestamp: ${templateTimestamp}`);
+        console.log(`[Rectified Preview] Filtered to ${templates.length} templates within 10s of timestamp: ${templateTimestamp}`);
       }
       
       console.log(`[Rectified Preview] Found ${templates.length} templates matching paper size: ${paperSizeFormat}`);
