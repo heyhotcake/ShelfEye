@@ -38,10 +38,10 @@ def decode_qr_codes(image, expected_count=None):
     # At 100 px/cm: 30mm QR = 300px base, 600px at 2x, 900px at 3x (excellent detection)
     scales = [1.0, 2.0, 3.0]
     
-    # Preallocate scratch buffer for largest scale (reuse to avoid allocations)
-    max_scale = max(scales)
-    scratch_width = int(gray.shape[1] * max_scale)
-    scratch_height = int(gray.shape[0] * max_scale)
+    # Preallocate reusable resources (avoid recreation in loops)
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+    kernel_sharpen = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]])
+    kernel_morph = np.ones((3,3), np.uint8)
     
     for scale in scales:
         # Early exit if we found all expected QRs (optimization)
@@ -102,17 +102,15 @@ def decode_qr_codes(image, expected_count=None):
         if try_decode(adaptive, f'adaptive_x{scale}'): continue
         del adaptive
         
-        # 4. CLAHE contrast enhancement
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        # 4. CLAHE contrast enhancement (reusing preallocated instance)
         enhanced = clahe.apply(scaled_gray)
         if try_decode(enhanced, f'enhanced_x{scale}'): continue
         del enhanced
         
         # Only try additional preprocessing at scale 1.0 and 2.0 (not at 3.0 to save time/memory)
         if scale <= 2.0:
-            # 5. Sharpening for blurry QRs
-            kernel = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]])
-            sharpened = cv2.filter2D(scaled_gray, -1, kernel)
+            # 5. Sharpening for blurry QRs (reusing preallocated kernel)
+            sharpened = cv2.filter2D(scaled_gray, -1, kernel_sharpen)
             if try_decode(sharpened, f'sharpened_x{scale}'): continue
             del sharpened
             
@@ -125,8 +123,7 @@ def decode_qr_codes(image, expected_count=None):
             if try_decode(binary_150, f'binary_150_x{scale}'): continue
             del binary_150
             
-            # 7. Morphological operations
-            kernel_morph = np.ones((3,3), np.uint8)
+            # 7. Morphological operations (reusing preallocated kernel)
             _, binary_base = cv2.threshold(scaled_gray, 127, 255, cv2.THRESH_BINARY)
             morphed = cv2.morphologyEx(binary_base, cv2.MORPH_CLOSE, kernel_morph)
             if try_decode(morphed, f'morphed_x{scale}'): continue
@@ -292,14 +289,20 @@ def validate_slot_qrs(camera_id, mode='visible'):
     print(f"[VALIDATION] Selected frame {best_frame_idx+1}/{num_frames} with sharpness {best_sharpness:.2f}", file=sys.stderr)
     sys.stderr.flush()
     
-    # Save the raw captured frame for debugging
+    # Save the raw captured frame for debugging (optional, controlled by env var)
     import os
+    enable_debug_images = os.environ.get('DEBUG_IMAGES', '1') == '1'  # Default enabled for compatibility
     debug_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'debug_images')
     os.makedirs(debug_dir, exist_ok=True)
-    raw_frame_path = os.path.join(debug_dir, 'validation_raw_frame.jpg')
-    cv2.imwrite(raw_frame_path, frame)
-    print(f"[VALIDATION] Saved raw captured frame to: {raw_frame_path}", file=sys.stderr)
-    sys.stderr.flush()
+    
+    if enable_debug_images:
+        raw_frame_path = os.path.join(debug_dir, 'validation_raw_frame.jpg')
+        cv2.imwrite(raw_frame_path, frame)
+        print(f"[VALIDATION] Saved raw captured frame to: {raw_frame_path}", file=sys.stderr)
+        sys.stderr.flush()
+    else:
+        print(f"[VALIDATION] Debug images disabled (set DEBUG_IMAGES=1 to enable)", file=sys.stderr)
+        sys.stderr.flush()
     
     # Load calibration data (passed from backend)
     homography_matrix = sys.argv[3] if len(sys.argv) > 3 else None
@@ -399,11 +402,16 @@ def validate_slot_qrs(camera_id, mode='visible'):
         scale_x = scale_y = 1.0
         print(f"Using direct homography warp (no paper size)", file=sys.stderr)
     
-    # Save debug rectified image
+    # Save debug rectified image (if enabled)
     rectified_path = os.path.join(debug_dir, 'validation_rectified_debug.jpg')
-    cv2.imwrite(rectified_path, rectified, [cv2.IMWRITE_JPEG_QUALITY, 95])
-    print(f"[VALIDATION] Saved rectified view to: {rectified_path}", file=sys.stderr)
-    sys.stderr.flush()
+    if enable_debug_images:
+        cv2.imwrite(rectified_path, rectified, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        print(f"[VALIDATION] Saved rectified view to: {rectified_path}", file=sys.stderr)
+        sys.stderr.flush()
+    else:
+        # Still create path for result even if not saved
+        print(f"[VALIDATION] Rectified debug image not saved (DEBUG_IMAGES=0)", file=sys.stderr)
+        sys.stderr.flush()
     
     # Decode QR codes with early exit optimization
     print(f"[VALIDATION] Starting QR code detection...", file=sys.stderr)
