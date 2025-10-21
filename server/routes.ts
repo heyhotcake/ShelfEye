@@ -1996,7 +1996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GPIO Light Control route (for testing)
+  // GPIO Light Control route (for testing) - Uses unified LED controller
   app.post("/api/gpio/light", async (req, res) => {
     try {
       const { action } = req.body;
@@ -2005,70 +2005,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid action. Use 'on' or 'off'" });
       }
 
-      // Get light strip GPIO pin from config
-      const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-      if (!lightStripConfig) {
-        return res.status(400).json({ message: "Light strip GPIO pin not configured" });
+      // Use unified LED controller
+      if (action === 'on') {
+        await setWhiteLight();
+      } else {
+        await turnOffLED();
       }
 
-      const pin = parseInt(lightStripConfig.value as string);
-
-      // Call Python GPIO controller with sudo (required for WS2812B /dev/mem access)
-      const pythonProcess = spawn('sudo', [
-        'python3',
-        path.join(process.cwd(), 'python/gpio_controller.py'),
-        '--pin', pin.toString(),
-        '--action', action
-      ]);
-
-      let result = '';
-      let error = '';
-      let responseSent = false;
-
-      pythonProcess.on('error', (err) => {
-        if (!responseSent) {
-          responseSent = true;
-          res.status(503).json({ 
-            message: "GPIO control not available", 
-            error: err.message 
-          });
-        }
-      });
-
-      pythonProcess.stdout.on('data', (data) => {
-        result += data.toString();
-      });
-
-      pythonProcess.stderr.on('data', (data) => {
-        const errStr = data.toString();
-        console.error(`[Validation] Python stderr: ${errStr}`);
-        error += errStr;
-      });
-
-      pythonProcess.on('close', (code) => {
-        if (responseSent) return;
-        responseSent = true;
-
-        if (code === 0) {
-          try {
-            const gpioResult = JSON.parse(result);
-            res.json({
-              ok: true,
-              ...gpioResult,
-              message: `Light ${action === 'on' ? 'turned on' : 'turned off'} successfully`
-            });
-          } catch (e) {
-            res.status(500).json({ 
-              message: "Failed to parse GPIO response", 
-              error: result 
-            });
-          }
-        } else {
-          res.status(500).json({ 
-            message: "GPIO control failed", 
-            error 
-          });
-        }
+      res.json({
+        ok: true,
+        action,
+        message: `Light ${action === 'on' ? 'turned on' : 'turned off'} successfully (unified controller)`
       });
 
     } catch (error) {

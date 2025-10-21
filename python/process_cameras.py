@@ -28,26 +28,29 @@ logger = logging.getLogger(__name__)
 # GPIO Light Control Functions
 def control_light(pin: int, state: str):
     """
-    Control GPIO light strip
+    Control GPIO light strip via unified LED controller
     
     Args:
-        pin: GPIO pin number
+        pin: GPIO pin number (passed for backwards compatibility but ignored)
         state: 'on' or 'off'
     """
     try:
         script_dir = Path(__file__).parent
-        gpio_script = script_dir / "gpio_controller.py"
+        led_controller = script_dir / "unified_led_controller.py"
+        
+        # Map 'on' to 'white' for the unified controller
+        action = 'white' if state == 'on' else 'off'
         
         # Use sudo for WS2812B /dev/mem access
         result = subprocess.run(
-            ["sudo", sys.executable, str(gpio_script), "--pin", str(pin), "--action", state],
+            ["sudo", sys.executable, str(led_controller), action],
             capture_output=True,
             text=True,
             timeout=5
         )
         
         if result.returncode == 0:
-            logger.info(f"Light strip (GPIO {pin}): {state.upper()}")
+            logger.info(f"Light strip: {state.upper()} (unified controller)")
         else:
             logger.warning(f"Light control failed: {result.stderr}")
     except Exception as e:

@@ -7,7 +7,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import { storage } from '../storage.js';
-import { getAlertLEDController } from './alert-led.js';
+import { setWhiteLight, turnOffLED, startRedFlash, stopRedFlash } from '../utils/led-control.js';
 
 export class StartupCalibrationService {
   private isRunning = false;
@@ -58,8 +58,7 @@ export class StartupCalibrationService {
       } else {
         console.log('[StartupCalibration] Calibration successful!');
         // Stop any existing alert LED
-        const ledController = getAlertLEDController(storage);
-        await ledController.stopFlash();
+        await stopRedFlash();
       }
 
     } catch (error) {
@@ -72,25 +71,8 @@ export class StartupCalibrationService {
 
   private async runCalibration(camera: any, paperSizeFormat: string): Promise<boolean> {
     return new Promise(async (resolve) => {
-      // Turn on LED light for consistent illumination during calibration
-      const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-      if (lightStripConfig) {
-        const pin = parseInt(lightStripConfig.value as string);
-        const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'on']);
-        
-        // Log LED control output for debugging
-        ledProcess.stdout.on('data', (data) => {
-          console.log(`[StartupCalibration] LED control output: ${data}`);
-        });
-        ledProcess.stderr.on('data', (data) => {
-          console.error(`[StartupCalibration] LED control error: ${data}`);
-        });
-        
-        console.log('[StartupCalibration] LED light turned ON for calibration');
-        
-        // Wait a moment for LED to fully turn on
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+      // Turn on LED light for consistent illumination during calibration (unified controller)
+      await setWhiteLight();
 
       // Get paper dimensions from format
       const { getPaperDimensions } = await import('../utils/paper-size.js');
@@ -119,7 +101,7 @@ export class StartupCalibrationService {
       pythonProcess.on('error', async (err) => {
         console.error('[StartupCalibration] Python process error:', err);
         // Turn off LED since Python failed to spawn (close event won't fire)
-        await this.turnOffLED();
+        await turnOffLED();
         resolve(false);
       });
 
@@ -139,7 +121,7 @@ export class StartupCalibrationService {
             
             if (!homographyMatrix || calibrationData.markers_detected !== 4) {
               console.error(`[StartupCalibration] Invalid calibration: ${calibrationData.markers_detected}/4 markers detected`);
-              await this.turnOffLED();
+              await turnOffLED();
               resolve(false);
               return;
             }
@@ -210,14 +192,14 @@ export class StartupCalibrationService {
             console.log(`[StartupCalibration] Calibration completed: ${calibrationData.markers_detected}/4 markers, error: ${calibrationData.reprojection_error.toFixed(2)}px`);
             
             // Turn off LED light after SUCCESSFUL calibration
-            await this.turnOffLED();
+            await turnOffLED();
             
             resolve(true);
 
           } catch (parseError) {
             console.error('[StartupCalibration] Failed to parse calibration result:', parseError);
             // Turn off LED light on error
-            await this.turnOffLED();
+            await turnOffLED();
             resolve(false);
           }
         } else {
@@ -230,47 +212,10 @@ export class StartupCalibrationService {
     });
   }
 
-  private async turnOffLED(): Promise<void> {
-    try {
-      const lightStripConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-      if (lightStripConfig) {
-        const pin = parseInt(lightStripConfig.value as string);
-        
-        // Wait for LED to turn off and release hardware resources
-        await new Promise<void>((resolve) => {
-          const ledProcess = spawn('sudo', ['python3', path.join(process.cwd(), 'python/gpio_controller.py'), '--pin', pin.toString(), '--action', 'off']);
-          
-          ledProcess.on('close', () => {
-            resolve();
-          });
-          
-          ledProcess.on('error', (err) => {
-            console.error('[StartupCalibration] LED off error:', err);
-            resolve(); // Continue even if error
-          });
-          
-          // Timeout after 2 seconds
-          setTimeout(() => {
-            ledProcess.kill('SIGTERM');
-            resolve();
-          }, 2000);
-        });
-        
-        // Small delay to ensure DMA channel is released
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        console.log('[StartupCalibration] LED light turned OFF');
-      }
-    } catch (err) {
-      console.error('[StartupCalibration] Failed to turn off LED light:', err);
-    }
-  }
-
   private async flashRedLED(reason: string): Promise<void> {
     console.warn(`[StartupCalibration] Flashing red LED - ${reason}`);
     try {
-      const ledController = getAlertLEDController(storage);
-      await ledController.startFlash('slow'); // Continuous slow flash for startup calibration failure
+      await startRedFlash(); // Unified controller handles continuous red flash
     } catch (error) {
       console.error('[StartupCalibration] Failed to flash red LED:', error);
     }
