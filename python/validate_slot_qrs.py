@@ -318,8 +318,8 @@ def validate_slot_qrs(camera_id, mode='visible'):
     
     # Calculate output size based on paper dimensions (if provided)
     if paper_width_cm and paper_height_cm:
-        # Increased from 40 to 160 for much better QR detection at 30mm size
-        # At 160 px/cm, a 30mm QR gets 48 pixels instead of just 24
+        # Increased from 40 to 160 for much better QR detection at 40mm size
+        # At 160 px/cm, a 40mm QR gets 64 pixels (vs 48 pixels for 30mm)
         pixels_per_cm = 160  # Double resolution for better detection
         output_width = int(paper_width_cm * pixels_per_cm)
         output_height = int(paper_height_cm * pixels_per_cm)

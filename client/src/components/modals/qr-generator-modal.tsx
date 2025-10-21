@@ -41,7 +41,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
     toolType: '',
     workerName: '',
     errorCorrection: 'L',
-    moduleSize: 25,
+    moduleSize: 30,
     includeHmac: true,
   });
   const [generatedQR, setGeneratedQR] = useState<QRGenerationResult | null>(null);
@@ -236,7 +236,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                   id="moduleSize"
                   type="number"
                   min="20"
-                  max="35"
+                  max="50"
                   value={formData.moduleSize}
                   onChange={(e) => setFormData({ ...formData, moduleSize: parseInt(e.target.value) })}
                   data-testid="input-module-size"
