@@ -226,6 +226,15 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
     print(f"[VALIDATION] Selected frame {best_frame_idx+1}/{num_frames} with sharpness {sharpness_scores[best_frame_idx]:.2f}", file=sys.stderr)
     sys.stderr.flush()
     
+    # Save the raw captured frame for debugging
+    import os
+    debug_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'debug_images')
+    os.makedirs(debug_dir, exist_ok=True)
+    raw_frame_path = os.path.join(debug_dir, 'validation_raw_frame.jpg')
+    cv2.imwrite(raw_frame_path, frame)
+    print(f"[VALIDATION] Saved raw captured frame to: {raw_frame_path}", file=sys.stderr)
+    sys.stderr.flush()
+    
     # Apply lens distortion correction if camera calibration parameters provided
     # Skip undistortion if all distortion coefficients are zero (to avoid interpolation artifacts)
     if camera_matrix is not None and dist_coeffs is not None:

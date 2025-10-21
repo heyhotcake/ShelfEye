@@ -9,6 +9,7 @@ import { cameraSessionManager } from "./camera-session-manager";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
+import fsSync from "fs";
 import QRCode from "qrcode";
 import crypto from "crypto";
 import { z } from "zod";
@@ -841,6 +842,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       res.status(500).json({ message: "Preview error", error });
+    }
+  });
+
+  // Debug images endpoint - serves captured validation images for troubleshooting
+  app.get("/api/debug-images/:filename", (req, res) => {
+    try {
+      const { filename } = req.params;
+      const debugDir = path.join(process.cwd(), 'debug_images');
+      const filePath = path.join(debugDir, filename);
+      
+      // Security: prevent directory traversal
+      if (!filePath.startsWith(debugDir)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Check if file exists
+      if (!fsSync.existsSync(filePath)) {
+        return res.status(404).json({ message: "Debug image not found" });
+      }
+      
+      // Serve the image
+      res.sendFile(filePath);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to serve debug image", error });
     }
   });
 
