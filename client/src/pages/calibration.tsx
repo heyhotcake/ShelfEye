@@ -84,6 +84,14 @@ export default function Calibration() {
 
   const activeCamera = cameras?.find((c: any) => c.isActive);
 
+  // Fetch template rectangles from DATABASE for the selected paper size (for calibration overlay)
+  const selectedDesignForQuery = savedTemplateDesigns.find(d => d.timestamp === selectedTemplate);
+  const paperSizeForQuery = selectedDesignForQuery?.paperSize || '6-page-3x2';
+  const { data: dbTemplateRectangles } = useQuery<any[]>({
+    queryKey: ['/api/template-rectangles', { paperSize: paperSizeForQuery }],
+    enabled: calibrationStep >= 1 && !!paperSizeForQuery,
+  });
+
   // Load saved template designs from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('templateConfigVersions');
@@ -916,13 +924,8 @@ export default function Calibration() {
                   const paperDimensions = getPaperDimensions(paperSize);
                   const aspectRatio = paperDimensions.width / paperDimensions.height;
                   
-                  // Fetch templates from DATABASE (not localStorage) to get latest adjusted positions
-                  const { data: dbTemplateRectangles } = useQuery({
-                    queryKey: ['/api/template-rectangles', { paperSize }],
-                    enabled: calibrationStep >= 1 && !!paperSize,
-                  });
-                  
                   // Get templates with categories for the canvas - use DB data if available, fallback to localStorage
+                  // dbTemplateRectangles is fetched at top level (lines 93-96)
                   const templatesWithCategories = (dbTemplateRectangles || selectedDesign?.templateRectangles || []).map((rect: any) => {
                     // Match category from selectedDesign for dimension info
                     const category = selectedDesign?.categories?.find((c: any) => c.id === rect.categoryId);
