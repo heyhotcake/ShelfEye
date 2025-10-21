@@ -858,7 +858,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/debug-images/:filename", (req, res) => {
     try {
       const { filename } = req.params;
-      const debugDir = path.join(process.cwd(), 'debug_images');
+      // Use absolute path to home directory
+      const debugDir = '/home/naniwa/ShelfEye/debug_images';
       const filePath = path.join(debugDir, filename);
       
       console.log(`[Debug Images] Request for: ${filename}`);
