@@ -256,18 +256,38 @@ export default function Calibration() {
           duration: 8000, // Show longer to ensure user sees the instruction
         });
       } else {
-        const invalidQrsInfo = data.invalid_qrs && data.invalid_qrs.length > 0 
-          ? ` (Found ${data.invalid_qrs.length} non-matching QR code(s): ${data.invalid_qrs.map((qr: any) => qr.data).join(', ')})`
-          : '';
-        const totalQrsInfo = data.total_qrs_detected !== undefined 
-          ? ` Total QRs detected: ${data.total_qrs_detected}.` 
-          : '';
-        toast({
-          title: "QR Validation Failed",
-          description: `${data.message || `Only ${data.detected_count}/${data.expected_count} QR codes matched.`}${totalQrsInfo}${invalidQrsInfo}`,
-          variant: "destructive",
-          duration: 10000,
-        });
+        // Handle error cases (camera open failure, etc.)
+        if (data.error) {
+          toast({
+            title: "QR Validation Failed",
+            description: data.error,
+            variant: "destructive",
+            duration: 10000,
+          });
+        } else {
+          // Handle validation failure with counts
+          const invalidQrsInfo = data.invalid_qrs && data.invalid_qrs.length > 0 
+            ? ` (Found ${data.invalid_qrs.length} non-matching QR code(s): ${data.invalid_qrs.map((qr: any) => qr.data).join(', ')})`
+            : '';
+          const totalQrsInfo = data.total_qrs_detected !== undefined 
+            ? ` Total QRs detected: ${data.total_qrs_detected}.` 
+            : '';
+          
+          let description = data.message;
+          if (!description && data.detected_count !== undefined && data.expected_count !== undefined) {
+            description = `Only ${data.detected_count}/${data.expected_count} QR codes matched.`;
+          }
+          if (!description) {
+            description = 'Validation failed. Please check the camera and try again.';
+          }
+          
+          toast({
+            title: "QR Validation Failed",
+            description: `${description}${totalQrsInfo}${invalidQrsInfo}`,
+            variant: "destructive",
+            duration: 10000,
+          });
+        }
       }
       // Resume preview polling
       queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
@@ -312,11 +332,22 @@ export default function Calibration() {
         // Invalidate calibration-info query to immediately show Active Camera card on dashboard
         queryClient.invalidateQueries({ queryKey: ['/api/config/calibration-info'] });
       } else {
-        toast({
-          title: "Tools Not Covering QRs",
-          description: data.message || `${data.detected_count} QR codes still visible`,
-          variant: "destructive",
-        });
+        // Handle error cases (camera open failure, etc.)
+        if (data.error) {
+          toast({
+            title: "QR Validation Failed",
+            description: data.error,
+            variant: "destructive",
+          });
+        } else {
+          const description = data.message || 
+            (data.detected_count !== undefined ? `${data.detected_count} QR codes still visible` : 'Validation failed. Please check the camera and try again.');
+          toast({
+            title: "Tools Not Covering QRs",
+            description,
+            variant: "destructive",
+          });
+        }
       }
       // Resume preview polling
       queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
