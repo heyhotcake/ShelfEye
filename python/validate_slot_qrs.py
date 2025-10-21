@@ -496,13 +496,67 @@ def validate_slot_qrs(camera_id, mode='visible'):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Validate slot QR codes in calibrated camera view')
-    parser.add_argument('camera_id', help='Camera ID')
-    parser.add_argument('mode', choices=['visible', 'covered'], help='Validation mode')
+    
+    # Parse all arguments properly
+    parser.add_argument('--resolution', help='Camera resolution (e.g., 1920x1080)')
+    parser.add_argument('--homography', help='Homography matrix as JSON string')
+    parser.add_argument('--slots', help='Expected slots configuration as JSON string')
+    parser.add_argument('--should-detect', choices=['true', 'false'], help='Whether QRs should be detected')
+    parser.add_argument('--paper-width-cm', type=float, help='Paper width in cm')
+    parser.add_argument('--paper-height-cm', type=float, help='Paper height in cm')
+    parser.add_argument('--camera-matrix', help='Camera matrix for distortion correction')
+    parser.add_argument('--dist-coeffs', help='Distortion coefficients')
+    parser.add_argument('--device-path', help='Camera device path (e.g., /dev/video0)')
+    parser.add_argument('--camera', type=int, help='Camera index', default=0)
     
     args = parser.parse_args()
     
+    # Determine mode based on should-detect flag
+    mode = 'visible' if args.should_detect == 'true' else 'covered'
+    
+    # Extract camera ID from device path or use default
+    camera_id = 'default'
+    if args.device_path:
+        camera_id = args.device_path
+    
+    # Set up the parameters that the validation function expects from sys.argv
+    # This is a temporary fix - ideally we'd refactor the validation function
+    import sys
+    sys.argv = ['validate_slot_qrs.py', camera_id, mode]
+    
+    # Add the calibration parameters in the order the function expects
+    if args.homography:
+        sys.argv.append(args.homography)
+    else:
+        sys.argv.append('null')
+    
+    if args.camera_matrix:
+        sys.argv.append(args.camera_matrix)
+    else:
+        sys.argv.append('null')
+    
+    if args.dist_coeffs:
+        sys.argv.append(args.dist_coeffs)
+    else:
+        sys.argv.append('null')
+    
+    if args.paper_width_cm:
+        sys.argv.append(str(args.paper_width_cm))
+    else:
+        sys.argv.append('null')
+    
+    if args.paper_height_cm:
+        sys.argv.append(str(args.paper_height_cm))
+    else:
+        sys.argv.append('null')
+    
+    if args.slots:
+        sys.argv.append(args.slots)
+    else:
+        sys.argv.append('[]')
+    
     # Run validation
-    result = validate_slot_qrs(args.camera_id, args.mode)
+    result = validate_slot_qrs(camera_id, mode)
     
     # Output JSON result
     print(json.dumps(result))
