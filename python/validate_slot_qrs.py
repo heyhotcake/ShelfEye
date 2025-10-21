@@ -247,30 +247,38 @@ def validate_slot_qrs(camera_id, mode='visible'):
     for i in range(2):
         cap.read()
     
-    # Capture multiple frames and select the sharpest one
-    frames = []
-    sharpness_scores = []
-    num_frames = 5  # Capture 5 frames
+    # Memory-optimized: Capture frames one at a time, keep only the sharpest
+    # This avoids storing 5 full frames simultaneously (~70MB → ~14MB)
+    num_frames = 5
+    best_frame = None
+    best_sharpness = -1
+    best_frame_idx = -1
     
-    print(f"[VALIDATION] Capturing {num_frames} frames for sharpness analysis", file=sys.stderr)
+    print(f"[VALIDATION] Capturing {num_frames} frames for sharpness analysis (memory-optimized)", file=sys.stderr)
     sys.stderr.flush()
     
     for i in range(num_frames):
         ret, frame = cap.read()
         if ret:
             # Calculate sharpness using Laplacian variance (higher = sharper)
+            # Work on grayscale to save memory
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
-            frames.append(frame)
-            sharpness_scores.append(sharpness)
+            
+            # Keep this frame only if it's the sharpest so far
+            if sharpness > best_sharpness:
+                best_frame = frame  # Old frame will be garbage collected
+                best_sharpness = sharpness
+                best_frame_idx = i
+            
             print(f"[VALIDATION] Frame {i+1}/{num_frames} captured, sharpness={sharpness:.2f}", file=sys.stderr)
             sys.stderr.flush()
     
     cap.release()
-    print(f"[VALIDATION] Camera released, captured {len(frames)} frames", file=sys.stderr)
+    print(f"[VALIDATION] Camera released", file=sys.stderr)
     sys.stderr.flush()
     
-    if not frames:
+    if best_frame is None:
         print(f"[VALIDATION] ERROR: Failed to capture any frames", file=sys.stderr)
         sys.stderr.flush()
         return {
@@ -278,10 +286,9 @@ def validate_slot_qrs(camera_id, mode='visible'):
             'error': 'Failed to capture any frames'
         }
     
-    # Select the sharpest frame
-    best_frame_idx = np.argmax(sharpness_scores)
-    frame = frames[best_frame_idx]
-    print(f"[VALIDATION] Selected frame {best_frame_idx+1}/{num_frames} with sharpness {sharpness_scores[best_frame_idx]:.2f}", file=sys.stderr)
+    # Use the sharpest frame
+    frame = best_frame
+    print(f"[VALIDATION] Selected frame {best_frame_idx+1}/{num_frames} with sharpness {best_sharpness:.2f}", file=sys.stderr)
     sys.stderr.flush()
     
     # Save the raw captured frame for debugging
