@@ -1,0 +1,45 @@
+tail -100 ~/ShelfEye/app.log | grep -A 3 "\[VALIDATION\]"
+[Validation] Python stderr: [VALIDATION] Opening camera: /dev/video0
+
+[Validation] Python stderr: [VALIDATION] Camera opened successfully
+
+[Validation] Python stderr: [VALIDATION] Starting frame capture (2 warmup + 5 capture frames)
+
+[Validation] Python stderr: [VALIDATION] Warmup frame 1/2 captured
+
+[Validation] Python stderr: [VALIDATION] Warmup frame 2/2 captured
+[VALIDATION] Capturing 5 frames for sharpness analysis
+
+[Validation] Python stderr: [VALIDATION] Frame 1/5 captured, sharpness=493.06
+
+[Validation] Python stderr: [VALIDATION] Frame 2/5 captured, sharpness=494.09
+
+[Validation] Python stderr: [VALIDATION] Frame 3/5 captured, sharpness=492.37
+
+[Validation] Python stderr: [VALIDATION] Frame 4/5 captured, sharpness=491.51
+
+[Validation] Python stderr: [VALIDATION] Frame 5/5 captured, sharpness=492.93
+
+[Validation] Python stderr: [VALIDATION] Camera released, captured 5 frames
+
+[Validation] Python stderr: [VALIDATION] Selected frame 2/5 with sharpness 494.09
+Skipping undistortion (all coefficients are zero)
+Using paper-based output size: 7128x3360 (89.1x42.0 cm) @ 80px/cm
+
+--
+[VALIDATION] Starting QR code decoding with dual decoders (pyzbar + OpenCV)
+
+[Validation] Python stderr: QR detected via pyzbar_original: pen-001
+QR detected via pyzbar_original: pen-002
+--
+[Validation] Python stderr: [VALIDATION] QR decoding complete: 4 total QR codes detected
+
+[Validation] Python stderr: [VALIDATION] Spatial validation complete: 2 valid QRs, 2 invalid QRs
+[VALIDATION] Missing 5 expected QR codes
+[VALIDATION] Result: FAILED - Detected 2/7 expected slot QR codes (total QRs found: 4)
+
+[CameraSessionManager] Released exclusive lock for camera f0302a62-d361-4134-86cc-f8c8558226c0
+10:07:25 AM [express] POST /api/calibrate/f0302a62-d361-4134-86cc-f8c8558226c0/validate-qrs-visible 2…
+naniwa@NaniwaTanaCheck:~/ShelfEye $ tail -30 ~/ShelfEye/app.log | grep -E "LED|Light"
+[VALIDATION] Result: FAILED - Detected 2/7 expected slot QR codes (total QRs found: 4)
+[LED] Light turned OFF

@@ -371,9 +371,12 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
             
             if expected_slot and scale_x and scale_y:
                 # Spatial validation: check if QR code is inside its expected slot region
+                expected_center_cm = np.array([expected_slot.get('x', 0), expected_slot.get('y', 0)])
+                detected_center_cm = np.array([qr_center[0] / scale_x, qr_center[1] / scale_y])
+                
                 is_in_region = point_in_rotated_rect(
                     qr_center,
-                    np.array([expected_slot.get('x', 0), expected_slot.get('y', 0)]),
+                    expected_center_cm,
                     expected_slot.get('width', 0),
                     expected_slot.get('height', 0),
                     expected_slot.get('rotation', 0),
@@ -381,7 +384,12 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
                     scale_y
                 )
                 
+                # Calculate distance for debugging
+                distance_cm = np.linalg.norm(detected_center_cm - expected_center_cm)
+                
                 if is_in_region:
+                    print(f"[VALIDATION] ✓ {qr_id}: detected at ({detected_center_cm[0]:.1f}, {detected_center_cm[1]:.1f}) cm, expected at ({expected_center_cm[0]:.1f}, {expected_center_cm[1]:.1f}) cm, distance={distance_cm:.1f} cm - PASS", file=sys.stderr)
+                    sys.stderr.flush()
                     valid_slot_qrs.append({
                         'slotId': expected_slot['slotId'],
                         'toolName': expected_slot['toolName'],
@@ -389,6 +397,8 @@ def validate_slot_qrs(camera_index, resolution, homography_matrix, expected_slot
                         'rect': qr['rect']
                     })
                 else:
+                    print(f"[VALIDATION] ✗ {qr_id}: detected at ({detected_center_cm[0]:.1f}, {detected_center_cm[1]:.1f}) cm, expected at ({expected_center_cm[0]:.1f}, {expected_center_cm[1]:.1f}) cm, distance={distance_cm:.1f} cm - REJECTED (outside slot region)", file=sys.stderr)
+                    sys.stderr.flush()
                     invalid_qrs.append({
                         'data': qr['data'],
                         'reason': f'QR ID {qr_id} found but NOT in expected slot region (spatial mismatch)'
