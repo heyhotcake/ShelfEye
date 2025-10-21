@@ -289,6 +289,10 @@ def validate_slot_qrs(camera_id, mode='visible'):
     print(f"[VALIDATION] Selected frame {best_frame_idx+1}/{num_frames} with sharpness {best_sharpness:.2f}", file=sys.stderr)
     sys.stderr.flush()
     
+    # Signal that frame capture is complete - LED can turn off now
+    print("[LED_OFF_SIGNAL]", file=sys.stderr)
+    sys.stderr.flush()
+    
     # Save the raw captured frame for debugging (optional, controlled by env var)
     import os
     enable_debug_images = os.environ.get('DEBUG_IMAGES', '1') == '1'  # Default enabled for compatibility
