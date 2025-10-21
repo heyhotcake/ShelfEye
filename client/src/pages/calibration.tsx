@@ -698,25 +698,33 @@ export default function Calibration() {
                         <Button 
                           className="w-full"
                           onClick={async () => {
+                            console.log('[SaveButton] Click detected', { hasTemplateAdjustments, adjustedTemplatesCount: adjustedTemplates.length });
+                            
                             // Save adjusted template positions if any
                             if (hasTemplateAdjustments && adjustedTemplates.length > 0) {
+                              console.log('[SaveButton] Saving adjusted templates to database...');
                               try {
                                 const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
                                 if (selectedDesign) {
                                   // Fetch actual database template rectangles by paper size
                                   const paperSize = selectedDesign.paperSize;
+                                  console.log('[SaveButton] Fetching DB templates for paper size:', paperSize);
                                   const dbRectsResponse = await fetch(`/api/template-rectangles?paperSize=${paperSize}`);
                                   if (dbRectsResponse.ok) {
                                     const dbRects = await dbRectsResponse.json();
+                                    console.log('[SaveButton] Found DB templates:', dbRects.length);
                                     
                                     // Match adjusted templates to database rectangles by autoQrId and update DB
                                     for (const adjusted of adjustedTemplates) {
                                       const dbRect = dbRects.find((r: any) => r.autoQrId === adjusted.autoQrId);
                                       if (dbRect) {
+                                        console.log(`[SaveButton] Updating ${dbRect.autoQrId}: (${adjusted.xCm}, ${adjusted.yCm})`);
                                         await apiRequest('PUT', `/api/template-rectangles/${dbRect.id}`, {
                                           xCm: adjusted.xCm,
                                           yCm: adjusted.yCm,
                                         });
+                                      } else {
+                                        console.warn(`[SaveButton] No DB match for autoQrId: ${adjusted.autoQrId}`);
                                       }
                                     }
                                     
@@ -736,6 +744,7 @@ export default function Calibration() {
                                     localStorage.setItem('templateConfigVersions', JSON.stringify(updatedDesigns));
                                     setSavedTemplateDesigns(updatedDesigns);
                                     
+                                    console.log('[SaveButton] Successfully saved to DB and localStorage');
                                     toast({
                                       title: "Positions Saved",
                                       description: `Updated ${adjustedTemplates.length} template positions in database and localStorage.`,
@@ -743,9 +752,11 @@ export default function Calibration() {
                                   } else {
                                     throw new Error('Failed to fetch database template rectangles');
                                   }
+                                } else {
+                                  console.error('[SaveButton] Selected design not found');
                                 }
                               } catch (error) {
-                                console.error('Failed to save adjusted positions:', error);
+                                console.error('[SaveButton] Failed to save adjusted positions:', error);
                                 toast({
                                   title: "Save Failed",
                                   description: "Failed to save adjusted positions. LocalStorage NOT updated to prevent inconsistency.",
@@ -754,6 +765,8 @@ export default function Calibration() {
                                 // Don't proceed if save failed
                                 return;
                               }
+                            } else {
+                              console.log('[SaveButton] No adjustments to save, proceeding to QR validation');
                             }
                             
                             setCalibrationStep(2); // Move to QR validation step
