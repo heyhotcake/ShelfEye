@@ -154,7 +154,7 @@ export default function Calibration() {
       return response.json();
     },
     enabled: !!activeCamera?.id && !isCameraLocked,
-    refetchInterval: isCameraLocked ? false : 1000,
+    refetchInterval: isCameraLocked ? false : 3000, // Poll every 3 seconds (reduced from 1s to reduce camera load)
   });
 
   // Rectified preview - fetch after successful calibration
