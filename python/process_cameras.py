@@ -31,7 +31,7 @@ def control_light(pin: int, state: str):
     Control GPIO light strip via unified LED controller
     
     Args:
-        pin: GPIO pin number (passed for backwards compatibility but ignored)
+        pin: GPIO pin number
         state: 'on' or 'off'
     """
     try:
@@ -41,16 +41,16 @@ def control_light(pin: int, state: str):
         # Map 'on' to 'white' for the unified controller
         action = 'white' if state == 'on' else 'off'
         
-        # Use sudo for WS2812B /dev/mem access
+        # Use sudo for WS2812B /dev/mem access with proper arguments
         result = subprocess.run(
-            ["sudo", sys.executable, str(led_controller), action],
+            ["sudo", sys.executable, str(led_controller), "--pin", str(pin), "--action", action],
             capture_output=True,
             text=True,
             timeout=5
         )
         
         if result.returncode == 0:
-            logger.info(f"Light strip: {state.upper()} (unified controller)")
+            logger.info(f"Light strip (GPIO {pin}): {state.upper()} (unified controller)")
         else:
             logger.warning(f"Light control failed: {result.stderr}")
     except Exception as e:
