@@ -230,6 +230,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const errStr = data.toString();
         console.error(`[Validation] Python stderr: ${errStr}`);
         error += errStr;
+        
+        // Turn off LED immediately after frame capture completes (~30s)
+        if (errStr.includes('[LED_OFF_SIGNAL]')) {
+          console.log('[Validation] Frame capture complete - turning off LED');
+          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
+        }
       });
 
       pythonProcess.on('close', async (code) => {
@@ -503,6 +509,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const errStr = data.toString();
         console.error(`[Validation] Python stderr: ${errStr}`);
         error += errStr;
+        
+        // Turn off LED immediately after frame capture completes (~30s)
+        if (errStr.includes('[LED_OFF_SIGNAL]')) {
+          console.log('[Validation] Frame capture complete - turning off LED');
+          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
+        }
       });
       
       pythonProcess.on('close', (code) => {
@@ -679,6 +691,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const errStr = data.toString();
         console.error(`[Validation] Python stderr: ${errStr}`);
         error += errStr;
+        
+        // Turn off LED immediately after frame capture completes (~30s)
+        if (errStr.includes('[LED_OFF_SIGNAL]')) {
+          console.log('[Validation] Frame capture complete - turning off LED');
+          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
+        }
       });
       
       pythonProcess.on('close', async (code) => {
@@ -797,6 +815,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const errStr = data.toString();
         console.error(`[Validation] Python stderr: ${errStr}`);
         error += errStr;
+        
+        // Turn off LED immediately after frame capture completes (~30s)
+        if (errStr.includes('[LED_OFF_SIGNAL]')) {
+          console.log('[Validation] Frame capture complete - turning off LED');
+          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
+        }
       });
 
       pythonProcess.on('close', (code) => {
@@ -982,6 +1006,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const errStr = data.toString();
         console.error(`[Validation] Python stderr: ${errStr}`);
         error += errStr;
+        
+        // Turn off LED immediately after frame capture completes (~30s)
+        if (errStr.includes('[LED_OFF_SIGNAL]')) {
+          console.log('[Validation] Frame capture complete - turning off LED');
+          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
+        }
       });
 
       pythonProcess.on('close', (code) => {
@@ -1054,6 +1084,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const errStr = data.toString();
         console.error(`[Validation] Python stderr: ${errStr}`);
         error += errStr;
+        
+        // Turn off LED immediately after frame capture completes (~30s)
+        if (errStr.includes('[LED_OFF_SIGNAL]')) {
+          console.log('[Validation] Frame capture complete - turning off LED');
+          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
+        }
       });
 
       pythonProcess.on('close', async (code) => {
