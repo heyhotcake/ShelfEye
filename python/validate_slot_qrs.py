@@ -71,6 +71,40 @@ def decode_qr_codes(image):
             })
             print(f"QR detected via pyzbar_{method_name}: {data}", file=sys.stderr)
     
+    # Extra aggressive pass: Try with lower resolution if we found < 3 QRs
+    if len(results) < 3:
+        print(f"Only {len(results)} QRs found, trying lower resolution fallback", file=sys.stderr)
+        # Downscale to 40 px/cm (half resolution)
+        h, w = image.shape[:2]
+        scaled = cv2.resize(image, (w//2, h//2), interpolation=cv2.INTER_AREA)
+        gray_scaled = cv2.cvtColor(scaled, cv2.COLOR_BGR2GRAY) if len(scaled.shape) == 3 else scaled
+        
+        # Try multiple preprocessing on scaled version
+        scaled_methods = [
+            ('scaled_original', scaled),
+            ('scaled_gray', gray_scaled),
+            ('scaled_threshold', cv2.threshold(gray_scaled, 127, 255, cv2.THRESH_BINARY)[1]),
+            ('scaled_adaptive', cv2.adaptiveThreshold(gray_scaled, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2))
+        ]
+        
+        for method_name, processed_image in scaled_methods:
+            qr_codes = pyzbar.decode(processed_image)
+            for qr in qr_codes:
+                data = qr.data.decode('utf-8')
+                if data not in found_qr_data:
+                    found_qr_data.add(data)
+                    # Scale coordinates back to original size
+                    x, y, w, h = qr.rect
+                    results.append({
+                        'data': data,
+                        'type': qr.type,
+                        'rect': {'x': x*2, 'y': y*2, 'width': w*2, 'height': h*2},
+                        'polygon': [(p.x*2, p.y*2) for p in qr.polygon],
+                        'center': (x*2 + w, y*2 + h),
+                        'detection_method': f'pyzbar_{method_name}'
+                    })
+                    print(f"QR detected via {method_name}: {data}", file=sys.stderr)
+    
     # Second pass: Try OpenCV QRCodeDetector as fallback (can detect multiple QRs)
     for method_name, processed_image in preprocessing_methods:
         try:
