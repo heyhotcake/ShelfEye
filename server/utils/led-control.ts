@@ -1,6 +1,9 @@
-import { spawn } from 'child_process';
+import { spawn, exec } from 'child_process';
 import path from 'path';
 import { storage } from '../storage';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 /**
  * Unified LED Control Utility
@@ -11,10 +14,31 @@ import { storage } from '../storage';
  */
 
 /**
+ * Kill any stuck LED controller processes to ensure clean state
+ * Used before calibration to prevent stuck processes from blocking white light
+ */
+async function killStuckLEDProcesses(): Promise<void> {
+  try {
+    // Kill any stuck unified_led_controller.py processes
+    await execAsync('sudo pkill -9 -f unified_led_controller.py || true');
+    console.log('[LED] Killed any stuck LED processes');
+    // Small delay to ensure processes are fully terminated
+    await new Promise(resolve => setTimeout(resolve, 200));
+  } catch (err) {
+    console.error('[LED] Error killing stuck processes:', err);
+  }
+}
+
+/**
  * Turn LED strip to WHITE (for validation/calibration lighting)
  * Will be denied if RED FLASH alert is active (priority system)
+ * Kills stuck processes first to ensure clean state
  */
-export async function setWhiteLight(): Promise<boolean> {
+export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
+  // Kill stuck LED processes if requested (for calibration)
+  if (killStuckFirst) {
+    await killStuckLEDProcesses();
+  }
   try {
     const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
     if (!lightConfig) {

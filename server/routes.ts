@@ -144,8 +144,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       lockAcquired = true;
 
       // Turn on LED light for consistent illumination during calibration (unified controller)
-      console.log('[Calibration] Turning on white LED light...');
-      const ledResult = await setWhiteLight();
+      // Kill stuck LED processes first to ensure clean state (prevents issues when calibrating after alert)
+      console.log('[Calibration] Turning on white LED light (killing stuck processes first)...');
+      const ledResult = await setWhiteLight(true);
       console.log('[Calibration] LED white light result:', ledResult);
       
       // Small delay to ensure LED process completes and releases stdout
@@ -536,7 +537,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       lockAcquired = true;
       
       // Turn on LED light for consistent illumination during validation (unified controller)
-      await setWhiteLight();
+      // Kill stuck LED processes first to ensure clean state
+      await setWhiteLight(true);
       
       // Small delay to ensure LED process completes and releases stdout
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -718,7 +720,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       lockAcquired = true;
       
       // Turn on LED light for consistent illumination during validation (unified controller)
-      await setWhiteLight();
+      // Kill stuck LED processes first to ensure clean state
+      await setWhiteLight(true);
       
       // Small delay to ensure LED process completes and releases stdout
       await new Promise(resolve => setTimeout(resolve, 100));
