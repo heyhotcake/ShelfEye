@@ -349,9 +349,9 @@ def validate_slot_qrs(camera_id, mode='visible'):
     
     # Calculate output size based on paper dimensions (if provided)
     if paper_width_cm and paper_height_cm:
-        # Increased to 200 px/cm for reliable 30mm QR detection with high-res camera
-        # At 200 px/cm, a 30mm QR gets 60 pixels base, 240 pixels at 4x upscaling
-        pixels_per_cm = 200  # High resolution for small QR codes
+        # Reduced to 50 px/cm to avoid OOM on Pi 2GB with large paper sizes
+        # At 50 px/cm, a 30mm QR gets 15 pixels base, 45 pixels at 3x upscaling (sufficient for detection)
+        pixels_per_cm = 50  # Balanced resolution for memory efficiency on Pi
         output_width = int(paper_width_cm * pixels_per_cm)
         output_height = int(paper_height_cm * pixels_per_cm)
         print(f"Using paper-based output size: {output_width}x{output_height} ({paper_width_cm}x{paper_height_cm} cm) @ {pixels_per_cm}px/cm", file=sys.stderr)
