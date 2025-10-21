@@ -861,19 +861,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const debugDir = path.join(process.cwd(), 'debug_images');
       const filePath = path.join(debugDir, filename);
       
+      console.log(`[Debug Images] Request for: ${filename}`);
+      console.log(`[Debug Images] CWD: ${process.cwd()}`);
+      console.log(`[Debug Images] Debug dir: ${debugDir}`);
+      console.log(`[Debug Images] Full path: ${filePath}`);
+      console.log(`[Debug Images] File exists: ${fsSync.existsSync(filePath)}`);
+      
       // Security: prevent directory traversal
       if (!filePath.startsWith(debugDir)) {
+        console.log(`[Debug Images] Access denied - path traversal attempt`);
         return res.status(403).json({ message: "Access denied" });
       }
       
       // Check if file exists
       if (!fsSync.existsSync(filePath)) {
-        return res.status(404).json({ message: "Debug image not found" });
+        // List what files ARE in the directory
+        try {
+          const files = fsSync.readdirSync(debugDir);
+          console.log(`[Debug Images] Files in debug dir: ${files.join(', ')}`);
+        } catch (e) {
+          console.log(`[Debug Images] Could not list debug dir: ${e}`);
+        }
+        return res.status(404).json({ message: "Debug image not found", path: filePath });
       }
       
       // Serve the image
+      console.log(`[Debug Images] Serving file: ${filePath}`);
       res.sendFile(filePath);
     } catch (error) {
+      console.error(`[Debug Images] Error:`, error);
       res.status(500).json({ message: "Failed to serve debug image", error });
     }
   });
