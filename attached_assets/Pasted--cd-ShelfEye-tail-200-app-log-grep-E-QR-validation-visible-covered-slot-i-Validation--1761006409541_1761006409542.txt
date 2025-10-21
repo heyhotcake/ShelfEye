@@ -1,0 +1,74 @@
+ cd ~/ShelfEye
+tail -200 app.log | grep -E "(QR|validation|visible|covered|slot)" -i
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Parsed 7 templates for preview overlay
+[Validation] Python stderr: INFO:__main__:Templates: [{'x': 24, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 65, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 19.5, 'y': 15, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 67, 'y': 15.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 16.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44, 'y': 39, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44, 'y': 28.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}]
+[Validation] Python stderr: INFO:__main__:Detected 4/4 corner markers: [np.int32(20), np.int32(17), np.int32(19), np.int32(18)]
+[Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[1536.0, 0.0, 960.0], [0.0, 1536.0, 540.0], [0.0, 0.0, 1.0]]
+[Validation] Python stderr: INFO:__main__:Generating rectified preview from calibration frame
+[Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+[Validation] Python stderr: INFO:rectified_preview:Drawing 7 template overlays
+[Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 24, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 65, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 19.5, 'y': 15, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 67, 'y': 15.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 16.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44, 'y': 39, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44, 'y': 28.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}]
+[Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+[Calibration] Deleted 7 existing slots
+[Calibration] Creating slots for 7 templates (paper size: 6-page-3x2)
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Starting QR validation (visible) for camera f0302a62-d361-4134-86cc-f8c8558226c0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Camera found: { hasHomography: true, hasCameraMatrix: true, hasDistCoeffs: true }
+[Validation] Found 1 slots for camera
+[Validation] LED light turned ON
+[Validation] Using paper dimensions: 89.1x42 cm
+[Validation] Using camera calibration parameters
+[Validation] Using device path: /dev/video0
+[Validation] LED control output: {"success": true, "pin": 18, "state": "HIGH", "mode": "ws2812"}
+[Validation] Python stderr: Opening camera: /dev/video0
+[Validation] Python stderr: Skipping undistortion (all coefficients are zero)
+[Validation] Python stderr: Using paper-based output size: 3564x1680 (89.1x42.0 cm)
+[Validation] Python stderr: Saved rectified image with overlays to: /home/naniwa/ShelfEye/debug_images/validation_rectified_debug.jpg
+[Validation] Python stderr: Also saved to: /tmp/validation_rectified_debug.jpg
+[Validation] Python stderr: QR detected via original: pen-003
+[Validation] Python stderr: QR detected via grayscale: pen-004
+[Validation] Python stderr: Total QR codes detected in image: 2
+9:22:50 AM [express] POST /api/calibrate/f0302a62-d361-4134-86cc-f8c8558226c0/validate-qrs-visible 2…
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+[Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+naniwa@NaniwaTanaCheck:~/ShelfEye $ cd ~/ShelfEye
+tail -300 app.log | grep -E "(slot|error|Error|failed)" -i
+[StartupCalibration] Calibration completed: 4/4 markers, error: 0.00px
+INFO:__main__:Point-wise errors: [4.412235823639328e-13, 2.3437142008433856e-13, 2.5421149729252077e-13, 3.639754730461873e-13]
+INFO:__main__:Reprojection error: mean=0.0000 px, max=0.0000 px
+INFO:__main__:Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero
+[Calibration] Deleted 7 existing slots
+[Calibration] Creating slots for 7 templates (paper size: 6-page-3x2)
+[Validation] Found 1 slots for camera
+[Validation] Found 7 slots for camera
+naniwa@NaniwaTanaCheck:~/ShelfEye $ psql "$DATABASE_URL" -c "SELECT COUNT(*) as total_slots, COUNT(CASE WHEN camera_id = (SELECT id FROM cameras WHERE name = 'Webcam One') THEN 1 END) as webcam_slots FROM slots;"
+ total_slots | webcam_slots
+-------------+--------------
+           7 |            7
+(1 row)
+
+naniwa@NaniwaTanaCheck:~/ShelfEye $ psql "$DATABASE_URL" -c "SELECT slot_id, tool_name, expected_qr_id, x_cm, y_cm FROM slots WHERE camera_id = (SELECT id FROM cameras WHERE name = 'Webcam One');"
+ slot_id  | tool_name | expected_qr_id | x_cm | y_cm
+----------+-----------+----------------+------+------
+ 5x5_accb | 5x5       |                |   24 | 27.5
+ 5x5_a871 | 5x5       |                |   65 | 27.5
+ pen_9a74 | pen       |                | 19.5 |   15
+ pen_a45a | pen       |                |   67 | 15.5
+ pen_4300 | pen       |                | 44.5 | 16.5
+ pen_6e12 | pen       |                |   44 |   39
+ 5x5_40f9 | 5x5       |                |   44 | 28.5
+(7 rows)
+
+naniwa@NaniwaTanaCheck:~/ShelfEye $
