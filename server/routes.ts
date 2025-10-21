@@ -226,13 +226,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Calibration] Built ${templatesWithDimensions.length} templates with dimensions for preview overlay`);
 
       // Call Python calibration script with paper size and preview generation
+      // Calculate preview output size maintaining correct aspect ratio
+      // Use same resolution as validation (80 px/cm) but scaled down for display
+      const previewScale = 10; // 10 px/cm for preview (vs 80 px/cm for validation)
+      const previewWidth = Math.round(paperDims.widthCm * previewScale);
+      const previewHeight = Math.round(paperDims.heightCm * previewScale);
+      console.log(`[Calibration] Preview output size: ${previewWidth}x${previewHeight} px (maintains ${(paperDims.widthCm/paperDims.heightCm).toFixed(2)}:1 aspect ratio)`);
+      
       const deviceSource = getCameraDeviceSource(camera);
       const calibrationArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
         '--generate-preview',
-        '--preview-output-size', '800x600',
+        '--preview-output-size', `${previewWidth}x${previewHeight}`,
         '--templates', JSON.stringify(templatesWithDimensions)
       ];
       
