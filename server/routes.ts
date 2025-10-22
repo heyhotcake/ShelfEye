@@ -439,35 +439,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[VerifyPositions] Adjusted templates:', JSON.stringify(adjustedTemplates, null, 2));
       
       // IMPORTANT: Homography string may start with negative numbers (e.g., "-18.706...")
-      // which would be interpreted as flags. We don't need to quote in the args array
-      // because spawn() handles arguments properly without shell interpretation.
+      // which argparse would interpret as a flag. Use --key=value syntax to avoid this.
       const previewArgs = [
         path.join(process.cwd(), 'python', 'rectified_preview.py'),
-        '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
-        '--homography', homographyString,  // No quotes needed - spawn handles this correctly
-        '--output-size', '1200x600',
-        '--templates', JSON.stringify(templatesForPython),
-        '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
+        `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
+        `--homography=${homographyString}`,  // Use --key=value syntax for negative numbers
+        '--output-size=1200x600',
+        `--templates=${JSON.stringify(templatesForPython)}`,
+        `--paper-size=${paperDims.widthCm}x${paperDims.heightCm}`,
       ];
-      
-      console.log('[VerifyPositions] Python args:', previewArgs.join(' '));
       
       // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
-        previewArgs.push('--device-path', camera.devicePath);
+        previewArgs.push(`--device-path=${camera.devicePath}`);
         console.log(`[VerifyPositions] Using device path: ${camera.devicePath}`);
       } else {
-        previewArgs.push('--camera', camera.deviceIndex?.toString() || '0');
+        previewArgs.push(`--camera=${camera.deviceIndex?.toString() || '0'}`);
         console.log(`[VerifyPositions] Using camera index: ${camera.deviceIndex || 0}`);
       }
       
       if (camera.cameraMatrix) {
-        previewArgs.push('--camera-matrix', camera.cameraMatrix.join(','));
+        previewArgs.push(`--camera-matrix=${camera.cameraMatrix.join(',')}`);
       }
       
       if (camera.distCoeffs) {
-        previewArgs.push('--dist-coeffs', camera.distCoeffs.join(','));
+        previewArgs.push(`--dist-coeffs=${camera.distCoeffs.join(',')}`);
       }
+      
+      console.log('[VerifyPositions] Python args:', previewArgs.join(' '));
       
       console.log('[VerifyPositions] Generating rectified preview with adjusted templates...');
       const pythonProcess = spawn('python3', previewArgs);
@@ -1148,30 +1147,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const args = [
         path.join(process.cwd(), 'python/rectified_preview.py'),
-        '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
-        '--homography', homographyStr,
-        '--output-size', `${outputWidth}x${outputHeight}`,
-        '--paper-size', `${paperDimensions.widthCm}x${paperDimensions.heightCm}`
+        `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
+        `--homography=${homographyStr}`,  // Use --key=value syntax for negative numbers
+        `--output-size=${outputWidth}x${outputHeight}`,
+        `--paper-size=${paperDimensions.widthCm}x${paperDimensions.heightCm}`
       ];
       
       // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
-        args.push('--device-path', camera.devicePath);
+        args.push(`--device-path=${camera.devicePath}`);
         console.log(`[Rectified Preview] Using device path: ${camera.devicePath}`);
       } else {
-        args.push('--camera', camera.deviceIndex?.toString() || '0');
+        args.push(`--camera=${camera.deviceIndex?.toString() || '0'}`);
         console.log(`[Rectified Preview] Using camera index: ${camera.deviceIndex || 0}`);
       }
       
       // Add templates if available
       if (templateData.length > 0) {
-        args.push('--templates', JSON.stringify(templateData));
+        args.push(`--templates=${JSON.stringify(templateData)}`);
       }
       
       // Add camera calibration parameters for lens distortion correction
       if (camera.cameraMatrix && camera.distCoeffs) {
-        args.push('--camera-matrix', camera.cameraMatrix.join(','));
-        args.push('--dist-coeffs', camera.distCoeffs.join(','));
+        args.push(`--camera-matrix=${camera.cameraMatrix.join(',')}`);
+        args.push(`--dist-coeffs=${camera.distCoeffs.join(',')}`);
         console.log(`[Rectified Preview] Using camera calibration for undistortion`);
       } else {
         console.log(`[Rectified Preview] No camera calibration parameters - skipping undistortion`);
