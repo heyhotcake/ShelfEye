@@ -9,6 +9,23 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - Preferred communication style: Simple, everyday language.
 - **Deployment Context**: User runs the application on a Raspberry Pi at `http://naniwatanacheck.local:5000`. **ALL debugging, testing, and issue reports refer to the Pi deployment, NOT the Replit web preview.** The Replit environment is for code development only; actual hardware features (camera, GPIO) only work on the Raspberry Pi. When user reports issues or provides screenshots, they are ALWAYS from the Pi, not from Replit webview.
 
+## Raspberry Pi Service Management
+
+**Systemd Service Name**: `shelfeye.service` (NOT `shelfeye-app.service`)
+
+**Common Commands:**
+- Check status: `sudo systemctl status shelfeye.service`
+- View logs: `sudo journalctl -u shelfeye.service -f`
+- Restart service: `sudo systemctl restart shelfeye.service`
+- Update code and restart:
+  ```bash
+  cd ~/shelfeye
+  git pull origin main
+  sudo systemctl restart shelfeye.service
+  ```
+
+**Important**: The service includes auto-update functionality that pulls latest code from GitHub on startup.
+
 ## System Architecture
 
 ### Frontend Architecture
