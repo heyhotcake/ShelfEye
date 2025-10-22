@@ -116,9 +116,9 @@ export function RectifiedPreviewCanvas({
       const isHovered = hoveredTemplate === template.id;
       const isDragged = draggedTemplate === template.id;
       
-      // Draw rectangle
+      // Draw rectangle (thin lines so template details are visible)
       ctx.strokeStyle = isDragged ? 'rgb(147, 51, 234)' : isHovered ? 'rgb(236, 72, 153)' : 'rgb(217, 70, 239)';
-      ctx.lineWidth = isDragged ? 4 : isHovered ? 3 : 2;
+      ctx.lineWidth = isDragged ? 2 : isHovered ? 1.5 : 1;
       ctx.strokeRect(-width / 2, -height / 2, width, height);
 
       // Draw semi-transparent fill on hover/drag

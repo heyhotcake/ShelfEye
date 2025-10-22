@@ -124,9 +124,9 @@ def generate_rectified_image_from_frame(
             # Convert cm to pixels
             corners_px = corners_cm * np.array([scale_x, scale_y])
             
-            # Draw rectangle
+            # Draw rectangle (thin line so template details are visible)
             pts = corners_px.astype(np.int32).reshape((-1, 1, 2))
-            cv2.polylines(rectified, [pts], True, (255, 0, 255), 3)
+            cv2.polylines(rectified, [pts], True, (255, 0, 255), 1)
             
             # Draw label
             center_x = int(np.mean(corners_px[:, 0]))

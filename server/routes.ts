@@ -438,14 +438,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[VerifyPositions] Adjusted templates:', JSON.stringify(adjustedTemplates, null, 2));
       
+      // IMPORTANT: Homography string may start with negative numbers (e.g., "-18.706...")
+      // which would be interpreted as flags. We don't need to quote in the args array
+      // because spawn() handles arguments properly without shell interpretation.
       const previewArgs = [
         path.join(process.cwd(), 'python', 'rectified_preview.py'),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
-        '--homography', homographyString,
+        '--homography', homographyString,  // No quotes needed - spawn handles this correctly
         '--output-size', '1200x600',
         '--templates', JSON.stringify(templatesForPython),
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
       ];
+      
+      console.log('[VerifyPositions] Python args:', previewArgs.join(' '));
       
       // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
