@@ -425,7 +425,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const previewArgs = [
         path.join(process.cwd(), 'python', 'rectified_preview.py'),
-        '--camera', camera.deviceIndex?.toString() || '0',
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', homographyString,
         '--output-size', '1200x600',
@@ -433,8 +432,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
       ];
       
+      // Use device path if available (for Raspberry Pi), otherwise use index
       if (camera.devicePath) {
         previewArgs.push('--device-path', camera.devicePath);
+        console.log(`[VerifyPositions] Using device path: ${camera.devicePath}`);
+      } else {
+        previewArgs.push('--camera', camera.deviceIndex?.toString() || '0');
+        console.log(`[VerifyPositions] Using camera index: ${camera.deviceIndex || 0}`);
       }
       
       if (camera.cameraMatrix) {
