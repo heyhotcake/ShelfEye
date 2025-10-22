@@ -620,13 +620,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Validation] Using paper dimensions: ${paperWidthCm}x${paperHeightCm} cm`);
       }
       
-      // Call Python validation script
+      // Call Python validation script with saved rectified image from calibration
       const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', JSON.stringify(camera.homographyMatrix),
         '--slots', JSON.stringify(expectedSlots),
-        '--should-detect', 'true' // Step 1: QRs should be visible
+        '--should-detect', 'true', // Step 1: QRs should be visible
+        '--use-saved-rectified' // Use the high-res rectified image from calibration
       ];
       
       // Add paper dimensions if available
@@ -810,13 +811,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Validation] Using paper dimensions: ${paperWidthCm}x${paperHeightCm} cm`);
       }
       
-      // Call Python validation script
+      // Call Python validation script with saved rectified image from calibration
       const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', JSON.stringify(camera.homographyMatrix),
         '--slots', JSON.stringify(expectedSlots),
-        '--should-detect', 'false' // Step 2: QRs should NOT be visible
+        '--should-detect', 'false', // Step 2: QRs should NOT be visible
+        '--use-saved-rectified' // Use the high-res rectified image from calibration
       ];
       
       // Add paper dimensions if available

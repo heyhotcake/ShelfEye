@@ -265,13 +265,36 @@ class ArucoCornerCalibrator:
                     # Generate rectified preview if requested
                     if generate_preview and preview_output_size:
                         try:
-                            logger.info("Generating rectified preview from calibration frame")
-                            rectified = generate_rectified_image_from_frame(
+                            # First, generate HIGH-RESOLUTION rectified image for QR validation
+                            # Use 100 pixels per cm for excellent QR detection quality
+                            pixels_per_cm = 100
+                            highres_width = int(paper_size_cm[0] * pixels_per_cm)
+                            highres_height = int(paper_size_cm[1] * pixels_per_cm)
+                            highres_size = (highres_width, highres_height)
+                            
+                            logger.info(f"Generating high-res rectified image: {highres_width}x{highres_height}px for QR validation")
+                            rectified_highres = generate_rectified_image_from_frame(
+                                frame, homography, highres_size, paper_size_cm, templates,
+                                camera_matrix, dist_coeffs
+                            )
+                            
+                            # Save high-res version to disk for QR validation
+                            import os
+                            data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+                            os.makedirs(data_dir, exist_ok=True)
+                            highres_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
+                            cv2.imwrite(highres_path, rectified_highres, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                            logger.info(f"Saved high-res rectified image to: {highres_path}")
+                            
+                            # Then, generate downscaled version for UI preview
+                            logger.info(f"Generating UI preview: {preview_output_size[0]}x{preview_output_size[1]}px")
+                            rectified_preview = generate_rectified_image_from_frame(
                                 frame, homography, preview_output_size, paper_size_cm, templates,
                                 camera_matrix, dist_coeffs
                             )
-                            # Encode as base64
-                            _, buffer = cv2.imencode('.jpg', rectified)
+                            
+                            # Encode preview as base64 for UI
+                            _, buffer = cv2.imencode('.jpg', rectified_preview)
                             image_base64 = base64.b64encode(buffer).decode('utf-8')
                             result['rectified_preview'] = f'data:image/jpeg;base64,{image_base64}'
                             logger.info("Rectified preview generated successfully")
