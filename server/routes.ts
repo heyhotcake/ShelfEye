@@ -475,25 +475,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       pythonProcess.stderr.on('data', (data) => {
-        error += data.toString();
+        const stderrText = data.toString();
+        console.error('[VerifyPositions] Python stderr:', stderrText);
+        error += stderrText;
       });
       
       pythonProcess.on('close', (code) => {
+        console.log(`[VerifyPositions] Python process exited with code ${code}`);
+        
         if (code === 0) {
           try {
             const previewData = JSON.parse(result);
+            console.log('[VerifyPositions] Preview data parsed successfully:', { ok: previewData.ok });
             if (previewData.ok) {
               res.json({
                 ok: true,
                 rectifiedPreview: previewData.image
               });
             } else {
+              console.error('[VerifyPositions] Preview generation failed:', previewData.error);
               res.status(500).json({ message: "Failed to generate preview", error: previewData.error });
             }
           } catch (parseError) {
-            res.status(500).json({ message: "Failed to parse preview result", error: parseError });
+            console.error('[VerifyPositions] Failed to parse result:', parseError);
+            console.error('[VerifyPositions] Raw output:', result);
+            res.status(500).json({ message: "Failed to parse preview result", error: String(parseError) });
           }
         } else {
+          console.error('[VerifyPositions] Python failed with error:', error);
           res.status(500).json({ message: "Preview generation failed", error });
         }
       });
