@@ -415,13 +415,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         categoryName: t.categoryName || t.autoQrId || 'Tool'
       }));
       
+      if (!camera.homographyMatrix || !Array.isArray(camera.homographyMatrix) || camera.homographyMatrix.length !== 9) {
+        console.error('[VerifyPositions] Invalid homography matrix:', camera.homographyMatrix);
+        return res.status(400).json({ 
+          message: "Camera homography matrix is invalid or missing. The homography matrix should have exactly 9 elements.",
+          details: { 
+            hasMatrix: !!camera.homographyMatrix,
+            isArray: Array.isArray(camera.homographyMatrix),
+            length: camera.homographyMatrix?.length || 0
+          }
+        });
+      }
+      
       const homographyString = camera.homographyMatrix.join(',');
       console.log('[VerifyPositions] Camera info:', {
         deviceIndex: camera.deviceIndex,
+        devicePath: camera.devicePath,
         resolution: camera.resolution,
         homographyLength: camera.homographyMatrix.length,
         homographyString: homographyString.substring(0, 50) + '...'
       });
+      
+      console.log('[VerifyPositions] Adjusted templates:', JSON.stringify(adjustedTemplates, null, 2));
       
       const previewArgs = [
         path.join(process.cwd(), 'python', 'rectified_preview.py'),
