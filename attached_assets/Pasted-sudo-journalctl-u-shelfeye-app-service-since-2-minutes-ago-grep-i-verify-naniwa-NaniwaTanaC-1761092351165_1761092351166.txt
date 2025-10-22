@@ -1,0 +1,144 @@
+sudo journalctl -u shelfeye-app.service --since "2 minutes ago" | grep -i verify
+naniwa@NaniwaTanaCheck:~ $ curl -s http://localhost:5000/api/slots/diagnostic/840adc60-46d1-4c89-968e-0e5e9ecb96d3 | python3 -m json.tool
+{
+    "cameraId": "840adc60-46d1-4c89-968e-0e5e9ecb96d3",
+    "slotCount": 7,
+    "slots": [
+        {
+            "id": "5x5-002",
+            "toolName": "5x5",
+            "xCm": 24,
+            "yCm": 27.5,
+            "widthCm": 5,
+            "heightCm": 5,
+            "rotation": 0
+        },
+        {
+            "id": "5x5-003",
+            "toolName": "5x5",
+            "xCm": 65,
+            "yCm": 27.5,
+            "widthCm": 5,
+            "heightCm": 5,
+            "rotation": 0
+        },
+        {
+            "id": "pen-001",
+            "toolName": "pen",
+            "xCm": 19.5,
+            "yCm": 14.766754,
+            "widthCm": 7,
+            "heightCm": 4,
+            "rotation": 0
+        },
+        {
+            "id": "pen-002",
+            "toolName": "pen",
+            "xCm": 67,
+            "yCm": 15.5,
+            "widthCm": 7,
+            "heightCm": 4,
+            "rotation": 0
+        },
+        {
+            "id": "pen-003",
+            "toolName": "pen",
+            "xCm": 44.5,
+            "yCm": 16.5,
+            "widthCm": 7,
+            "heightCm": 4,
+            "rotation": 0
+        },
+        {
+            "id": "pen-004",
+            "toolName": "pen",
+            "xCm": 44,
+            "yCm": 39,
+            "widthCm": 7,
+            "heightCm": 4,
+            "rotation": 0
+        },
+        {
+            "id": "5x5-001",
+            "toolName": "5x5",
+            "xCm": 44,
+            "yCm": 28.5,
+            "widthCm": 5,
+            "heightCm": 5,
+            "rotation": 0
+        }
+    ]
+}
+naniwa@NaniwaTanaCheck:~ $ curl -s http://localhost:5000/api/slots/diagnostic/840adc60-46d1-4c89-968e-0e5e9ecb96d3 | python3 -m json.tool
+{
+    "cameraId": "840adc60-46d1-4c89-968e-0e5e9ecb96d3",
+    "slotCount": 7,
+    "slots": [
+        {
+            "id": "5x5-002",
+            "toolName": "5x5",
+            "xCm": 24,
+            "yCm": 27.5,
+            "widthCm": 5,
+            "heightCm": 5,
+            "rotation": 0
+        },
+        {
+            "id": "5x5-003",
+            "toolName": "5x5",
+            "xCm": 65,
+            "yCm": 27.5,
+            "widthCm": 5,
+            "heightCm": 5,
+            "rotation": 0
+        },
+        {
+            "id": "pen-001",
+            "toolName": "pen",
+            "xCm": 19.5,
+            "yCm": 14.766754,
+            "widthCm": 7,
+            "heightCm": 4,
+            "rotation": 0
+        },
+        {
+            "id": "pen-002",
+            "toolName": "pen",
+            "xCm": 67,
+            "yCm": 15.5,
+            "widthCm": 7,
+            "heightCm": 4,
+            "rotation": 0
+        },
+        {
+            "id": "pen-003",
+            "toolName": "pen",
+            "xCm": 44.5,
+            "yCm": 16.5,
+            "widthCm": 7,
+            "heightCm": 4,
+            "rotation": 0
+        },
+        {
+            "id": "pen-004",
+            "toolName": "pen",
+            "xCm": 44,
+            "yCm": 39,
+            "widthCm": 7,
+            "heightCm": 4,
+            "rotation": 0
+        },
+        {
+            "id": "5x5-001",
+            "toolName": "5x5",
+            "xCm": 44,
+            "yCm": 28.5,
+            "widthCm": 5,
+            "heightCm": 5,
+            "rotation": 0
+        }
+    ]
+}
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -u shelfeye-app.service -f
+^C
+naniwa@NaniwaTanaCheck:~ $
