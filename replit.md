@@ -21,10 +21,18 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
   ```bash
   cd ~/shelfeye
   git pull origin main
+  sudo systemctl daemon-reload  # Reload if service file changed
   sudo systemctl restart shelfeye.service
   ```
 
 **Important**: The service includes auto-update functionality that pulls latest code from GitHub on startup.
+
+**Resource Limits (Long-Term Reliability):**
+- CPU: 380% (3.8 cores out of 4, leaves 0.2 for OS)
+- Memory Soft Limit: 1.5GB (triggers swapping/slowdown warning)
+- Memory Hard Limit: 1.8GB (process killed if exceeded, auto-restarts)
+- Restart Safety: Max 5 restarts in 10 minutes (prevents infinite loops)
+- On memory kill: 10-second gap, then auto-restart with fresh memory state
 
 ## System Architecture
 
@@ -66,8 +74,17 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - Persistent storage for cameras, slots, detection logs, alert rules, system config, and workers.
 
 **File Storage Strategy:**
-- `data/<slot_id>_last.png` for live previews.
+- `data/<slot_id>_last.png` for live previews (overwritten each capture).
 - `data/rois/<slot_id>/<YYYY-MM>/<timestamp>_<slot_id>.png` for ROI archives.
+- `data/latest_calibration_rectified.jpg` for high-res rectified image from ArUco calibration (reused for QR validation).
+
+**Data Retention & Cleanup:**
+- Detection logs: 3 years (1,095 days)
+- ROI images: 3 months (90 days)
+- Sent alerts: 30 days
+- Daily maintenance: Runs at 3:00 AM JST
+- Emergency cleanup: Triggered at 90% disk usage (reduces retention to 30 days)
+- Accelerated cleanup: Triggered at 80% disk usage (reduces retention to 60 days)
 
 ### System Design Choices
 
@@ -87,6 +104,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - Simplified QR-based detection: Slot QR visible = tool missing; Worker QR visible = checked out; No QR visible = tool present.
 - Gmail and Google Sheets integration for multi-channel alerts and logging.
 - ArUco corner markers (IDs 17-20) positioned at extreme corners of the printable area.
+- **Long-term reliability systems**: Automated daily maintenance, disk space monitoring, graceful degradation on low storage, systemd resource limits (CPU 380%, Memory 1.5GB/1.8GB).
 
 **Detection & Alert System:**
 - **State Machine**: ITEM_PRESENT → EMPTY → CHECKED_OUT.

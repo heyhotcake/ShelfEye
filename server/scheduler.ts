@@ -6,6 +6,7 @@ import type { Camera, Slot } from '@shared/schema';
 import { sendAlertEmail } from './services/email-alerts';
 import { SheetsLogger } from './services/sheets-logger';
 import { getAlertLEDController } from './services/alert-led';
+import { maintenanceService } from './services/maintenance-service';
 
 const TIMEZONE = 'Asia/Tokyo';
 
@@ -160,7 +161,31 @@ export class CaptureScheduler {
       this.scheduleDiagnostic(timeStr); // 30 min before capture
     }
 
-    console.log(`[Scheduler] Scheduled ${config.captureTimes.length} capture times`);
+    // Schedule daily maintenance at 3 AM JST
+    this.scheduleDailyMaintenance();
+
+    console.log(`[Scheduler] Scheduled ${config.captureTimes.length} capture times + daily maintenance`);
+  }
+
+  /**
+   * Schedule daily maintenance task
+   * Runs at 3 AM JST to clean up old data and check disk space
+   */
+  private scheduleDailyMaintenance() {
+    // Cron: 0 3 * * * = 3:00 AM every day
+    const task = cron.schedule('0 3 * * *', async () => {
+      console.log('[Scheduler] Running daily maintenance at 3:00 AM JST');
+      try {
+        await maintenanceService.runDailyMaintenance();
+      } catch (error) {
+        console.error('[Scheduler] Daily maintenance failed:', error);
+      }
+    }, {
+      timezone: TIMEZONE
+    });
+
+    this.tasks.set('daily-maintenance', task);
+    console.log('[Scheduler] Scheduled daily maintenance at 3:00 AM JST');
   }
 
   /**

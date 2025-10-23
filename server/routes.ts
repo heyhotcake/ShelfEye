@@ -6,6 +6,7 @@ import { sendTestAlert } from "./services/email-alerts";
 import { getAlertLEDController } from "./services/alert-led";
 import { startupCalibrationService } from "./services/startup-calibration";
 import { cameraSessionManager } from "./camera-session-manager";
+import { maintenanceService } from "./services/maintenance-service";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
@@ -46,6 +47,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Health check failed", error });
+    }
+  });
+
+  // Maintenance routes
+  app.get("/api/maintenance/stats", async (_req, res) => {
+    try {
+      const stats = await maintenanceService.getMaintenanceStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch maintenance stats", error });
+    }
+  });
+
+  app.post("/api/maintenance/run", async (_req, res) => {
+    try {
+      await maintenanceService.runDailyMaintenance();
+      res.json({ message: "Maintenance completed successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Maintenance failed", error });
+    }
+  });
+
+  app.get("/api/maintenance/disk-usage", async (_req, res) => {
+    try {
+      const diskCheck = await maintenanceService.checkDiskSpace();
+      res.json(diskCheck);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check disk usage", error });
     }
   });
 
