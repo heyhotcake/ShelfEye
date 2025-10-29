@@ -10,7 +10,6 @@ import sys
 import logging
 import numpy as np
 import cv2
-from pyzbar.pyzbar import decode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -32,42 +31,53 @@ def scan_all_qr_codes(image_path):
         height, width = image.shape[:2]
         logger.info(f"Image loaded: {width}x{height}px")
         
-        # Decode all QR codes
-        detected_qrs = decode(image)
+        # Use OpenCV's QR code detector
+        qr_detector = cv2.QRCodeDetector()
         
-        logger.info(f"Found {len(detected_qrs)} QR codes")
-        
+        # Detect and decode multiple QR codes
         results = []
-        for qr in detected_qrs:
-            # Get QR data
-            qr_data = qr.data.decode('utf-8')
-            
-            # Get bounding box
-            rect = qr.rect
-            polygon = qr.polygon
-            
-            # Calculate center
-            center_x = rect.left + rect.width / 2
-            center_y = rect.top + rect.height / 2
-            
-            result = {
-                'data': qr_data,
-                'type': qr.type,
-                'center_x': center_x,
-                'center_y': center_y,
-                'width': rect.width,
-                'height': rect.height,
-                'bbox': {
-                    'left': rect.left,
-                    'top': rect.top,
-                    'width': rect.width,
-                    'height': rect.height
-                },
-                'polygon': [[p.x, p.y] for p in polygon]
-            }
-            
-            results.append(result)
-            logger.info(f"QR found: '{qr_data}' at ({center_x:.1f}, {center_y:.1f})")
+        success, decoded_info, points, straight_qrcode = qr_detector.detectAndDecodeMulti(image)
+        
+        if success and decoded_info:
+            for i, data in enumerate(decoded_info):
+                if data:  # Skip empty detections
+                    # Get corner points for this QR code
+                    qr_points = points[i]
+                    
+                    # Calculate bounding box
+                    xs = qr_points[:, 0]
+                    ys = qr_points[:, 1]
+                    left = int(np.min(xs))
+                    top = int(np.min(ys))
+                    right = int(np.max(xs))
+                    bottom = int(np.max(ys))
+                    
+                    # Calculate center and size
+                    center_x = (left + right) / 2
+                    center_y = (top + bottom) / 2
+                    qr_width = right - left
+                    qr_height = bottom - top
+                    
+                    result = {
+                        'data': data,
+                        'type': 'QRCODE',
+                        'center_x': center_x,
+                        'center_y': center_y,
+                        'width': qr_width,
+                        'height': qr_height,
+                        'bbox': {
+                            'left': left,
+                            'top': top,
+                            'width': qr_width,
+                            'height': qr_height
+                        },
+                        'polygon': qr_points.tolist()
+                    }
+                    
+                    results.append(result)
+                    logger.info(f"QR found: '{data}' at ({center_x:.1f}, {center_y:.1f})")
+        
+        logger.info(f"Found {len(results)} QR codes")
         
         return {
             'success': True,
