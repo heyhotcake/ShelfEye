@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-10-29T02:20:48.276Z",
+  "paperSize": "A4-landscape",
+  "homographyMatrix": [
+    [
+      -63.375188488815716,
+      3.065144762388452,
+      1870.913797151111
+    ],
+    [
+      -3.113832322887947,
+      -39.640572646619894,
+      1095.9969877525912
+    ],
+    [
+      -0.001899370675126851,
+      0.001641113672377393,
+      1
+    ]
+  ],
+  "markersDetected": 4,
+  "sourceImage": "/home/runner/workspace/data/test-uploads/test_1761704446322_03912f7738cd10a0.jpg",
+  "rectifiedImage": "/home/runner/workspace/data/test-calibration/test_rectified.jpg",
+  "paperWidthCm": 29.7,
+  "paperHeightCm": 21
+}
