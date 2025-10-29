@@ -8,6 +8,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 
 - Preferred communication style: Simple, everyday language.
 - **Deployment Context**: User runs the application on a Raspberry Pi at `http://naniwatanacheck.local:5000`. **ALL debugging, testing, and issue reports refer to the Pi deployment, NOT the Replit web preview.** The Replit environment is for code development only; actual hardware features (camera, GPIO) only work on the Raspberry Pi. When user reports issues or provides screenshots, they are ALWAYS from the Pi, not from Replit webview.
+- **Future Plans**: Upgrade to true 4K camera to improve QR detection speed and accuracy, then simplify redundant image processing that's currently needed to compensate for low camera resolution.
 
 ## Raspberry Pi Service Management
 
@@ -250,8 +251,19 @@ sudo journalctl -u shelfeye.service -f | grep -i "alert\|led"
 - Can take 5-10 minutes for 7 slots depending on QR visibility and lighting
 - Debug images saved to `/home/naniwa/ShelfEye/debug_images/` for inspection
 
-**Camera Resolution Settings**:
-- Database Setting: 2560x1440 (QHD)
-- Actual Capture: 1920x1080 (camera doesn't support 2560x1440)
-- Upgrade to 4K: 3840x2160 (requires 4K-capable camera and recalibration)
-- Stored in database per-camera in `cameras.resolution` field
+**Camera Hardware Limitations**:
+- **Current Camera**: Falsely advertised as "2K" - only supports 1920x1080 (Full HD)
+- **Actual Max Resolution**: 1920x1080 @ 30fps in MJPG format
+- **Database Setting**: 2560x1440 (QHD) - but camera silently falls back to 1920x1080
+- **Impact**: Lower resolution = harder QR detection = slower multi-scale processing needed
+- **Recommended Upgrade**: True 4K camera (3840x2160) with MJPG support @ 15-30fps
+- **Post-Upgrade**: Can simplify detection pipeline and reduce processing time
+
+**Performance Impact**:
+- Validation time: 5-10 minutes for 7 slots (due to multi-scale detection needed for low resolution)
+- With 4K camera: Expected 2-3 minutes (higher native resolution = less upscaling needed)
+
+**To verify camera capabilities** (SSH into Raspberry Pi):
+```bash
+v4l2-ctl --device=/dev/video0 --list-formats-ext
+```
