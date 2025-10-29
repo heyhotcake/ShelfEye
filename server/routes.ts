@@ -745,14 +745,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const validationResult = JSON.parse(result);
               res.json(validationResult);
             } catch (parseError) {
-              res.status(500).json({ message: "Failed to parse validation result", error: parseError });
+              console.error('[Validation] Failed to parse validation result:', parseError);
+              console.error('[Validation] Raw output:', result);
+              res.status(500).json({ 
+                success: false,
+                error: "Failed to parse validation result",
+                message: "Validation script returned invalid JSON - check server logs for details"
+              });
             }
           } else {
             try {
               const validationResult = JSON.parse(result);
               res.json(validationResult); // Return 200 even on validation failure so frontend can show detailed message
-            } catch {
-              res.status(500).json({ message: "Validation failed", error });
+            } catch (parseError) {
+              console.error('[Validation] Failed to parse Python output. Exit code:', code);
+              console.error('[Validation] Result:', result);
+              console.error('[Validation] Error output:', error);
+              res.status(500).json({ 
+                success: false,
+                error: error || "Validation script failed to return valid JSON",
+                message: "Validation failed - check server logs for details"
+              });
             }
           }
         } finally {
@@ -948,14 +961,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               res.json(validationResult);
             } catch (parseError) {
-              res.status(500).json({ message: "Failed to parse validation result", error: parseError });
+              console.error('[Validation] Failed to parse validation result:', parseError);
+              console.error('[Validation] Raw output:', result);
+              res.status(500).json({ 
+                success: false,
+                error: "Failed to parse validation result",
+                message: "Validation script returned invalid JSON - check server logs for details"
+              });
             }
           } else {
             try {
               const validationResult = JSON.parse(result);
               res.json(validationResult); // Return 200 even on validation failure so frontend can show detailed message
-            } catch {
-              res.status(500).json({ message: "Validation failed", error });
+            } catch (parseError) {
+              console.error('[Validation] Failed to parse Python output. Exit code:', code);
+              console.error('[Validation] Result:', result);
+              console.error('[Validation] Error output:', error);
+              res.status(500).json({ 
+                success: false,
+                error: error || "Validation script failed to return valid JSON",
+                message: "Validation failed - check server logs for details"
+              });
             }
           }
         } finally {
