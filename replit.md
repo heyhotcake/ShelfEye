@@ -167,22 +167,23 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
    sudo journalctl -u shelfeye.service -f | grep -i "validation\|qr"
    ```
 
-2. **Check Which QR Codes Were Detected** (SSH into Raspberry Pi):
-   ```bash
-   cd /home/naniwa/ShelfEye
+2. **Check Which QR Codes Were Detected**:
    
-   # Run validation manually to see all detected QRs
-   sudo python3 python/validate_slot_qrs.py \
-     --resolution "2560x1440" \
-     --should-detect "true" \
-     --use-saved-rectified
+   The validation output is shown in the service logs. Look for lines like:
+   ```
+   [Validation] Python stderr: QR detected via pyzbar_binary_127_x1.0: pen-003
+   ```
+   
+   **View validation results from logs** (SSH into Raspberry Pi):
+   ```bash
+   # Check most recent validation in logs
+   sudo journalctl -u shelfeye.service -n 200 --no-pager | grep -i "QR detected\|detected_count\|expected_count"
    ```
    
    Output shows:
-   - Total QR codes detected
-   - Specific QR IDs found (e.g., "pen-001", "worker-john")
-   - Expected QRs that are missing
-   - Position information for each QR
+   - Which QR codes were detected (e.g., "pen-003", "5x5-003")
+   - Detection method used (e.g., "pyzbar_binary_127_x1.0", "pyzbar_grayscale_x2.0")
+   - Total detected vs expected counts
 
 3. **Check Server Logs for Detailed Errors**:
    ```bash
@@ -193,13 +194,19 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
    sudo journalctl -u shelfeye.service | grep -i "validation failed"
    ```
 
-4. **Test Camera Directly**:
+4. **View Saved Debug Images**:
    ```bash
-   cd /home/naniwa/ShelfEye
+   # Validation saves debug images you can download and inspect
+   ls -lh /home/naniwa/ShelfEye/debug_images/
    
-   # Capture a test image to verify camera is working
-   python3 python/camera_preview.py 0 2560 1440
+   # View the raw captured frame
+   # validation_raw_frame.jpg - Raw camera capture
+   
+   # View the rectified (top-down) image used for QR detection
+   # validation_rectified_debug.jpg - High-res rectified image (8910x4200 @ 100px/cm)
    ```
+   
+   Download these images via SFTP to visually inspect QR code quality.
 
 ### Alert System Failures
 
@@ -225,14 +232,26 @@ sudo journalctl -u shelfeye.service -f | grep -i "alert\|led"
 
 ### Rectified Preview vs Actual Detection Quality
 
-**Understanding**: The rectified preview shown in the UI is **downscaled to 800x600** for display purposes only. The actual QR detection uses the **full camera resolution (2560x1440)** without downscaling.
+**Understanding**: The rectified preview shown in the UI is **downscaled to 800x600** for display purposes only. The actual QR detection uses much higher resolution.
+
+**Resolution Pipeline**:
+1. **Camera Capture**: 2560x1440 (QHD) - but validation shows it's actually capturing at 1920x1080
+2. **Rectified Image for QR Detection**: 8910x4200 pixels @ 100px/cm (for 89.1x42cm paper)
+3. **UI Preview**: 800x600 pixels (heavily downscaled for display only)
 
 **Why Preview Looks Blurry**:
-- Preview: 800x600 pixels (for UI display)
-- Actual QR Detection: Uses full 2560x1440 resolution directly from camera
-- No quality loss in actual detection process
+- UI Preview: 800x600 pixels (for display)
+- Actual QR Detection: 8910x4200 pixels (very high resolution)
+- **No quality loss** in actual detection - uses high-res rectified image
+
+**QR Detection Performance**:
+- Uses multi-scale detection (1.0x, 2.0x, 3.0x upscaling)
+- Memory-optimized for Raspberry Pi (converts to grayscale to save 75MB)
+- Can take 5-10 minutes for 7 slots depending on QR visibility and lighting
+- Debug images saved to `/home/naniwa/ShelfEye/debug_images/` for inspection
 
 **Camera Resolution Settings**:
-- Current: 2560x1440 (QHD)
+- Database Setting: 2560x1440 (QHD)
+- Actual Capture: 1920x1080 (camera doesn't support 2560x1440)
 - Upgrade to 4K: 3840x2160 (requires 4K-capable camera and recalibration)
 - Stored in database per-camera in `cameras.resolution` field
