@@ -49,6 +49,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - Dual version management (template and slot configurations) using localStorage.
 - Recharts for analytics visualization.
 - Real-time polling for dashboard updates (30-second intervals).
+- Detection logs display diagnostic data (detection method, SSIM score, pose quality) for troubleshooting random detection failures.
 
 **State Management Strategy:**
 - Server state managed via TanStack Query.
@@ -112,6 +113,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - **Binary Detection Logic**: Based on QR visibility and type.
 - **Worker Validation**: Database lookup for worker QR codes to track checkouts and identify unauthorized removals.
 - **Checkout Tracking**: Detection logs include worker ID for relational tracking and historical reports.
+- **Detection Method Logging**: Tracks which detection method/scale was used (e.g., "pyzbar_adaptive_x2") for diagnosing random detection failures and identifying lighting vs resolution issues.
 - **Business Rules Engine**: Time-based monitoring with grace periods.
 - **Queue-based Alerts**: Offline resilience with retry logic.
 - **QR Code Format**: Simple ID payloads (e.g., "pen-001", "worker-john") optimized for 40mm scanning reliability.
