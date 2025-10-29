@@ -1244,9 +1244,38 @@ export default function SlotDrawing() {
               </h2>
               <p className="text-sm text-muted-foreground mt-1">Design your tool layout - ArUco markers, templates, and QR codes on one sheet</p>
             </div>
-            <Button variant="outline" size="sm" data-testid="button-close-slot-drawing">
-              <X className="w-4 h-4" />
-            </Button>
+            <div className="flex gap-2">
+              {slots && slots.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => {
+                    if (confirm(`Delete all ${slots.length} slots? This cannot be undone.`)) {
+                      apiRequest('/api/slots', 'DELETE').then(() => {
+                        queryClient.invalidateQueries({ queryKey: ['/api/slots'] });
+                        toast({
+                          title: "Slots deleted",
+                          description: `Deleted all ${slots.length} slots. You can now recreate them with correct coordinates.`,
+                        });
+                      }).catch(() => {
+                        toast({
+                          title: "Error",
+                          description: "Failed to delete slots",
+                          variant: "destructive",
+                        });
+                      });
+                    }
+                  }}
+                  data-testid="button-delete-all-slots"
+                >
+                  <Trash className="w-4 h-4 mr-2" />
+                  Delete All {slots.length} Slots
+                </Button>
+              )}
+              <Button variant="outline" size="sm" data-testid="button-close-slot-drawing">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </header>
         
