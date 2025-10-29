@@ -306,36 +306,22 @@ export class CaptureScheduler {
         console.error('[Scheduler] Failed to log to sheets:', error);
       }
 
-      // Create detection logs and evaluate alerts for each slot result
-      const alertsTriggered: string[] = [];
+      // Create detection logs for each slot result
       if (result.results) {
         for (const cameraResult of result.results) {
           if (cameraResult.slotResults) {
             for (const slotResult of cameraResult.slotResults) {
-              // Check if alert should be triggered for this slot
-              const shouldAlert = await this.evaluateSlotForAlert(slotResult);
-              
               await this.storage.createDetectionLog({
                 slotId: slotResult.slotId,
                 status: slotResult.status,
                 qrId: slotResult.qrData,
                 ssimScore: slotResult.ssimEmpty, // Store empty baseline SSIM
                 rawDetectionData: slotResult,
-                alertTriggered: shouldAlert,
+                alertTriggered: false, // TODO: Implement alert logic
               });
-              
-              if (shouldAlert) {
-                alertsTriggered.push(slotResult.slotId);
-              }
             }
           }
         }
-      }
-      
-      // Trigger red LED flash if any tools are missing
-      if (alertsTriggered.length > 0) {
-        console.log(`[Scheduler] ${alertsTriggered.length} tools missing - triggering LED alert`);
-        await this.triggerAlertLED(alertsTriggered);
       }
 
       // If there were failures, trigger alert
@@ -625,109 +611,6 @@ export class CaptureScheduler {
       console.log(`[Scheduler] Stopped diagnostic task: ${key}`);
     });
     this.diagnosticTasks.clear();
-  }
-
-  /**
-   * Evaluate if a slot should trigger an alert based on its status and alert rules
-   */
-  private async evaluateSlotForAlert(slotResult: any): Promise<boolean> {
-    const status = slotResult.status;
-    
-    // Only alert for EMPTY or CHECKED_OUT states
-    if (status !== 'EMPTY' && status !== 'CHECKED_OUT') {
-      return false;
-    }
-    
-    // Get enabled TOOL_MISSING alert rules
-    const alertRules = await this.storage.getAlertRules();
-    const toolMissingRules = alertRules.filter(rule => 
-      rule.ruleType === 'TOOL_MISSING' && rule.isEnabled
-    );
-    
-    if (toolMissingRules.length === 0) {
-      // No alert rules configured, alert immediately
-      return true;
-    }
-    
-    // Check each rule to see if alert should be triggered
-    for (const rule of toolMissingRules) {
-      const verificationWindowMinutes = rule.verificationWindow || 5;
-      
-      // Get recent detection logs for this slot
-      const recentLogs = await this.storage.getDetectionLogsBySlotId(slotResult.slotId, 10);
-      
-      // Check if slot has been empty for the verification window
-      if (recentLogs.length === 0) {
-        // First detection ever - alert immediately
-        return true;
-      }
-      
-      // Find when slot first became empty
-      const firstEmptyLog = recentLogs.find(log => 
-        log.status === 'EMPTY' || log.status === 'CHECKED_OUT'
-      );
-      
-      if (!firstEmptyLog) {
-        // Just became empty - alert immediately
-        return true;
-      }
-      
-      // Calculate how long it's been empty
-      const emptyDuration = Date.now() - new Date(firstEmptyLog.timestamp).getTime();
-      const emptyDurationMinutes = emptyDuration / (60 * 1000);
-      
-      // Check if it's been empty long enough
-      if (emptyDurationMinutes >= verificationWindowMinutes) {
-        // Queue alert
-        const slot = await this.storage.getSlotById(slotResult.slotId);
-        if (slot) {
-          await this.storage.createAlertQueueEntry({
-            slotId: slotResult.slotId,
-            ruleId: rule.id,
-            alertType: status,
-            message: `Tool "${slot.toolName}" (${slot.slotId}) is ${status === 'EMPTY' ? 'missing' : 'checked out'}`,
-            status: 'pending',
-            retryCount: 0,
-            scheduledAt: new Date(),
-          });
-        }
-        
-        return true;
-      }
-    }
-    
-    return false;
-  }
-  
-  /**
-   * Trigger red LED flash alert for missing tools
-   */
-  private async triggerAlertLED(slotIds: string[]): Promise<void> {
-    try {
-      // Get slot details for alert message
-      const slots = await Promise.all(
-        slotIds.map(id => this.storage.getSlotById(id))
-      );
-      const slotNames = slots.filter(s => s).map(s => s!.toolName).join(', ');
-      
-      console.log(`[Scheduler] Starting red LED flash for missing tools: ${slotNames}`);
-      
-      // Start red LED flash (slow pattern for missing tools)
-      const alertLED = getAlertLEDController(this.storage);
-      await alertLED.startFlash('slow');
-      
-      // Send email and sheets alerts
-      await this.sendAlert(
-        'TOOL_MISSING',
-        `${slotIds.length} tool(s) missing: ${slotNames}`,
-        undefined,
-        slotIds.join(',')
-      );
-      
-      console.log('[Scheduler] Alert LED activated for missing tools');
-    } catch (error) {
-      console.error('[Scheduler] Failed to trigger alert LED:', error);
-    }
   }
 
   /**
