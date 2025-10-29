@@ -25,6 +25,7 @@ interface DetectionLog {
   poseQuality: number | null;
   imagePath: string | null;
   alertTriggered: boolean;
+  rawDetectionData: any;
 }
 
 export default function DetectionLogs() {
@@ -212,8 +213,9 @@ export default function DetectionLogs() {
                         <TableHead>Slot</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>QR ID / Worker</TableHead>
-                        <TableHead>SSIM Score</TableHead>
-                        <TableHead>Pose Quality</TableHead>
+                        <TableHead>Detection Method</TableHead>
+                        <TableHead>SSIM</TableHead>
+                        <TableHead>Pose</TableHead>
                         <TableHead>Alert</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -239,6 +241,20 @@ export default function DetectionLogs() {
                               <span className="text-green-500">{log.qrId}</span>
                             ) : (
                               <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {log.rawDetectionData?.detection_method ? (
+                              <span 
+                                className="text-gray-400"
+                                title={log.rawDetectionData.detection_method}
+                              >
+                                {log.rawDetectionData.detection_method}
+                              </span>
+                            ) : log.status === 'ITEM_PRESENT' ? (
+                              <span className="text-muted-foreground italic">no QR</span>
+                            ) : (
+                              <span className="text-red-400">not detected</span>
                             )}
                           </TableCell>
                           <TableCell className="font-mono text-sm">
@@ -274,7 +290,7 @@ export default function DetectionLogs() {
                       
                       {!logs?.length && (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8">
+                          <TableCell colSpan={9} className="text-center py-8">
                             <div className="text-muted-foreground">
                               No detection logs found
                             </div>
