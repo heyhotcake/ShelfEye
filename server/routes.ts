@@ -244,8 +244,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Test Calibration] Running ArUco calibration on: ${resolvedPath}`);
       console.log(`[Test Calibration] Paper size: ${paperSizeFormat} (${paperDims.widthCm}x${paperDims.heightCm}cm)`);
 
-      // Run ArUco calibration Python script
-      const pythonScript = path.join(process.cwd(), 'python', 'aruco_calibrator.py');
+      // Run Test ArUco calibration Python script (processes static images)
+      const pythonScript = path.join(process.cwd(), 'python', 'test_aruco_calibrator.py');
       const outputDir = path.join(process.cwd(), 'data', 'test-calibration');
       
       // Ensure output directory exists
