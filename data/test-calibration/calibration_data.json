@@ -1,26 +1,26 @@
 {
-  "timestamp": "2025-10-29T02:53:49.128Z",
-  "paperSize": "6-page-3x2",
+  "timestamp": "2025-10-29T02:56:16.295Z",
+  "paperSize": "A4-landscape",
   "homographyMatrix": [
     [
-      -18.632267765183443,
-      1.3268282910324876,
-      1765.167610170005
+      -63.375188488815716,
+      3.065144762388452,
+      1870.913797151111
     ],
     [
-      -0.915464853034247,
-      -17.159461408041068,
-      1035.313384130196
+      -3.113832322887947,
+      -39.640572646619894,
+      1095.9969877525912
     ],
     [
-      -0.0005584138500912893,
-      0.0007103990898014853,
+      -0.001899370675126851,
+      0.001641113672377393,
       1
     ]
   ],
   "markersDetected": 4,
   "sourceImage": "/home/runner/workspace/data/test-uploads/test_1761704446322_03912f7738cd10a0.jpg",
   "rectifiedImage": "/home/runner/workspace/data/test-calibration/test_rectified.jpg",
-  "paperWidthCm": 89.1,
-  "paperHeightCm": 42
+  "paperWidthCm": 29.7,
+  "paperHeightCm": 21
 }
