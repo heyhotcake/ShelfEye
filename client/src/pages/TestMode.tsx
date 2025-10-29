@@ -37,6 +37,22 @@ interface TestResults {
   simulationEnabled: boolean;
 }
 
+interface QRCode {
+  data: string;
+  type: string;
+  center_x: number;
+  center_y: number;
+  width: number;
+  height: number;
+}
+
+interface QRScanResults {
+  success: boolean;
+  qr_codes: QRCode[];
+  total_found: number;
+  image_size: { width: number; height: number };
+}
+
 interface CalibrationData {
   success: boolean;
   timestamp: string;
@@ -55,6 +71,7 @@ export default function TestMode() {
   const [paperSize, setPaperSize] = useState<string>("A4-landscape");
   const [calibrationData, setCalibrationData] = useState<CalibrationData | null>(null);
   const [useTestCalibration, setUseTestCalibration] = useState<boolean>(false);
+  const [qrScanResults, setQrScanResults] = useState<QRScanResults | null>(null);
 
   // Get simulation status
   const { data: status, refetch: refetchStatus } = useQuery<{
@@ -142,6 +159,22 @@ export default function TestMode() {
     },
   });
 
+  // Run QR scan mutation (scan entire image, no slots)
+  const runQRScan = useMutation<QRScanResults, Error, string>({
+    mutationFn: async (imagePath: string) => {
+      const response = await fetch('/api/test-mode/scan-qrs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagePath }),
+      });
+      if (!response.ok) throw new Error('QR scan failed');
+      return response.json();
+    },
+    onSuccess: (data: QRScanResults) => {
+      setQrScanResults(data);
+    },
+  });
+
   // Run detection mutation
   const runDetection = useMutation<TestResults, Error, { imagePath: string; useCalibration: boolean }>({
     mutationFn: async ({ imagePath, useCalibration }) => {
@@ -177,9 +210,19 @@ export default function TestMode() {
     }
   };
 
+  const handleRunQRScan = () => {
+    if (selectedImage) {
+      setQrScanResults(null);
+      setTestResults(null);
+      const imageToScan = useTestCalibration && calibrationData ? calibrationData.rectifiedImage : selectedImage;
+      runQRScan.mutate(imageToScan);
+    }
+  };
+
   const handleRunTest = () => {
     if (selectedImage) {
       setTestResults(null);
+      setQrScanResults(null);
       runDetection.mutate({ imagePath: selectedImage, useCalibration: useTestCalibration });
     }
   };
@@ -395,7 +438,7 @@ export default function TestMode() {
                 
                 {/* Detection Section */}
                 <div className="space-y-3">
-                  <Label className="text-gray-300">Step 2: Run QR Detection</Label>
+                  <Label className="text-gray-300">Step 2: Scan for QR Codes</Label>
                   
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -413,16 +456,29 @@ export default function TestMode() {
                     </label>
                   </div>
                   
-                  <Button
-                    onClick={handleRunTest}
-                    disabled={runDetection.isPending}
-                    className="w-full"
-                    size="lg"
-                    data-testid="button-run-test"
-                  >
-                    <PlayCircle className="w-5 h-5 mr-2" />
-                    {runDetection.isPending ? "Running Detection..." : "Run QR Detection Test"}
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={handleRunQRScan}
+                      disabled={runQRScan.isPending}
+                      variant="outline"
+                      data-testid="button-scan-all-qrs"
+                    >
+                      <ScanLine className="w-5 h-5 mr-2" />
+                      {runQRScan.isPending ? "Scanning..." : "Scan All QRs"}
+                    </Button>
+                    <Button
+                      onClick={handleRunTest}
+                      disabled={runDetection.isPending}
+                      data-testid="button-run-test"
+                    >
+                      <PlayCircle className="w-5 h-5 mr-2" />
+                      {runDetection.isPending ? "Testing..." : "Test Slots"}
+                    </Button>
+                  </div>
+                  
+                  <p className="text-xs text-gray-400 italic">
+                    "Scan All QRs" shows all readable QR codes. "Test Slots" checks specific slot positions.
+                  </p>
                 </div>
               </>
             )}
@@ -438,11 +494,27 @@ export default function TestMode() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {runQRScan.isPending && (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-400">Scanning image for QR codes...</p>
+              </div>
+            )}
+
             {runDetection.isPending && (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
                 <p className="text-gray-400">Processing image with Pi simulation...</p>
               </div>
+            )}
+
+            {runQRScan.isError && (
+              <Alert className="bg-red-500/10 border-red-500/30">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+                <AlertDescription className="text-red-300">
+                  QR scan failed. Check console for details.
+                </AlertDescription>
+              </Alert>
             )}
 
             {runDetection.isError && (
@@ -452,6 +524,61 @@ export default function TestMode() {
                   Detection test failed. Check console for details.
                 </AlertDescription>
               </Alert>
+            )}
+
+            {qrScanResults && (
+              <div className="space-y-6">
+                {/* QR Scan Summary */}
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-blue-400 mb-2">
+                    <ScanLine className="w-5 h-5" />
+                    <span className="font-medium">Full Image Scan (No Slot Filtering)</span>
+                  </div>
+                  <div className="text-2xl font-bold text-white">
+                    {qrScanResults.total_found} QR code{qrScanResults.total_found !== 1 ? 's' : ''} found
+                  </div>
+                  <div className="text-sm text-gray-400 mt-1">
+                    Image size: {qrScanResults.image_size.width} × {qrScanResults.image_size.height} px
+                  </div>
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                {/* All Detected QR Codes */}
+                <div>
+                  <Label className="text-gray-300 mb-3 block">All Detected QR Codes</Label>
+                  {qrScanResults.qr_codes.length > 0 ? (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {qrScanResults.qr_codes.map((qr, index) => (
+                        <div
+                          key={index}
+                          className="bg-gray-700 rounded-lg p-3 border border-gray-600"
+                          data-testid={`qr-${index}`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="text-white font-mono font-medium">{qr.data}</div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                Position: ({qr.center_x.toFixed(0)}, {qr.center_y.toFixed(0)}) px
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                Size: {qr.width} × {qr.height} px
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="text-xs">
+                              {qr.type}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No QR codes detected in image
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {testResults && (
@@ -532,9 +659,9 @@ export default function TestMode() {
               </div>
             )}
 
-            {!testResults && !runDetection.isPending && !runDetection.isError && (
+            {!testResults && !qrScanResults && !runDetection.isPending && !runQRScan.isPending && !runDetection.isError && !runQRScan.isError && (
               <div className="text-center py-12 text-gray-500">
-                Select an image and click "Run Detection Test" to see results
+                Select an image and run a scan to see results
               </div>
             )}
           </CardContent>

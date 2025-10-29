@@ -370,6 +370,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Scan entire image for all QR codes (no slot filtering)
+  app.post("/api/test-mode/scan-qrs", async (req, res) => {
+    try {
+      const { imagePath } = req.body;
+
+      if (!imagePath) {
+        return res.status(400).json({ message: "imagePath is required" });
+      }
+
+      // SECURITY: Validate image path
+      const normalizedPath = path.normalize(imagePath);
+      const resolvedPath = path.resolve(normalizedPath);
+      const allowedDirs = [
+        path.resolve(process.cwd(), 'data', 'test-uploads'),
+        path.resolve(process.cwd(), 'data', 'test-calibration'),
+      ];
+      
+      const isAllowed = allowedDirs.some(dir => resolvedPath.startsWith(dir));
+      if (!isAllowed) {
+        return res.status(400).json({ message: "Invalid image path" });
+      }
+
+      console.log(`[Test Mode] Scanning all QR codes in: ${resolvedPath}`);
+
+      // Run QR scanner Python script
+      const pythonScript = path.join(process.cwd(), 'python', 'scan_all_qrs.py');
+      const args = [pythonScript, '--image-path', resolvedPath];
+
+      console.log(`[Test Mode] Running: python3 ${args.join(' ')}`);
+
+      const pythonProcess = spawn('python3', args);
+      
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      pythonProcess.on('close', async (code) => {
+        if (code !== 0) {
+          console.error(`[Test Mode] QR scan failed with code ${code}`);
+          console.error(`[Test Mode] stderr: ${stderr}`);
+          return res.status(500).json({ 
+            message: "QR scan failed", 
+            error: stderr,
+            code 
+          });
+        }
+
+        try {
+          // Parse the JSON output
+          const resultMatch = stdout.match(/\{[\s\S]*"success"[\s\S]*\}/);
+          if (!resultMatch) {
+            throw new Error('Could not parse QR scan result');
+          }
+
+          const result = JSON.parse(resultMatch[0]);
+          
+          console.log(`[Test Mode] Found ${result.total_found} QR codes`);
+          
+          res.json(result);
+        } catch (error) {
+          console.error('[Test Mode] Error parsing result:', error);
+          res.status(500).json({ 
+            message: "Failed to parse QR scan result", 
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        console.error('[Test Mode] Process error:', error);
+        res.status(500).json({ 
+          message: "Failed to start QR scan process", 
+          error: error.message 
+        });
+      });
+    } catch (error) {
+      console.error('[Test Mode] Error:', error);
+      res.status(500).json({ 
+        message: "QR scan failed", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Run test detection on an image (using test calibration if available)
   app.post("/api/test-mode/detect", async (req, res) => {
     try {
