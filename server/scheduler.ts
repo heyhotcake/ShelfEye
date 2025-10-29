@@ -326,7 +326,7 @@ export class CaptureScheduler {
 
       // If there were failures, trigger alert
       if (result.status === 'failure' || result.status === 'partial_failure') {
-        await this.sendAlert('CAPTURE_FAILURE', `Capture ${result.status}: ${result.failureCount} failures`);
+        await this.sendAlert('capture_failure', `Capture ${result.status}: ${result.failureCount} failures`);
       }
 
       console.log(`[Scheduler] Capture complete: ${result.status} (${executionTime}ms)`);
@@ -348,7 +348,7 @@ export class CaptureScheduler {
         executionTimeMs: executionTime,
       });
 
-      await this.sendAlert('CAPTURE_ERROR', `Capture failed: ${error.message}`);
+      await this.sendAlert('capture_failure', `Capture failed: ${error.message}`);
 
       throw error;
     }
@@ -422,7 +422,7 @@ export class CaptureScheduler {
           });
         }
 
-        await this.sendAlert('DIAGNOSTIC_FAILURE', message);
+        await this.sendAlert('diagnostic_failure', message);
       }
 
       console.log(`[Scheduler] Diagnostic complete: ${result.status} (${executionTime}ms)`);
@@ -444,7 +444,7 @@ export class CaptureScheduler {
         executionTimeMs: executionTime,
       });
 
-      await this.sendAlert('DIAGNOSTIC_ERROR', `Diagnostic check failed: ${error.message}`);
+      await this.sendAlert('diagnostic_failure', `Diagnostic check failed: ${error.message}`);
 
       throw error;
     }
@@ -502,13 +502,22 @@ export class CaptureScheduler {
       const now = toZonedTime(new Date(), TIMEZONE);
       const timestamp = format(now, 'yyyy-MM-dd HH:mm:ss', { timeZone: TIMEZONE });
       
-      // Determine email type
+      // Normalize alert type (support both legacy uppercase and new lowercase)
       let emailType: 'diagnostic_failure' | 'capture_failure' | 'camera_offline' | 'test_alert';
-      if (alertType === 'DIAGNOSTIC_FAILURE' || alertType === 'DIAGNOSTIC_ERROR') {
+      
+      // Handle legacy uppercase formats for backward compatibility
+      if (alertType === 'DIAGNOSTIC_FAILURE' || alertType === 'DIAGNOSTIC_ERROR' || alertType === 'diagnostic_failure') {
         emailType = 'diagnostic_failure';
-      } else if (alertType === 'CAPTURE_FAILURE' || alertType === 'CAPTURE_ERROR') {
+      } else if (alertType === 'CAPTURE_FAILURE' || alertType === 'CAPTURE_ERROR' || alertType === 'capture_failure') {
         emailType = 'capture_failure';
+      } else if (alertType === 'camera_offline') {
+        emailType = 'camera_offline';
+      } else if (alertType === 'test_alert') {
+        emailType = 'test_alert';
       } else {
+        // Unknown type - log warning and default to camera_offline
+        console.warn(`[Scheduler] ⚠️ Unknown alert type '${alertType}' - defaulting to 'camera_offline'`);
+        console.warn(`[Scheduler] Valid types: diagnostic_failure, capture_failure, camera_offline, test_alert`);
         emailType = 'camera_offline';
       }
       
