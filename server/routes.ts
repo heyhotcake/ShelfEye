@@ -7,6 +7,8 @@ import { getAlertLEDController } from "./services/alert-led";
 import { startupCalibrationService } from "./services/startup-calibration";
 import { cameraSessionManager } from "./camera-session-manager";
 import { maintenanceService } from "./services/maintenance-service";
+import { piSimulationService } from "./services/pi-simulation-service";
+import multer from "multer";
 import { spawn } from "child_process";
 import path from "path";
 import fs from "fs/promises";
@@ -75,6 +77,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(diskCheck);
     } catch (error) {
       res.status(500).json({ message: "Failed to check disk usage", error });
+    }
+  });
+
+  // Test Mode / Pi Simulation routes
+  const upload = multer({ 
+    dest: path.join(process.cwd(), 'data', 'test-uploads'),
+    limits: { fileSize: 20 * 1024 * 1024 } // 20MB max
+  });
+
+  // Ensure test uploads directory exists
+  const testUploadsDir = path.join(process.cwd(), 'data', 'test-uploads');
+  try {
+    await fs.mkdir(testUploadsDir, { recursive: true });
+  } catch (error) {
+    console.error('[Test Mode] Could not create test-uploads directory:', error);
+  }
+
+  // Get simulation status
+  app.get("/api/test-mode/status", (_req, res) => {
+    try {
+      const memory = piSimulationService.getMemoryUsage();
+      res.json({
+        simulationEnabled: piSimulationService.isEnabled(),
+        memory,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get simulation status", error });
+    }
+  });
+
+  // Toggle simulation mode
+  app.post("/api/test-mode/toggle", (req, res) => {
+    try {
+      const { enabled } = req.body;
+      piSimulationService.setSimulationEnabled(enabled);
+      res.json({ 
+        simulationEnabled: piSimulationService.isEnabled(),
+        message: `Pi simulation ${enabled ? 'enabled' : 'disabled'}`
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to toggle simulation", error });
+    }
+  });
+
+  // Upload test image
+  app.post("/api/test-mode/upload", upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file uploaded" });
+      }
+
+      // SECURITY: Validate MIME type
+      const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        await fs.unlink(req.file.path); // Clean up
+        return res.status(400).json({ 
+          message: "Invalid file type. Only JPEG and PNG images are allowed" 
+        });
+      }
+
+      // SECURITY: Generate server-side filename to prevent path traversal
+      // Use timestamp + random string instead of user-provided filename
+      const fileExtension = req.file.mimetype === 'image/png' ? 'png' : 'jpg';
+      const randomString = crypto.randomBytes(8).toString('hex');
+      const fileName = `test_${Date.now()}_${randomString}.${fileExtension}`;
+      const finalPath = path.join(testUploadsDir, fileName);
+      
+      // Move uploaded file to final location
+      await fs.rename(req.file.path, finalPath);
+
+      res.json({
+        fileName,
+        path: finalPath,
+        size: req.file.size,
+        message: "Image uploaded successfully"
+      });
+    } catch (error) {
+      console.error('[Test Mode] Upload error:', error);
+      // Clean up temp file if it exists
+      if (req.file?.path) {
+        try {
+          await fs.unlink(req.file.path);
+        } catch (e) {
+          // Already deleted
+        }
+      }
+      res.status(500).json({ message: "Failed to upload image", error });
+    }
+  });
+
+  // Get list of available test images
+  app.get("/api/test-mode/images", async (_req, res) => {
+    try {
+      const images = [];
+      
+      // Check for calibration image
+      const calibrationPath = path.join(process.cwd(), 'data', 'latest_calibration_rectified.jpg');
+      try {
+        await fs.access(calibrationPath);
+        const stats = await fs.stat(calibrationPath);
+        images.push({
+          fileName: 'latest_calibration_rectified.jpg',
+          path: calibrationPath,
+          size: stats.size,
+          source: 'calibration',
+          created: stats.mtime,
+        });
+      } catch (error) {
+        // No calibration image yet
+      }
+
+      // Get uploaded test images
+      try {
+        const files = await fs.readdir(testUploadsDir);
+        for (const file of files) {
+          const filePath = path.join(testUploadsDir, file);
+          const stats = await fs.stat(filePath);
+          if (stats.isFile() && /\.(jpg|jpeg|png)$/i.test(file)) {
+            images.push({
+              fileName: file,
+              path: filePath,
+              size: stats.size,
+              source: 'uploaded',
+              created: stats.mtime,
+            });
+          }
+        }
+      } catch (error) {
+        // Directory doesn't exist or is empty
+      }
+
+      res.json({ images });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to list test images", error });
+    }
+  });
+
+  // Run test detection on an image
+  app.post("/api/test-mode/detect", async (req, res) => {
+    try {
+      const { imagePath, slotIds } = req.body;
+
+      if (!imagePath) {
+        return res.status(400).json({ message: "imagePath is required" });
+      }
+
+      // SECURITY: Validate image path is in allowed directory
+      // This is done inside testSlotQRDetection() which throws if path is invalid
+      
+      // Get slots to test (or all slots if not specified)
+      let slots;
+      if (slotIds && slotIds.length > 0) {
+        slots = await Promise.all(
+          slotIds.map((id: string) => storage.getSlot(id))
+        );
+        slots = slots.filter(s => s !== null);
+      } else {
+        slots = await storage.getSlots();
+      }
+
+      if (slots.length === 0) {
+        return res.status(400).json({ message: "No slots found to test" });
+      }
+
+      // Prepare slot configs for detection
+      const slotConfigs = slots.map(slot => ({
+        id: slot.id,
+        polygon: slot.polygon,
+        qr_data: slot.qrData,
+      }));
+
+      // Run detection with Pi simulation
+      // SECURITY: Path validation happens inside testSlotQRDetection()
+      const result = await piSimulationService.testSlotQRDetection(
+        imagePath,
+        slotConfigs
+      );
+
+      res.json({
+        ...result,
+        slotCount: slots.length,
+        detectedCount: result.results.filter(r => r.detected).length,
+        simulationEnabled: piSimulationService.isEnabled(),
+      });
+    } catch (error) {
+      console.error('[Test Mode] Detection error:', error);
+      const message = error instanceof Error ? error.message : "Detection test failed";
+      res.status(500).json({ message, error });
     }
   });
 

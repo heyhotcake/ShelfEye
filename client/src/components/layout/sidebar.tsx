@@ -15,7 +15,8 @@ import {
   LogOut,
   User,
   Printer,
-  Cloud
+  Cloud,
+  FlaskConical
 } from "lucide-react";
 
 const navigation = [
@@ -74,6 +75,11 @@ const navigation = [
     name: "Workers",
     href: "/workers",
     icon: User,
+  },
+  {
+    name: "Test Mode",
+    href: "/test-mode",
+    icon: FlaskConical,
   },
 ];
 
