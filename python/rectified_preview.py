@@ -65,11 +65,10 @@ def generate_rectified_image_from_frame(
         [0, 0, 1]
     ], dtype=np.float32)
     
-    # Invert homography: camera pixels → cm
-    H_inv = np.linalg.inv(H)
-    
-    # Combined warp for warpPerspective: camera_pixel → cm → output_pixel
-    M = S @ H_inv
+    # For warpPerspective backward mapping: output_pixels → cm → camera_pixels
+    # output_pixels → cm is inv(S), cm → camera_pixels is H
+    # Combined: H @ inv(S)
+    M = H @ np.linalg.inv(S)
     
     # Warp the image
     rectified = cv2.warpPerspective(frame, M, output_size)

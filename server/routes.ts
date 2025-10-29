@@ -1899,22 +1899,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/slots", async (_req, res) => {
-    try {
-      const slots = await storage.getSlots();
-      let deletedCount = 0;
-      for (const slot of slots) {
-        const deleted = await storage.deleteSlot(slot.id);
-        if (deleted) deletedCount++;
-      }
-      console.log(`[Slots] Deleted all ${deletedCount} slots`);
-      res.json({ ok: true, message: `Deleted ${deletedCount} slots`, count: deletedCount });
-    } catch (error) {
-      console.error('[Slots] Error deleting all slots:', error);
-      res.status(500).json({ message: "Failed to delete all slots", error });
-    }
-  });
-
   // Detection logs routes
   app.get("/api/detection-logs", async (req, res) => {
     try {
