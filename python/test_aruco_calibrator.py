@@ -137,9 +137,8 @@ class TestArucoCalibrator:
                 [0, 0, 1]
             ], dtype=np.float32)
             
-            # Combined transformation: rectified pixels → cm → camera pixels
-            # homography maps cm → camera pixels, so we need: homography @ inv(outputScale)
-            M_combined = homography @ np.linalg.inv(M_output)
+            # Combined transformation: input pixels → cm → output pixels
+            M_combined = M_output @ np.linalg.inv(homography)
             
             # Warp image
             rectified = cv2.warpPerspective(image, M_combined, (output_width, output_height))
