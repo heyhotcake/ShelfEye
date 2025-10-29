@@ -214,18 +214,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Run test detection on an image
-  app.post("/api/test-mode/detect", async (req, res) => {
+  // Run ArUco calibration on uploaded test image
+  app.post("/api/test-mode/calibrate", async (req, res) => {
     try {
-      const { imagePath, slotIds } = req.body;
+      const { imagePath, paperSize } = req.body;
 
       if (!imagePath) {
         return res.status(400).json({ message: "imagePath is required" });
       }
 
-      // SECURITY: Validate image path is in allowed directory
-      // This is done inside testSlotQRDetection() which throws if path is invalid
+      // SECURITY: Validate image path
+      const normalizedPath = path.normalize(imagePath);
+      const resolvedPath = path.resolve(normalizedPath);
+      const allowedDirs = [
+        path.resolve(process.cwd(), 'data', 'test-uploads'),
+        path.resolve(process.cwd(), 'data'),
+      ];
       
+      const isAllowed = allowedDirs.some(dir => resolvedPath.startsWith(dir));
+      if (!isAllowed) {
+        return res.status(400).json({ message: "Invalid image path" });
+      }
+
+      // Get paper dimensions
+      const { getPaperDimensions } = await import('./utils/paper-size.js');
+      const paperSizeFormat = paperSize || 'A4-landscape';
+      const paperDims = getPaperDimensions(paperSizeFormat);
+
+      console.log(`[Test Calibration] Running ArUco calibration on: ${resolvedPath}`);
+      console.log(`[Test Calibration] Paper size: ${paperSizeFormat} (${paperDims.widthCm}x${paperDims.heightCm}cm)`);
+
+      // Run ArUco calibration Python script
+      const pythonScript = path.join(process.cwd(), 'python', 'aruco_calibrator.py');
+      const outputDir = path.join(process.cwd(), 'data', 'test-calibration');
+      
+      // Ensure output directory exists
+      await fs.mkdir(outputDir, { recursive: true });
+
+      const args = [
+        pythonScript,
+        '--image-path', resolvedPath,
+        '--paper-width-cm', paperDims.widthCm.toString(),
+        '--paper-height-cm', paperDims.heightCm.toString(),
+        '--output-dir', outputDir,
+      ];
+
+      console.log(`[Test Calibration] Running: python3 ${args.join(' ')}`);
+
+      const pythonProcess = spawn('python3', args);
+      
+      let stdout = '';
+      let stderr = '';
+
+      pythonProcess.stdout.on('data', (data) => {
+        const output = data.toString();
+        stdout += output;
+        console.log(`[Test Calibration] ${output.trim()}`);
+      });
+
+      pythonProcess.stderr.on('data', (data) => {
+        const output = data.toString();
+        stderr += output;
+        console.error(`[Test Calibration] ${output.trim()}`);
+      });
+
+      pythonProcess.on('close', async (code) => {
+        if (code !== 0) {
+          console.error(`[Test Calibration] Failed with code ${code}`);
+          console.error(`[Test Calibration] stderr: ${stderr}`);
+          return res.status(500).json({ 
+            message: "ArUco calibration failed", 
+            error: stderr,
+            code 
+          });
+        }
+
+        try {
+          // Parse the JSON output from Python script
+          const resultMatch = stdout.match(/\{[\s\S]*"success"[\s\S]*\}/);
+          if (!resultMatch) {
+            throw new Error('Could not parse calibration result');
+          }
+
+          const result = JSON.parse(resultMatch[0]);
+          
+          if (!result.success) {
+            return res.status(400).json({
+              message: "ArUco markers not detected",
+              error: result.error || "Failed to detect required ArUco markers"
+            });
+          }
+
+          console.log(`[Test Calibration] Success! Detected ${result.markers_detected} markers`);
+          
+          // Store calibration info in a test-specific file
+          const calibrationData = {
+            timestamp: new Date().toISOString(),
+            paperSize: paperSizeFormat,
+            homographyMatrix: result.homography_matrix,
+            markersDetected: result.markers_detected,
+            sourceImage: resolvedPath,
+            rectifiedImage: path.join(outputDir, 'test_rectified.jpg'),
+            paperWidthCm: paperDims.widthCm,
+            paperHeightCm: paperDims.heightCm,
+          };
+
+          await fs.writeFile(
+            path.join(outputDir, 'calibration_data.json'),
+            JSON.stringify(calibrationData, null, 2)
+          );
+
+          res.json({
+            success: true,
+            ...calibrationData,
+          });
+        } catch (error) {
+          console.error('[Test Calibration] Error parsing result:', error);
+          res.status(500).json({ 
+            message: "Failed to parse calibration result", 
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      });
+
+      pythonProcess.on('error', (error) => {
+        console.error('[Test Calibration] Process error:', error);
+        res.status(500).json({ 
+          message: "Failed to start calibration process", 
+          error: error.message 
+        });
+      });
+    } catch (error) {
+      console.error('[Test Calibration] Error:', error);
+      res.status(500).json({ 
+        message: "Calibration failed", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get test calibration data
+  app.get("/api/test-mode/calibration", async (_req, res) => {
+    try {
+      const calibrationFile = path.join(process.cwd(), 'data', 'test-calibration', 'calibration_data.json');
+      
+      try {
+        const data = await fs.readFile(calibrationFile, 'utf-8');
+        const calibration = JSON.parse(data);
+        res.json(calibration);
+      } catch (error) {
+        res.status(404).json({ message: "No test calibration found. Run calibration first." });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get test calibration", error });
+    }
+  });
+
+  // Run test detection on an image (using test calibration if available)
+  app.post("/api/test-mode/detect", async (req, res) => {
+    try {
+      const { imagePath, slotIds, useTestCalibration } = req.body;
+
+      if (!imagePath) {
+        return res.status(400).json({ message: "imagePath is required" });
+      }
+
       // Get slots to test (or all slots if not specified)
       let slots;
       if (slotIds && slotIds.length > 0) {
@@ -241,6 +394,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No slots found to test" });
       }
 
+      // If using test calibration, use the rectified image instead
+      let imageToTest = imagePath;
+      if (useTestCalibration) {
+        const calibrationFile = path.join(process.cwd(), 'data', 'test-calibration', 'calibration_data.json');
+        try {
+          const data = await fs.readFile(calibrationFile, 'utf-8');
+          const calibration = JSON.parse(data);
+          imageToTest = calibration.rectifiedImage;
+          console.log(`[Test Mode] Using rectified image from test calibration: ${imageToTest}`);
+        } catch (error) {
+          return res.status(400).json({ 
+            message: "Test calibration not found. Run calibration first or disable useTestCalibration." 
+          });
+        }
+      }
+
       // Prepare slot configs for detection
       const slotConfigs = slots.map(slot => ({
         id: slot.id,
@@ -251,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Run detection with Pi simulation
       // SECURITY: Path validation happens inside testSlotQRDetection()
       const result = await piSimulationService.testSlotQRDetection(
-        imagePath,
+        imageToTest,
         slotConfigs
       );
 
@@ -260,6 +429,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         slotCount: slots.length,
         detectedCount: result.results.filter(r => r.detected).length,
         simulationEnabled: piSimulationService.isEnabled(),
+        usedTestCalibration: useTestCalibration || false,
+        testedImage: imageToTest,
       });
     } catch (error) {
       console.error('[Test Mode] Detection error:', error);

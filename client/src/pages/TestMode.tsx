@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Upload, PlayCircle, Clock, HardDrive, Cpu, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Upload, PlayCircle, Clock, HardDrive, Cpu, CheckCircle2, XCircle, AlertTriangle, ScanLine, Image as ImageIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TestImage {
   fileName: string;
@@ -35,10 +37,24 @@ interface TestResults {
   simulationEnabled: boolean;
 }
 
+interface CalibrationData {
+  success: boolean;
+  timestamp: string;
+  paperSize: string;
+  homographyMatrix: number[][];
+  markersDetected: number;
+  rectifiedImage: string;
+  paperWidthCm: number;
+  paperHeightCm: number;
+}
+
 export default function TestMode() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<TestResults | null>(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [paperSize, setPaperSize] = useState<string>("A4-landscape");
+  const [calibrationData, setCalibrationData] = useState<CalibrationData | null>(null);
+  const [useTestCalibration, setUseTestCalibration] = useState<boolean>(false);
 
   // Get simulation status
   const { data: status, refetch: refetchStatus } = useQuery<{
@@ -93,13 +109,46 @@ export default function TestMode() {
     },
   });
 
-  // Run detection mutation
-  const runDetection = useMutation<TestResults, Error, string>({
+  // Get test calibration data
+  const { data: testCalibration, refetch: refetchCalibration } = useQuery<CalibrationData>({
+    queryKey: ['/api/test-mode/calibration'],
+    retry: false,
+  });
+
+  // Hydrate calibration data from server on load
+  if (testCalibration && !calibrationData) {
+    setCalibrationData(testCalibration);
+    setUseTestCalibration(true);
+  }
+
+  // Run calibration mutation
+  const runCalibration = useMutation<CalibrationData, Error, string>({
     mutationFn: async (imagePath: string) => {
+      const response = await fetch('/api/test-mode/calibrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagePath, paperSize }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Calibration failed');
+      }
+      return response.json();
+    },
+    onSuccess: (data: CalibrationData) => {
+      setCalibrationData(data);
+      refetchCalibration();
+      setUseTestCalibration(true);
+    },
+  });
+
+  // Run detection mutation
+  const runDetection = useMutation<TestResults, Error, { imagePath: string; useCalibration: boolean }>({
+    mutationFn: async ({ imagePath, useCalibration }) => {
       const response = await fetch('/api/test-mode/detect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imagePath }),
+        body: JSON.stringify({ imagePath, useTestCalibration: useCalibration }),
       });
       if (!response.ok) throw new Error('Detection failed');
       return response.json();
@@ -121,10 +170,17 @@ export default function TestMode() {
     }
   };
 
+  const handleRunCalibration = () => {
+    if (selectedImage) {
+      setCalibrationData(null);
+      runCalibration.mutate(selectedImage);
+    }
+  };
+
   const handleRunTest = () => {
     if (selectedImage) {
       setTestResults(null);
-      runDetection.mutate(selectedImage);
+      runDetection.mutate({ imagePath: selectedImage, useCalibration: useTestCalibration });
     }
   };
 
@@ -280,16 +336,95 @@ export default function TestMode() {
             </div>
 
             {selectedImage && (
-              <Button
-                onClick={handleRunTest}
-                disabled={runDetection.isPending}
-                className="w-full"
-                size="lg"
-                data-testid="button-run-test"
-              >
-                <PlayCircle className="w-5 h-5 mr-2" />
-                {runDetection.isPending ? "Running Detection..." : "Run Detection Test"}
-              </Button>
+              <>
+                <Separator className="bg-gray-700" />
+                
+                {/* Calibration Section */}
+                <div className="space-y-3">
+                  <Label className="text-gray-300">Step 1: Run ArUco Calibration</Label>
+                  <div className="space-y-2">
+                    <Select value={paperSize} onValueChange={setPaperSize}>
+                      <SelectTrigger className="bg-gray-700 border-gray-600 text-white" data-testid="select-paper-size">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A4-landscape">A4 Landscape</SelectItem>
+                        <SelectItem value="A4-portrait">A4 Portrait</SelectItem>
+                        <SelectItem value="6-page-3x2">6-Page (3x2 A4)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Button
+                      onClick={handleRunCalibration}
+                      disabled={runCalibration.isPending}
+                      className="w-full"
+                      variant="outline"
+                      data-testid="button-run-calibration"
+                    >
+                      <ScanLine className="w-5 h-5 mr-2" />
+                      {runCalibration.isPending ? "Running Calibration..." : "Run ArUco Calibration"}
+                    </Button>
+                  </div>
+                  
+                  {/* Calibration Results */}
+                  {runCalibration.isError && (
+                    <Alert className="bg-red-500/10 border-red-500/30">
+                      <AlertTriangle className="w-4 h-4 text-red-400" />
+                      <AlertDescription className="text-red-300">
+                        {runCalibration.error?.message || "Calibration failed"}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {calibrationData && (
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-green-400 mb-2">
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span className="font-medium">Calibration Successful!</span>
+                      </div>
+                      <div className="text-sm text-gray-300 space-y-1">
+                        <div>✓ Detected {calibrationData.markersDetected} ArUco markers</div>
+                        <div>✓ Paper size: {calibrationData.paperSize}</div>
+                        <div>✓ Rectified image ready for detection</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Separator className="bg-gray-700" />
+                
+                {/* Detection Section */}
+                <div className="space-y-3">
+                  <Label className="text-gray-300">Step 2: Run QR Detection</Label>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="use-calibration"
+                      checked={useTestCalibration}
+                      onCheckedChange={(checked) => setUseTestCalibration(checked === true)}
+                      disabled={!calibrationData}
+                      data-testid="checkbox-use-calibration"
+                    />
+                    <label
+                      htmlFor="use-calibration"
+                      className={`text-sm ${calibrationData ? 'text-gray-300' : 'text-gray-500'}`}
+                    >
+                      Use rectified image from calibration
+                    </label>
+                  </div>
+                  
+                  <Button
+                    onClick={handleRunTest}
+                    disabled={runDetection.isPending}
+                    className="w-full"
+                    size="lg"
+                    data-testid="button-run-test"
+                  >
+                    <PlayCircle className="w-5 h-5 mr-2" />
+                    {runDetection.isPending ? "Running Detection..." : "Run QR Detection Test"}
+                  </Button>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
