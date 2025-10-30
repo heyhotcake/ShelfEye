@@ -612,17 +612,27 @@ export class DbStorage implements IStorage {
         conditions: { maxReprojectionError: 2.5 },
       });
 
-      await this.setConfig("smtp_host", "smtp.gmail.com", "SMTP server host");
-      await this.setConfig("smtp_port", 587, "SMTP server port");
-      await this.setConfig("smtp_user", "", "SMTP username");
-      await this.setConfig("smtp_pass", "", "SMTP password");
-      await this.setConfig("smtp_from", "alerts@example.com", "Alert email sender");
-      await this.setConfig("alert_email", "", "Alert recipient email");
-      await this.setConfig("google_sheets_url", "", "Google Sheets logging URL");
-      await this.setConfig("buzzer_gpio_pin", 17, "Buzzer GPIO pin");
-      await this.setConfig("led_gpio_pin", 27, "LED GPIO pin");
-      await this.setConfig("light_strip_gpio_pin", 22, "LED light strip GPIO pin for consistent capture lighting");
-      await this.setConfig("alert_led_gpio_pin", 17, "Red alert LED GPIO pin for flashing error indicators");
+      // Only set config values if they don't exist (avoid overwriting user settings)
+      const configDefaults = [
+        { key: "smtp_host", value: "smtp.gmail.com", desc: "SMTP server host" },
+        { key: "smtp_port", value: 587, desc: "SMTP server port" },
+        { key: "smtp_user", value: "", desc: "SMTP username" },
+        { key: "smtp_pass", value: "", desc: "SMTP password" },
+        { key: "smtp_from", value: "alerts@example.com", desc: "Alert email sender" },
+        { key: "alert_email", value: "", desc: "Alert recipient email" },
+        { key: "google_sheets_url", value: "", desc: "Google Sheets logging URL" },
+        { key: "buzzer_gpio_pin", value: 17, desc: "Buzzer GPIO pin" },
+        { key: "led_gpio_pin", value: 27, desc: "LED GPIO pin" },
+        { key: "light_strip_gpio_pin", value: 18, desc: "LED light strip GPIO pin for consistent capture lighting" },
+        { key: "alert_led_gpio_pin", value: 17, desc: "Red alert LED GPIO pin for flashing error indicators" },
+      ];
+      
+      for (const config of configDefaults) {
+        const existing = await this.getConfigByKey(config.key);
+        if (!existing) {
+          await this.setConfig(config.key, config.value, config.desc);
+        }
+      }
     }
   }
 
