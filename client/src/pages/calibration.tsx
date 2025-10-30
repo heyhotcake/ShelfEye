@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, CheckCircle, Ruler, X } from "lucide-react";
+import { Camera, CheckCircle, Ruler, X, Download } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 import { RectifiedPreviewCanvas } from "@/components/canvas/rectified-preview-canvas";
 
@@ -952,7 +952,20 @@ export default function Calibration() {
                   
                   return (
                   <div className="mt-6">
-                    <h4 className="text-sm font-semibold text-foreground mb-3">Rectified Preview with Template Overlay</h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-foreground">Rectified Preview with Template Overlay</h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          window.open('/api/calibrate/download-rectified', '_blank');
+                        }}
+                        data-testid="button-download-rectified"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download High-Res
+                      </Button>
+                    </div>
                     <div className="canvas-container">
                       <div className="bg-muted rounded overflow-hidden" style={{ aspectRatio: `${aspectRatio.toFixed(3)} / 1` }}>
                         {calibrationResult?.rectifiedPreview && templatesWithCategories.length > 0 ? (

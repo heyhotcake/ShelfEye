@@ -137,6 +137,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download high-resolution rectified image
+  app.get("/api/calibrate/download-rectified", async (_req, res) => {
+    try {
+      const rectifiedPath = path.join(process.cwd(), 'data', 'latest_calibration_rectified.jpg');
+      
+      // Check if file exists
+      try {
+        await fs.access(rectifiedPath);
+      } catch {
+        return res.status(404).json({ message: "Rectified image not found. Run calibration first." });
+      }
+      
+      // Send file for download
+      res.download(rectifiedPath, 'calibration_rectified.jpg', (err) => {
+        if (err) {
+          console.error('[Calibration] Error downloading rectified image:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ message: "Failed to download rectified image" });
+          }
+        }
+      });
+    } catch (error) {
+      console.error('[Calibration] Download error:', error);
+      res.status(500).json({ message: "Failed to download rectified image", error });
+    }
+  });
+
   // Calibration routes
   app.post("/api/calibrate/:cameraId", async (req, res) => {
     const { cameraId } = req.params;
