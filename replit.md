@@ -37,6 +37,13 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - Restart Safety: Max 5 restarts in 10 minutes (prevents infinite loops)
 - On memory kill: 10-second gap, then auto-restart with fresh memory state
 
+**Hardware Watchdog (Auto-Reboot on System Freeze):**
+- Pi has experienced freezes after 2-3 days of continuous operation
+- Hardware watchdog monitors system health and auto-reboots if system becomes unresponsive
+- Setup script: `enable-watchdog.sh` (run once on Pi to enable)
+- Reboot trigger: 15 seconds of no heartbeat
+- Status check: `sudo systemctl status watchdog`
+
 ## System Architecture
 
 ### Frontend Architecture
