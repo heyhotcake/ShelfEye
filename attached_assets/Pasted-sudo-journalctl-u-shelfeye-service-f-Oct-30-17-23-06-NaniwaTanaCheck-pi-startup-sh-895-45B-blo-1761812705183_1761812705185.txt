@@ -1,0 +1,39 @@
+sudo journalctl -u shelfeye.service -f
+Oct 30 17:23:06 NaniwaTanaCheck pi-startup.sh[895]: [45B blob data]
+Oct 30 17:23:06 NaniwaTanaCheck pi-startup.sh[895]: [45B blob data]
+Oct 30 17:23:06 NaniwaTanaCheck pi-startup.sh[895]: [45B blob data]
+Oct 30 17:23:06 NaniwaTanaCheck pi-startup.sh[895]: [i] No changes detected
+Oct 30 17:23:07 NaniwaTanaCheck pi-startup.sh[996]: [2025-10-30 17:23:07] 🚀 Starting ShelfEye application...
+Oct 30 17:23:07 NaniwaTanaCheck pi-startup.sh[999]: [2025-10-30 17:23:07] Access at: http://naniwatanacheck.local:5000
+Oct 30 17:23:07 NaniwaTanaCheck pi-startup.sh[1002]: [2025-10-30 17:23:07] =========================================
+Oct 30 17:23:07 NaniwaTanaCheck pi-startup.sh[1005]: > rest-express@1.0.0 dev
+Oct 30 17:23:07 NaniwaTanaCheck pi-startup.sh[1005]: > NODE_ENV=development tsx server/index.ts
+Oct 30 17:23:22 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Initializing...
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Reloading configuration...
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled daily maintenance at 3:00 AM JST
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Scheduled 4 capture times + daily maintenance
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [Scheduler] Initialized successfully
+Oct 30 17:23:24 NaniwaTanaCheck pi-startup.sh[1005]: [StartupCalibration] Starting startup calibration check...
+Oct 30 17:23:25 NaniwaTanaCheck pi-startup.sh[1005]: [StartupCalibration] Last calibrated camera f0302a62-d361-4134-86cc-f8c8558226c0 not found - flashing red LED
+Oct 30 17:23:25 NaniwaTanaCheck pi-startup.sh[1005]: [StartupCalibration] Flashing red LED - Calibrated camera not found
+Oct 30 17:23:25 NaniwaTanaCheck sudo[1074]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action red_flash_start --pattern slow
+Oct 30 17:23:25 NaniwaTanaCheck sudo[1074]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 30 17:23:25 NaniwaTanaCheck pi-startup.sh[1005]: [LED] RED FLASH started (slow pattern)
+Oct 30 17:23:25 NaniwaTanaCheck pi-startup.sh[1005]: 5:23:25 PM [express] serving on port 5000
+Oct 30 17:23:38 NaniwaTanaCheck pi-startup.sh[1005]: Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+Oct 30 17:23:38 NaniwaTanaCheck pi-startup.sh[1005]:   npx update-browserslist-db@latest
+Oct 30 17:23:38 NaniwaTanaCheck pi-startup.sh[1005]:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Oct 30 17:23:45 NaniwaTanaCheck pi-startup.sh[1005]: 5:23:45 PM [express] GET /api/cameras 304 in 847ms :: [{"id":"a91d43f1-47bf-4d75-8a7d-d2faf0503f81",…
+Oct 30 17:23:45 NaniwaTanaCheck pi-startup.sh[1005]: 5:23:45 PM [express] GET /api/template-rectangles 200 in 863ms :: [{"id":"5ee6a712-9d03-49f4-b3a7-84…
+Oct 30 17:23:47 NaniwaTanaCheck pi-startup.sh[1005]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+client_loop: send disconnect: Connection reset
+
+C:\Users\NANIWA>
