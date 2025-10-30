@@ -9,6 +9,7 @@ import json
 import sys
 import base64
 import logging
+import time
 from typing import Optional, Tuple, Dict
 import numpy as np
 import cv2
@@ -237,6 +238,19 @@ class ArucoCornerCalibrator:
             cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # Autofocus
             cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = enabled)
             cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
+            
+            # Log actual camera resolution (verify camera is at requested resolution)
+            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            logger.info(f"[CALIBRATION] Requested: {width}x{height}, Actual: {actual_width}x{actual_height}")
+            print(f"[CALIBRATION] Camera resolution: {actual_width}x{actual_height} (requested {width}x{height})", file=sys.stderr)
+            sys.stderr.flush()
+            
+            # Give autofocus time to adjust (critical for sharp QR codes)
+            logger.info("Warming up autofocus (discarding 5 frames)...")
+            for i in range(5):
+                cap.read()
+                time.sleep(0.2)  # 200ms between frames
             
             # Capture frame
             ret, frame = cap.read()
