@@ -1057,36 +1057,49 @@ export default function SlotDrawing() {
 
   const loadTemplateVersion = async (version: typeof savedTemplateVersions[0]) => {
     try {
-      // First, we need to ensure categories exist in the database
+      console.log(`[LOAD] Loading template version: ${version.paperSize} - ${version.name}`);
+      
+      // First, ensure all categories exist in the database
       for (const category of version.categories) {
         // Check if category exists, if not create it
         const existingCategory = toolCategories.find((c: any) => c.name === category.name);
         if (!existingCategory) {
+          console.log(`[LOAD] Creating missing category: ${category.name}`);
           await apiRequest('POST', '/api/tool-categories', {
             name: category.name,
             toolType: category.toolType,
             widthCm: category.widthCm,
             heightCm: category.heightCm,
           });
+        } else {
+          console.log(`[LOAD] Category already exists: ${category.name} (ID: ${existingCategory.id})`);
         }
       }
 
-      // Refresh categories and re-fetch to get latest IDs
-      await queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
-      await new Promise(resolve => setTimeout(resolve, 500)); // Wait for query refresh
-      
-      // Re-fetch categories to get the latest with correct IDs
+      // CRITICAL: Re-fetch categories from database to get current IDs
+      // (some may have just been created with new IDs)
+      console.log('[LOAD] Re-fetching categories from database...');
       const categoriesResponse = await fetch('/api/tool-categories');
+      if (!categoriesResponse.ok) {
+        throw new Error('Failed to re-fetch categories');
+      }
       const latestCategories = await categoriesResponse.json();
+      console.log(`[LOAD] Fetched ${latestCategories.length} categories from database`);
       
-      // Create a mapping from old category names to new category IDs
+      // Create a mapping from category NAME to current DATABASE ID
       const categoryNameToId = new Map<string, string>();
       for (const savedCategory of version.categories) {
         const dbCategory = latestCategories.find((c: any) => c.name === savedCategory.name);
         if (dbCategory) {
           categoryNameToId.set(savedCategory.name, dbCategory.id);
+          console.log(`[LOAD] Mapped category "${savedCategory.name}": saved ID ${savedCategory.id} → DB ID ${dbCategory.id}`);
+        } else {
+          console.warn(`[LOAD] WARNING: Category "${savedCategory.name}" not found in database!`);
         }
       }
+      
+      // Invalidate React Query cache to stay in sync
+      await queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
 
       // Fetch existing template rectangles for the TARGET paper size
       const response = await fetch(`/api/template-rectangles?paperSize=${version.paperSize}`);
