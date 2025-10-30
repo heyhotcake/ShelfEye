@@ -1,0 +1,19 @@
+ sudo journalctl -u shelfeye.service --since "5 minutes ago" --no-pager | grep -i "calibrat\|homography\|aruco"
+Oct 30 14:46:02 NaniwaTanaCheck pi-startup.sh[2484]: [Calibration] Turning on white LED light (killing stuck processes first)...
+Oct 30 14:46:02 NaniwaTanaCheck pi-startup.sh[2484]: [Calibration] LED white light result: false
+Oct 30 14:46:02 NaniwaTanaCheck pi-startup.sh[2484]: [Calibration] Found 7 templates matching paper size: 6-page-3x2
+Oct 30 14:46:04 NaniwaTanaCheck pi-startup.sh[2484]: [Calibration] Built 7 templates with dimensions for preview overlay
+Oct 30 14:46:04 NaniwaTanaCheck pi-startup.sh[2484]: [Calibration] Preview output size: 891x420 px (maintains 2.12:1 aspect ratio)
+Oct 30 14:46:04 NaniwaTanaCheck pi-startup.sh[2484]: [Calibration] Using device path: /dev/video0
+Oct 30 14:46:07 NaniwaTanaCheck pi-startup.sh[2484]: [Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+Oct 30 14:46:07 NaniwaTanaCheck pi-startup.sh[2484]: INFO:__main__:Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero
+Oct 30 14:46:08 NaniwaTanaCheck pi-startup.sh[2484]: [Validation] Python stderr: INFO:__main__:Saved high-res rectified image to: /home/naniwa/ShelfEye/python/../data/latest_calibration_rectified.jpg
+Oct 30 14:46:09 NaniwaTanaCheck pi-startup.sh[2484]: [Calibration] Deleted 0 existing slots
+Oct 30 14:46:09 NaniwaTanaCheck pi-startup.sh[2484]: [Calibration] Creating slots for 7 templates (paper size: 6-page-3x2)
+Oct 30 14:46:16 NaniwaTanaCheck pi-startup.sh[2484]: [Calibration] Saved paper size format to config: 6-page-3x2
+Oct 30 14:46:16 NaniwaTanaCheck pi-startup.sh[2484]: 2:46:16 PM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 24212ms :: {"ok…
+Oct 30 14:48:29 NaniwaTanaCheck pi-startup.sh[2677]:  python/aruco_calibrator.py                         |  3 ++
+Oct 30 14:49:01 NaniwaTanaCheck pi-startup.sh[2742]: [StartupCalibration] Starting startup calibration check...
+Oct 30 14:49:01 NaniwaTanaCheck pi-startup.sh[2742]: [StartupCalibration] Last calibrated camera f0302a62-d361-4134-86cc-f8c8558226c0 not found - flashing red LED
+Oct 30 14:49:01 NaniwaTanaCheck pi-startup.sh[2742]: [StartupCalibration] Flashing red LED - Calibrated camera not found
+naniwa@NaniwaTanaCheck:~/ShelfEye $
