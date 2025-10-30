@@ -291,11 +291,11 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         cap = cv2.VideoCapture(0)
         
         # Set camera to highest resolution for better QR detection
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
+        # Try 4K first, camera will fall back to best supported resolution
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
         
-        # Use MJPG format for USB cameras (better quality at high res)
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+        # Let OpenCV choose best format (YUV2, MJPEG, etc.) based on camera capability
         
         # Reduce buffer size to get fresh frames
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)

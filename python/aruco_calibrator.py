@@ -229,8 +229,7 @@ class ArucoCornerCalibrator:
             
             width, height = resolution
             
-            # Set MJPG format for better performance with USB cameras
-            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+            # Let OpenCV choose best format (YUV2, MJPEG, etc.) based on camera capability
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
