@@ -65,16 +65,12 @@ def generate_rectified_image_from_frame(
         [0, 0, 1]
     ], dtype=np.float32)
     
-    # For warpPerspective backward mapping: output_pixels → cm → camera_pixels
-    # Since H maps cm → camera_pixels, we need inv(H) for camera_pixels → cm
-    # output_pixels → cm is inv(S), cm → camera_pixels needs to be inverted
-    # So: camera_pixels → cm is inv(H), and we go output_pixels → cm → camera_pixels
-    # Actually for warpPerspective: we want output_pixels (rectified) → camera_pixels (source)
-    # output_pixels → cm: inv(S), cm → camera_pixels: H
-    # Wait, let me reconsider: warpPerspective needs source coords for each output pixel
-    # If H: cm → camera_px, then for each output_px: output_px → cm (multiply by inv(S)), then cm → camera_px (multiply by H)
-    # Actually the inverse might be needed - try inv(H) @ S instead
-    M = np.linalg.inv(H) @ S
+    # For warpPerspective backward mapping: camera_pixels → cm → output_pixels
+    # Invert homography: camera pixels → cm
+    H_inv = np.linalg.inv(H)
+    
+    # Combined warp for warpPerspective: camera_pixel → cm → output_pixel
+    M = S @ H_inv
     
     # Warp the image
     rectified = cv2.warpPerspective(frame, M, output_size)
