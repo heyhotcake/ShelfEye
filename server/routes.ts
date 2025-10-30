@@ -1066,11 +1066,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Call Python preview script
       // Use device path if available, otherwise use device index
       const deviceSource = camera.devicePath || camera.deviceIndex?.toString() || '0';
+      
+      // For 4K cameras (3840x2160), use lower resolution for preview to prevent memory issues
+      // Calibration/capture still uses full resolution
+      const is4K = camera.resolution[0] >= 3840;
+      const previewWidth = is4K ? 1920 : camera.resolution[0];
+      const previewHeight = is4K ? 1080 : camera.resolution[1];
+      
+      console.log(`[Preview] Camera resolution: ${camera.resolution[0]}x${camera.resolution[1]}, using preview: ${previewWidth}x${previewHeight}`);
+      
       const pythonProcess = spawn('python3', [
         path.join(process.cwd(), 'python/camera_preview.py'),
         deviceSource,
-        camera.resolution[0].toString(),
-        camera.resolution[1].toString()
+        previewWidth.toString(),
+        previewHeight.toString()
       ]);
 
       let result = '';
