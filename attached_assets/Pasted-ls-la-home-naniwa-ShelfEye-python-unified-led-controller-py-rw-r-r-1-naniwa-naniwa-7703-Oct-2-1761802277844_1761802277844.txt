@@ -1,0 +1,16 @@
+ls -la /home/naniwa/ShelfEye/python/unified_led_controller.py
+-rw-r--r-- 1 naniwa naniwa 7703 Oct 20 15:29 /home/naniwa/ShelfEye/python/unified_led_controller.py
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo journalctl -u shelfeye.service -n 100 --no-pager | grep -i led
+Oct 30 14:30:50 NaniwaTanaCheck pi-startup.sh[2193]: Failed to create slot for template 45763e3b-0cba-40ca-a4ab-8f6a383ad67d: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Oct 30 14:30:51 NaniwaTanaCheck pi-startup.sh[2193]: Failed to create slot for template a43473c6-d741-4ead-9310-afa9183ae301: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Oct 30 14:30:52 NaniwaTanaCheck pi-startup.sh[2193]: Failed to create slot for template 4a82c0c5-8e67-4cda-b9f3-5bbf3765e768: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Oct 30 14:30:53 NaniwaTanaCheck sudo[2351]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 22 --action off
+Oct 30 14:30:53 NaniwaTanaCheck pi-startup.sh[2193]: [LED] Unified controller stderr: Gpio 22 is illegal for LED channel 0
+Oct 30 14:30:53 NaniwaTanaCheck pi-startup.sh[2193]: Error initializing LED strip: ws2811_init failed with code -11 (Selected GPIO not possible)
+Oct 30 14:30:53 NaniwaTanaCheck pi-startup.sh[2193]: [LED] Unified controller stderr: [LED] RED FLASH active - cannot turn off
+naniwa@NaniwaTanaCheck:~/ShelfEye $ cd /home/naniwa/ShelfEye
+sudo python3 python/unified_led_controller.py --pin 18 --action green_on
+usage: unified_led_controller.py [-h] --pin PIN --action {white,off,red_flash_start,red_flash_stop,status}
+                                 [--pattern {fast,slow,pulse}] [--num-leds NUM_LEDS] [--duration DURATION]
+unified_led_controller.py: error: argument --action: invalid choice: 'green_on' (choose from white, off, red_flash_start, red_flash_stop, status)
+naniwa@NaniwaTanaCheck:~/ShelfEye $
