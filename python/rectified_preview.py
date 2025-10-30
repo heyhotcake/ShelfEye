@@ -203,8 +203,10 @@ def generate_rectified_preview(
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
-        # Enable autofocus for sharp images
-        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        # Enable all auto features for best image quality
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # Autofocus
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = enabled)
+        cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
         
         # Capture frame
         ret, frame = cap.read()

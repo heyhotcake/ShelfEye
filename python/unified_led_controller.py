@@ -27,9 +27,10 @@ LOCK_FILE = '/tmp/led_controller.lock'
 class UnifiedLEDController:
     """Single controller for WS2812B strip with priority management"""
     
-    def __init__(self, pin: int, num_leds: int = 27):
+    def __init__(self, pin: int, num_leds: int = 27, brightness: int = 100):
         self.pin = pin
         self.num_leds = num_leds
+        self.brightness = brightness
         self.strip = None
         self.flashing = False
         self.flash_thread = None
@@ -43,7 +44,7 @@ class UnifiedLEDController:
                     800000,  # 800kHz
                     10,      # DMA channel
                     False,   # Invert
-                    255,     # Brightness
+                    brightness,  # Configurable brightness (default 100 for 4K camera)
                     0,       # Channel
                     0x00081000  # WS2812
                 )
@@ -169,11 +170,12 @@ def main():
     parser.add_argument("--action", choices=["white", "off", "red_flash_start", "red_flash_stop", "status"], required=True)
     parser.add_argument("--pattern", choices=["fast", "slow", "pulse"], default="slow", help="Flash pattern")
     parser.add_argument("--num-leds", type=int, default=27, help="Number of LEDs")
+    parser.add_argument("--brightness", type=int, default=100, help="LED brightness 0-255 (default 100 for new 4K camera)")
     parser.add_argument("--duration", type=int, help="Duration in seconds (for timed actions)")
     
     args = parser.parse_args()
     
-    led = UnifiedLEDController(args.pin, args.num_leds)
+    led = UnifiedLEDController(args.pin, args.num_leds, args.brightness)
     
     # Signal handler for graceful shutdown
     def signal_handler(sig, frame):

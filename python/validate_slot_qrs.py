@@ -297,8 +297,10 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         
         # Let OpenCV choose best format (YUV2, MJPEG, etc.) based on camera capability
         
-        # Enable autofocus for sharp images
-        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        # Enable all auto features for best image quality
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # Autofocus
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = enabled)
+        cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
         
         # Reduce buffer size to get fresh frames
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)

@@ -53,7 +53,8 @@ export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
         'python3',
         path.join(process.cwd(), 'python/unified_led_controller.py'),
         '--pin', pin.toString(),
-        '--action', 'white'
+        '--action', 'white',
+        '--brightness', '100'  // Reduced brightness for new 4K camera
       ]);
 
       let result = '';
