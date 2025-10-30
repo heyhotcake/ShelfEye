@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
@@ -84,6 +85,13 @@ export default function SlotDrawing() {
   
   // Paper size configuration
   const [paperSize, setPaperSize] = useState('A4-landscape');
+  
+  // Dialog states for confirmations and warnings
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
+  const [unsavedWarningOpen, setUnsavedWarningOpen] = useState(false);
+  const [templateToLoad, setTemplateToLoad] = useState<typeof savedTemplateVersions[0] | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Camera selection (removed - templates are now camera-independent)
   
@@ -175,28 +183,32 @@ export default function SlotDrawing() {
 
   // Camera selection removed - templates are now camera-independent
 
-  // Load template rectangles when data changes
+  // Track the last loaded snapshot for unsaved changes comparison
+  const [lastLoadedSnapshot, setLastLoadedSnapshot] = useState<string>('[]');
+  
+  // Don't auto-load template rectangles when query data changes
+  // Templates are only loaded via Eye button or explicit load actions
+  // This keeps the canvas blank when paper size changes
+  
+  // Track unsaved changes by comparing current templateRectangles with last loaded snapshot
   useEffect(() => {
-    if (templateRects && templateRects.length > 0) {
-      const loadedRects: TemplateRectangle[] = templateRects.map((rect: any) => {
-        const category = toolCategories.find((c: any) => c.id === rect.categoryId);
-        return {
-          id: rect.id,
-          categoryId: rect.categoryId,
-          xCm: rect.xCm,
-          yCm: rect.yCm,
-          rotation: rect.rotation,
-          widthCm: category?.widthCm || 0,
-          heightCm: category?.heightCm || 0,
-          categoryName: category?.name || '',
-          toolType: category?.toolType || '',
-        };
-      });
-      setTemplateRectangles(loadedRects);
-    } else {
-      setTemplateRectangles([]);
-    }
-  }, [templateRects, toolCategories]);
+    const currentSnapshot = JSON.stringify(templateRectangles.map(r => ({
+      id: r.id,
+      categoryId: r.categoryId,
+      xCm: r.xCm,
+      yCm: r.yCm,
+      rotation: r.rotation,
+      autoQrId: r.autoQrId,
+    })).sort((a, b) => a.id.localeCompare(b.id)));
+    
+    setHasUnsavedChanges(currentSnapshot !== lastLoadedSnapshot);
+  }, [templateRectangles, lastLoadedSnapshot]);
+  
+  // Clear canvas when paper size changes
+  useEffect(() => {
+    setTemplateRectangles([]);
+    setSelectedTemplateRect(null);
+  }, [paperSize]);
 
   const createSlotMutation = useMutation({
     mutationFn: (slotData: any) => apiRequest('POST', '/api/slots', slotData),
@@ -1017,6 +1029,17 @@ export default function SlotDrawing() {
       // Refresh template rectangles
       await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
       
+      // Update snapshot to mark as saved
+      const snapshot = JSON.stringify(templateRectangles.map(r => ({
+        id: r.id,
+        categoryId: r.categoryId,
+        xCm: r.xCm,
+        yCm: r.yCm,
+        rotation: r.rotation,
+        autoQrId: r.autoQrId,
+      })).sort((a, b) => a.id.localeCompare(b.id)));
+      setLastLoadedSnapshot(snapshot);
+      
       toast({
         title: "Template Design Saved",
         description: `"${paperSize} - ${templateVersionName}" saved with ${templateRectangles.length} tools to database and ready for calibration`,
@@ -1048,8 +1071,22 @@ export default function SlotDrawing() {
         }
       }
 
-      // Refresh categories
+      // Refresh categories and re-fetch to get latest IDs
       await queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
+      await new Promise(resolve => setTimeout(resolve, 500)); // Wait for query refresh
+      
+      // Re-fetch categories to get the latest with correct IDs
+      const categoriesResponse = await fetch('/api/tool-categories');
+      const latestCategories = await categoriesResponse.json();
+      
+      // Create a mapping from old category names to new category IDs
+      const categoryNameToId = new Map<string, string>();
+      for (const savedCategory of version.categories) {
+        const dbCategory = latestCategories.find((c: any) => c.name === savedCategory.name);
+        if (dbCategory) {
+          categoryNameToId.set(savedCategory.name, dbCategory.id);
+        }
+      }
 
       // Fetch existing template rectangles for the TARGET paper size
       const response = await fetch(`/api/template-rectangles?paperSize=${version.paperSize}`);
@@ -1066,20 +1103,72 @@ export default function SlotDrawing() {
       // Set paper size AFTER deletion so state is consistent
       setPaperSize(version.paperSize);
 
-      // Create new template rectangles
+      // Create new template rectangles with remapped category IDs
+      const newRects = [];
       for (const rect of version.templateRectangles) {
-        await apiRequest('POST', '/api/template-rectangles', {
-          categoryId: rect.categoryId,
+        // Find the category in the original saved data by its ID
+        const savedCategory = version.categories.find((c: any) => c.id === rect.categoryId);
+        
+        if (!savedCategory) {
+          console.warn(`Skipping rectangle: saved category not found for ID ${rect.categoryId}`);
+          continue;
+        }
+        
+        // Get the current DB category ID using the category name as the key
+        const currentCategoryId = categoryNameToId.get(savedCategory.name);
+        
+        if (!currentCategoryId) {
+          console.warn(`Skipping rectangle: current category ID not found for name ${savedCategory.name}`);
+          continue;
+        }
+        
+        // POST with the remapped category ID
+        const created = await apiRequest('POST', '/api/template-rectangles', {
+          categoryId: currentCategoryId, // This is the NEW ID from the database
           paperSize: version.paperSize,
           xCm: rect.xCm,
           yCm: rect.yCm,
           rotation: rect.rotation,
           autoQrId: rect.autoQrId,
         });
+        newRects.push(created);
       }
 
-      // Refresh template rectangles to show the loaded design
+      // Refresh template rectangles and load them onto canvas
       await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
+      
+      // Load the templates onto the canvas with remapped category IDs
+      const loadedRects: TemplateRectangle[] = version.templateRectangles.map((rect: any) => {
+        const savedCategory = version.categories.find((c: any) => c.id === rect.categoryId);
+        const currentCategoryId = savedCategory ? categoryNameToId.get(savedCategory.name) : rect.categoryId;
+        const dbCategory = latestCategories.find((c: any) => c.id === currentCategoryId);
+        
+        return {
+          id: rect.id,
+          categoryId: currentCategoryId || rect.categoryId,
+          xCm: rect.xCm,
+          yCm: rect.yCm,
+          rotation: rect.rotation,
+          widthCm: dbCategory?.widthCm || savedCategory?.widthCm || 0,
+          heightCm: dbCategory?.heightCm || savedCategory?.heightCm || 0,
+          categoryName: dbCategory?.name || savedCategory?.name || '',
+          toolType: dbCategory?.toolType || savedCategory?.toolType || '',
+          autoQrId: rect.autoQrId,
+        };
+      });
+      setTemplateRectangles(loadedRects);
+      
+      // Update snapshot to mark as saved
+      const snapshot = JSON.stringify(loadedRects.map(r => ({
+        id: r.id,
+        categoryId: r.categoryId,
+        xCm: r.xCm,
+        yCm: r.yCm,
+        rotation: r.rotation,
+        autoQrId: r.autoQrId,
+      })).sort((a, b) => a.id.localeCompare(b.id)));
+      setLastLoadedSnapshot(snapshot);
+      
       setSelectedTemplateRect(null);
 
       toast({
@@ -1095,24 +1184,54 @@ export default function SlotDrawing() {
     }
   };
 
-  const deleteTemplateVersion = (timestamp: string) => {
-    const versionToDelete = savedTemplateVersions.find(v => v.timestamp === timestamp);
-    const updated = savedTemplateVersions.filter(v => v.timestamp !== timestamp);
+  const confirmDeleteTemplateVersion = () => {
+    if (!templateToDelete) return;
+    
+    const versionToDelete = savedTemplateVersions.find(v => v.timestamp === templateToDelete);
+    const updated = savedTemplateVersions.filter(v => v.timestamp !== templateToDelete);
     setSavedTemplateVersions(updated);
     localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
     toast({
       title: "Template Design Deleted",
       description: versionToDelete ? `"${versionToDelete.paperSize} - ${versionToDelete.name}" removed` : "Design removed",
     });
+    
+    setDeleteConfirmOpen(false);
+    setTemplateToDelete(null);
+  };
+  
+  const deleteTemplateVersion = (timestamp: string) => {
+    setTemplateToDelete(timestamp);
+    setDeleteConfirmOpen(true);
   };
   
   const previewTemplateVersion = async (version: any) => {
+    // Check for unsaved changes before loading
+    if (hasUnsavedChanges) {
+      setTemplateToLoad(version);
+      setUnsavedWarningOpen(true);
+      return;
+    }
+    
     // Just load it onto the canvas - same as the load button
     await loadTemplateVersion(version);
     toast({
       title: "Template Loaded for Preview",
       description: `"${version.paperSize} - ${version.name}" is now shown on canvas`,
     });
+  };
+  
+  const confirmLoadTemplate = async () => {
+    if (!templateToLoad) return;
+    
+    await loadTemplateVersion(templateToLoad);
+    toast({
+      title: "Template Loaded",
+      description: `"${templateToLoad.paperSize} - ${templateToLoad.name}" is now shown on canvas`,
+    });
+    
+    setUnsavedWarningOpen(false);
+    setTemplateToLoad(null);
   };
 
   const addTemplateRectangle = async (categoryId: string) => {
@@ -1464,9 +1583,16 @@ export default function SlotDrawing() {
                 {/* Template Version Management */}
                 <Card className="mt-4">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Clock className="w-4 h-4" />
-                      Template Designs
+                    <CardTitle className="flex items-center justify-between text-base">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Template Designs
+                      </div>
+                      {hasUnsavedChanges && (
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                          Unsaved Changes
+                        </Badge>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1514,7 +1640,14 @@ export default function SlotDrawing() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => loadTemplateVersion(version)}
+                                    onClick={() => {
+                                      if (hasUnsavedChanges) {
+                                        setTemplateToLoad(version);
+                                        setUnsavedWarningOpen(true);
+                                      } else {
+                                        loadTemplateVersion(version);
+                                      }
+                                    }}
                                     data-testid={`button-load-template-version-${version.timestamp}`}
                                     title="Load template"
                                   >
@@ -1548,6 +1681,64 @@ export default function SlotDrawing() {
         open={showCategoryManager}
         onOpenChange={setShowCategoryManager}
       />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Template Design?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {templateToDelete && (() => {
+                const version = savedTemplateVersions.find(v => v.timestamp === templateToDelete);
+                return version ? (
+                  <>
+                    Are you sure you want to delete <strong>"{version.paperSize} - {version.name}"</strong>? 
+                    This action cannot be undone.
+                  </>
+                ) : "Are you sure you want to delete this template design? This action cannot be undone.";
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeleteConfirmOpen(false);
+              setTemplateToDelete(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteTemplateVersion}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Unsaved Changes Warning Dialog */}
+      <AlertDialog open={unsavedWarningOpen} onOpenChange={setUnsavedWarningOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes on the current canvas. Loading a new template will discard these changes. 
+              Do you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setUnsavedWarningOpen(false);
+              setTemplateToLoad(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLoadTemplate}>
+              Load Template
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
