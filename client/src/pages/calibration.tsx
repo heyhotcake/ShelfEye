@@ -149,6 +149,10 @@ export default function Calibration() {
   }, [activeCamera?.id, relevantDesigns]);
 
   // Camera preview - poll every 1 second, but pause when camera is locked
+  // CRITICAL: Disable auto-preview for 4K cameras to prevent memory crashes on Raspberry Pi
+  const is4KCamera = activeCamera && activeCamera.resolution[0] >= 3840;
+  const previewDisabled = is4KCamera || isCameraLocked;
+  
   const { data: preview } = useQuery<CameraPreview>({
     queryKey: ['/api/camera-preview', activeCamera?.id],
     queryFn: async () => {
@@ -172,8 +176,8 @@ export default function Calibration() {
       
       return response.json();
     },
-    enabled: !!activeCamera?.id && !isCameraLocked,
-    refetchInterval: isCameraLocked ? false : 3000, // Poll every 3 seconds (reduced from 1s to reduce camera load)
+    enabled: !!activeCamera?.id && !previewDisabled,
+    refetchInterval: previewDisabled ? false : 3000, // Poll every 3 seconds (reduced from 1s to reduce camera load)
   });
 
   // Rectified preview - fetch after successful calibration
@@ -459,7 +463,17 @@ export default function Calibration() {
                 
                 <div className="canvas-container">
                   <div className="aspect-[4/3] bg-muted rounded relative overflow-hidden">
-                    {preview?.ok && preview?.image ? (
+                    {is4KCamera ? (
+                      <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                        <div className="text-center max-w-md px-4">
+                          <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm font-medium text-foreground mb-2">4K Camera Detected</p>
+                          <p className="text-xs text-muted-foreground">
+                            Auto-preview is disabled to prevent memory issues. Click "Start ArUco Calibration" below to begin.
+                          </p>
+                        </div>
+                      </div>
+                    ) : preview?.ok && preview?.image ? (
                       <img 
                         src={preview.image} 
                         alt="Camera preview" 
