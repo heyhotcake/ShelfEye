@@ -9,6 +9,8 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - Preferred communication style: Simple, everyday language.
 - **Deployment Context**: User runs the application on a Raspberry Pi at `http://naniwatanacheck.local:5000`. **ALL debugging, testing, and issue reports refer to the Pi deployment, NOT the Replit web preview.** The Replit environment is for code development only; actual hardware features (camera, GPIO) only work on the Raspberry Pi. When user reports issues or provides screenshots, they are ALWAYS from the Pi, not from Replit webview.
 - **Future Plans**: Upgrade to true 4K camera to improve QR detection speed and accuracy, then simplify redundant image processing that's currently needed to compensate for low camera resolution.
+  - See `4K-CAMERA-UPGRADE-GUIDE.md` for detailed upgrade instructions
+  - Post-processing optimizations planned after 4K camera is confirmed working
 
 ## Raspberry Pi Service Management
 
@@ -253,10 +255,12 @@ sudo journalctl -u shelfeye.service -f | grep -i "alert\|led"
 - **No quality loss** in actual detection - uses high-res rectified image
 
 **QR Detection Performance**:
-- Uses multi-scale detection (1.0x, 2.0x, 3.0x upscaling)
+- Uses multi-scale detection (1.0x, 2.0x, 3.0x upscaling) - needed for current 1080p camera
 - Memory-optimized for Raspberry Pi (converts to grayscale to save 75MB)
-- Can take 5-10 minutes for 7 slots depending on QR visibility and lighting
+- Can take 5-10 minutes for 7 slots with 1080p camera
+- Expected 2-3 minutes with 4K camera upgrade
 - Debug images saved to `/home/naniwa/ShelfEye/debug_images/` for inspection
+- **Post-processing to be simplified after 4K camera upgrade** (see upgrade guide)
 
 **Camera Hardware Limitations**:
 - **Current Camera**: Falsely advertised as "2K" - only supports 1920x1080 (Full HD)
