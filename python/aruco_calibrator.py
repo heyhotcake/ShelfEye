@@ -233,6 +233,9 @@ class ArucoCornerCalibrator:
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
+            # Enable autofocus for sharp images
+            cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+            
             # Capture frame
             ret, frame = cap.read()
             if not ret:

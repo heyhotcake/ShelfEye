@@ -41,6 +41,9 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
+        # Enable autofocus for sharp images
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        
         # Capture frame
         ret, frame = cap.read()
         if not ret or frame is None:
