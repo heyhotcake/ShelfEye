@@ -255,12 +255,10 @@ class ArucoCornerCalibrator:
             
             # Enable all auto features for best image quality
             cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # Autofocus
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = enabled)
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = auto mode)
             cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
             
-            # Reduce brightness/exposure if camera tends to overexpose
-            # -1 = default, 0 = very dark, values vary by camera
-            cap.set(cv2.CAP_PROP_BRIGHTNESS, -1)  # Use default
+            # Let camera auto-adjust exposure/brightness (don't force manual values)
             
             # Log actual camera resolution (verify camera is at requested resolution)
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -275,14 +273,14 @@ class ArucoCornerCalibrator:
                 print(f"[CALIBRATION] WARNING: Camera running at {actual_width}x{actual_height} instead of {width}x{height}", file=sys.stderr)
             sys.stderr.flush()
             
-            # Give autofocus time to adjust (critical for sharp QR codes)
-            # Many cameras need 3-5 seconds for autofocus to settle properly
-            logger.info("Warming up autofocus (discarding 20 frames over 4 seconds)...")
-            print(f"[CALIBRATION] Waiting for autofocus to settle...", file=sys.stderr)
-            for i in range(20):
+            # Give autofocus and auto-exposure time to adjust (critical for proper lighting and sharp QR codes)
+            # Many cameras need 5-8 seconds for both to settle properly
+            logger.info("Warming up autofocus and auto-exposure (discarding 30 frames over 6 seconds)...")
+            print(f"[CALIBRATION] Waiting for autofocus and auto-exposure to settle...", file=sys.stderr)
+            for i in range(30):
                 cap.read()
-                time.sleep(0.2)  # 200ms between frames = 4 seconds total
-            logger.info("Autofocus warmup complete")
+                time.sleep(0.2)  # 200ms between frames = 6 seconds total
+            logger.info("Camera warmup complete")
             
             # Capture frame
             ret, frame = cap.read()
