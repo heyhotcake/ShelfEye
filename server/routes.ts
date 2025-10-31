@@ -496,13 +496,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[VerifyPositions] Adjusted templates:', JSON.stringify(adjustedTemplates, null, 2));
       
+      // Calculate high-resolution output size (40 px/cm for QR code readability)
+      const pixelsPerCm = 40;
+      const outputWidth = Math.round(paperDims.widthCm * pixelsPerCm);
+      const outputHeight = Math.round(paperDims.heightCm * pixelsPerCm);
+      console.log(`[VerifyPositions] High-res output size: ${outputWidth}x${outputHeight} px (${pixelsPerCm} px/cm)`);
+      
       // IMPORTANT: Homography string may start with negative numbers (e.g., "-18.706...")
       // which argparse would interpret as a flag. Use --key=value syntax to avoid this.
       const previewArgs = [
         path.join(process.cwd(), 'python', 'rectified_preview.py'),
         `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
         `--homography=${homographyString}`,  // Use --key=value syntax for negative numbers
-        '--output-size=1200x600',
+        `--output-size=${outputWidth}x${outputHeight}`,
         `--templates=${JSON.stringify(templatesForPython)}`,
         `--paper-size=${paperDims.widthCm}x${paperDims.heightCm}`,
       ];
