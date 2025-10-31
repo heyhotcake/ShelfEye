@@ -183,12 +183,26 @@ class ArucoCornerCalibrator:
             reprojection_error = np.mean(point_errors)
             max_error = np.max(point_errors)
             
+            # Calculate actual pixel density from detected markers
+            # Measure horizontal and vertical pixel distances between markers
+            horizontal_pixels = np.linalg.norm(dst_points[1] - dst_points[0])  # Top-left to top-right
+            vertical_pixels = np.linalg.norm(dst_points[3] - dst_points[0])  # Top-left to bottom-left
+            horizontal_cm = paper_width_cm - 2 * marker_center_offset  # Distance between marker centers
+            vertical_cm = paper_height_cm - 2 * marker_center_offset
+            measured_px_per_cm_h = float(horizontal_pixels / horizontal_cm)
+            measured_px_per_cm_v = float(vertical_pixels / vertical_cm)
+            
+            # Store the measured pixel density for later use in generating rectified images
+            self.measured_px_per_cm = float(min(measured_px_per_cm_h, measured_px_per_cm_v))
+            
             logger.info(f"Homography calculated successfully (maps cm → pixels)")
             logger.info(f"Paper size: {paper_width_cm}cm × {paper_height_cm}cm")
             logger.info(f"Detected points: {dst_points.tolist()}")
             logger.info(f"Projected points: {projected_points.tolist()}")
             logger.info(f"Point-wise errors: {point_errors.tolist()}")
             logger.info(f"Reprojection error: mean={reprojection_error:.4f} px, max={max_error:.4f} px")
+            logger.info(f"MEASURED pixel density: {measured_px_per_cm_h:.1f} px/cm (horizontal), {measured_px_per_cm_v:.1f} px/cm (vertical)")
+            logger.info(f"Using {self.measured_px_per_cm:.1f} px/cm for native-resolution rectified images (no upsampling)")
             logger.info(f"Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero")
             logger.info(f"Camera matrix and distortion coefficients estimated (distortion currently set to zero)")
             
@@ -284,15 +298,14 @@ class ArucoCornerCalibrator:
                     if generate_preview and preview_output_size:
                         try:
                             # First, generate HIGH-RESOLUTION rectified image for QR validation
-                            # Use NATIVE camera resolution to avoid upsampling (no fake pixels)
-                            # Camera resolution / paper width = actual pixels per cm
-                            pixels_per_cm = min(resolution[0] / paper_size_cm[0], resolution[1] / paper_size_cm[1])
+                            # Use MEASURED pixel density from detected markers (no upsampling)
+                            pixels_per_cm = self.measured_px_per_cm
                             highres_width = int(paper_size_cm[0] * pixels_per_cm)
                             highres_height = int(paper_size_cm[1] * pixels_per_cm)
                             highres_size = (highres_width, highres_height)
-                            logger.info(f"Using native camera resolution: {pixels_per_cm:.1f} px/cm (no upsampling)")
+                            logger.info(f"Using MEASURED pixel density: {pixels_per_cm:.1f} px/cm (no upsampling)")
                             
-                            logger.info(f"Generating high-res rectified image: {highres_width}x{highres_height}px for QR validation")
+                            logger.info(f"Generating native-resolution rectified image: {highres_width}x{highres_height}px ({(highres_width*highres_height/1_000_000):.1f} MP) for QR validation")
                             rectified_highres = generate_rectified_image_from_frame(
                                 frame, homography, highres_size, paper_size_cm, templates,
                                 camera_matrix, dist_coeffs
@@ -304,7 +317,12 @@ class ArucoCornerCalibrator:
                             os.makedirs(data_dir, exist_ok=True)
                             highres_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
                             cv2.imwrite(highres_path, rectified_highres, [cv2.IMWRITE_JPEG_QUALITY, 95])
-                            logger.info(f"Saved high-res rectified image to: {highres_path}")
+                            
+                            # Verify saved dimensions
+                            saved_height, saved_width = rectified_highres.shape[:2]
+                            logger.info(f"✓ Saved native-resolution rectified image: {saved_width}×{saved_height} px ({(saved_width*saved_height/1_000_000):.1f} MP)")
+                            logger.info(f"✓ File location: {highres_path}")
+                            logger.info(f"✓ This is the EXACT image that QR validation will use (no upsampling)")
                             
                             # Then, generate downscaled version for UI preview
                             logger.info(f"Generating UI preview: {preview_output_size[0]}x{preview_output_size[1]}px")
