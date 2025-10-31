@@ -559,6 +559,11 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                 })
     
     # Calculate summary
+    expected_visible = 0
+    actual_visible = 0
+    expected_hidden = 0
+    actual_hidden = 0
+    
     if mode == 'visible':
         expected_visible = len(expected_slots)
         actual_visible = len([d for d in validation_details if d['detected']])
