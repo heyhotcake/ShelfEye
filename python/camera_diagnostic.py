@@ -73,7 +73,7 @@ class CameraDiagnostic:
             
             # Enable all automatic features - trust the camera to adjust properly
             cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)  # 1 = auto mode
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
             cap.set(cv2.CAP_PROP_AUTO_WB, 1)
             
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))

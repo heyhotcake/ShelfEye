@@ -39,7 +39,7 @@ class CameraManager:
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
             # Enable all automatic features - trust the camera to adjust properly
             self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-            self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)  # 1 = auto mode
+            self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
             self.cap.set(cv2.CAP_PROP_AUTO_WB, 1)
             
             logger.info(f"Camera {self.camera_index} initialized successfully")
