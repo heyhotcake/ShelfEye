@@ -164,6 +164,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download validation debug image
+  app.get("/api/calibrate/download-debug", async (_req, res) => {
+    try {
+      const debugPath = path.join(process.cwd(), 'data', 'validatio_rectified_debug.jpg');
+      
+      // Check if file exists
+      try {
+        await fs.access(debugPath);
+      } catch {
+        return res.status(404).json({ message: "Debug image not found. Run QR validation first." });
+      }
+      
+      // Send file for download
+      res.download(debugPath, 'validation_debug.jpg', (err) => {
+        if (err) {
+          console.error('[Validation] Error downloading debug image:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ message: "Failed to download debug image" });
+          }
+        }
+      });
+    } catch (error) {
+      console.error('[Validation] Download error:', error);
+      res.status(500).json({ message: "Failed to download debug image", error });
+    }
+  });
+
   // Calibration routes
   app.post("/api/calibrate/:cameraId", async (req, res) => {
     const { cameraId } = req.params;
