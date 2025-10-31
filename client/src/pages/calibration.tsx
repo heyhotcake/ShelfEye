@@ -131,22 +131,14 @@ export default function Calibration() {
       setStep1Result(null);
       setStep2Result(null);
       setIsCameraLocked(false);
-      
-      // Auto-select template if only one exists for this camera
-      if (activeCamera && relevantDesigns.length === 1) {
-        console.log('[Calibration] Auto-selecting template:', relevantDesigns[0].timestamp);
-        setSelectedTemplate(relevantDesigns[0].timestamp);
-      } else {
-        console.log('[Calibration] Clearing template selection');
-        setSelectedTemplate("");
-      }
+      setSelectedTemplate(""); // Clear template selection when camera changes
       
       // Update ref to current camera ID
       previousCameraIdRef.current = currentCameraId;
     } else {
       console.log('[Calibration] Camera same, no reset');
     }
-  }, [activeCamera?.id, relevantDesigns]);
+  }, [activeCamera?.id]);
 
   // Camera preview - poll every 3 seconds, but pause when camera is locked
   // For 4K cameras, backend automatically uses 1920x1080 for preview to prevent memory issues
