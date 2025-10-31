@@ -244,7 +244,12 @@ class ArucoCornerCalibrator:
             
             width, height = resolution
             
-            # Let OpenCV choose best format (YUV2, MJPEG, etc.) based on camera capability
+            # Force MJPEG format for high resolutions (4K cameras require MJPEG)
+            # MJPEG = Motion JPEG (compressed), required for 4K on most USB cameras
+            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+            logger.info(f"[CALIBRATION] Set format to MJPEG for high-resolution capture")
+            
+            # Set resolution AFTER format
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
@@ -253,11 +258,21 @@ class ArucoCornerCalibrator:
             cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = enabled)
             cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
             
+            # Reduce brightness/exposure if camera tends to overexpose
+            # -1 = default, 0 = very dark, values vary by camera
+            cap.set(cv2.CAP_PROP_BRIGHTNESS, -1)  # Use default
+            
             # Log actual camera resolution (verify camera is at requested resolution)
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            logger.info(f"[CALIBRATION] Requested: {width}x{height}, Actual: {actual_width}x{actual_height}")
-            print(f"[CALIBRATION] Camera resolution: {actual_width}x{actual_height} (requested {width}x{height})", file=sys.stderr)
+            actual_fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+            fourcc_str = "".join([chr((actual_fourcc >> 8 * i) & 0xFF) for i in range(4)])
+            logger.info(f"[CALIBRATION] Requested: {width}x{height}, Actual: {actual_width}x{actual_height}, Format: {fourcc_str}")
+            print(f"[CALIBRATION] Camera resolution: {actual_width}x{actual_height} (requested {width}x{height}), Format: {fourcc_str}", file=sys.stderr)
+            
+            if actual_width != width or actual_height != height:
+                logger.warning(f"[CALIBRATION] WARNING: Camera did not accept requested resolution!")
+                print(f"[CALIBRATION] WARNING: Camera running at {actual_width}x{actual_height} instead of {width}x{height}", file=sys.stderr)
             sys.stderr.flush()
             
             # Give autofocus time to adjust (critical for sharp QR codes)
