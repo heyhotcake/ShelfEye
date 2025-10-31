@@ -174,8 +174,8 @@ export default function Calibration() {
       
       return response.json();
     },
-    enabled: !!activeCamera?.id && !isCameraLocked,
-    refetchInterval: isCameraLocked ? false : 3000, // Poll every 3 seconds (reduced from 1s to reduce camera load)
+    enabled: false, // DISABLED: Auto-polling causes Pi crashes with 4K camera
+    refetchInterval: false, // No auto-refresh
   });
 
   // Rectified preview - fetch after successful calibration
