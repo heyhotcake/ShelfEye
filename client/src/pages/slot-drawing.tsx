@@ -1269,6 +1269,79 @@ export default function SlotDrawing() {
     setTemplateToLoad(null);
   };
 
+  const exportTemplateToFile = (version: typeof savedTemplateVersions[0]) => {
+    const dataStr = JSON.stringify(version, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `template-${version.paperSize}-${version.name}-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Template Exported",
+      description: `Downloaded "${version.name}" as JSON file`,
+    });
+  };
+
+  const importTemplateFromFile = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      try {
+        const text = await file.text();
+        const imported = JSON.parse(text);
+        
+        // Validate the imported data has required fields
+        if (!imported.name || !imported.paperSize || !imported.templateRectangles || !imported.categories) {
+          throw new Error('Invalid template file format');
+        }
+        
+        // Add to saved versions if not already there
+        const exists = savedTemplateVersions.find(v => 
+          v.name === imported.name && v.paperSize === imported.paperSize
+        );
+        
+        if (exists) {
+          toast({
+            title: "Template Already Exists",
+            description: `A template named "${imported.name}" for ${imported.paperSize} already exists`,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Update timestamp to current time
+        imported.timestamp = new Date().toISOString();
+        
+        // Add to saved versions
+        const updated = [...savedTemplateVersions, imported];
+        setSavedTemplateVersions(updated);
+        localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
+        
+        toast({
+          title: "Template Imported",
+          description: `Successfully imported "${imported.name}" with ${imported.templateRectangles.length} tools`,
+        });
+        
+        // Optionally load it right away
+        await loadTemplateVersion(imported);
+      } catch (error) {
+        toast({
+          title: "Import Failed",
+          description: error instanceof Error ? error.message : "Failed to import template file",
+          variant: "destructive",
+        });
+      }
+    };
+    input.click();
+  };
+
   const addTemplateRectangle = async (categoryId: string) => {
     const category = toolCategories.find((c: any) => c.id === categoryId);
     if (!category) return;
@@ -1646,6 +1719,17 @@ export default function SlotDrawing() {
                         </Button>
                       </div>
 
+                      {/* Import Template Button */}
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={importTemplateFromFile}
+                        data-testid="button-import-template"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Import Template from File
+                      </Button>
+
                       {/* Saved Template Designs List */}
                       {savedTemplateVersions.length > 0 && (
                         <div className="border rounded-lg p-3 space-y-2">
@@ -1687,6 +1771,15 @@ export default function SlotDrawing() {
                                     title="Load template"
                                   >
                                     <Download className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => exportTemplateToFile(version)}
+                                    data-testid={`button-export-template-version-${version.timestamp}`}
+                                    title="Export template to file"
+                                  >
+                                    <Upload className="w-3 h-3" />
                                   </Button>
                                   <Button
                                     size="sm"
