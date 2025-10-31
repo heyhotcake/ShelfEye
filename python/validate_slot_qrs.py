@@ -14,12 +14,6 @@ import sys
 import time
 import argparse
 from pyzbar import pyzbar
-from camera_utils import (
-    setup_camera_optimal, 
-    warmup_camera_properly, 
-    capture_optimal_frame,
-    apply_gamma_correction
-)
 
 # Suppress OpenCV warnings/info to prevent polluting stdout
 os.environ['OPENCV_LOG_LEVEL'] = 'FATAL'
@@ -299,10 +293,31 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                 'error': 'No homography matrix provided'
             }
         
-        # Capture frame from camera with optimal settings (matches Windows Camera app quality)
-        print(f"[VALIDATION] Opening camera with optimal settings", file=sys.stderr)
+        # Capture frame from camera
+        print(f"[VALIDATION] Opening camera", file=sys.stderr)
         sys.stderr.flush()
         cap = cv2.VideoCapture(0)
+        
+        # Force MJPEG format FIRST (required for 4K on most USB cameras)
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        print(f"[VALIDATION] Set format to MJPEG for high-resolution capture", file=sys.stderr)
+        
+        # Set camera to highest resolution for better QR detection
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
+        
+        # Enable all automatic features - trust the camera to adjust properly
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
+        cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+        
+        # Log actual resolution achieved
+        actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        print(f"[VALIDATION] Camera resolution: {actual_width}x{actual_height} (requested 3840x2160)", file=sys.stderr)
+        
+        # Reduce buffer size to get fresh frames
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         
         if not cap.isOpened():
             print(f"[VALIDATION] ERROR: Failed to open camera", file=sys.stderr)
@@ -319,54 +334,62 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                 'details': []
             }
         
-        # Use optimal camera setup (4K resolution, optimal format, hardware settings)
-        setup_camera_optimal(cap, resolution=(3840, 2160))
-        
-        # Log actual resolution achieved
+        # Get actual camera resolution
         actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(f"[VALIDATION] Camera resolution: {actual_width}x{actual_height} (requested 3840x2160)", file=sys.stderr)
+        print(f"[VALIDATION] Camera resolution: {actual_width}x{actual_height}", file=sys.stderr)
         sys.stderr.flush()
         
-        # Proper warmup like Windows Camera app (10 seconds at 30fps)
-        # This ensures auto-exposure is fully settled for bright, clear images
-        print(f"[VALIDATION] Warming up camera (10s continuous operation for optimal brightness)...", file=sys.stderr)
+        # Discard first few frames (camera warmup and autofocus)
+        # Give autofocus time to settle (critical for sharp QR codes)
+        print(f"[VALIDATION] Warming up autofocus (discarding 20 frames over 4 seconds)...", file=sys.stderr)
         sys.stderr.flush()
-        warmup_camera_properly(cap, duration_seconds=10)
+        for i in range(20):
+            cap.read()
+            time.sleep(0.2)  # 200ms between frames = 4 seconds total
         
-        # MEMORY OPTIMIZATION: Capture single optimal frame with post-processing
-        # Saves ~56MB RAM compared to 5-frame capture (critical for Raspberry Pi)
-        # The capture_optimal_frame function internally captures multiple frames and picks the sharpest
-        print(f"[VALIDATION] Capturing optimal frame with brightness enhancement...", file=sys.stderr)
+        # Memory-optimized: Capture frames one at a time, keep only the sharpest
+        # This avoids storing 5 full frames simultaneously (~70MB → ~14MB)
+        num_frames = 5
+        best_frame = None
+        best_sharpness = -1
+        best_frame_idx = -1
+        
+        print(f"[VALIDATION] Capturing {num_frames} frames for sharpness analysis (memory-optimized)", file=sys.stderr)
         sys.stderr.flush()
         
-        best_frame = capture_optimal_frame(cap)
+        for i in range(num_frames):
+            ret, frame = cap.read()
+            if ret:
+                # Calculate sharpness using Laplacian variance (higher = sharper)
+                # Work on grayscale to save memory
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
+                
+                # Keep this frame only if it's the sharpest so far
+                if sharpness > best_sharpness:
+                    best_frame = frame  # Old frame will be garbage collected
+                    best_sharpness = sharpness
+                    best_frame_idx = i
+                
+                print(f"[VALIDATION] Frame {i+1}/{num_frames} captured, sharpness={sharpness:.2f}", file=sys.stderr)
+                sys.stderr.flush()
         
         cap.release()
         print(f"[VALIDATION] Camera released", file=sys.stderr)
         sys.stderr.flush()
         
         if best_frame is None:
-            print(f"[VALIDATION] ERROR: Failed to capture frame", file=sys.stderr)
+            print(f"[VALIDATION] ERROR: Failed to capture any frames", file=sys.stderr)
             sys.stderr.flush()
             return {
                 'success': False,
-                'error': 'Failed to capture frame from camera',
-                'missing_qrs': [],
-                'incorrectly_visible': [],
-                'expected_visible': 0,
-                'actual_visible': 0,
-                'expected_hidden': 0,
-                'actual_hidden': 0,
-                'details': []
+                'error': 'Failed to capture any frames'
             }
         
-        # Extra brightness boost to match Windows Camera app (aggressive post-processing)
-        best_frame = apply_gamma_correction(best_frame, gamma=1.1)
-        
-        # Use the optimal frame
+        # Use the sharpest frame
         frame = best_frame
-        print(f"[VALIDATION] Optimal frame captured with post-processing applied", file=sys.stderr)
+        print(f"[VALIDATION] Selected frame {best_frame_idx+1}/{num_frames} with sharpness {best_sharpness:.2f}", file=sys.stderr)
         sys.stderr.flush()
         
         # Signal that frame capture is complete - LED can turn off now
