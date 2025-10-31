@@ -13,6 +13,9 @@ export class StartupCalibrationService {
   private isRunning = false;
 
   async initialize(): Promise<void> {
+    console.log('[StartupCalibration] DISABLED - Startup calibration check disabled to prevent Pi crashes');
+    return; // TEMPORARY FIX: Disable startup calibration to prevent LED/camera access crashes
+    
     if (this.isRunning) {
       console.log('[StartupCalibration] Already running, skipping...');
       return;
