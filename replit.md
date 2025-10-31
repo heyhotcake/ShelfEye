@@ -7,7 +7,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 **4K Camera Support**: The system now supports true 4K cameras (3840x2160) with intelligent dual-resolution mode:
 - **Live Preview**: DISABLED (auto-polling disabled to prevent Pi crashes)
 - **Calibration/Capture**: Uses full 4K resolution for maximum accuracy
-- **Startup Calibration**: DISABLED (automatic calibration at startup disabled to prevent LED/camera access crashes)
+- **Startup Calibration**: ENABLED (runs automatically on server startup using last calibration settings)
 - Preview only available during active calibration - no auto-polling to preserve system stability
 
 ## User Preferences
@@ -43,11 +43,11 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - On memory kill: 10-second gap, then auto-restart with fresh memory state
 
 **Hardware Watchdog (Auto-Reboot on System Freeze):**
-- Pi has experienced freezes after 2-3 days of continuous operation
-- Hardware watchdog monitors system health and auto-reboots if system becomes unresponsive
+- **CURRENTLY DISABLED** - 15-second timeout was too aggressive and caused false reboots during normal operations (Vite compilation, TypeScript loading)
 - Setup script: `enable-watchdog.sh` (run once on Pi to enable)
-- Reboot trigger: 15 seconds of no heartbeat
+- If re-enabling, increase timeout to 60+ seconds: Edit `/etc/watchdog.conf` and set `watchdog-timeout = 60`
 - Status check: `sudo systemctl status watchdog`
+- Note: Watchdog thought the Pi was frozen when it was just busy, causing reboot loops
 
 ## System Architecture
 
