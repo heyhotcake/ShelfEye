@@ -1,0 +1,19 @@
+ sudo journalctl -u shelfeye.service -f
+Oct 31 13:06:40 NaniwaTanaCheck sudo[2680]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action red_flash_start --pattern slow --num-leds 99
+Oct 31 13:06:40 NaniwaTanaCheck sudo[2680]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 31 13:06:40 NaniwaTanaCheck pi-startup.sh[2638]: [LED] RED FLASH started (slow pattern)
+Oct 31 13:06:40 NaniwaTanaCheck pi-startup.sh[2638]: 1:06:40 PM [express] serving on port 5000
+Oct 31 13:06:54 NaniwaTanaCheck pi-startup.sh[2638]: Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+Oct 31 13:06:54 NaniwaTanaCheck pi-startup.sh[2638]:   npx update-browserslist-db@latest
+Oct 31 13:06:54 NaniwaTanaCheck pi-startup.sh[2638]:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Oct 31 13:07:01 NaniwaTanaCheck pi-startup.sh[2638]: 1:07:01 PM [express] GET /api/cameras 304 in 721ms :: [{"id":"a91d43f1-47bf-4d75-8a7d-d2faf0503f81",…
+Oct 31 13:07:01 NaniwaTanaCheck pi-startup.sh[2638]: 1:07:01 PM [express] GET /api/slots 304 in 738ms :: [{"id":"f6272be9-b268-45ee-a147-17299f21cde1","s…
+Oct 31 13:07:01 NaniwaTanaCheck pi-startup.sh[2638]: 1:07:01 PM [express] GET /api/config 304 in 912ms :: [{"id":"04e164ea-7cb9-4941-a4f1-77dfb9f53265","…
+Oct 31 13:07:13 NaniwaTanaCheck pi-startup.sh[2638]: [GPIO Light] Received action: on
+Oct 31 13:07:14 NaniwaTanaCheck sudo[2700]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action white --num-leds 99 --brightness 100
+Oct 31 13:07:14 NaniwaTanaCheck sudo[2700]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Oct 31 13:07:14 NaniwaTanaCheck pi-startup.sh[2638]: [LED] Unified controller stderr: [LED] RED FLASH has priority - white light request denied
+Oct 31 13:07:14 NaniwaTanaCheck sudo[2700]: pam_unix(sudo:session): session closed for user root
+Oct 31 13:07:14 NaniwaTanaCheck pi-startup.sh[2638]: [LED] Unified controller failed: [LED] RED FLASH has priority - white light request denied
+Oct 31 13:07:14 NaniwaTanaCheck pi-startup.sh[2638]: [GPIO Light] Sending response: {"ok":true,"action":"on","message":"Light turned on successfully (unified controller)"}
+Oct 31 13:07:14 NaniwaTanaCheck pi-startup.sh[2638]: 1:07:14 PM [express] POST /api/gpio/light 200 in 1044ms :: {"ok":true,"action":"on","message":"Light…

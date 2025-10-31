@@ -2346,10 +2346,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Use unified LED controller
+      let success = false;
       if (action === 'on') {
-        await setWhiteLight();
+        success = await setWhiteLight();
       } else {
         await turnOffLED();
+        success = true; // turnOffLED doesn't return a value
+      }
+
+      if (!success && action === 'on') {
+        return res.status(409).json({
+          ok: false,
+          action,
+          message: 'White light blocked - RED FLASH alert has priority. Stop the alert first.'
+        });
       }
 
       const response = {
