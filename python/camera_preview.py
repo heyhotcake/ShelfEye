@@ -12,8 +12,7 @@ import logging
 from camera_utils import (
     setup_camera_optimal, 
     warmup_camera_properly, 
-    capture_optimal_frame,
-    apply_gamma_correction
+    capture_optimal_frame
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -56,7 +55,7 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
         logger.info("Warming up camera...")
         warmup_camera_properly(cap, duration_seconds=10)
         
-        # Capture optimal frame with post-processing
+        # Capture frame (no post-processing)
         frame = capture_optimal_frame(cap)
         
         if frame is None:
@@ -64,9 +63,6 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
                 'ok': False,
                 'error': 'Failed to capture frame'
             }
-        
-        # Extra brightness boost
-        frame = apply_gamma_correction(frame, gamma=1.1)
         
         # Encode as JPEG
         _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
