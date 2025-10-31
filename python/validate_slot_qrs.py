@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 import json
 import sys
+import time
 import argparse
 from pyzbar import pyzbar
 
@@ -339,11 +340,13 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"[VALIDATION] Camera resolution: {actual_width}x{actual_height}", file=sys.stderr)
         sys.stderr.flush()
         
-        # Discard first few frames (camera warmup)
-        print(f"[VALIDATION] Warming up camera (discarding first 2 frames)", file=sys.stderr)
+        # Discard first few frames (camera warmup and autofocus)
+        # Give autofocus time to settle (critical for sharp QR codes)
+        print(f"[VALIDATION] Warming up autofocus (discarding 20 frames over 4 seconds)...", file=sys.stderr)
         sys.stderr.flush()
-        for i in range(2):
+        for i in range(20):
             cap.read()
+            time.sleep(0.2)  # 200ms between frames = 4 seconds total
         
         # Memory-optimized: Capture frames one at a time, keep only the sharpest
         # This avoids storing 5 full frames simultaneously (~70MB → ~14MB)

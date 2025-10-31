@@ -276,10 +276,13 @@ class ArucoCornerCalibrator:
             sys.stderr.flush()
             
             # Give autofocus time to adjust (critical for sharp QR codes)
-            logger.info("Warming up autofocus (discarding 5 frames)...")
-            for i in range(5):
+            # Many cameras need 3-5 seconds for autofocus to settle properly
+            logger.info("Warming up autofocus (discarding 20 frames over 4 seconds)...")
+            print(f"[CALIBRATION] Waiting for autofocus to settle...", file=sys.stderr)
+            for i in range(20):
                 cap.read()
-                time.sleep(0.2)  # 200ms between frames
+                time.sleep(0.2)  # 200ms between frames = 4 seconds total
+            logger.info("Autofocus warmup complete")
             
             # Capture frame
             ret, frame = cap.read()
