@@ -209,9 +209,12 @@ def generate_rectified_preview(
         cap.set(cv2.CAP_PROP_AUTO_WB, 1)
         
         # Warmup: Let auto-exposure and autofocus settle (discard first few frames)
+        # Camera needs time BETWEEN frames to analyze and adjust - not just frame count
+        import time
         logger.info("Warming up camera (auto-exposure, autofocus, white balance)...")
-        for i in range(10):
+        for i in range(30):
             cap.read()
+            time.sleep(0.2)  # 200ms between frames = 6 seconds total
         
         # Capture frame
         ret, frame = cap.read()
