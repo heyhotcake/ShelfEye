@@ -208,6 +208,11 @@ def generate_rectified_preview(
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
         cap.set(cv2.CAP_PROP_AUTO_WB, 1)
         
+        # Warmup: Let auto-exposure and autofocus settle (discard first few frames)
+        logger.info("Warming up camera (auto-exposure, autofocus, white balance)...")
+        for i in range(10):
+            cap.read()
+        
         # Capture frame
         ret, frame = cap.read()
         if not ret:
