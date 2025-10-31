@@ -253,12 +253,10 @@ class ArucoCornerCalibrator:
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
-            # Enable all auto features for best image quality
+            # Enable autofocus only - let camera handle exposure/white balance automatically
             cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # Autofocus
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = auto mode)
-            cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
-            
-            # Let camera auto-adjust exposure/brightness (don't force manual values)
+            # Note: NOT setting AUTO_EXPOSURE - cameras have different values and defaults work best
+            # Note: NOT setting AUTO_WB - let camera use built-in auto white balance
             
             # Log actual camera resolution (verify camera is at requested resolution)
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
