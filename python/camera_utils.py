@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Camera utilities for optimal camera warmup and image quality
+Camera utilities for optimal image quality matching native camera apps
 """
 
 import cv2
@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 def apply_auto_brightness_contrast(image, clip_hist_percent=1):
     """
-    Automatic brightness and contrast optimization
+    Automatic brightness and contrast optimization using histogram clipping
+    Similar to what Windows Camera app does internally
     """
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
@@ -50,15 +51,16 @@ def apply_auto_brightness_contrast(image, clip_hist_percent=1):
 
 def apply_sharpening(image):
     """
-    Apply unsharp mask for sharpening
+    Apply unsharp mask for sharpening (like Windows Camera app)
     """
     gaussian = cv2.GaussianBlur(image, (0, 0), 2.0)
     sharpened = cv2.addWeighted(image, 1.5, gaussian, -0.5, 0)
     return sharpened
 
-def apply_gamma_correction(image, gamma=1.15):
+def apply_gamma_correction(image, gamma=1.2):
     """
-    Apply gamma correction to brighten images
+    Apply gamma correction to brighten dark images
+    Windows Camera app typically uses gamma ~1.2 for indoor scenes
     """
     inv_gamma = 1.0 / gamma
     table = np.array([((i / 255.0) ** inv_gamma) * 255
@@ -116,9 +118,9 @@ def warmup_camera_properly(cap, duration_seconds=10):
 
 def capture_optimal_frame(cap):
     """
-    Capture frame with full quality pipeline (produces CRISP images)
+    Capture frame with optimal quality
     """
-    # Take multiple frames and pick the sharpest
+    # Take multiple frames and pick the best (sharpest)
     best_frame = None
     best_sharpness = 0
     
@@ -135,11 +137,11 @@ def capture_optimal_frame(cap):
     if best_frame is None:
         return None
         
-    # Apply post-processing pipeline (ESSENTIAL for CRISP quality)
+    # Apply post-processing to match Windows Camera app
     # Step 1: Auto brightness/contrast
     enhanced = apply_auto_brightness_contrast(best_frame)
     
-    # Step 2: Gamma correction
+    # Step 2: Gamma correction (brighten)
     brightened = apply_gamma_correction(enhanced, gamma=1.15)
     
     # Step 3: Sharpening
