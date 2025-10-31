@@ -150,7 +150,7 @@ export default function Configuration() {
     onSuccess: (data: any) => {
       toast({
         title: "Light Control",
-        description: data.message || `Light ${data.state === 'HIGH' ? 'turned on' : 'turned off'}`,
+        description: data.message || `Light ${data.action === 'on' ? 'turned on' : 'turned off'}`,
       });
     },
     onError: (error) => {
