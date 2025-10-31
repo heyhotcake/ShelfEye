@@ -37,8 +37,10 @@ class CameraManager:
             # Set camera properties
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
-            # Enable autofocus - let camera handle exposure/white balance automatically
+            # Enable all automatic features - trust the camera to adjust properly
             self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+            self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)  # 1 = auto mode
+            self.cap.set(cv2.CAP_PROP_AUTO_WB, 1)
             
             logger.info(f"Camera {self.camera_index} initialized successfully")
             return True
