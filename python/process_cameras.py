@@ -298,10 +298,10 @@ class CameraProcessor:
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
-            # Enable all auto features for best image quality
+            # Enable autofocus only - let camera handle exposure/white balance automatically
             cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # Autofocus
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = enabled)
-            cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
+            # Note: NOT setting AUTO_EXPOSURE - camera defaults work best
+            # Note: NOT setting AUTO_WB - let camera use built-in auto white balance
             
             # Give autofocus time to adjust (critical for sharp images)
             logger.info(f"Camera {camera_id}: Warming up autofocus...")
