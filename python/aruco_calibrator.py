@@ -14,6 +14,14 @@ from typing import Optional, Tuple, Dict
 import numpy as np
 import cv2
 from rectified_preview import generate_rectified_image_from_frame
+from camera_utils import (
+    setup_camera_optimal, 
+    warmup_camera_properly, 
+    capture_optimal_frame,
+    apply_auto_brightness_contrast,
+    apply_gamma_correction,
+    apply_sharpening
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -244,16 +252,8 @@ class ArucoCornerCalibrator:
             
             width, height = resolution
             
-            # DON'T force format - let camera choose best format for brightness
-            # The camera's auto-exposure works better with its default format
-            # Set resolution directly
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-            
-            # Enable all automatic features - trust the camera to adjust properly
-            cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
-            cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+            # Use optimal camera setup (matches Windows Camera app behavior)
+            setup_camera_optimal(cap, resolution)
             
             # Log actual camera resolution (verify camera is at requested resolution)
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -268,19 +268,20 @@ class ArucoCornerCalibrator:
                 print(f"[CALIBRATION] WARNING: Camera running at {actual_width}x{actual_height} instead of {width}x{height}", file=sys.stderr)
             sys.stderr.flush()
             
-            # Give autofocus and auto-exposure time to adjust (critical for proper lighting and sharp QR codes)
-            # Many cameras need 5-8 seconds for both to settle properly
-            logger.info("Warming up autofocus and auto-exposure (discarding 75 frames over 15 seconds)...")
-            print(f"[CALIBRATION] Waiting for autofocus and auto-exposure to settle...", file=sys.stderr)
-            for i in range(75):
-                cap.read()
-                time.sleep(0.2)  # 200ms between frames = 15 seconds total
+            # Proper warmup like Windows Camera app (continuous at 30fps)
+            logger.info("Warming up camera with continuous operation (like Windows Camera app)...")
+            print(f"[CALIBRATION] Warming up camera for optimal brightness and focus...", file=sys.stderr)
+            warmup_camera_properly(cap, duration_seconds=10)
             logger.info("Camera warmup complete")
             
-            # Capture frame
-            ret, frame = cap.read()
-            if not ret:
+            # Capture optimal frame with post-processing
+            logger.info("Capturing optimal frame with brightness enhancement...")
+            frame = capture_optimal_frame(cap)
+            if frame is None:
                 raise Exception("Failed to capture frame from camera")
+            
+            # Extra brightness boost to match Windows Camera app (they're aggressive)
+            frame = apply_gamma_correction(frame, gamma=1.1)
             
             # Detect corner markers
             marker_centers, num_detected = self.detect_corner_markers(frame)
