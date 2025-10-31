@@ -9,12 +9,6 @@ import sys
 import json
 import base64
 import logging
-from camera_utils import (
-    setup_camera_optimal, 
-    warmup_camera_properly, 
-    capture_optimal_frame,
-    apply_gamma_correction
-)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -49,24 +43,37 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
                 'error': f'Cannot open camera device {device_source}'
             }
         
-        # Use optimal camera setup (matches Windows Camera app quality)
-        setup_camera_optimal(cap, resolution=(width, height))
+        # Let OpenCV choose best format (YUV2, MJPEG, etc.) based on camera capability
+        # Set resolution
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
-        # Proper warmup like Windows Camera app (10 seconds at 30fps)
-        logger.info("Warming up camera with optimal settings (10s continuous operation)...")
-        warmup_camera_properly(cap, duration_seconds=10)
+        # Enable all automatic features - trust the camera to adjust properly
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
+        cap.set(cv2.CAP_PROP_AUTO_WB, 1)
         
-        # Capture optimal frame with post-processing
-        frame = capture_optimal_frame(cap)
+        # Verify settings were applied
+        actual_af = cap.get(cv2.CAP_PROP_AUTOFOCUS)
+        actual_ae = cap.get(cv2.CAP_PROP_AUTO_EXPOSURE)
+        actual_wb = cap.get(cv2.CAP_PROP_AUTO_WB)
+        logger.info(f"Camera settings - Autofocus: {actual_af}, Auto-exposure: {actual_ae}, Auto-WB: {actual_wb}")
         
-        if frame is None:
+        # Warmup: Let auto-exposure and autofocus settle (discard first few frames)
+        # Camera needs time BETWEEN frames to analyze and adjust - not just frame count
+        import time
+        logger.info("Warming up camera (auto-exposure, autofocus, white balance)...")
+        for i in range(75):
+            cap.read()
+            time.sleep(0.2)  # 200ms between frames = 15 seconds total
+        
+        # Capture frame
+        ret, frame = cap.read()
+        if not ret or frame is None:
             return {
                 'ok': False,
                 'error': 'Failed to capture frame'
             }
-        
-        # Extra brightness boost to match Windows Camera app
-        frame = apply_gamma_correction(frame, gamma=1.1)
         
         # Encode as JPEG
         _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
