@@ -1,0 +1,69 @@
+6:34 2025 from fe80::ea4:cf33:c860:5e33%wlan0
+naniwa@NaniwaTanaCheck:~ $ journalctl -u shelfeye -n 200 | grep -i "validation\|qr\|missing\|detected"
+Oct 31 15:16:13 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Using MEASURED pixel density: 31.7 px/cm (no upsampling)
+Oct 31 15:16:13 NaniwaTanaCheck pi-startup.sh[4360]: INFO:__main__:Generating native-resolution rectified image: 2820x1329px (3.7 MP) for QR validation
+Oct 31 15:16:13 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:rectified_preview:Drawing 7 template overlays
+Oct 31 15:16:13 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 4.5, 'y': 9.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 5.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 78, 'y': 3.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 44.5, 'y': 39, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 78.5, 'y': 37, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 10, 'y': 38.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}]
+Oct 31 15:16:14 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:✓ Saved native-resolution rectified image: 2820×1329 px (3.7 MP)
+Oct 31 15:16:14 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:✓ File location: /home/naniwa/ShelfEye/python/../data/latest_calibration_rectified.jpg
+Oct 31 15:16:14 NaniwaTanaCheck pi-startup.sh[4360]: INFO:__main__:✓ This is the EXACT image that QR validation will use (no upsampling)
+Oct 31 15:16:14 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:rectified_preview:Drawing 7 template overlays
+Oct 31 15:16:14 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 4.5, 'y': 9.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 5.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 78, 'y': 3.5, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 27.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 44.5, 'y': 39, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 78.5, 'y': 37, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 10, 'y': 38.5, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}]
+Oct 31 15:16:14 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Oct 31 15:16:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:16:29 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:16:36 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:16:43 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:16:50 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:16:57 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:17:03 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:17:11 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:17:17 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:17:19 NaniwaTanaCheck pi-startup.sh[4360]:   autoQrId: 'pen-001',
+Oct 31 15:17:19 NaniwaTanaCheck pi-startup.sh[4360]:   autoQrId: 'pen-002',
+Oct 31 15:17:19 NaniwaTanaCheck pi-startup.sh[4360]:   autoQrId: 'pen-003',
+Oct 31 15:17:19 NaniwaTanaCheck pi-startup.sh[4360]:   autoQrId: '5x5-001',
+Oct 31 15:17:20 NaniwaTanaCheck pi-startup.sh[4360]:   autoQrId: 'pen-004',
+Oct 31 15:17:20 NaniwaTanaCheck pi-startup.sh[4360]:   autoQrId: '5x5-002',
+Oct 31 15:17:20 NaniwaTanaCheck pi-startup.sh[4360]:   autoQrId: '5x5-003',
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Starting QR validation (visible) for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Camera found: { hasHomography: true, hasCameraMatrix: true, hasDistCoeffs: true }
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Found 7 slots for camera
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] ====== SLOT COORDINATES BEING USED FOR VALIDATION ======
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] 1. pen-001 (pen): x=4.50cm, y=9.50cm, size=7x4cm, rot=0°
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] 2. pen-002 (pen): x=44.50cm, y=5.50cm, size=7x4cm, rot=0°
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] 3. pen-003 (pen): x=78.00cm, y=3.50cm, size=7x4cm, rot=0°
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] 4. 5x5-001 (5x5): x=44.50cm, y=27.50cm, size=5x5cm, rot=0°
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] 5. pen-004 (pen): x=44.50cm, y=39.00cm, size=7x4cm, rot=0°
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] 6. 5x5-002 (5x5): x=78.50cm, y=37.00cm, size=5x5cm, rot=0°
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] 7. 5x5-003 (5x5): x=10.00cm, y=38.50cm, size=5x5cm, rot=0°
+Oct 31 15:17:22 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] ==================================================
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Using paper dimensions: 89.1x42 cm
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Using camera calibration parameters
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Using device path: /dev/video0
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: [VALIDATION] Starting validation for camera /dev/video0 in mode 'visible'
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [VALIDATION] Will use saved calibration rectified image
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: [VALIDATION] Received parameters:
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [VALIDATION] Using saved calibration rectified image
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: [VALIDATION] Loaded rectified image: 2820x1329px
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [VALIDATION] Found 7 expected slots for validation
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: [VALIDATION] Saved rectified view to: /home/naniwa/ShelfEye/data/validatio_rectified_debug.jpg
+Oct 31 15:17:34 NaniwaTanaCheck pi-startup.sh[4360]: [VALIDATION] Starting QR code detection...
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: [VALIDATION] Found 0 QR codes total
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]:   ERROR:  should be visible but not detected
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]:   ERROR:  should be visible but not detected
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]:   ERROR:  should be visible but not detected
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]:   ERROR:  should be visible but not detected
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr:   ERROR:  should be visible but not detected
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]:   ERROR:  should be visible but not detected
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]:   ERROR:  should be visible but not detected
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]: [VALIDATION] Summary:
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]:   - Missing: , , , , , ,
+Oct 31 15:18:05 NaniwaTanaCheck pi-startup.sh[4360]: 3:18:05 PM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81/validate-qrs-visible 2…
+Oct 31 15:18:07 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:18:15 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:19:32 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:19:39 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:19:46 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Oct 31 15:19:52 NaniwaTanaCheck pi-startup.sh[4360]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+naniwa@NaniwaTanaCheck:~ $
