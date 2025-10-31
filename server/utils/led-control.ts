@@ -54,6 +54,7 @@ export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
         path.join(process.cwd(), 'python/unified_led_controller.py'),
         '--pin', pin.toString(),
         '--action', 'white',
+        '--num-leds', '99',
         '--brightness', '100'  // Reduced brightness for new 4K camera
       ]);
 
@@ -125,7 +126,8 @@ export async function turnOffLED(): Promise<void> {
         'python3',
         path.join(process.cwd(), 'python/unified_led_controller.py'),
         '--pin', pin.toString(),
-        '--action', 'off'
+        '--action', 'off',
+        '--num-leds', '99'
       ]);
 
       let result = '';
@@ -193,7 +195,8 @@ export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow')
         path.join(process.cwd(), 'python/unified_led_controller.py'),
         '--pin', pin.toString(),
         '--action', 'red_flash_start',
-        '--pattern', pattern
+        '--pattern', pattern,
+        '--num-leds', '99'
       ], {
         detached: true, // Keep running in background
         stdio: ['ignore', 'pipe', 'pipe']
@@ -269,7 +272,8 @@ export async function stopRedFlash(): Promise<boolean> {
         'python3',
         path.join(process.cwd(), 'python/unified_led_controller.py'),
         '--pin', pin.toString(),
-        '--action', 'red_flash_stop'
+        '--action', 'red_flash_stop',
+        '--num-leds', '99'
       ]);
 
       let result = '';
