@@ -1,0 +1,26 @@
+Oct 31 09:51:18 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 09:51:18 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 09:51:18 NaniwaTanaCheck pi-startup.sh[886]: [i] No changes detected
+Oct 31 09:51:18 NaniwaTanaCheck pi-startup.sh[990]: [2025-10-31 09:51:18] 🚀 Starting ShelfEye application...
+Oct 31 09:51:18 NaniwaTanaCheck pi-startup.sh[993]: [2025-10-31 09:51:18] Access at: http://naniwatanacheck.local:5000
+Oct 31 09:51:18 NaniwaTanaCheck pi-startup.sh[996]: [2025-10-31 09:51:18] =========================================
+Oct 31 09:51:18 NaniwaTanaCheck pi-startup.sh[1001]: > rest-express@1.0.0 dev
+Oct 31 09:51:18 NaniwaTanaCheck pi-startup.sh[1001]: > NODE_ENV=development tsx server/index.ts
+Oct 31 09:51:33 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Initializing...
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Reloading configuration...
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled daily maintenance at 3:00 AM JST
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Scheduled 4 capture times + daily maintenance
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [Scheduler] Initialized successfully
+Oct 31 09:51:35 NaniwaTanaCheck pi-startup.sh[1001]: [StartupCalibration] DISABLED - Startup calibration check disabled to prevent Pi crashes
+Oct 31 09:51:36 NaniwaTanaCheck pi-startup.sh[1001]: 9:51:36 AM [express] serving on port 5000
+Oct 31 09:51:48 NaniwaTanaCheck pi-startup.sh[1001]: Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+Oct 31 09:51:48 NaniwaTanaCheck pi-startup.sh[1001]:   npx update-browserslist-db@latest
+Oct 31 09:51:48 NaniwaTanaCheck pi-startup.sh[1001]:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
