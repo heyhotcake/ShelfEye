@@ -456,6 +456,7 @@ export default function Calibration() {
                   <div className="aspect-[4/3] bg-muted rounded relative overflow-hidden">
                     {preview?.ok && preview?.image ? (
                       <img 
+                        key={preview.image.substring(0, 100)} 
                         src={preview.image} 
                         alt="Camera preview" 
                         className="w-full h-full object-contain"
