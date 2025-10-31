@@ -53,6 +53,12 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
         cap.set(cv2.CAP_PROP_AUTO_WB, 1)
         
+        # Reset hardware brightness/contrast to defaults (undo any previous boosting)
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, 128)  # Default middle value
+        cap.set(cv2.CAP_PROP_CONTRAST, 128)    # Default middle value
+        cap.set(cv2.CAP_PROP_SATURATION, 128)  # Default middle value
+        cap.set(cv2.CAP_PROP_GAIN, 0)          # No gain boost
+        
         # Verify settings were applied
         actual_af = cap.get(cv2.CAP_PROP_AUTOFOCUS)
         actual_ae = cap.get(cv2.CAP_PROP_AUTO_EXPOSURE)
