@@ -35,6 +35,7 @@ interface ValidationResult {
   detected_count: number;
   expected_count: number;
   message: string;
+  error?: string;
   valid_qrs?: any[];
   invalid_qrs?: any[];
   missing_slots?: any[];
