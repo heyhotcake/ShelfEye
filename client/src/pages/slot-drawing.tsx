@@ -1332,6 +1332,78 @@ export default function SlotDrawing() {
     input.click();
   };
 
+  const syncFromDatabase = async () => {
+    try {
+      // Fetch all template rectangles from database
+      const rectsResponse = await fetch('/api/template-rectangles');
+      const allRects = await rectsResponse.json();
+      
+      // Group by paper size
+      const rectsByPaperSize = allRects.reduce((acc: any, rect: any) => {
+        if (!acc[rect.paperSize]) {
+          acc[rect.paperSize] = [];
+        }
+        acc[rect.paperSize].push(rect);
+        return acc;
+      }, {});
+      
+      // Fetch categories
+      const categoriesResponse = await fetch('/api/tool-categories');
+      const allCategories = await categoriesResponse.json();
+      
+      // Create a version for each paper size that has templates
+      const newVersions: any[] = [];
+      for (const [size, rects] of Object.entries(rectsByPaperSize)) {
+        const rectArray = rects as any[];
+        if (rectArray.length === 0) continue;
+        
+        // Get categories used in these templates
+        const usedCategoryIds = new Set(rectArray.map(r => r.categoryId));
+        const relevantCategories = allCategories.filter((c: any) => usedCategoryIds.has(c.id));
+        
+        const version = {
+          name: 'From Database',
+          timestamp: new Date().toISOString(),
+          paperSize: size,
+          templateRectangles: rectArray.map(r => ({
+            id: r.id,
+            categoryId: r.categoryId,
+            xCm: r.xCm,
+            yCm: r.yCm,
+            rotation: r.rotation,
+            autoQrId: r.autoQrId,
+          })),
+          categories: relevantCategories,
+        };
+        newVersions.push(version);
+      }
+      
+      if (newVersions.length === 0) {
+        toast({
+          title: "No Templates in Database",
+          description: "No template rectangles found in the database",
+        });
+        return;
+      }
+      
+      // Add to saved versions
+      const updated = [...savedTemplateVersions, ...newVersions];
+      setSavedTemplateVersions(updated);
+      localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
+      
+      toast({
+        title: "Synced from Database",
+        description: `Found ${newVersions.length} template design(s) in the database`,
+      });
+    } catch (error) {
+      toast({
+        title: "Sync Failed",
+        description: error instanceof Error ? error.message : "Failed to sync from database",
+        variant: "destructive",
+      });
+    }
+  };
+
   const addTemplateRectangle = async (categoryId: string) => {
     const category = toolCategories.find((c: any) => c.id === categoryId);
     if (!category) return;
@@ -1707,14 +1779,29 @@ export default function SlotDrawing() {
                           <Save className="w-4 h-4 mr-2" />
                           Save
                         </Button>
+                      </div>
+                      
+                      {/* Import/Sync Options */}
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={syncFromDatabase} 
+                          variant="outline"
+                          className="flex-1"
+                          data-testid="button-sync-from-database"
+                          title="Load templates from database"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Sync from Database
+                        </Button>
                         <Button 
                           onClick={importTemplateVersion} 
                           variant="outline"
+                          className="flex-1"
                           data-testid="button-import-template"
                           title="Import template from file"
                         >
                           <Upload className="w-4 h-4 mr-2" />
-                          Import
+                          Import File
                         </Button>
                       </div>
 
