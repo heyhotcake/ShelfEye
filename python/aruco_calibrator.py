@@ -284,11 +284,13 @@ class ArucoCornerCalibrator:
                     if generate_preview and preview_output_size:
                         try:
                             # First, generate HIGH-RESOLUTION rectified image for QR validation
-                            # Use 100 pixels per cm for excellent QR detection quality
-                            pixels_per_cm = 100
+                            # Use NATIVE camera resolution to avoid upsampling (no fake pixels)
+                            # Camera resolution / paper width = actual pixels per cm
+                            pixels_per_cm = min(resolution[0] / paper_size_cm[0], resolution[1] / paper_size_cm[1])
                             highres_width = int(paper_size_cm[0] * pixels_per_cm)
                             highres_height = int(paper_size_cm[1] * pixels_per_cm)
                             highres_size = (highres_width, highres_height)
+                            logger.info(f"Using native camera resolution: {pixels_per_cm:.1f} px/cm (no upsampling)")
                             
                             logger.info(f"Generating high-res rectified image: {highres_width}x{highres_height}px for QR validation")
                             rectified_highres = generate_rectified_image_from_frame(
