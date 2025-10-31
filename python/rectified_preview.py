@@ -212,9 +212,9 @@ def generate_rectified_preview(
         # Camera needs time BETWEEN frames to analyze and adjust - not just frame count
         import time
         logger.info("Warming up camera (auto-exposure, autofocus, white balance)...")
-        for i in range(30):
+        for i in range(75):
             cap.read()
-            time.sleep(0.2)  # 200ms between frames = 6 seconds total
+            time.sleep(0.2)  # 200ms between frames = 15 seconds total
         
         # Capture frame
         ret, frame = cap.read()

@@ -273,11 +273,11 @@ class ArucoCornerCalibrator:
             
             # Give autofocus and auto-exposure time to adjust (critical for proper lighting and sharp QR codes)
             # Many cameras need 5-8 seconds for both to settle properly
-            logger.info("Warming up autofocus and auto-exposure (discarding 30 frames over 6 seconds)...")
+            logger.info("Warming up autofocus and auto-exposure (discarding 75 frames over 15 seconds)...")
             print(f"[CALIBRATION] Waiting for autofocus and auto-exposure to settle...", file=sys.stderr)
-            for i in range(30):
+            for i in range(75):
                 cap.read()
-                time.sleep(0.2)  # 200ms between frames = 6 seconds total
+                time.sleep(0.2)  # 200ms between frames = 15 seconds total
             logger.info("Camera warmup complete")
             
             # Capture frame
