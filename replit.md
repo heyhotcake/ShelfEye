@@ -123,14 +123,16 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - **Long-term reliability systems**: Automated daily maintenance, disk space monitoring, graceful degradation on low storage, systemd resource limits (CPU 380%, Memory 1.5GB/1.8GB).
 
 **LED Strip Configuration (Updated Oct 31, 2025):**
-- **Hardware**: WS2812B LED strip with 99 LEDs (upgraded from 27 LEDs)
+- **Hardware**: Two WS2812B LED strips in series - 27 LEDs + 72 LEDs = 99 total
 - **GPIO Pin**: GPIO 18 (BCM), Physical Pin 12
-- **Power**: External DC adapter (5V) - black wire to +5V, white wire to GND
+- **Power**: External 4A DC adapter (5V) - black wire to +5V, white wire to GND
 - **Ground**: Common ground shared between Raspberry Pi and DC adapter (critical for data signal)
-- **Data Pin**: GPIO 18 connects to LED strip DIN (data input)
-- **Current Issue**: LEDs not responding (neither red flash nor white light) - troubleshooting in progress
-- **Test Script**: `test_led_direct.py` created for direct hardware testing
-- **Note**: All LED control code updated to use 99 LEDs via `--num-leds 99` parameter
+- **Wiring**: GPIO 18 → 27-LED strip DIN → 27-LED DOUT → 72-LED strip DIN
+- **Software Status**: ✅ All code correctly configured (GPIO 18, 99 LEDs, proper error handling)
+- **Hardware Issue**: LEDs not responding at all - Python script initializes successfully but no lights turn on
+- **Likely Cause**: Voltage level mismatch - Pi outputs 3.3V but WS2812B expects 5V data signal
+- **Solution Needed**: 3.3V to 5V logic level shifter between GPIO 18 and first LED's DIN
+- **Test Script**: `test_led_direct.py` available for direct hardware testing
 
 **Detection & Alert System:**
 - **State Machine**: ITEM_PRESENT → EMPTY → CHECKED_OUT.
