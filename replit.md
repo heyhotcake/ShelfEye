@@ -5,10 +5,10 @@
 A Raspberry Pi-based automated tool monitoring system utilizing computer vision, QR codes, and ArUco markers for real-time tool tracking across multiple cameras. It features simple QR code validation, temporal smoothing for presence detection, and multi-channel alerting (email, Google Sheets, sound). The system includes a React web dashboard for calibration, configurable slot management, analytics, and system administration. Its core purpose is to prevent tool loss and improve accountability in workshops by tracking tool presence and checkout status.
 
 **4K Camera Support**: The system now supports true 4K cameras (3840x2160) with intelligent dual-resolution mode:
-- **Live Preview**: DISABLED (auto-polling disabled to prevent Pi crashes)
-- **Calibration/Capture**: Uses full 4K resolution for maximum accuracy
+- **Live Preview**: 1280x720 @ 5-second polling (0.2 fps) - lightweight monitoring for ArUco marker visibility
+- **Calibration/Capture**: Full 4K YUV2 (3840x2160) for maximum accuracy and QR detection
 - **Startup Calibration**: ENABLED (runs automatically on server startup using last calibration settings)
-- Preview only available during active calibration - no auto-polling to preserve system stability
+- Preview pauses automatically when camera is locked during calibration/capture
 
 ## User Preferences
 

@@ -174,8 +174,8 @@ export default function Calibration() {
       
       return response.json();
     },
-    enabled: false, // DISABLED: Auto-polling causes Pi crashes with 4K camera
-    refetchInterval: false, // No auto-refresh
+    enabled: !!activeCamera && !isCameraLocked, // Enable low-res preview when camera not in use
+    refetchInterval: 5000, // Low framerate: 1 frame every 5 seconds (0.2 fps) to avoid Pi overload
   });
 
   // Rectified preview - fetch after successful calibration
