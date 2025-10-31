@@ -34,8 +34,9 @@ def decode_qr_codes(image, expected_count=None):
     # Input is already grayscale from rectification (memory-optimized)
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    # Memory-optimized scales for Pi 2GB RAM
-    # At 100 px/cm: 30mm QR = 300px base, 600px at 2x, 900px at 3x (excellent detection)
+    # Multi-scale detection for robustness across different QR sizes
+    # At native 43 px/cm: 30mm QR = ~130px base, ~260px at 2x, ~390px at 3x
+    # Upsampling helps detect small/damaged QR codes that need more pixels
     scales = [1.0, 2.0, 3.0]
     
     # Preallocate reusable resources (avoid recreation in loops)
@@ -263,13 +264,19 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"[VALIDATION] Found {len(expected_slots)} expected slots for validation", file=sys.stderr)
         sys.stderr.flush()
         
-        # Calculate scale factors for coordinate conversion (same as used during calibration)
+        # Calculate ACTUAL scale factors from the loaded image dimensions
+        # This supports any resolution (native camera resolution, not hardcoded upsampling)
         if paper_width_cm and paper_height_cm:
-            pixels_per_cm = 100  # Same as used during calibration
-            scale_x = pixels_per_cm
-            scale_y = pixels_per_cm
+            actual_px_per_cm_width = rectified.shape[1] / paper_width_cm
+            actual_px_per_cm_height = rectified.shape[0] / paper_height_cm
+            pixels_per_cm = min(actual_px_per_cm_width, actual_px_per_cm_height)
+            scale_x = actual_px_per_cm_width
+            scale_y = actual_px_per_cm_height
+            print(f"[VALIDATION] Calculated pixel density from saved image: {actual_px_per_cm_width:.1f} px/cm (width), {actual_px_per_cm_height:.1f} px/cm (height)", file=sys.stderr)
+            print(f"[VALIDATION] Using {pixels_per_cm:.1f} px/cm for coordinate conversion", file=sys.stderr)
         else:
             scale_x = scale_y = 1.0
+            print(f"[VALIDATION] No paper dimensions provided, using scale 1.0", file=sys.stderr)
     
     else:
         # CAPTURE NEW FRAME AND APPLY HOMOGRAPHY PATH
