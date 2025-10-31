@@ -253,7 +253,7 @@ def main():
     parser.add_argument('--device-path', type=str, help='Camera device path for Raspberry Pi (e.g., /dev/video0)')
     parser.add_argument('--resolution', type=str, required=True, help='Camera resolution (WxH)')
     parser.add_argument('--homography', type=str, required=True, help='Homography matrix as comma-separated values')
-    parser.add_argument('--output-size', type=str, default='800x600', help='Output image size (WxH)')
+    parser.add_argument('--output-size', type=str, default=None, help='Output image size (WxH). If not provided, calculates from homography to match camera resolution')
     parser.add_argument('--templates', type=str, default=None, help='Template rectangles as JSON string')
     parser.add_argument('--paper-size', type=str, default='88.8x42.0', help='Paper size in cm (WxH)')
     parser.add_argument('--camera-matrix', type=str, default=None, help='Camera intrinsic matrix as comma-separated values (9 values)')
@@ -266,9 +266,46 @@ def main():
         width, height = map(int, args.resolution.split('x'))
         resolution = (width, height)
         
-        # Parse output size
-        out_width, out_height = map(int, args.output_size.split('x'))
-        output_size = (out_width, out_height)
+        # Parse output size (or calculate from homography if not provided)
+        if args.output_size:
+            out_width, out_height = map(int, args.output_size.split('x'))
+            output_size = (out_width, out_height)
+        else:
+            # Calculate output size from measured pixel density in homography
+            # Measure pixel density from homography matrix
+            homography_arr = np.array([float(x) for x in args.homography.split(',')]).reshape(3, 3)
+            paper_w, paper_h = map(float, args.paper_size.split('x'))
+            
+            # Sample points at paper corners to measure pixel density
+            # Markers are 5cm from edges, so paper area is between markers
+            marker_offset = 5.0
+            test_points_cm = np.array([
+                [marker_offset, marker_offset],
+                [paper_w - marker_offset, marker_offset],
+                [paper_w - marker_offset, paper_h - marker_offset],
+                [marker_offset, paper_h - marker_offset]
+            ])
+            
+            # Convert to homogeneous coordinates and apply homography
+            test_points_h = np.hstack([test_points_cm, np.ones((4, 1))])
+            pixels_h = (homography_arr @ test_points_h.T).T
+            pixels = pixels_h[:, :2] / pixels_h[:, 2:3]
+            
+            # Measure pixel density from horizontal and vertical spans
+            horizontal_px = np.linalg.norm(pixels[1] - pixels[0])
+            vertical_px = np.linalg.norm(pixels[3] - pixels[0])
+            horizontal_cm = paper_w - 2 * marker_offset
+            vertical_cm = paper_h - 2 * marker_offset
+            
+            px_per_cm_h = horizontal_px / horizontal_cm
+            px_per_cm_v = vertical_px / vertical_cm
+            px_per_cm = min(px_per_cm_h, px_per_cm_v)
+            
+            out_width = int(paper_w * px_per_cm)
+            out_height = int(paper_h * px_per_cm)
+            output_size = (out_width, out_height)
+            
+            logger.info(f"Calculated output size from homography: {out_width}x{out_height} ({px_per_cm:.1f} px/cm)")
         
         # Parse homography matrix
         homography = [float(x) for x in args.homography.split(',')]

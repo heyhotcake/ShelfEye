@@ -523,11 +523,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[VerifyPositions] Adjusted templates:', JSON.stringify(adjustedTemplates, null, 2));
       
-      // Calculate high-resolution output size (40 px/cm for QR code readability)
-      const pixelsPerCm = 40;
-      const outputWidth = Math.round(paperDims.widthCm * pixelsPerCm);
-      const outputHeight = Math.round(paperDims.heightCm * pixelsPerCm);
-      console.log(`[VerifyPositions] High-res output size: ${outputWidth}x${outputHeight} px (${pixelsPerCm} px/cm)`);
+      // Let Python calculate output size from measured pixel density (~100 px/cm for 4K)
+      // Python aruco_calibrator measured the actual pixel density from marker spacing
+      console.log(`[VerifyPositions] Using measured pixel density from ArUco calibration (no output-size override)`);
       
       // IMPORTANT: Homography string may start with negative numbers (e.g., "-18.706...")
       // which argparse would interpret as a flag. Use --key=value syntax to avoid this.
@@ -535,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path.join(process.cwd(), 'python', 'rectified_preview.py'),
         `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
         `--homography=${homographyString}`,  // Use --key=value syntax for negative numbers
-        `--output-size=${outputWidth}x${outputHeight}`,
+        // NO --output-size parameter - let Python use measured pixel density
         `--templates=${JSON.stringify(templatesForPython)}`,
         `--paper-size=${paperDims.widthCm}x${paperDims.heightCm}`,
       ];
@@ -1263,20 +1261,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Call Python rectified preview script
       const homographyStr = camera.homographyMatrix.join(',');
       
-      // Calculate output size based on paper dimensions
-      // Use a scale factor to get a reasonable display size (e.g., 40 pixels per cm for better QR detection)
-      const pixelsPerCm = 40;
-      const outputWidth = Math.round(paperDimensions.widthCm * pixelsPerCm);
-      const outputHeight = Math.round(paperDimensions.heightCm * pixelsPerCm);
-      
+      // Let Python calculate output size from measured pixel density (~100 px/cm for 4K)
+      // Python aruco_calibrator measured the actual pixel density from marker spacing
       console.log(`[Rectified Preview] Paper: ${paperDimensions.widthCm}x${paperDimensions.heightCm} cm`);
-      console.log(`[Rectified Preview] Output: ${outputWidth}x${outputHeight} px (${pixelsPerCm} px/cm)`);
+      console.log(`[Rectified Preview] Using measured pixel density from ArUco calibration (no output-size override)`);
       
       const args = [
         path.join(process.cwd(), 'python/rectified_preview.py'),
         `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
         `--homography=${homographyStr}`,  // Use --key=value syntax for negative numbers
-        `--output-size=${outputWidth}x${outputHeight}`,
+        // NO --output-size parameter - let Python use measured pixel density
         `--paper-size=${paperDimensions.widthCm}x${paperDimensions.heightCm}`
       ];
       
