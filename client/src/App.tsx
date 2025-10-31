@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useTemplateInitialization } from "@/hooks/use-template-initialization";
 import Dashboard from "@/pages/dashboard";
 import Calibration from "@/pages/calibration";
 import SlotDrawing from "@/pages/slot-drawing";
@@ -36,6 +37,8 @@ function Router() {
 }
 
 function App() {
+  useTemplateInitialization();
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
