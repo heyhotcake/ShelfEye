@@ -122,6 +122,16 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - ArUco corner markers (IDs 17-20) positioned at extreme corners of the printable area.
 - **Long-term reliability systems**: Automated daily maintenance, disk space monitoring, graceful degradation on low storage, systemd resource limits (CPU 380%, Memory 1.5GB/1.8GB).
 
+**LED Strip Configuration (Updated Oct 31, 2025):**
+- **Hardware**: WS2812B LED strip with 99 LEDs (upgraded from 27 LEDs)
+- **GPIO Pin**: GPIO 18 (BCM), Physical Pin 12
+- **Power**: External DC adapter (5V) - black wire to +5V, white wire to GND
+- **Ground**: Common ground shared between Raspberry Pi and DC adapter (critical for data signal)
+- **Data Pin**: GPIO 18 connects to LED strip DIN (data input)
+- **Current Issue**: LEDs not responding (neither red flash nor white light) - troubleshooting in progress
+- **Test Script**: `test_led_direct.py` created for direct hardware testing
+- **Note**: All LED control code updated to use 99 LEDs via `--num-leds 99` parameter
+
 **Detection & Alert System:**
 - **State Machine**: ITEM_PRESENT → EMPTY → CHECKED_OUT.
 - **QR Type System**: "slot" and "worker" types with simple ID strings.
