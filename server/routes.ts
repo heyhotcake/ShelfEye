@@ -35,7 +35,8 @@ let scheduler: CaptureScheduler;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   scheduler = new CaptureScheduler(storage);
-  await scheduler.initialize();
+  // DISABLED: Scheduler initialization disabled to prevent camera diagnostic crashes
+  // await scheduler.initialize();
   
   // Run startup calibration
   await startupCalibrationService.initialize();
