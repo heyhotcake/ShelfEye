@@ -1100,14 +1100,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use device path if available, otherwise use device index
       const deviceSource = camera.devicePath || camera.deviceIndex?.toString() || '0';
       
-      // For 4K cameras (3840x2160), use much lower resolution (HD 720p) for preview
-      // Preview is only used to verify ArUco markers are visible - doesn't need high quality
-      // Actual calibration/capture ALWAYS uses full 4K YUV2 resolution
-      const is4K = camera.resolution[0] >= 3840;
-      const previewWidth = is4K ? 1280 : camera.resolution[0];
-      const previewHeight = is4K ? 720 : camera.resolution[1];
+      // Use full camera resolution for preview to ensure sharp QR codes
+      // The camera's auto-exposure and autofocus work best at native resolution
+      const previewWidth = camera.resolution[0];
+      const previewHeight = camera.resolution[1];
       
-      console.log(`[Preview] Camera resolution: ${camera.resolution[0]}x${camera.resolution[1]}, using preview: ${previewWidth}x${previewHeight}`);
+      console.log(`[Preview] Using full camera resolution: ${previewWidth}x${previewHeight}`);
       
       const pythonProcess = spawn('python3', [
         path.join(process.cwd(), 'python/camera_preview.py'),
