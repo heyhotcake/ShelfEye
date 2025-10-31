@@ -12,6 +12,7 @@ import cv2
 import sys
 import json
 import logging
+import time
 import numpy as np
 import subprocess
 from typing import Dict, List, Any, Tuple, Optional
@@ -296,6 +297,17 @@ class CameraProcessor:
             width, height = resolution
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            
+            # Enable all auto features for best image quality
+            cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # Autofocus
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = enabled)
+            cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
+            
+            # Give autofocus time to adjust (critical for sharp images)
+            logger.info(f"Camera {camera_id}: Warming up autofocus...")
+            for i in range(5):
+                cap.read()
+                time.sleep(0.2)  # 200ms between frames
             
             # Capture frame
             ret, frame = cap.read()

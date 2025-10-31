@@ -265,13 +265,12 @@ sudo journalctl -u shelfeye.service -f | grep -i "alert\|led"
 - Debug images saved to `/home/naniwa/ShelfEye/debug_images/` for inspection
 - **Post-processing to be simplified after 4K camera upgrade** (see upgrade guide)
 
-**Camera Hardware Limitations**:
-- **Current Camera**: Falsely advertised as "2K" - only supports 1920x1080 (Full HD)
-- **Actual Max Resolution**: 1920x1080 @ 30fps in MJPG format
-- **Database Setting**: 2560x1440 (QHD) - but camera silently falls back to 1920x1080
-- **Impact**: Lower resolution = harder QR detection = slower multi-scale processing needed
-- **Recommended Upgrade**: True 4K camera (3840x2160) with MJPG support @ 15-30fps
-- **Post-Upgrade**: Can simplify detection pipeline and reduce processing time
+**Camera Features (4K High-Quality Camera)**:
+- **Resolution**: True 4K (3840x2160) with 8.5MP Sony sensor
+- **Auto Features**: All capture scripts now use autofocus, auto exposure, and auto white balance
+- **Autofocus Warmup**: 5 frames @ 200ms intervals before capture (ensures sharp images)
+- **Format**: YUV2/MJPEG auto-selected by OpenCV based on camera capability
+- **Quality**: All auto features enabled on every capture for maximum image quality
 
 **Performance Impact**:
 - Validation time: 5-10 minutes for 7 slots (due to multi-scale detection needed for low resolution)

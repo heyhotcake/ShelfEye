@@ -111,11 +111,16 @@ def validate_slot_qrs(camera_id, mode='visible'):
     # Camera capture at MAXIMUM resolution
     cap = cv2.VideoCapture(0)
     
-    # Try to set maximum resolution
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+    # Try to set maximum 4K resolution for best QR detection
+    # Camera will fall back to best supported resolution if 4K not available
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    
+    # Enable all auto features for best image quality
+    cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # Autofocus
+    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = enabled)
+    cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
     
     if not cap.isOpened():
         print(json.dumps({"error": "Failed to open camera"}))

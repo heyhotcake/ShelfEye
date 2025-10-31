@@ -71,6 +71,11 @@ class CameraDiagnostic:
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
+            # Enable all auto features for best image quality
+            cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)  # Autofocus
+            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Auto exposure (3 = enabled)
+            cap.set(cv2.CAP_PROP_AUTO_WB, 1)  # Auto white balance
+            
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             
