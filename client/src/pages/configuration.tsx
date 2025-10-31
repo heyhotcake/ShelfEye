@@ -145,9 +145,14 @@ export default function Configuration() {
   });
 
   const lightControlMutation = useMutation({
-    mutationFn: (action: 'on' | 'off') =>
-      apiRequest('POST', '/api/gpio/light', { action }),
+    mutationFn: (action: 'on' | 'off') => {
+      console.log('[Light Control] Sending action:', action);
+      return apiRequest('POST', '/api/gpio/light', { action });
+    },
     onSuccess: (data: any) => {
+      console.log('[Light Control] Received response:', data);
+      console.log('[Light Control] data.message:', data.message);
+      console.log('[Light Control] data.action:', data.action);
       toast({
         title: "Light Control",
         description: data.message || `Light ${data.action === 'on' ? 'turned on' : 'turned off'}`,

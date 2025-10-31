@@ -2339,6 +2339,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { action } = req.body;
       
+      console.log('[GPIO Light] Received action:', action);
+      
       if (!action || !['on', 'off'].includes(action)) {
         return res.status(400).json({ message: "Invalid action. Use 'on' or 'off'" });
       }
@@ -2350,11 +2352,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await turnOffLED();
       }
 
-      res.json({
+      const response = {
         ok: true,
         action,
         message: `Light ${action === 'on' ? 'turned on' : 'turned off'} successfully (unified controller)`
-      });
+      };
+      
+      console.log('[GPIO Light] Sending response:', JSON.stringify(response));
+      
+      res.json(response);
 
     } catch (error) {
       res.status(500).json({ 
