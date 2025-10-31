@@ -1,0 +1,171 @@
+sudo systemctl status shelfeye.service --no-pager -l
+● shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-10-31 10:05:21 JST; 52s ago
+ Invocation: 179b1557a396483fb9479a57bba8f48f
+   Main PID: 830 (pi-startup.sh)
+      Tasks: 45 (limit: 1579)
+        CPU: 23.378s
+     CGroup: /system.slice/shelfeye.service
+             ├─830 /bin/bash /home/naniwa/ShelfEye/pi-startup.sh
+             ├─947 "npm run dev"
+             ├─948 tee -a /home/naniwa/ShelfEye/logs/startup.log
+             ├─963 sh -c "NODE_ENV=development tsx server/index.ts"
+             ├─964 node /home/naniwa/ShelfEye/node_modules/.bin/tsx server/index.ts
+             ├─976 /usr/bin/node --require /home/naniwa/ShelfEye/node_modules/tsx/dist/preflight.cjs --import file:///home/naniwa/ShelfEye/node_modules/tsx/dist/loader.mjs server/index.ts
+             └─989 /home/naniwa/ShelfEye/node_modules/@esbuild/linux-arm64/bin/esbuild --service=0.25.9 --ping
+
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [i] No changes detected
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[939]: [2025-10-31 10:06:00] 🚀 Starting ShelfEye application...
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[942]: [2025-10-31 10:06:00] Access at: http://naniwatanacheck.local:5000
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[945]: [2025-10-31 10:06:00] =========================================
+Oct 31 10:06:01 NaniwaTanaCheck pi-startup.sh[948]: > rest-express@1.0.0 dev
+Oct 31 10:06:01 NaniwaTanaCheck pi-startup.sh[948]: > NODE_ENV=development tsx server/index.ts
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -u shelfeye.service --since "1 minute ago" --no-pager
+Oct 31 10:05:21 NaniwaTanaCheck systemd[1]: Started shelfeye.service - ShelfEye Tool Monitoring System.
+Oct 31 10:05:21 NaniwaTanaCheck pi-startup.sh[839]: [2025-10-31 10:05:21] =========================================
+Oct 31 10:05:21 NaniwaTanaCheck pi-startup.sh[844]: [2025-10-31 10:05:21] Starting ShelfEye Auto-Update System
+Oct 31 10:05:21 NaniwaTanaCheck pi-startup.sh[848]: [2025-10-31 10:05:21] =========================================
+Oct 31 10:05:21 NaniwaTanaCheck pi-startup.sh[852]: [2025-10-31 10:05:21] Loading environment variables from .env.pi...
+Oct 31 10:05:21 NaniwaTanaCheck pi-startup.sh[855]: [2025-10-31 10:05:21] Checking for updates from GitHub...
+Oct 31 10:05:22 NaniwaTanaCheck pi-startup.sh[858]: From https://github.com/heyhotcake/ShelfEye
+Oct 31 10:05:22 NaniwaTanaCheck pi-startup.sh[858]:  * branch            main       -> FETCH_HEAD
+Oct 31 10:05:22 NaniwaTanaCheck pi-startup.sh[876]: [2025-10-31 10:05:22] ✓ Already up to date (commit: b33aea2)
+Oct 31 10:05:22 NaniwaTanaCheck pi-startup.sh[880]: [2025-10-31 10:05:22] ✓ WS2812B LED library already installed
+Oct 31 10:05:22 NaniwaTanaCheck pi-startup.sh[883]: [2025-10-31 10:05:22] Syncing database schema...
+Oct 31 10:05:25 NaniwaTanaCheck pi-startup.sh[886]: > rest-express@1.0.0 db:push
+Oct 31 10:05:25 NaniwaTanaCheck pi-startup.sh[886]: > drizzle-kit push
+Oct 31 10:05:25 NaniwaTanaCheck pi-startup.sh[886]: No config path provided, using default 'drizzle.config.ts'
+Oct 31 10:05:25 NaniwaTanaCheck pi-startup.sh[886]: Reading config file '/home/naniwa/ShelfEye/drizzle.config.ts'
+Oct 31 10:05:27 NaniwaTanaCheck pi-startup.sh[886]: Using 'pg' driver for database querying
+Oct 31 10:05:27 NaniwaTanaCheck pi-startup.sh[886]: [⣷] Pulling schema from database...
+Oct 31 10:05:28 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:28 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:28 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:28 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:28 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:28 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:28 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:28 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:29 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:29 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:29 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:29 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:29 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:29 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:29 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:30 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:30 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:30 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:30 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:30 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:30 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:30 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:30 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:31 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:31 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:31 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:31 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:31 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:31 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:31 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:31 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:32 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:32 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:32 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:32 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:32 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:32 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:32 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:32 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:33 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:33 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:33 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:33 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:33 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:33 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:33 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:33 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:34 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:34 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:34 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:34 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:34 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:34 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:34 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:35 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:35 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:35 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:35 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:35 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:35 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:35 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:35 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:36 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:36 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:36 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:36 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:36 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:36 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:36 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:36 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:37 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:37 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:37 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:37 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:37 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:37 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:37 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:37 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:38 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:38 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:38 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:38 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:38 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:38 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:38 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:38 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:39 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:39 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:39 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:39 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:39 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:39 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:39 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:57 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:57 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:58 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:58 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:58 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:58 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:58 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:58 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:58 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:58 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:59 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:59 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:59 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:59 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:59 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:59 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:59 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:05:59 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [45B blob data]
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[886]: [i] No changes detected
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[939]: [2025-10-31 10:06:00] 🚀 Starting ShelfEye application...
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[942]: [2025-10-31 10:06:00] Access at: http://naniwatanacheck.local:5000
+Oct 31 10:06:00 NaniwaTanaCheck pi-startup.sh[945]: [2025-10-31 10:06:00] =========================================
+Oct 31 10:06:01 NaniwaTanaCheck pi-startup.sh[948]: > rest-express@1.0.0 dev
+Oct 31 10:06:01 NaniwaTanaCheck pi-startup.sh[948]: > NODE_ENV=development tsx server/index.ts
+Oct 31 10:06:16 NaniwaTanaCheck pi-startup.sh[948]: [StartupCalibration] DISABLED - Startup calibration check disabled to prevent Pi crashes
+Oct 31 10:06:16 NaniwaTanaCheck pi-startup.sh[948]: 10:06:16 AM [express] serving on port 5000
+naniwa@NaniwaTanaCheck:~ $
