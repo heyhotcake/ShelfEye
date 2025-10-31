@@ -48,10 +48,19 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
-        # Enable all automatic features - trust the camera to adjust properly
+        # Disable auto-exposure to prevent blown-out whites
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)  # 1 = Manual mode
+        cap.set(cv2.CAP_PROP_EXPOSURE, -6)      # Reduce exposure (negative values)
+        
+        # Keep autofocus and auto white balance
         cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
         cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+        
+        # Set lower brightness/contrast to prevent blowout
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, 100)   # Below default
+        cap.set(cv2.CAP_PROP_CONTRAST, 100)     # Below default
+        cap.set(cv2.CAP_PROP_SATURATION, 128)   # Default
+        cap.set(cv2.CAP_PROP_GAIN, 0)           # No gain
         
         # Warmup: Let auto-exposure and autofocus settle (discard first few frames)
         # Camera needs time BETWEEN frames to analyze and adjust - not just frame count
