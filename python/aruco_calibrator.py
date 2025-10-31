@@ -247,6 +247,15 @@ class ArucoCornerCalibrator:
             camera_source = device_path if device_path else camera_index
             logger.info(f"Opening camera: {camera_source}")
             cap = cv2.VideoCapture(camera_source)
+            
+            # If device path fails (e.g., /dev/video0 on Windows), try camera index as fallback
+            if not cap.isOpened() and device_path and device_path.startswith('/'):
+                logger.warning(f"Device path {device_path} failed, falling back to camera index {camera_index}")
+                print(f"[CALIBRATION] Device path {device_path} not accessible, using camera index {camera_index}", file=sys.stderr)
+                sys.stderr.flush()
+                camera_source = camera_index
+                cap = cv2.VideoCapture(camera_source)
+            
             if not cap.isOpened():
                 raise Exception(f"Could not open camera {camera_source}")
             
