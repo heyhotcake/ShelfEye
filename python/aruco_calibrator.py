@@ -244,12 +244,9 @@ class ArucoCornerCalibrator:
             
             width, height = resolution
             
-            # Force MJPEG format for high resolutions (4K cameras require MJPEG)
-            # MJPEG = Motion JPEG (compressed), required for 4K on most USB cameras
-            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-            logger.info(f"[CALIBRATION] Set format to MJPEG for high-resolution capture")
-            
-            # Set resolution AFTER format
+            # DON'T force format - let camera choose best format for brightness
+            # The camera's auto-exposure works better with its default format
+            # Set resolution directly
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
