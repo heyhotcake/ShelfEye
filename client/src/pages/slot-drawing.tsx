@@ -269,7 +269,28 @@ export default function SlotDrawing() {
 
   const createTemplateRectMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/template-rectangles', data),
-    onSuccess: () => {
+    onSuccess: async (response) => {
+      const createdRect = await response.json();
+      const category = toolCategories.find((c: any) => c.id === createdRect.categoryId);
+      
+      if (category) {
+        const newTemplateRect: TemplateRectangle = {
+          id: createdRect.id,
+          categoryId: createdRect.categoryId,
+          xCm: createdRect.xCm,
+          yCm: createdRect.yCm,
+          rotation: createdRect.rotation,
+          widthCm: category.widthCm,
+          heightCm: category.heightCm,
+          categoryName: category.name,
+          toolType: category.toolType,
+          autoQrId: createdRect.autoQrId,
+        };
+        
+        setTemplateRectangles(prev => [...prev, newTemplateRect]);
+        setSelectedTemplateRect(newTemplateRect);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
     },
     onError: (error) => {
@@ -298,13 +319,14 @@ export default function SlotDrawing() {
 
   const deleteTemplateRectMutation = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/template-rectangles/${id}`),
-    onSuccess: () => {
+    onSuccess: (_response, id) => {
       toast({
         title: "Template Deleted",
         description: "Template rectangle removed successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
+      setTemplateRectangles(prev => prev.filter(r => r.id !== id));
       setSelectedTemplateRect(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
     },
     onError: (error) => {
       toast({
