@@ -48,17 +48,17 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         
-        # Disable auto-exposure to prevent blown-out whites
+        # Use manual exposure with moderate setting
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)  # 1 = Manual mode
-        cap.set(cv2.CAP_PROP_EXPOSURE, -6)      # Reduce exposure (negative values)
+        cap.set(cv2.CAP_PROP_EXPOSURE, -3)      # Moderate exposure reduction
         
         # Keep autofocus and auto white balance
         cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
         cap.set(cv2.CAP_PROP_AUTO_WB, 1)
         
-        # Set lower brightness/contrast to prevent blowout
-        cap.set(cv2.CAP_PROP_BRIGHTNESS, 100)   # Below default
-        cap.set(cv2.CAP_PROP_CONTRAST, 100)     # Below default
+        # Moderate brightness/contrast settings
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, 110)   # Slightly below default
+        cap.set(cv2.CAP_PROP_CONTRAST, 110)     # Slightly below default
         cap.set(cv2.CAP_PROP_SATURATION, 128)   # Default
         cap.set(cv2.CAP_PROP_GAIN, 0)           # No gain
         
