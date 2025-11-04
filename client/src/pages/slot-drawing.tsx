@@ -1166,29 +1166,28 @@ export default function SlotDrawing() {
           rotation: rect.rotation,
           autoQrId: rect.autoQrId,
         });
-        newRects.push(created);
+        const createdRect = await created.json();
+        newRects.push(createdRect);
       }
 
       // Refresh template rectangles and load them onto canvas
       await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
       
-      // Load the templates onto the canvas with remapped category IDs
-      const loadedRects: TemplateRectangle[] = version.templateRectangles.map((rect: any) => {
-        const savedCategory = version.categories.find((c: any) => c.id === rect.categoryId);
-        const currentCategoryId = savedCategory ? categoryNameToId.get(savedCategory.name) : rect.categoryId;
-        const dbCategory = latestCategories.find((c: any) => c.id === currentCategoryId);
+      // Load the templates onto the canvas using the NEW IDs from the database
+      const loadedRects: TemplateRectangle[] = newRects.map((newRect: any) => {
+        const dbCategory = latestCategories.find((c: any) => c.id === newRect.categoryId);
         
         return {
-          id: rect.id,
-          categoryId: currentCategoryId || rect.categoryId,
-          xCm: rect.xCm,
-          yCm: rect.yCm,
-          rotation: rect.rotation,
-          widthCm: dbCategory?.widthCm || savedCategory?.widthCm || 0,
-          heightCm: dbCategory?.heightCm || savedCategory?.heightCm || 0,
-          categoryName: dbCategory?.name || savedCategory?.name || '',
-          toolType: dbCategory?.toolType || savedCategory?.toolType || '',
-          autoQrId: rect.autoQrId,
+          id: newRect.id, // Use the NEW ID from the database, not the old one!
+          categoryId: newRect.categoryId,
+          xCm: newRect.xCm,
+          yCm: newRect.yCm,
+          rotation: newRect.rotation,
+          widthCm: dbCategory?.widthCm || 0,
+          heightCm: dbCategory?.heightCm || 0,
+          categoryName: dbCategory?.name || '',
+          toolType: dbCategory?.toolType || '',
+          autoQrId: newRect.autoQrId,
         };
       });
       setTemplateRectangles(loadedRects);
