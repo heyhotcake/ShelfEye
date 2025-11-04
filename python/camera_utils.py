@@ -79,6 +79,11 @@ def setup_camera_optimal(cap, resolution=(3840, 2160)):
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
     
+    # Set default brightness/contrast values (critical for proper exposure)
+    cap.set(cv2.CAP_PROP_BRIGHTNESS, 128)  # Default value
+    cap.set(cv2.CAP_PROP_CONTRAST, 28)     # Default value
+    cap.set(cv2.CAP_PROP_GAIN, 0)          # Auto gain
+    
     # Enable all automatic features - let camera firmware handle everything
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
     cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Auto mode (aperture priority)
