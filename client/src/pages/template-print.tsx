@@ -232,10 +232,10 @@ export default function TemplatePrint() {
         const paperHeightCm = canvasDimensions.realHeightMm / 10;
         
         const cornerPositions = [
-          { id: 17, xCm: 0, yCm: 0 }, // Top-left
-          { id: 18, xCm: paperWidthCm - markerSizeCm, yCm: 0 }, // Top-right
-          { id: 19, xCm: paperWidthCm - markerSizeCm, yCm: paperHeightCm - markerSizeCm }, // Bottom-right
-          { id: 20, xCm: 0, yCm: paperHeightCm - markerSizeCm }, // Bottom-left
+          { id: 96, xCm: 0, yCm: 0 }, // Top-left (A)
+          { id: 97, xCm: paperWidthCm - markerSizeCm, yCm: 0 }, // Top-right (B)
+          { id: 98, xCm: paperWidthCm - markerSizeCm, yCm: paperHeightCm - markerSizeCm }, // Bottom-right (C)
+          { id: 99, xCm: 0, yCm: paperHeightCm - markerSizeCm }, // Bottom-left (D)
         ];
 
         cornerPositions.forEach((pos) => {
