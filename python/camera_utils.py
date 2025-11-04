@@ -78,16 +78,13 @@ def setup_camera_optimal(cap, resolution=(3840, 2160)):
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
     
-    # Enable all auto features
+    # Enable all auto features - trust camera firmware completely
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
     cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Mode 3 = Aperture Priority
     cap.set(cv2.CAP_PROP_AUTO_WB, 1)
     
-    # Optional: Boost brightness/contrast at hardware level
-    cap.set(cv2.CAP_PROP_BRIGHTNESS, 140)  # Slightly above default (128)
-    cap.set(cv2.CAP_PROP_CONTRAST, 140)    # Slightly above default (128)
-    cap.set(cv2.CAP_PROP_SATURATION, 130)  # Slightly above default (128)
-    cap.set(cv2.CAP_PROP_GAIN, 20)         # Small gain boost
+    # Don't override brightness/contrast/saturation/gain - let camera firmware decide
+    # High-quality cameras have excellent automatic processing
     
     # Log what was actually set
     actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))

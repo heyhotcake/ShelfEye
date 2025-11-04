@@ -298,9 +298,8 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         sys.stderr.flush()
         cap = cv2.VideoCapture(0)
         
-        # Force MJPEG format FIRST (required for 4K on most USB cameras)
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-        print(f"[VALIDATION] Set format to MJPEG for high-resolution capture", file=sys.stderr)
+        # Don't force MJPEG - let camera firmware choose best format for quality
+        # High-quality cameras often have better native formats than MJPEG
         
         # Set camera to highest resolution for better QR detection
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
