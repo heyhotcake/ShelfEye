@@ -1,0 +1,129 @@
+sudo journalctl -u shelfeye -f
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:rectified_preview:Drawing 7 template overlays
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 4.5, 'y': 9, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 4.864706, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 78.95294, 'y': 2.3882353, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 27.817648, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 44.65882, 'y': 39.95294, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 79.61176, 'y': 37.95294, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 9.047058, 'y': 39.611763, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}]
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:__main__:✓ Saved LABELED native-resolution rectified image for download
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:__main__:✓ File location: /home/naniwa/ShelfEye/python/../data/latest_calibration_rectified_labeled.jpg
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: INFO:__main__:Generating UI preview: 891x420px
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:rectified_preview:Drawing 7 template overlays
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 4.5, 'y': 9, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 4.864706, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 78.95294, 'y': 2.3882353, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.5, 'y': 27.817648, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 44.65882, 'y': 39.95294, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 79.61176, 'y': 37.95294, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 9.047058, 'y': 39.611763, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}]
+Nov 04 14:03:16 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Nov 04 14:03:19 NaniwaTanaCheck pi-startup.sh[4219]: [Calibration] Deleted 7 existing slots
+Nov 04 14:03:20 NaniwaTanaCheck pi-startup.sh[4219]: [Calibration] Creating slots for 7 templates (paper size: 6-page-3x2)
+Nov 04 14:03:23 NaniwaTanaCheck pi-startup.sh[4219]: [Calibration] Saved paper size format to config: 6-page-3x2
+Nov 04 14:03:23 NaniwaTanaCheck pi-startup.sh[4219]: [CameraSessionManager] Released exclusive lock for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Nov 04 14:03:23 NaniwaTanaCheck pi-startup.sh[4219]: 2:03:23 PM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 31895ms :: {"ok…
+Nov 04 14:03:24 NaniwaTanaCheck sudo[4422]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action off --num-leds 99
+Nov 04 14:03:24 NaniwaTanaCheck sudo[4422]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 04 14:03:24 NaniwaTanaCheck pi-startup.sh[4219]: [LED] Unified controller stderr: [LED] RED FLASH active - cannot turn off
+Nov 04 14:03:24 NaniwaTanaCheck sudo[4422]: pam_unix(sudo:session): session closed for user root
+Nov 04 14:03:24 NaniwaTanaCheck pi-startup.sh[4219]: 2:03:24 PM [express] GET /api/template-rectangles 200 in 172ms :: [{"id":"cd25c7b9-9643-4c8f-8451-82…
+Nov 04 14:03:24 NaniwaTanaCheck pi-startup.sh[4219]: 2:03:24 PM [express] GET /api/cameras 200 in 679ms :: [{"id":"a91d43f1-47bf-4d75-8a7d-d2faf0503f81",…
+Nov 04 14:03:25 NaniwaTanaCheck pi-startup.sh[4219]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Nov 04 14:03:25 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Nov 04 14:03:25 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:camera_utils:Camera format: MJPG, resolution: 1920x1080
+Nov 04 14:03:25 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:camera_utils:Camera warmup: 10 seconds at 30fps pace...
+Nov 04 14:03:35 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:camera_utils:Warmup complete: 153 frames over 10s
+Nov 04 14:03:37 NaniwaTanaCheck pi-startup.sh[4219]: 2:03:37 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 12783ms :: …
+Nov 04 14:03:41 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Starting QR validation (visible) for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Camera found: { hasHomography: true, hasCameraMatrix: true, hasDistCoeffs: true }
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Found 7 slots for camera
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] ====== SLOT COORDINATES BEING USED FOR VALIDATION ======
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] 1. pen-001 (pen): x=4.50cm, y=9.00cm, size=7x4cm, rot=0°
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] 2. pen-002 (pen): x=44.50cm, y=4.86cm, size=7x4cm, rot=0°
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] 3. pen-003 (pen): x=78.95cm, y=2.39cm, size=7x4cm, rot=0°
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] 4. 5x5-001 (5x5): x=44.50cm, y=27.82cm, size=5x5cm, rot=0°
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] 5. pen-004 (pen): x=44.66cm, y=39.95cm, size=7x4cm, rot=0°
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] 6. 5x5-002 (5x5): x=79.61cm, y=37.95cm, size=5x5cm, rot=0°
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] 7. 5x5-003 (5x5): x=9.05cm, y=39.61cm, size=5x5cm, rot=0°
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] ==================================================
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [CameraSessionManager] Exclusive lock set for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81 - blocking new previews
+Nov 04 14:03:42 NaniwaTanaCheck pi-startup.sh[4219]: [CameraSessionManager] Waiting for in-flight previews to complete...
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]: [CameraSessionManager] Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81 should now be available for exclusive use
+Nov 04 14:03:52 NaniwaTanaCheck sudo[4430]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/pkill -9 -f unified_led_controller.py
+Nov 04 14:03:52 NaniwaTanaCheck sudo[4430]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]: [LED] Error killing stuck processes: Error: Command failed: sudo pkill -9 -f unified_led_controller.py || true
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:     at genericNodeError (node:internal/errors:984:15)
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:     at wrappedFn (node:internal/errors:538:14)
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:     at ChildProcess.exithandler (node:child_process:422:12)
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:     at ChildProcess.emit (node:events:524:28)
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:     at maybeClose (node:internal/child_process:1104:16)
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:     at Socket.<anonymous> (node:internal/child_process:456:11)
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:     at Socket.emit (node:events:524:28)
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:     at Pipe.<anonymous> (node:net:343:12) {
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:   code: null,
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:   killed: false,
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:   signal: 'SIGKILL',
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:   cmd: 'sudo pkill -9 -f unified_led_controller.py || true',
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:   stdout: '',
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]:   stderr: ''
+Nov 04 14:03:52 NaniwaTanaCheck pi-startup.sh[4219]: }
+Nov 04 14:03:53 NaniwaTanaCheck sudo[4433]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action white --num-leds 99 --brightness 100
+Nov 04 14:03:53 NaniwaTanaCheck sudo[4433]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 04 14:03:53 NaniwaTanaCheck pi-startup.sh[4219]: [LED] Unified controller stderr: [LED] RED FLASH has priority - white light request denied
+Nov 04 14:03:53 NaniwaTanaCheck sudo[4433]: pam_unix(sudo:session): session closed for user root
+Nov 04 14:03:53 NaniwaTanaCheck pi-startup.sh[4219]: [LED] Unified controller failed: [LED] RED FLASH has priority - white light request denied
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Using paper dimensions: 89.1x42 cm
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Using camera calibration parameters
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Using device path: /dev/video0
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: [VALIDATION] Starting validation for camera /dev/video0 in mode 'visible'
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Will use saved calibration rectified image
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: [VALIDATION] Received parameters:
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   - Homography matrix: Yes
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   - Camera matrix: Yes
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   - Distortion coeffs: Yes
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   - Paper size: 89.1x42.0 cm
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   - Use saved rectified: True
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Using saved calibration rectified image
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: [VALIDATION] Loaded rectified image: 2822x1330px
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Found 7 expected slots for validation
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Calculated pixel density from saved image: 31.7 px/cm (width), 31.7 px/cm (height)
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: [VALIDATION] Using 31.7 px/cm for coordinate conversion
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: [VALIDATION] Saved rectified view to: /home/naniwa/ShelfEye/data/validation_rectified_debug.jpg
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Starting per-slot ROI QR code detection...
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Slot 1/7: unknown (expected QR: '')
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ROI size: 57x57px at (0,0)
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ✗ No QR detected in ROI
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   ✗ ERROR: Expected QR '' not detected
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Slot 2/7: unknown (expected QR: '')
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ROI size: 57x57px at (0,0)
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ✗ No QR detected in ROI
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   ✗ ERROR: Expected QR '' not detected
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Slot 3/7: unknown (expected QR: '')
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ROI size: 57x57px at (0,0)
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ✗ No QR detected in ROI
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   ✗ ERROR: Expected QR '' not detected
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Slot 4/7: unknown (expected QR: '')
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ROI size: 57x57px at (0,0)
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ✗ No QR detected in ROI
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   ✗ ERROR: Expected QR '' not detected
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Slot 5/7: unknown (expected QR: '')
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ROI size: 57x57px at (0,0)
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ✗ No QR detected in ROI
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]:   ✗ ERROR: Expected QR '' not detected
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Slot 6/7: unknown (expected QR: '')
+Nov 04 14:03:54 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ROI size: 57x57px at (0,0)
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ✗ No QR detected in ROI
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]:   ✗ ERROR: Expected QR '' not detected
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Slot 7/7: unknown (expected QR: '')
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ROI size: 57x57px at (0,0)
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   ✗ No QR detected in ROI
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]:   ✗ ERROR: Expected QR '' not detected
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]: [VALIDATION] Summary:
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr:   - Success: False
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]:   - Expected visible: 7
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]:   - Actually visible: 0
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]:   - Missing: , , , , , ,
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]: [CameraSessionManager] Released exclusive lock for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]: 2:03:55 PM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81/validate-qrs-visible 2…
+Nov 04 14:03:55 NaniwaTanaCheck sudo[4441]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action off --num-leds 99
+Nov 04 14:03:55 NaniwaTanaCheck sudo[4441]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 04 14:03:55 NaniwaTanaCheck pi-startup.sh[4219]: [LED] Unified controller stderr: [LED] RED FLASH active - cannot turn off
+Nov 04 14:03:55 NaniwaTanaCheck sudo[4441]: pam_unix(sudo:session): session closed for user root
+Nov 04 14:03:56 NaniwaTanaCheck pi-startup.sh[4219]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Nov 04 14:03:56 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Nov 04 14:03:56 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:camera_utils:Camera format: MJPG, resolution: 1920x1080
+Nov 04 14:03:56 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:camera_utils:Camera warmup: 10 seconds at 30fps pace...
+Nov 04 14:04:06 NaniwaTanaCheck pi-startup.sh[4219]: [Validation] Python stderr: INFO:camera_utils:Warmup complete: 152 frames over 10s
+Nov 04 14:04:07 NaniwaTanaCheck pi-startup.sh[4219]: 2:04:07 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 12638ms :: …
