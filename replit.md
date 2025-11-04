@@ -25,10 +25,11 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - **Data Retention & Cleanup**: Detection logs (3 years), ROI images (3 months), sent alerts (30 days). Daily maintenance runs at 3:00 AM JST. Emergency/accelerated cleanup triggered by disk usage thresholds.
 
 ### System Design Choices
-- **UI/UX**: Calibration system uses paper size formats (e.g., "A4-landscape"). Rectified preview with grid and template overlays. 6-Page multi-sheet template system for large areas with automated slot creation.
+- **UI/UX**: Calibration system uses paper size formats (e.g., "A4-landscape"). Rectified preview with grid and template overlays. 6-Page multi-sheet template system for large areas with automated slot creation. Dual-image calibration output: clean version for QR validation (no overlays) and labeled version for user download (with grid/labels).
 - **Technical Implementations**: Auto-start and auto-update via systemd services. GPIO LED light strip integration for dual-purpose lighting and visual alerts. Worker QR validation against a database for checkout tracking. Simplified QR-based detection logic.
 - **LED Strip Configuration**: Two WS2812B LED strips (99 total LEDs) on GPIO 18 (BCM), requiring an external 5V power supply and a 3.3V to 5V logic level shifter for data signal.
 - **Detection & Alert System**: State machine for tool presence. Binary detection logic based on QR visibility. Worker validation. Time-based monitoring with grace periods. Queue-based alerts with retry logic. Simple ID payloads for QR codes.
+- **QR Validation Strategy**: Per-slot ROI (Region of Interest) scanning for optimal accuracy with 30-50 slots. Each slot's region is extracted individually with 20% padding, then scanned independently using multi-scale detection (1x, 2x, 3x upsampling) and aggressive preprocessing (CLAHE, adaptive thresholding, sharpening). This approach is more reliable than full-image scanning, especially for high slot counts.
 
 ### Camera Configuration (CRITICAL)
 - **Format**: MJPEG (Motion-JPEG) format MUST be forced on all camera captures. YUYV format at high resolutions throttles to 0.1fps, preventing auto-exposure convergence. MJPEG achieves 7-10fps at 4K and 15-60fps at 1080p.

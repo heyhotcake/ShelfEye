@@ -475,27 +475,18 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"[VALIDATION] Rectified debug image not saved (DEBUG_IMAGES=0)", file=sys.stderr)
         sys.stderr.flush()
     
-    # Decode QR codes with early exit optimization
-    print(f"[VALIDATION] Starting QR code detection...", file=sys.stderr)
+    # PER-SLOT ROI SCANNING: Extract and scan each slot individually for better accuracy
+    print(f"[VALIDATION] Starting per-slot ROI QR code detection...", file=sys.stderr)
     sys.stderr.flush()
-    expected_count = len(expected_slots) if expected_slots else None
-    qr_results = decode_qr_codes(rectified, expected_count=expected_count)
-    print(f"[VALIDATION] Found {len(qr_results)} QR codes total", file=sys.stderr)
-    sys.stderr.flush()
-    
-    # Build a map of detected QR codes
-    detected_qrs = {}
-    for qr in qr_results:
-        detected_qrs[qr['data']] = qr
-        print(f"  - {qr['data']} at ({qr['center'][0]:.1f}, {qr['center'][1]:.1f}) via {qr['detection_method']}", file=sys.stderr)
     
     # Build validation results based on mode
     validation_details = []
     missing_qrs = []
     incorrectly_visible = []
+    detected_qrs_list = []
     
-    # Process each expected slot
-    for slot in expected_slots:
+    # Process each expected slot - extract ROI and scan individually
+    for idx, slot in enumerate(expected_slots):
         slot_id = slot.get('slot_id', 'unknown')
         expected_qr = slot.get('expected_qr_id', '')
         x_cm = slot.get('x_cm', 0)
@@ -504,49 +495,31 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         height_cm = slot.get('height_cm', 3.0)
         rotation = slot.get('rotation', 0)
         
-        # Check if QR is detected
-        if expected_qr in detected_qrs:
-            qr = detected_qrs[expected_qr]
-            qr_center = qr['center']
-            
-            # Check if QR is in expected position (with tolerance)
-            expected_x_px = x_cm * scale_x
-            expected_y_px = y_cm * scale_y
-            distance = np.sqrt((qr_center[0] - expected_x_px)**2 + (qr_center[1] - expected_y_px)**2)
-            
-            # Consider within bounds if it's inside the rotated rectangle
-            in_bounds = point_in_rotated_rect(qr_center, np.array([x_cm, y_cm]), 
-                                             width_cm, height_cm, rotation, scale_x, scale_y)
-            
+        print(f"[VALIDATION] Slot {idx+1}/{len(expected_slots)}: {slot_id} (expected QR: '{expected_qr}')", file=sys.stderr)
+        
+        # Convert slot position from cm to pixels
+        center_x_px = int(x_cm * scale_x)
+        center_y_px = int(y_cm * scale_y)
+        width_px = int(width_cm * scale_x)
+        height_px = int(height_cm * scale_y)
+        
+        # Add 20% padding around slot for better QR detection (in case QR is slightly outside)
+        padding = 0.2
+        padded_width = int(width_px * (1 + padding))
+        padded_height = int(height_px * (1 + padding))
+        
+        # Calculate ROI boundaries (top-left corner)
+        roi_x1 = max(0, center_x_px - padded_width // 2)
+        roi_y1 = max(0, center_y_px - padded_height // 2)
+        roi_x2 = min(rectified.shape[1], center_x_px + padded_width // 2)
+        roi_y2 = min(rectified.shape[0], center_y_px + padded_height // 2)
+        
+        # Extract ROI
+        roi = rectified[roi_y1:roi_y2, roi_x1:roi_x2]
+        
+        if roi.size == 0:
+            print(f"  WARNING: Empty ROI for slot {slot_id}", file=sys.stderr)
             if mode == 'visible':
-                # QR should be visible (tool is absent)
-                validation_details.append({
-                    'slot_id': slot_id,
-                    'expected_qr': expected_qr,
-                    'status': 'correct' if in_bounds else 'wrong_position',
-                    'detected': True,
-                    'in_bounds': in_bounds,
-                    'distance_px': distance,
-                    'detection_method': qr['detection_method']
-                })
-                if not in_bounds:
-                    print(f"  WARNING: {expected_qr} detected but at wrong position (off by {distance:.1f}px)", file=sys.stderr)
-            else:
-                # QR should NOT be visible (tool is present)
-                validation_details.append({
-                    'slot_id': slot_id,
-                    'expected_qr': expected_qr,
-                    'status': 'incorrect',
-                    'detected': True,
-                    'in_bounds': in_bounds,
-                    'detection_method': qr['detection_method']
-                })
-                incorrectly_visible.append(expected_qr)
-                print(f"  ERROR: {expected_qr} is visible but should be covered", file=sys.stderr)
-        else:
-            # QR not detected
-            if mode == 'visible':
-                # QR should be visible but isn't
                 validation_details.append({
                     'slot_id': slot_id,
                     'expected_qr': expected_qr,
@@ -555,9 +528,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                     'in_bounds': False
                 })
                 missing_qrs.append(expected_qr)
-                print(f"  ERROR: {expected_qr} should be visible but not detected", file=sys.stderr)
             else:
-                # QR not visible (correct - tool is present)
                 validation_details.append({
                     'slot_id': slot_id,
                     'expected_qr': expected_qr,
@@ -565,6 +536,83 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                     'detected': False,
                     'in_bounds': True
                 })
+            continue
+        
+        print(f"  ROI size: {roi.shape[1]}x{roi.shape[0]}px at ({roi_x1},{roi_y1})", file=sys.stderr)
+        
+        # Scan this ROI for QR codes (limit to 1 expected in this slot)
+        roi_qr_results = decode_qr_codes(roi, expected_count=1)
+        
+        if roi_qr_results:
+            # QR detected in this slot's ROI
+            qr = roi_qr_results[0]
+            qr_data = qr['data']
+            detected_qrs_list.append(qr_data)
+            
+            print(f"  ✓ Detected QR: '{qr_data}' via {qr['detection_method']}", file=sys.stderr)
+            
+            if mode == 'visible':
+                # QR should be visible - check if it matches expected
+                if qr_data == expected_qr:
+                    validation_details.append({
+                        'slot_id': slot_id,
+                        'expected_qr': expected_qr,
+                        'status': 'correct',
+                        'detected': True,
+                        'in_bounds': True,
+                        'detection_method': qr['detection_method']
+                    })
+                    print(f"  ✓ CORRECT: Matches expected QR '{expected_qr}'", file=sys.stderr)
+                else:
+                    validation_details.append({
+                        'slot_id': slot_id,
+                        'expected_qr': expected_qr,
+                        'status': 'wrong_qr',
+                        'detected': True,
+                        'in_bounds': True,
+                        'actual_qr': qr_data,
+                        'detection_method': qr['detection_method']
+                    })
+                    missing_qrs.append(expected_qr)
+                    print(f"  ✗ WRONG QR: Expected '{expected_qr}' but found '{qr_data}'", file=sys.stderr)
+            else:
+                # QR should NOT be visible (tool should cover it)
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'incorrect',
+                    'detected': True,
+                    'in_bounds': True,
+                    'actual_qr': qr_data,
+                    'detection_method': qr['detection_method']
+                })
+                incorrectly_visible.append(expected_qr)
+                print(f"  ✗ ERROR: QR '{qr_data}' is visible but should be covered", file=sys.stderr)
+        else:
+            # No QR detected in this slot's ROI
+            print(f"  ✗ No QR detected in ROI", file=sys.stderr)
+            
+            if mode == 'visible':
+                # QR should be visible but isn't - MISSING
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'missing',
+                    'detected': False,
+                    'in_bounds': False
+                })
+                missing_qrs.append(expected_qr)
+                print(f"  ✗ ERROR: Expected QR '{expected_qr}' not detected", file=sys.stderr)
+            else:
+                # QR not visible - CORRECT (tool is covering it)
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'correct',
+                    'detected': False,
+                    'in_bounds': True
+                })
+                print(f"  ✓ CORRECT: QR is covered as expected", file=sys.stderr)
     
     # Calculate summary
     expected_visible = 0
@@ -582,7 +630,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
             'expected_visible': expected_visible,
             'actual_visible': actual_visible,
             'missing_qrs': missing_qrs,
-            'detected_qrs': list(detected_qrs.keys()),
+            'detected_qrs': detected_qrs_list,
             'details': validation_details,
             'debug_image': rectified_path
         }
