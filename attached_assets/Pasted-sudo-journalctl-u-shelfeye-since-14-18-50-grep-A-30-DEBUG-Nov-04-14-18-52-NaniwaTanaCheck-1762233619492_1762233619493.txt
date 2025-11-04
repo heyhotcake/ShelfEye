@@ -1,0 +1,65 @@
+sudo journalctl -u shelfeye --since "14:18:50" | grep -A 30 "DEBUG"
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]: [Validation] DEBUG: Raw slots from database: [
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   {
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     id: '3c4ac695-80e4-4d4f-9581-26e7744198a3',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     slotId: 'pen-001',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     expectedQrId: 'pen-001',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     toolName: 'pen'
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   },
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   {
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     id: 'f0dca828-505c-4af7-80e1-d816f1b64678',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     slotId: 'pen-002',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     expectedQrId: 'pen-002',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     toolName: 'pen'
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   },
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   {
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     id: '02c1feb2-1136-442f-9799-a0bec05b8fa5',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     slotId: 'pen-003',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     expectedQrId: 'pen-003',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     toolName: 'pen'
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   },
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   {
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     id: '211d5e18-b4fb-406e-b57c-9841c5ba5b91',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     slotId: '5x5-001',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     expectedQrId: '5x5-001',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     toolName: '5x5'
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   },
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   {
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     id: 'c6269295-60fa-4079-b39c-55eb34a09c83',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     slotId: 'pen-004',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     expectedQrId: 'pen-004',
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     toolName: 'pen'
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   },
+--
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]: [Validation] DEBUG: expectedSlots JSON: [
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   {
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "id": "pen-001",
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "slotId": "pen-001",
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "toolName": "pen",
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "x": 4.5,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "y": 9,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "width": 7,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "height": 4,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "rotation": 0
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   },
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   {
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "id": "pen-002",
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "slotId": "pen-002",
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "toolName": "pen",
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "x": 44.5,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "y": 4.864706,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "width": 7,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "height": 4,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "rotation": 0
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   },
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   {
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "id": "pen-003",
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "slotId": "pen-003",
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "toolName": "pen",
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "x": 78.95294,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "y": 2.3882353,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "width": 7,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "height": 4,
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:     "rotation": 0
+Nov 04 14:18:52 NaniwaTanaCheck pi-startup.sh[4677]:   },
+naniwa@NaniwaTanaCheck:~/ShelfEye $

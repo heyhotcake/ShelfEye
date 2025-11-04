@@ -498,12 +498,13 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     
     # Process each expected slot - extract ROI and scan individually
     for idx, slot in enumerate(expected_slots):
-        slot_id = slot.get('slot_id', 'unknown')
-        expected_qr = slot.get('expected_qr_id', '')
-        x_cm = slot.get('x_cm', 0)
-        y_cm = slot.get('y_cm', 0)
-        width_cm = slot.get('width_cm', 3.0)
-        height_cm = slot.get('height_cm', 3.0)
+        # Backend sends camelCase JSON, handle both snake_case (legacy) and camelCase (current)
+        slot_id = slot.get('slotId') or slot.get('slot_id', 'unknown')
+        expected_qr = slot.get('id') or slot.get('expected_qr_id', '')
+        x_cm = slot.get('x') or slot.get('x_cm', 0)
+        y_cm = slot.get('y') or slot.get('y_cm', 0)
+        width_cm = slot.get('width') or slot.get('width_cm', 3.0)
+        height_cm = slot.get('height') or slot.get('height_cm', 3.0)
         rotation = slot.get('rotation', 0)
         
         print(f"[VALIDATION] Slot {idx+1}/{len(expected_slots)}: {slot_id} (expected QR: '{expected_qr}')", file=sys.stderr)
