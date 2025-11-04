@@ -284,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Download high-resolution rectified image
   app.get("/api/calibrate/download-rectified", async (_req, res) => {
     try {
-      // Use the labeled version for download (clean version is only for QR validation)
+      // Use the labeled version for download (clean version is only for ArUco marker validation)
       const rectifiedPath = path.join(process.cwd(), 'data', 'latest_calibration_rectified_labeled.jpg');
       
       // Check if file exists
@@ -318,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         await fs.access(debugPath);
       } catch {
-        return res.status(404).json({ message: "Debug image not found. Run QR validation first." });
+        return res.status(404).json({ message: "Debug image not found. Run ArUco marker validation first." });
       }
       
       // Send file for download
@@ -780,11 +780,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Two-step calibration validation routes
-  app.post("/api/calibrate/:cameraId/validate-qrs-visible", async (req, res) => {
+  app.post("/api/calibrate/:cameraId/validate-markers-visible", async (req, res) => {
     const { cameraId } = req.params;
     let lockAcquired = false;
     
-    console.log(`[Validation] Starting QR validation (visible) for camera ${cameraId}`);
+    console.log(`[Validation] Starting ArUco marker validation (visible) for camera ${cameraId}`);
     
     try {
       const camera = await storage.getCamera(cameraId);
@@ -996,7 +996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/calibrate/:cameraId/validate-qrs-covered", async (req, res) => {
+  app.post("/api/calibrate/:cameraId/validate-markers-covered", async (req, res) => {
     const { cameraId } = req.params;
     let lockAcquired = false;
     
@@ -2836,7 +2836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const debugImagePath = '/tmp/validation_rectified_debug.jpg';
     res.sendFile(debugImagePath, (err) => {
       if (err) {
-        res.status(404).json({ error: 'Debug image not found. Run QR validation first.' });
+        res.status(404).json({ error: 'Debug image not found. Run ArUco marker validation first.' });
       }
     });
   });

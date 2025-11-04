@@ -20,10 +20,10 @@ export const cameras = pgTable("cameras", {
 export const slots = pgTable("slots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   slotId: text("slot_id").notNull().unique(),
-  slotNumber: integer("slot_number").notNull(), // Simple 1-60 number for simplified QR codes (auto-assigned per camera)
+  slotNumber: integer("slot_number").notNull(), // ArUco marker ID (1-50) for slot identification (auto-assigned per camera)
   cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }).notNull(),
   toolName: text("tool_name").notNull(),
-  expectedQrId: text("expected_qr_id"),
+  expectedQrId: text("expected_qr_id"), // Legacy column name - stores ArUco marker ID (same as slotNumber)
   priority: text("priority").notNull().default("medium"), // high, medium, low
   regionCoords: json("region_coords").$type<number[][]>().notNull(), // polygon coordinates in pixels
   xCm: real("x_cm").notNull(), // center X position in cm
@@ -45,7 +45,7 @@ export const detectionLogs = pgTable("detection_logs", {
   slotId: varchar("slot_id").references(() => slots.id, { onDelete: "cascade" }).notNull(),
   timestamp: timestamp("timestamp").notNull().default(sql`now()`),
   status: text("status").notNull(), // EMPTY, ITEM_PRESENT, CHECKED_OUT, TRAINING_ERROR
-  qrId: text("qr_id"),
+  qrId: text("qr_id"), // Legacy column name - stores detected ArUco marker ID or worker QR code
   workerId: varchar("worker_id").references(() => workers.id, { onDelete: "set null" }),
   workerName: text("worker_name"),
   ssimScore: real("ssim_score"),
@@ -58,7 +58,7 @@ export const detectionLogs = pgTable("detection_logs", {
 export const alertRules = pgTable("alert_rules", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  ruleType: text("rule_type").notNull(), // TOOL_MISSING, QR_FAILURE, CAMERA_HEALTH
+  ruleType: text("rule_type").notNull(), // TOOL_MISSING, MARKER_DETECTION_FAILURE, CAMERA_HEALTH
   isEnabled: boolean("is_enabled").notNull().default(true),
   verificationWindow: integer("verification_window").notNull().default(5), // minutes
   businessHoursOnly: boolean("business_hours_only").notNull().default(true),
@@ -112,7 +112,7 @@ export const templateRectangles = pgTable("template_rectangles", {
   xCm: real("x_cm").notNull(),
   yCm: real("y_cm").notNull(),
   rotation: integer("rotation").notNull().default(0), // 0, 45, 90, 135, 180, 225, 270, 315
-  autoQrId: text("auto_qr_id"),
+  autoQrId: text("auto_qr_id"), // Legacy column name - stores ArUco marker ID (1-50)
   slotId: varchar("slot_id").references(() => slots.id, { onDelete: "set null" }), // Auto-generated slot
   createdAt: timestamp("created_at").default(sql`now()`),
   // Templates are now camera-independent - assigned to cameras during calibration via slots

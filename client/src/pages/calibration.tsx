@@ -275,11 +275,11 @@ export default function Calibration() {
     },
   });
 
-  const validateQRsVisibleMutation = useMutation({
+  const validateMarkersVisibleMutation = useMutation({
     mutationFn: (cameraId: string) => {
       // Lock camera BEFORE starting validation to stop preview polling
       setIsCameraLocked(true);
-      return apiRequest('POST', `/api/calibrate/${cameraId}/validate-qrs-visible`);
+      return apiRequest('POST', `/api/calibrate/${cameraId}/validate-markers-visible`);
     },
     onSuccess: async (response) => {
       const data: ValidationResult = await response.json();
@@ -287,41 +287,41 @@ export default function Calibration() {
       setIsCameraLocked(false); // Clear lock state
       
       if (data.success) {
-        setCalibrationStep(3); // Move to step 4 (tools covering QRs)
+        setCalibrationStep(3); // Move to step 4 (tools covering markers)
         toast({
-          title: "Step 3 Complete - QR Codes Visible ✓",
-          description: `All ${data.detected_count} slot QR codes detected successfully. Now place ALL tools in their slots, then click the validation button.`,
+          title: "Step 3 Complete - ArUco Markers Visible ✓",
+          description: `All ${data.detected_count} slot ArUco markers detected successfully. Now place ALL tools in their slots, then click the validation button.`,
           duration: 8000, // Show longer to ensure user sees the instruction
         });
       } else {
         // Handle error cases (camera open failure, etc.)
         if (data.error) {
           toast({
-            title: "QR Validation Failed",
+            title: "Marker Validation Failed",
             description: data.error,
             variant: "destructive",
             duration: 10000,
           });
         } else {
           // Handle validation failure with counts
-          const invalidQrsInfo = data.invalid_qrs && data.invalid_qrs.length > 0 
-            ? ` (Found ${data.invalid_qrs.length} non-matching QR code(s): ${data.invalid_qrs.map((qr: any) => qr.data).join(', ')})`
+          const invalidMarkersInfo = data.invalid_qrs && data.invalid_qrs.length > 0 
+            ? ` (Found ${data.invalid_qrs.length} non-matching marker(s): ${data.invalid_qrs.map((qr: any) => qr.data).join(', ')})`
             : '';
-          const totalQrsInfo = data.total_qrs_detected !== undefined 
-            ? ` Total QRs detected: ${data.total_qrs_detected}.` 
+          const totalMarkersInfo = data.total_qrs_detected !== undefined 
+            ? ` Total markers detected: ${data.total_qrs_detected}.` 
             : '';
           
           let description = data.message;
           if (!description && data.detected_count !== undefined && data.expected_count !== undefined) {
-            description = `Only ${data.detected_count}/${data.expected_count} QR codes matched.`;
+            description = `Only ${data.detected_count}/${data.expected_count} ArUco markers matched.`;
           }
           if (!description) {
             description = 'Validation failed. Please check the camera and try again.';
           }
           
           toast({
-            title: "QR Validation Failed",
-            description: `${description}${totalQrsInfo}${invalidQrsInfo}`,
+            title: "Marker Validation Failed",
+            description: `${description}${totalMarkersInfo}${invalidMarkersInfo}`,
             variant: "destructive",
             duration: 10000,
           });
@@ -332,7 +332,7 @@ export default function Calibration() {
     },
     onError: async (error: any) => {
       setIsCameraLocked(false); // Clear lock state on error
-      let errorMessage = "QR validation failed";
+      let errorMessage = "Marker validation failed";
       if (error.response) {
         try {
           const errorData = await error.response.json();
@@ -351,11 +351,11 @@ export default function Calibration() {
     },
   });
 
-  const validateQRsCoveredMutation = useMutation({
+  const validateMarkersCoveredMutation = useMutation({
     mutationFn: (cameraId: string) => {
       // Lock camera BEFORE starting validation to stop preview polling
       setIsCameraLocked(true);
-      return apiRequest('POST', `/api/calibrate/${cameraId}/validate-qrs-covered`);
+      return apiRequest('POST', `/api/calibrate/${cameraId}/validate-markers-covered`);
     },
     onSuccess: async (response) => {
       const data: ValidationResult = await response.json();
@@ -365,7 +365,7 @@ export default function Calibration() {
       if (data.success) {
         toast({
           title: "Calibration Complete",
-          description: "All tools are properly covering QR codes. System is ready!",
+          description: "All tools are properly covering ArUco markers. System is ready!",
         });
         // Invalidate calibration-info query to immediately show Active Camera card on dashboard
         queryClient.invalidateQueries({ queryKey: ['/api/config/calibration-info'] });
@@ -373,15 +373,15 @@ export default function Calibration() {
         // Handle error cases (camera open failure, etc.)
         if (data.error) {
           toast({
-            title: "QR Validation Failed",
+            title: "Marker Validation Failed",
             description: data.error,
             variant: "destructive",
           });
         } else {
           const description = data.message || 
-            (data.detected_count !== undefined ? `${data.detected_count} QR codes still visible` : 'Validation failed. Please check the camera and try again.');
+            (data.detected_count !== undefined ? `${data.detected_count} ArUco markers still visible` : 'Validation failed. Please check the camera and try again.');
           toast({
-            title: "Tools Not Covering QRs",
+            title: "Tools Not Covering Markers",
             description,
             variant: "destructive",
           });
@@ -392,7 +392,7 @@ export default function Calibration() {
     },
     onError: async (error: any) => {
       setIsCameraLocked(false); // Clear lock state on error
-      let errorMessage = "QR validation failed";
+      let errorMessage = "Marker validation failed";
       if (error.response) {
         try {
           const errorData = await error.response.json();
@@ -778,15 +778,15 @@ export default function Calibration() {
                                 return;
                               }
                             } else {
-                              console.log('[SaveButton] No adjustments to save, proceeding to QR validation');
+                              console.log('[SaveButton] No adjustments to save, proceeding to marker validation');
                             }
                             
-                            setCalibrationStep(2); // Move to QR validation step
+                            setCalibrationStep(2); // Move to marker validation step
                           }}
-                          data-testid="button-proceed-qr-validation"
+                          data-testid="button-proceed-marker-validation"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          {hasTemplateAdjustments ? 'Save Adjustments & Proceed to QR Validation' : 'Proceed to QR Validation'}
+                          {hasTemplateAdjustments ? 'Save Adjustments & Proceed to Marker Validation' : 'Proceed to Marker Validation'}
                         </Button>
                       </div>
                     )}
@@ -795,26 +795,26 @@ export default function Calibration() {
                       <div className="space-y-2">
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 3:</strong> Ensure all tool slots are EMPTY (QR codes should be visible). Click to validate.
+                            <strong>Step 3:</strong> Ensure all tool slots are EMPTY (ArUco markers should be visible). Click to validate.
                           </p>
                         </div>
                         <Button 
                           className="w-full"
                           onClick={() => {
                             if (activeCamera) {
-                              validateQRsVisibleMutation.mutate(activeCamera.id);
+                              validateMarkersVisibleMutation.mutate(activeCamera.id);
                             }
                           }}
-                          disabled={!activeCamera || validateQRsVisibleMutation.isPending}
-                          data-testid="button-validate-qrs-visible"
+                          disabled={!activeCamera || validateMarkersVisibleMutation.isPending}
+                          data-testid="button-validate-markers-visible"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          {validateQRsVisibleMutation.isPending ? 'Validating...' : 'Validate QR Codes Visible'}
+                          {validateMarkersVisibleMutation.isPending ? 'Validating...' : 'Validate ArUco Markers Visible'}
                         </Button>
                         {step1Result && !step1Result.success && step1Result.missing_slots && (
                           <>
                             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
-                              <p className="text-xs text-red-500 font-semibold mb-1">Missing QR Codes ({step1Result.detected_count}/{step1Result.expected_count} detected):</p>
+                              <p className="text-xs text-red-500 font-semibold mb-1">Missing ArUco Markers ({step1Result.detected_count}/{step1Result.expected_count} detected):</p>
                               <ul className="text-xs text-muted-foreground list-disc list-inside">
                                 {step1Result.missing_slots.map((slot: any, idx: number) => (
                                   <li key={idx}>{slot.slotId} - {slot.toolName}</li>
@@ -825,7 +825,7 @@ export default function Calibration() {
                               <p className="text-xs font-semibold text-amber-600 mb-1">Troubleshooting:</p>
                               <ul className="text-xs text-muted-foreground list-disc list-inside space-y-0.5">
                                 <li>Check rectified preview above - are template outlines aligned?</li>
-                                <li>QR codes might be too small - try larger QR codes or better camera position</li>
+                                <li>ArUco markers might be too small - try larger markers or better camera position</li>
                                 <li>Image quality might be poor - check lighting and camera focus</li>
                                 <li>Template positions might not match physical layout</li>
                               </ul>
@@ -839,7 +839,7 @@ export default function Calibration() {
                       <div className="space-y-2">
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 4:</strong> Place ALL tools in their slots so they cover the QR codes. When ready, click the button below to verify.
+                            <strong>Step 4:</strong> Place ALL tools in their slots so they cover the ArUco markers. When ready, click the button below to verify.
                           </p>
                         </div>
                         {!step2Result && (
@@ -853,18 +853,18 @@ export default function Calibration() {
                           className="w-full"
                           onClick={() => {
                             if (activeCamera) {
-                              validateQRsCoveredMutation.mutate(activeCamera.id);
+                              validateMarkersCoveredMutation.mutate(activeCamera.id);
                             }
                           }}
-                          disabled={!activeCamera || validateQRsCoveredMutation.isPending}
-                          data-testid="button-validate-qrs-covered"
+                          disabled={!activeCamera || validateMarkersCoveredMutation.isPending}
+                          data-testid="button-validate-markers-covered"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          {validateQRsCoveredMutation.isPending ? 'Validating...' : 'Verify Tools Are Covering QR Codes'}
+                          {validateMarkersCoveredMutation.isPending ? 'Validating...' : 'Verify Tools Are Covering ArUco Markers'}
                         </Button>
                         {step2Result && !step2Result.success && step2Result.visible_qrs && (
                           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
-                            <p className="text-xs text-red-500 font-semibold mb-1">QR Codes Still Visible:</p>
+                            <p className="text-xs text-red-500 font-semibold mb-1">ArUco Markers Still Visible:</p>
                             <ul className="text-xs text-muted-foreground list-disc list-inside">
                               {step2Result.visible_qrs.map((qr: any, idx: number) => (
                                 <li key={idx}>{qr.slotId} - {qr.toolName}</li>
@@ -879,7 +879,7 @@ export default function Calibration() {
                               <p className="text-xs text-green-500 font-semibold">Calibration Complete!</p>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
-                              All tools are properly covering QR codes. System is ready for monitoring.
+                              All tools are properly covering ArUco markers. System is ready for monitoring.
                             </p>
                           </div>
                         )}
