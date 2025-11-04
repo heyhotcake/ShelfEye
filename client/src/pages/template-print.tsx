@@ -575,6 +575,17 @@ export default function TemplatePrint() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <Button
+                      onClick={() => {
+                        localStorage.removeItem('templateConfigVersions');
+                        window.location.reload();
+                      }}
+                      variant="destructive"
+                      size="sm"
+                      data-testid="button-clear-cache"
+                    >
+                      Clear Cache
+                    </Button>
                   </div>
                   {selectedDesignTimestamp && (
                     <div className="text-sm text-muted-foreground pl-32">
