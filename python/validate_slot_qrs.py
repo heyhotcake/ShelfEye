@@ -591,9 +591,25 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"  DEBUG: Saved ROI to {debug_roi_path}", file=sys.stderr)
         print(f"  DEBUG: ROI shape={roi.shape}, dtype={roi.dtype}, min={roi.min()}, max={roi.max()}", file=sys.stderr)
         
+        # Boost contrast for low-contrast ROIs (common in corners due to vignetting)
+        # If the pixel range is narrow (low contrast), apply aggressive contrast stretching
+        roi_to_scan = roi
+        pixel_range = roi.max() - roi.min()
+        if pixel_range < 120:  # Low contrast detected
+            print(f"  DEBUG: Low contrast detected (range={pixel_range}), applying contrast boost", file=sys.stderr)
+            # Normalize to full 0-255 range
+            roi_to_scan = cv2.normalize(roi, None, 0, 255, cv2.NORM_MINMAX)
+            # Apply CLAHE for additional local contrast enhancement
+            clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8))
+            roi_to_scan = clahe.apply(roi_to_scan)
+            # Save boosted version for debugging
+            boosted_path = os.path.join(data_dir, f'validation_roi_{slot_id}_boosted.jpg')
+            cv2.imwrite(boosted_path, roi_to_scan)
+            print(f"  DEBUG: Saved contrast-boosted ROI to {boosted_path}", file=sys.stderr)
+        
         # Scan this ROI for QR codes (limit to 1 expected in this slot)
         print(f"  DEBUG: Starting QR decode for slot {slot_id}...", file=sys.stderr)
-        roi_qr_results = decode_qr_codes(roi, expected_count=1)
+        roi_qr_results = decode_qr_codes(roi_to_scan, expected_count=1)
         print(f"  DEBUG: Decode complete. Found {len(roi_qr_results)} QR codes", file=sys.stderr)
         
         if roi_qr_results:
