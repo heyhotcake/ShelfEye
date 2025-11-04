@@ -840,12 +840,16 @@ export default function SlotDrawing() {
 
       for (const rect of templateRectangles) {
         if (isPointInRotatedRect(x, y, rect)) {
+          setSelectedTemplateRect(rect); // Select the rectangle to show details panel
           setDraggingRectId(rect.id);
           setDragStartPos({ x, y });
           event.preventDefault();
           return;
         }
       }
+      
+      // If clicked outside any rectangle, deselect
+      setSelectedTemplateRect(null);
     }
   };
 
