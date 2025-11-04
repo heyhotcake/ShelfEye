@@ -71,8 +71,8 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
                 'error': 'Failed to capture frame'
             }
         
-        # Encode as JPEG
-        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        # Encode as JPEG with high quality to preserve camera's natural output
+        _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
         
         # Convert to base64
         img_base64 = base64.b64encode(buffer).decode('utf-8')
