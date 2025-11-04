@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, boolean, timestamp, json, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -20,7 +20,7 @@ export const cameras = pgTable("cameras", {
 export const slots = pgTable("slots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   slotId: text("slot_id").notNull().unique(),
-  slotNumber: integer("slot_number"), // Simple 1-60 number for simplified QR codes
+  slotNumber: integer("slot_number").notNull(), // Simple 1-60 number for simplified QR codes (auto-assigned per camera)
   cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }).notNull(),
   toolName: text("tool_name").notNull(),
   expectedQrId: text("expected_qr_id"),
@@ -35,7 +35,10 @@ export const slots = pgTable("slots", {
   graceWindow: text("grace_window").default("08:30-16:30"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").default(sql`now()`),
-});
+}, (table) => ({
+  // Ensure each camera has unique slot numbers (1, 2, 3, etc.)
+  uniqueSlotNumberPerCamera: unique().on(table.cameraId, table.slotNumber),
+}));
 
 export const detectionLogs = pgTable("detection_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -152,7 +155,7 @@ export const googleOAuthCredentials = pgTable("google_oauth_credentials", {
 
 // Insert schemas
 export const insertCameraSchema = createInsertSchema(cameras).omit({ id: true, createdAt: true });
-export const insertSlotSchema = createInsertSchema(slots).omit({ id: true, createdAt: true });
+export const insertSlotSchema = createInsertSchema(slots).omit({ id: true, slotNumber: true, createdAt: true }); // slotNumber is auto-assigned
 export const insertDetectionLogSchema = createInsertSchema(detectionLogs).omit({ id: true });
 export const insertAlertRuleSchema = createInsertSchema(alertRules).omit({ id: true, createdAt: true });
 export const insertAlertQueueSchema = createInsertSchema(alertQueue).omit({ id: true, createdAt: true });

@@ -679,16 +679,19 @@ export class DbStorage implements IStorage {
   }
 
   async createSlot(slot: InsertSlot): Promise<Slot> {
-    // Auto-assign slot number if not provided
-    let slotToInsert = { ...slot };
-    if (!slotToInsert.slotNumber) {
-      // Get highest slot number for this camera
-      const cameraSlots = await this.getSlotsByCamera(slot.cameraId);
-      const maxNumber = cameraSlots.reduce((max, s) => {
-        return s.slotNumber && s.slotNumber > max ? s.slotNumber : max;
-      }, 0);
-      slotToInsert.slotNumber = maxNumber + 1;
-    }
+    // Auto-assign sequential slot number per camera (1, 2, 3, ...)
+    // Get highest slot number for this camera
+    const cameraSlots = await this.getSlotsByCamera(slot.cameraId);
+    const maxNumber = cameraSlots.reduce((max, s) => {
+      return s.slotNumber > max ? s.slotNumber : max;
+    }, 0);
+    const nextSlotNumber = maxNumber + 1;
+    
+    // Insert slot with auto-assigned number
+    const slotToInsert = {
+      ...slot,
+      slotNumber: nextSlotNumber,
+    };
     
     const result = await db.insert(schema.slots).values(slotToInsert).returning();
     return result[0];
