@@ -119,12 +119,13 @@ def warmup_camera_properly(cap, duration_seconds=10):
 def capture_optimal_frame(cap):
     """
     Capture frame with full quality pipeline (produces CRISP images)
+    Takes 15 frames and picks the sharpest one for best autofocus quality
     """
     # Take multiple frames and pick the sharpest
     best_frame = None
     best_sharpness = 0
     
-    for i in range(5):
+    for i in range(15):
         ret, frame = cap.read()
         if ret:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

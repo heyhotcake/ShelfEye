@@ -261,12 +261,14 @@ class ArucoCornerCalibrator:
             # Use same camera setup as preview for consistent settings (MJPEG format, auto-exposure, etc.)
             setup_camera_optimal(cap, resolution=(width, height))
             
-            # Use same warmup as preview (10 seconds) - settings don't reset when switching from preview
-            warmup_camera_properly(cap, duration_seconds=10)
+            # Extended warmup for better autofocus stability (20 seconds)
+            warmup_camera_properly(cap, duration_seconds=20)
             
-            # Capture single frame to avoid RAM overload (no multi-frame capture)
-            ret, frame = cap.read()
-            if not ret:
+            # Use multi-frame sharpness selection for best focus
+            # Takes 10 frames and keeps the sharpest one
+            from camera_utils import capture_optimal_frame
+            frame = capture_optimal_frame(cap)
+            if frame is None:
                 raise Exception("Failed to capture frame from camera")
             
             # Detect corner markers
