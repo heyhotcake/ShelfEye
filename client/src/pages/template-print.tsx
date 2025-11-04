@@ -94,33 +94,34 @@ export default function TemplatePrint() {
     queryKey: ['/api/tool-categories'],
   });
 
-  const moduleSize = 60; // Very large modules for easy scanning (was 15, then 40)
-  
+  // Generate ArUco markers for slot numbers (1-99)
   const { data: qrCodes = {} } = useQuery<Record<string, string>>({
-    queryKey: ['/api/qr-codes', templateRectangles, moduleSize], // Include moduleSize in key to force refresh when changed
+    queryKey: ['/api/aruco-slot-markers', templateRectangles],
     queryFn: async () => {
       const codes: Record<string, string> = {};
       
       for (const rect of templateRectangles) {
         if (rect.autoQrId) {
           try {
-            const response = await fetch('/api/qr-generate', {
+            // Extract slot number from autoQrId (format: "slot-1", "slot-2", etc.)
+            const slotNumber = parseInt(rect.autoQrId.replace('slot-', ''));
+            
+            const response = await fetch('/api/aruco-generate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                type: 'slot',
-                id: rect.autoQrId,
-                errorCorrection: 'L', // Lowest error correction = largest modules
-                moduleSize: moduleSize, // Use variable for consistency
+                mode: 'single',
+                markerId: slotNumber,
+                markerLengthCm: 3.0, // 3cm ArUco markers for slots
               }),
             });
             
             if (response.ok) {
               const result = await response.json();
-              codes[rect.autoQrId] = `data:image/png;base64,${result.qrCode}`;
+              codes[rect.autoQrId] = `data:image/png;base64,${result.image}`;
             }
           } catch (error) {
-            console.error(`Failed to generate QR for ${rect.autoQrId}:`, error);
+            console.error(`Failed to generate ArUco marker for ${rect.autoQrId}:`, error);
           }
         }
       }

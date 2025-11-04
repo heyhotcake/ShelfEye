@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Validate slot QR codes in calibrated camera view.
+Validate slot ArUco markers in calibrated camera view.
 Used for two-step calibration validation:
-1. Verify QR codes ARE readable when slots are empty
-2. Verify QR codes are NOT readable when tools are placed (covering QRs)
+1. Verify ArUco markers ARE readable when slots are empty
+2. Verify ArUco markers are NOT readable when tools are placed (covering markers)
 """
 
 import os
@@ -13,94 +13,69 @@ import json
 import sys
 import time
 import argparse
-from pyzbar import pyzbar
 
 # Suppress OpenCV warnings/info to prevent polluting stdout
 os.environ['OPENCV_LOG_LEVEL'] = 'FATAL'
 cv2.setLogLevel(0)
 
-def decode_qr_codes(image, expected_count=None):
-    """Decode all QR codes in image with multi-scale detection and aggressive preprocessing
+def decode_aruco_markers(image, expected_count=None):
+    """Decode all ArUco markers in image
     
     Args:
-        image: Input image to scan for QR codes
-        expected_count: If provided, exit early once this many QRs are found (optimization)
+        image: Input image to scan for ArUco markers
+        expected_count: If provided, exit early once this many markers are found (optimization)
     """
     results = []
-    found_qr_data = set()
+    found_marker_ids = set()
     
-    # Initialize OpenCV QR detector once (reuse across scales)
-    opencv_detector = cv2.QRCodeDetector()
+    # Initialize ArUco detector (using 4x4 dictionary, IDs 0-49)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+    aruco_params = cv2.aruco.DetectorParameters()
     
     # Input is already grayscale from rectification (memory-optimized)
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    # Multi-scale detection for robustness across different QR sizes
-    # At native 43 px/cm: 30mm QR = ~130px base, ~260px at 2x, ~390px at 3x
-    # Upsampling helps detect small/damaged QR codes that need more pixels
-    scales = [1.0, 2.0, 3.0]
-    
-    # Preallocate reusable resources (avoid recreation in loops)
-    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-    kernel_sharpen = np.array([[-1,-1,-1], [-1, 9,-1], [-1,-1,-1]])
-    kernel_morph = np.ones((3,3), np.uint8)
-    
-    for scale in scales:
-        # Early exit if we found all expected QRs (optimization)
-        if expected_count and len(found_qr_data) >= expected_count:
-            print(f"[DECODE] Early exit: found {len(found_qr_data)}/{expected_count} QRs at scale {scale}", file=sys.stderr)
-            break
+    # Detect ArUco markers
+    try:
+        corners, ids, rejected = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
         
-        # Upscale image for this scale level (reusing memory)
-        if scale != 1.0:
-            scaled_width = int(gray.shape[1] * scale)
-            scaled_height = int(gray.shape[0] * scale)
-            scaled_gray = cv2.resize(gray, (scaled_width, scaled_height), interpolation=cv2.INTER_CUBIC)
-        else:
-            scaled_gray = gray
-        
-        # Helper function to try pyzbar decode and add results
-        def try_decode(img, method_name):
-            try:
-                qr_codes = pyzbar.decode(img)
-                for qr in qr_codes:
-                    data = qr.data.decode('utf-8')
-                    if data not in found_qr_data:
-                        found_qr_data.add(data)
-                        x, y, w, h = qr.rect
-                        # Scale coordinates back to original size
-                        if scale != 1.0:
-                            x, y, w, h = int(x/scale), int(y/scale), int(w/scale), int(h/scale)
-                        results.append({
-                            'data': data,
-                            'type': qr.type,
-                            'rect': {'x': x, 'y': y, 'width': w, 'height': h},
-                            'polygon': [(int(point.x/scale), int(point.y/scale)) for point in qr.polygon],
-                            'center': (x + w / 2, y + h / 2),
-                            'detection_method': f'pyzbar_{method_name}'
-                        })
-                        print(f"QR detected via pyzbar_{method_name}: {data}", file=sys.stderr)
-                        
-                        # Early exit check after each QR found
-                        if expected_count and len(found_qr_data) >= expected_count:
-                            return True
-            except:
-                pass
-            return False
-        
-        # Helper function to try OpenCV QR detector (fallback when pyzbar fails)
-        def try_opencv_decode(img, method_name):
-            try:
-                data, points, _ = opencv_detector.detectAndDecode(img)
-                if data and data not in found_qr_data:
-                    found_qr_data.add(data)
-                    # Estimate center from points
-                    if points is not None and len(points) > 0:
-                        pts = points[0]
-                        x = int(np.mean(pts[:, 0]) / scale)
-                        y = int(np.mean(pts[:, 1]) / scale)
-                        w = int((np.max(pts[:, 0]) - np.min(pts[:, 0])) / scale)
-                        h = int((np.max(pts[:, 1]) - np.min(pts[:, 1])) / scale)
+        if ids is not None and len(ids) > 0:
+            for i, marker_id in enumerate(ids.flatten()):
+                # Only process slot markers (IDs 1-99, excluding corner markers 17-20)
+                if marker_id < 1 or marker_id > 99 or marker_id in [17, 18, 19, 20]:
+                    continue
+                
+                if marker_id not in found_marker_ids:
+                    found_marker_ids.add(marker_id)
+                    
+                    # Get marker corners
+                    marker_corners = corners[i][0]
+                    
+                    # Calculate center
+                    center_x = int(np.mean(marker_corners[:, 0]))
+                    center_y = int(np.mean(marker_corners[:, 1]))
+                    
+                    # Calculate bounding box
+                    x_min = int(np.min(marker_corners[:, 0]))
+                    y_min = int(np.min(marker_corners[:, 1]))
+                    x_max = int(np.max(marker_corners[:, 0]))
+                    y_max = int(np.max(marker_corners[:, 1]))
+                    
+                    results.append({
+                        'data': str(marker_id),  # Store marker ID as string for compatibility
+                        'type': 'ARUCO',
+                        'rect': {'x': x_min, 'y': y_min, 'width': x_max - x_min, 'height': y_max - y_min},
+                        'polygon': [(int(p[0]), int(p[1])) for p in marker_corners],
+                        'center': (center_x, center_y),
+                        'detection_method': 'aruco_opencv'
+                    })
+                    print(f"ArUco marker detected: ID {marker_id} at ({center_x}, {center_y})", file=sys.stderr)
+                    
+                    # Early exit if we found all expected markers
+                    if expected_count and len(found_marker_ids) >= expected_count:
+                        break
+    except Exception as e:
+        print(f"[ERROR] ArUco detection failed: {e}", file=sys.stderr)
                     else:
                         x, y, w, h = 0, 0, img.shape[1], img.shape[0]
                     
