@@ -134,7 +134,8 @@ export default function TemplatePrint() {
   const { data: arucoMarkers } = useQuery<any>({
     queryKey: ['/api/aruco-corner-markers', paperSize],
     queryFn: async () => {
-      const markerIds = [17, 18, 19, 20];
+      // Corner markers: 96 (top-left), 97 (top-right), 98 (bottom-right), 99 (bottom-left)
+      const markerIds = [96, 97, 98, 99];
       const markerPromises = markerIds.map(id =>
         fetch('/api/aruco-generate', {
           method: 'POST',

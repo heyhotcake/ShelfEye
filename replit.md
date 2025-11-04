@@ -4,7 +4,11 @@
 A Raspberry Pi-based automated tool monitoring system utilizing computer vision, QR codes, and ArUco markers for real-time tool tracking across multiple cameras. Its core purpose is to prevent tool loss and improve accountability in workshops by tracking tool presence and checkout status. Key features include QR code validation, temporal smoothing for presence detection, multi-channel alerting (email, Google Sheets, sound), and a React web dashboard for calibration, configurable slot management, analytics, and system administration. The system supports 4K cameras with intelligent dual-resolution modes for live preview and high-accuracy calibration/capture.
 
 ## Recent Changes (Nov 4, 2025)
-- **Fixed QR Validation Data Flow Bug**: Python script was using incorrect field names (snake_case `expected_qr_id` instead of camelCase `id`) causing empty expected QR IDs during validation. Updated `validate_slot_qrs.py` to correctly read camelCase JSON fields from backend (`id`, `slotId`, `x`, `y`, `width`, `height` instead of `expected_qr_id`, `slot_id`, `x_cm`, `y_cm`, `width_cm`, `height_cm`). QR validation now works correctly with per-slot ROI scanning and matching.
+- **Switched from QR Codes to ArUco Markers for Slots**: Replaced QR code-based slot identification with ArUco markers for simplicity and better integration with existing calibration system.
+  - **Corner markers**: IDs 96-99 (reserved high IDs to avoid conflicts) - A=96 (top-left), B=97 (top-right), C=98 (bottom-right), D=99 (bottom-left)
+  - **Slot markers**: IDs 1-50 (supports up to 50 slots per camera)
+  - **Dictionary**: DICT_4X4_100 (supports IDs 0-99)
+  - Updated: `aruco_calibrator.py`, `validate_slot_qrs.py`, `template-print.tsx`, `aruco_generator.py`
 
 ## User Preferences
 - Preferred communication style: Simple, everyday language.
@@ -31,8 +35,8 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - **UI/UX**: Calibration system uses paper size formats (e.g., "A4-landscape"). Rectified preview with grid and template overlays. 6-Page multi-sheet template system for large areas with automated slot creation. Dual-image calibration output: clean version for QR validation (no overlays) and labeled version for user download (with grid/labels).
 - **Technical Implementations**: Auto-start and auto-update via systemd services. GPIO LED light strip integration for dual-purpose lighting and visual alerts. Worker QR validation against a database for checkout tracking. Simplified QR-based detection logic.
 - **LED Strip Configuration**: Two WS2812B LED strips (99 total LEDs) on GPIO 18 (BCM), requiring an external 5V power supply and a 3.3V to 5V logic level shifter for data signal.
-- **Detection & Alert System**: State machine for tool presence. Binary detection logic based on QR visibility. Worker validation. Time-based monitoring with grace periods. Queue-based alerts with retry logic. Simple ID payloads for QR codes.
-- **QR Validation Strategy**: Per-slot ROI (Region of Interest) scanning for optimal accuracy with 30-50 slots. Each slot's region is extracted individually with 20% padding, then scanned independently using multi-scale detection (1x, 2x, 3x upsampling) and aggressive preprocessing (CLAHE, adaptive thresholding, sharpening). This approach is more reliable than full-image scanning, especially for high slot counts.
+- **Detection & Alert System**: State machine for tool presence. Binary detection logic based on ArUco marker visibility. Worker validation. Time-based monitoring with grace periods. Queue-based alerts with retry logic.
+- **ArUco Marker Strategy**: Per-slot ROI (Region of Interest) scanning for optimal accuracy with up to 50 slots. Each slot is identified by a unique ArUco marker (IDs 1-50). Corner markers (IDs 96-99) are used for calibration and perspective correction. ArUco detection is simpler and more robust than QR codes, with built-in OpenCV support.
 
 ### Camera Configuration (CRITICAL)
 - **Format**: MJPEG (Motion-JPEG) format MUST be forced on all camera captures. YUYV format at high resolutions throttles to 0.1fps, preventing auto-exposure convergence. MJPEG achieves 7-10fps at 4K and 15-60fps at 1080p.

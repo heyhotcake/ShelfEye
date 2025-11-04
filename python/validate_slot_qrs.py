@@ -28,8 +28,9 @@ def decode_aruco_markers(image, expected_count=None):
     results = []
     found_marker_ids = set()
     
-    # Initialize ArUco detector (using 4x4 dictionary, IDs 0-49)
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+    # Initialize ArUco detector (using 4x4_100 dictionary, IDs 0-99)
+    # Slot markers: 1-50, Corner markers: 96-99 (reserved)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     aruco_params = cv2.aruco.DetectorParameters()
     
     # Input is already grayscale from rectification (memory-optimized)
@@ -41,8 +42,8 @@ def decode_aruco_markers(image, expected_count=None):
         
         if ids is not None and len(ids) > 0:
             for i, marker_id in enumerate(ids.flatten()):
-                # Only process slot markers (IDs 1-99, excluding corner markers 17-20)
-                if marker_id < 1 or marker_id > 99 or marker_id in [17, 18, 19, 20]:
+                # Only process slot markers (IDs 1-50, excluding corner markers 96-99)
+                if marker_id < 1 or marker_id > 95:
                     continue
                 
                 if marker_id not in found_marker_ids:

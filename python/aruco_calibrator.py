@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ArUco 4-Corner Calibration Module for Tool Tracking System
-Detects 4 corner ArUco markers (IDs 17-20) and computes homography matrix
+Detects 4 corner ArUco markers (IDs 96-99) and computes homography matrix
 """
 
 import argparse
@@ -35,8 +35,9 @@ class ArucoCornerCalibrator:
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(dictionary_type)
         self.detector_params = cv2.aruco.DetectorParameters()
         
-        # Expected corner marker IDs (A=17, B=18, C=19, D=20)
-        self.corner_ids = [17, 18, 19, 20]
+        # Expected corner marker IDs: 96-99 (reserved high IDs to avoid conflict with slot markers 1-50)
+        # A=96 (top-left), B=97 (top-right), C=98 (bottom-right), D=99 (bottom-left)
+        self.corner_ids = [96, 97, 98, 99]
         
     def detect_corner_markers(self, image: np.ndarray) -> Tuple[Dict[int, np.ndarray], int]:
         """
@@ -145,15 +146,15 @@ class ArucoCornerCalibrator:
             logger.info(f"Using zero distortion coefficients (no distortion correction): {dist_coeffs.tolist()}")
             
             # Destination points: detected marker centers in pixels (in order A, B, C, D)
-            # A (17) = top-left
-            # B (18) = top-right
-            # C (19) = bottom-right
-            # D (20) = bottom-left
+            # A (96) = top-left
+            # B (97) = top-right
+            # C (98) = bottom-right
+            # D (99) = bottom-left
             dst_points = np.array([
-                marker_centers[17],  # A: top-left
-                marker_centers[18],  # B: top-right
-                marker_centers[19],  # C: bottom-right
-                marker_centers[20],  # D: bottom-left
+                marker_centers[96],  # A: top-left
+                marker_centers[97],  # B: top-right
+                marker_centers[98],  # C: bottom-right
+                marker_centers[99],  # D: bottom-left
             ], dtype=np.float32)
             
             # Source points: paper corners in cm (real-world coordinates)
