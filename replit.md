@@ -30,6 +30,23 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - **LED Strip Configuration**: Two WS2812B LED strips (99 total LEDs) on GPIO 18 (BCM), requiring an external 5V power supply and a 3.3V to 5V logic level shifter for data signal.
 - **Detection & Alert System**: State machine for tool presence. Binary detection logic based on QR visibility. Worker validation. Time-based monitoring with grace periods. Queue-based alerts with retry logic. Simple ID payloads for QR codes.
 
+### Camera Configuration (CRITICAL)
+- **Format**: MJPEG (Motion-JPEG) format MUST be forced on all camera captures. YUYV format at high resolutions throttles to 0.1fps, preventing auto-exposure convergence. MJPEG achieves 7-10fps at 4K and 15-60fps at 1080p.
+- **Resolution Strategy**: Dual-resolution mode to prevent RAM overload on 2GB Raspberry Pi:
+  - Preview: 1920x1080 (~6MB per frame, safe for RAM)
+  - Calibration/Validation: 3840x2160 (high accuracy, single frame only)
+- **Camera Settings** (defaults that produce bright, natural images):
+  - Brightness: 128 (default)
+  - Contrast: 28 (default)
+  - Gain: 0 (auto)
+  - Auto-exposure: Mode 3 (Aperture Priority)
+  - Auto-focus: Enabled
+  - Auto white balance: Enabled
+- **Warmup**: 10 seconds continuous frame capture to allow auto-exposure convergence (152+ frames at 1920x1080, 70-100 frames at 4K)
+- **Post-processing Pipeline**: Multi-frame sharpness selection → auto brightness/contrast → gamma correction (1.15) → sharpening
+- **Memory Optimization**: Buffer size = 1, single-frame calibration, immediate grayscale conversion for validation
+- **ALL Python scripts** must force MJPEG: camera_preview.py, aruco_calibrator.py, validate_slot_qrs.py, camera_manager.py, rectified_preview.py, process_cameras.py, camera_diagnostic.py, validate_slot_qrs_highres.py
+
 ## External Dependencies
 
 ### Third-Party Services
