@@ -43,7 +43,10 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
                 'error': f'Cannot open camera device {device_source}'
             }
         
-        # Let OpenCV choose best format (YUV2, MJPEG, etc.) based on camera capability
+        # Force MJPEG format for better color and dynamic range at high resolution
+        # YUYV can have exaggerated shadows and limited dynamic range
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        
         # Set resolution
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -52,6 +55,11 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
         cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
         cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode)
         cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+        
+        # Log what format was actually set
+        fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+        fourcc_str = "".join([chr((fourcc >> 8 * i) & 0xFF) for i in range(4)])
+        logger.info(f"Camera format: {fourcc_str}, Resolution: {int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))}")
         
         # Don't set brightness/contrast/saturation/gain - let camera decide
         
