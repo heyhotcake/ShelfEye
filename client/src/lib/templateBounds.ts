@@ -10,12 +10,12 @@ export interface PaperBounds {
 }
 
 export const PAPER_BOUNDS: Record<string, PaperBounds> = {
-  'A5-landscape': { widthCm: 21.0, heightCm: 14.8, safeMarginCm: 0.5 },
-  'A4-landscape': { widthCm: 29.7, heightCm: 21.0, safeMarginCm: 0.5 },
-  'A3-landscape': { widthCm: 42.0, heightCm: 29.7, safeMarginCm: 0.5 },
-  '2xA5-landscape': { widthCm: 42.0, heightCm: 14.8, safeMarginCm: 0.5 },
-  '3xA5-landscape': { widthCm: 63.0, heightCm: 14.8, safeMarginCm: 0.5 },
-  '6-page-3x2': { widthCm: 89.1, heightCm: 42.0, safeMarginCm: 0.5 },
+  'A5-landscape': { widthCm: 21.0, heightCm: 14.8, safeMarginCm: 1.0 },
+  'A4-landscape': { widthCm: 29.7, heightCm: 21.0, safeMarginCm: 1.0 },
+  'A3-landscape': { widthCm: 42.0, heightCm: 29.7, safeMarginCm: 1.0 },
+  '2xA5-landscape': { widthCm: 42.0, heightCm: 14.8, safeMarginCm: 1.0 },
+  '3xA5-landscape': { widthCm: 63.0, heightCm: 14.8, safeMarginCm: 1.0 },
+  '6-page-3x2': { widthCm: 89.1, heightCm: 42.0, safeMarginCm: 1.0 },
 };
 
 export interface Rectangle {
@@ -31,7 +31,37 @@ export interface BoundaryViolation {
 }
 
 /**
- * Check if a rectangle extends outside the printable area
+ * Get safe zone bounds for 6-page format, accounting for per-sheet margins
+ * For 6-page: 3 columns x 2 rows of A4 sheets, each with 1cm safe margin
+ */
+function get6PageSafeBounds(): { minX: number; maxX: number; minY: number; maxY: number }[] {
+  const a4WidthCm = 29.7;
+  const a4HeightCm = 21.0;
+  const safeMarginCm = 1.0;
+  
+  const sheetBounds = [];
+  
+  // 6 sheets in 3x2 grid (sheets 1-6)
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 3; col++) {
+      const sheetOffsetX = col * a4WidthCm;
+      const sheetOffsetY = row * a4HeightCm;
+      
+      sheetBounds.push({
+        minX: sheetOffsetX + safeMarginCm,
+        maxX: sheetOffsetX + a4WidthCm - safeMarginCm,
+        minY: sheetOffsetY + safeMarginCm,
+        maxY: sheetOffsetY + a4HeightCm - safeMarginCm,
+      });
+    }
+  }
+  
+  return sheetBounds;
+}
+
+/**
+ * Check if a rectangle extends outside the safe zones
+ * For 6-page format, checks against individual sheet safe zones
  */
 export function checkBoundaryViolations(
   rect: Rectangle,
@@ -50,29 +80,55 @@ export function checkBoundaryViolations(
   const topEdge = rect.yCm - halfHeight;
   const bottomEdge = rect.yCm + halfHeight;
   
-  const minX = bounds.safeMarginCm;
-  const maxX = bounds.widthCm - bounds.safeMarginCm;
-  const minY = bounds.safeMarginCm;
-  const maxY = bounds.heightCm - bounds.safeMarginCm;
-  
-  if (leftEdge < minX) {
-    violations.push({ edge: 'left', amount: minX - leftEdge });
-  }
-  if (rightEdge > maxX) {
-    violations.push({ edge: 'right', amount: rightEdge - maxX });
-  }
-  if (topEdge < minY) {
-    violations.push({ edge: 'top', amount: minY - topEdge });
-  }
-  if (bottomEdge > maxY) {
-    violations.push({ edge: 'bottom', amount: bottomEdge - maxY });
+  if (paperSize === '6-page-3x2') {
+    // For 6-page format, check against all sheet safe zones
+    // Rectangle must fit entirely within at least one sheet's safe zone
+    const sheetSafeBounds = get6PageSafeBounds();
+    
+    let fitsInAnySheet = false;
+    for (const sheet of sheetSafeBounds) {
+      if (leftEdge >= sheet.minX && rightEdge <= sheet.maxX &&
+          topEdge >= sheet.minY && bottomEdge <= sheet.maxY) {
+        fitsInAnySheet = true;
+        break;
+      }
+    }
+    
+    if (!fitsInAnySheet) {
+      // Find which edges violate the closest sheet
+      const centerX = rect.xCm;
+      const centerY = rect.yCm;
+      
+      // Determine which sheet the center is in
+      const col = Math.floor(centerX / 29.7);
+      const row = Math.floor(centerY / 21.0);
+      const sheetIndex = Math.min(Math.max(row * 3 + col, 0), 5);
+      const sheet = sheetSafeBounds[sheetIndex];
+      
+      if (leftEdge < sheet.minX) violations.push({ edge: 'left', amount: sheet.minX - leftEdge });
+      if (rightEdge > sheet.maxX) violations.push({ edge: 'right', amount: rightEdge - sheet.maxX });
+      if (topEdge < sheet.minY) violations.push({ edge: 'top', amount: sheet.minY - topEdge });
+      if (bottomEdge > sheet.maxY) violations.push({ edge: 'bottom', amount: bottomEdge - sheet.maxY });
+    }
+  } else {
+    // For single-page formats, use simple bounds
+    const minX = bounds.safeMarginCm;
+    const maxX = bounds.widthCm - bounds.safeMarginCm;
+    const minY = bounds.safeMarginCm;
+    const maxY = bounds.heightCm - bounds.safeMarginCm;
+    
+    if (leftEdge < minX) violations.push({ edge: 'left', amount: minX - leftEdge });
+    if (rightEdge > maxX) violations.push({ edge: 'right', amount: rightEdge - maxX });
+    if (topEdge < minY) violations.push({ edge: 'top', amount: minY - topEdge });
+    if (bottomEdge > maxY) violations.push({ edge: 'bottom', amount: bottomEdge - maxY });
   }
   
   return violations;
 }
 
 /**
- * Clamp a rectangle position to stay within printable bounds
+ * Clamp a rectangle position to stay within safe zones
+ * For 6-page format, clamps to the nearest sheet's safe zone
  * Returns the corrected center position (xCm, yCm)
  */
 export function clampToBounds(
@@ -85,17 +141,42 @@ export function clampToBounds(
   const halfWidth = rect.widthCm / 2;
   const halfHeight = rect.heightCm / 2;
   
-  const minX = bounds.safeMarginCm + halfWidth;
-  const maxX = bounds.widthCm - bounds.safeMarginCm - halfWidth;
-  const minY = bounds.safeMarginCm + halfHeight;
-  const maxY = bounds.heightCm - bounds.safeMarginCm - halfHeight;
-  
-  const clampedX = Math.max(minX, Math.min(maxX, rect.xCm));
-  const clampedY = Math.max(minY, Math.min(maxY, rect.yCm));
-  
-  const clamped = clampedX !== rect.xCm || clampedY !== rect.yCm;
-  
-  return { xCm: clampedX, yCm: clampedY, clamped };
+  if (paperSize === '6-page-3x2') {
+    // For 6-page format, clamp to the appropriate sheet's safe zone
+    const sheetSafeBounds = get6PageSafeBounds();
+    
+    // Determine which sheet the rectangle center is in
+    const col = Math.floor(rect.xCm / 29.7);
+    const row = Math.floor(rect.yCm / 21.0);
+    const sheetIndex = Math.min(Math.max(row * 3 + col, 0), 5);
+    const sheet = sheetSafeBounds[sheetIndex];
+    
+    // Clamp center to keep rectangle fully within this sheet's safe zone
+    const minX = sheet.minX + halfWidth;
+    const maxX = sheet.maxX - halfWidth;
+    const minY = sheet.minY + halfHeight;
+    const maxY = sheet.maxY - halfHeight;
+    
+    const clampedX = Math.max(minX, Math.min(maxX, rect.xCm));
+    const clampedY = Math.max(minY, Math.min(maxY, rect.yCm));
+    
+    const clamped = clampedX !== rect.xCm || clampedY !== rect.yCm;
+    
+    return { xCm: clampedX, yCm: clampedY, clamped };
+  } else {
+    // For single-page formats, use simple bounds
+    const minX = bounds.safeMarginCm + halfWidth;
+    const maxX = bounds.widthCm - bounds.safeMarginCm - halfWidth;
+    const minY = bounds.safeMarginCm + halfHeight;
+    const maxY = bounds.heightCm - bounds.safeMarginCm - halfHeight;
+    
+    const clampedX = Math.max(minX, Math.min(maxX, rect.xCm));
+    const clampedY = Math.max(minY, Math.min(maxY, rect.yCm));
+    
+    const clamped = clampedX !== rect.xCm || clampedY !== rect.yCm;
+    
+    return { xCm: clampedX, yCm: clampedY, clamped };
+  }
 }
 
 /**
