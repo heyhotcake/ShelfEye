@@ -88,8 +88,10 @@ export default function TemplatePrint() {
     queryKey: ['/api/tool-categories'],
   });
 
+  const moduleSize = 40; // Larger modules for less dense QR codes
+  
   const { data: qrCodes = {} } = useQuery<Record<string, string>>({
-    queryKey: ['/api/qr-codes', templateRectangles],
+    queryKey: ['/api/qr-codes', templateRectangles, moduleSize], // Include moduleSize in key to force refresh when changed
     queryFn: async () => {
       const codes: Record<string, string> = {};
       
@@ -103,7 +105,7 @@ export default function TemplatePrint() {
                 type: 'slot',
                 id: rect.autoQrId,
                 errorCorrection: 'L', // Lowest error correction = largest modules
-                moduleSize: 40, // Larger modules for 3cm x 3cm QR codes (was 15)
+                moduleSize: moduleSize, // Use variable for consistency
               }),
             });
             
