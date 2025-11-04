@@ -75,14 +75,20 @@ export default function TemplatePrint() {
 
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
 
-  const { data: templateRectangles = [] } = useQuery<TemplateRectangle[]>({
-    queryKey: ['/api/template-rectangles', paperSize],
+  // Load ALL template rectangles from database (not just from saved localStorage designs)
+  const { data: allTemplateRectangles = [] } = useQuery<TemplateRectangle[]>({
+    queryKey: ['/api/template-rectangles'],
     queryFn: async () => {
-      const response = await fetch(`/api/template-rectangles?paperSize=${paperSize}`);
+      const response = await fetch(`/api/template-rectangles`);
       if (!response.ok) throw new Error('Failed to fetch template rectangles');
       return response.json();
     },
   });
+  
+  // Use database templates if no saved design is selected
+  const templateRectangles = selectedDesignTimestamp && savedTemplateDesigns.length > 0
+    ? (savedTemplateDesigns.find(d => d.timestamp === selectedDesignTimestamp)?.templateRectangles || [])
+    : allTemplateRectangles;
 
   const { data: categories = [] } = useQuery<ToolCategory[]>({
     queryKey: ['/api/tool-categories'],
@@ -561,32 +567,39 @@ export default function TemplatePrint() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Label htmlFor="template-design" className="text-sm font-medium">Template Design:</Label>
-                    <Select value={selectedDesignTimestamp} onValueChange={setSelectedDesignTimestamp}>
-                      <SelectTrigger className="w-64" id="template-design" data-testid="select-template-design">
-                        <SelectValue placeholder="Select a template design" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {savedTemplateDesigns.map((design) => (
-                          <SelectItem key={design.timestamp} value={design.timestamp}>
-                            {design.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      onClick={() => {
-                        localStorage.removeItem('templateConfigVersions');
-                        window.location.reload();
-                      }}
-                      variant="destructive"
-                      size="sm"
-                      data-testid="button-clear-cache"
-                    >
-                      Clear Cache
-                    </Button>
-                  </div>
+                  {savedTemplateDesigns.length > 0 ? (
+                    <div className="flex items-center gap-3">
+                      <Label htmlFor="template-design" className="text-sm font-medium">Template Design:</Label>
+                      <Select value={selectedDesignTimestamp} onValueChange={setSelectedDesignTimestamp}>
+                        <SelectTrigger className="w-64" id="template-design" data-testid="select-template-design">
+                          <SelectValue placeholder="Select a template design" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {savedTemplateDesigns.map((design) => (
+                            <SelectItem key={design.timestamp} value={design.timestamp}>
+                              {design.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={() => {
+                          localStorage.removeItem('templateConfigVersions');
+                          window.location.reload();
+                        }}
+                        variant="destructive"
+                        size="sm"
+                        data-testid="button-clear-cache"
+                      >
+                        Clear Cache
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground mb-1">Loading templates from database...</p>
+                      <p>Showing {allTemplateRectangles.length} template{allTemplateRectangles.length !== 1 ? 's' : ''} with fresh QR codes (numbers 1-7)</p>
+                    </div>
+                  )}
                   {selectedDesignTimestamp && (
                     <div className="text-sm text-muted-foreground pl-32">
                       <p>Paper Size: <span className="font-medium text-foreground">{paperSize}</span></p>
