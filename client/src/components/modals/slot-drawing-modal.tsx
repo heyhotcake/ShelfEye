@@ -23,6 +23,7 @@ interface Point {
 interface SlotRegion {
   id: string;
   slotId: string;
+  slotNumber?: number; // Auto-assigned sequential number for simplified QR codes (1, 2, 3...)
   points: Point[];
   toolName: string;
   expectedQrId: string;
@@ -187,14 +188,26 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                     </div>
                     
                     <div>
-                      <Label htmlFor="expectedQrId">Expected QR ID</Label>
+                      <Label htmlFor="expectedQrId">
+                        Expected QR ID 
+                        {selectedRegion.slotNumber && (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            (QR Code: "{selectedRegion.slotNumber}")
+                          </span>
+                        )}
+                      </Label>
                       <Input 
                         id="expectedQrId"
-                        placeholder="e.g., S001"
+                        placeholder="e.g., S001 (optional - slot number will be used)"
                         value={selectedRegion.expectedQrId}
                         onChange={(e) => updateSelectedRegion({ expectedQrId: e.target.value })}
                         data-testid="input-expected-qr"
                       />
+                      {selectedRegion.slotNumber && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Print a QR code with "{selectedRegion.slotNumber}" for this slot
+                        </p>
+                      )}
                     </div>
                     
                     <div>

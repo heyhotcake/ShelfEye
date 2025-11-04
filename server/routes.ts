@@ -670,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Prepare expected slots data with full geometry for spatial validation and overlay
       // IMPORTANT: These coordinates come from the DATABASE which contains ADJUSTED coordinates after save
       const expectedSlots = slots.map(slot => ({
-        id: slot.expectedQrId, // This matches the 'id' field in QR payload
+        id: slot.slotNumber?.toString() || slot.expectedQrId, // Use simplified slot number (e.g., "1", "2", "3") instead of complex IDs
         slotId: slot.slotId,
         toolName: slot.toolName,
         x: slot.xCm, // Center position in cm (FROM DATABASE - ADJUSTED if saved)
@@ -874,7 +874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Prepare expected slots data with full geometry for spatial validation and overlay
       // IMPORTANT: These coordinates come from the DATABASE which contains ADJUSTED coordinates after save
       const expectedSlots = slots.map(slot => ({
-        id: slot.expectedQrId, // This matches the 'id' field in QR payload
+        id: slot.slotNumber?.toString() || slot.expectedQrId, // Use simplified slot number (e.g., "1", "2", "3") instead of complex IDs
         slotId: slot.slotId,
         toolName: slot.toolName,
         x: slot.xCm, // Center position in cm (FROM DATABASE - ADJUSTED if saved)

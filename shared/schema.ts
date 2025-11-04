@@ -20,6 +20,7 @@ export const cameras = pgTable("cameras", {
 export const slots = pgTable("slots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   slotId: text("slot_id").notNull().unique(),
+  slotNumber: integer("slot_number"), // Simple 1-60 number for simplified QR codes
   cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }).notNull(),
   toolName: text("tool_name").notNull(),
   expectedQrId: text("expected_qr_id"),
