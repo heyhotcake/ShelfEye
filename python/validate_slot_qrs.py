@@ -294,9 +294,20 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
             }
         
         # Capture frame from camera
-        print(f"[VALIDATION] Opening camera", file=sys.stderr)
+        # Use camera_id if it's a device path, otherwise use index 0
+        device_source = camera_id if camera_id and camera_id.startswith('/dev/') else 0
+        print(f"[VALIDATION] Opening camera: {device_source}", file=sys.stderr)
         sys.stderr.flush()
-        cap = cv2.VideoCapture(0)
+        
+        # Try to open camera with device path first
+        cap = cv2.VideoCapture(device_source)
+        
+        # If device path fails, fall back to camera index 0
+        if not cap.isOpened() and isinstance(device_source, str) and device_source.startswith('/'):
+            print(f"[VALIDATION] WARNING: Device path {device_source} failed, falling back to camera index 0", file=sys.stderr)
+            sys.stderr.flush()
+            device_source = 0
+            cap = cv2.VideoCapture(device_source)
         
         # Force MJPEG format for 4K - YUYV saturates USB bandwidth and throttles to 0.1fps
         cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
