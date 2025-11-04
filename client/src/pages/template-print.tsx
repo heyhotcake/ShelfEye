@@ -366,12 +366,26 @@ export default function TemplatePrint() {
         templatesWithCategories.forEach((rect) => {
           const xMm = cmToMm(rect.xCm);
           const yMm = cmToMm(rect.yCm);
-          const rectSheet = getSheetForRect(xMm, yMm);
-
-          if (rectSheet !== sheetNum) return; // Skip if not on this sheet
-
           const widthMm = cmToMm(rect.category.widthCm);
           const heightMm = cmToMm(rect.category.heightCm);
+          
+          // For non-rotated rectangles, check if the rectangle BOUNDS overlap with this sheet
+          // (not just the center point)
+          const rectLeftMm = xMm - widthMm / 2;
+          const rectRightMm = xMm + widthMm / 2;
+          const rectTopMm = yMm - heightMm / 2;
+          const rectBottomMm = yMm + heightMm / 2;
+          
+          const sheetLeftMm = sheetOffsetX;
+          const sheetRightMm = sheetOffsetX + a4WidthMm;
+          const sheetTopMm = sheetOffsetY;
+          const sheetBottomMm = sheetOffsetY + a4HeightMm;
+          
+          // Check if rectangle overlaps with this sheet (even partially)
+          const overlapsSheet = !(rectRightMm <= sheetLeftMm || rectLeftMm >= sheetRightMm ||
+                                  rectBottomMm <= sheetTopMm || rectTopMm >= sheetBottomMm);
+          
+          if (!overlapsSheet) return; // Skip if doesn't overlap this sheet
 
           // Adjust coordinates relative to sheet
           const localX = xMm - sheetOffsetX;
