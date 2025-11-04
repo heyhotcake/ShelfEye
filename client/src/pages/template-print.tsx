@@ -88,7 +88,7 @@ export default function TemplatePrint() {
     queryKey: ['/api/tool-categories'],
   });
 
-  const moduleSize = 40; // Larger modules for less dense QR codes
+  const moduleSize = 60; // Very large modules for easy scanning (was 15, then 40)
   
   const { data: qrCodes = {} } = useQuery<Record<string, string>>({
     queryKey: ['/api/qr-codes', templateRectangles, moduleSize], // Include moduleSize in key to force refresh when changed

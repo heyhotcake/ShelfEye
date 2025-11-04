@@ -1665,7 +1665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'image/png' as const,
         quality: 1,
         margin: 1,
-        width: moduleSize * 10, // Scale based on module size
+        width: moduleSize * 25, // Larger multiplier for bigger modules (was *10)
       };
 
       // Generate QR code as base64
