@@ -395,23 +395,25 @@ export default function SlotDrawing() {
     return { minX: minXCm, maxX: maxXCm, minY: minYCm, maxY: maxYCm };
   };
 
-  // Constrain position to sheet boundaries
+  // Constrain position to canvas boundaries (entire area, not individual sheets)
   const constrainToSheet = (xCm: number, yCm: number, rectWidthCm: number, rectHeightCm: number): { x: number; y: number } => {
-    const bounds = getSheetBounds(xCm, yCm);
-    if (!bounds) return { x: xCm, y: yCm };
+    // Get canvas dimensions in cm
+    const canvasWidthCm = canvasDimensions.realWidthMm / 10;
+    const canvasHeightCm = canvasDimensions.realHeightMm / 10;
     
-    // Add safe margin (1cm) to keep rectangles inside printable area
+    // Add safe margin (1cm) to keep rectangles inside canvas
     const safeMarginCm = 1;
     const halfWidth = rectWidthCm / 2;
     const halfHeight = rectHeightCm / 2;
     
+    // Constrain to entire canvas area, not individual sheets
     const constrainedX = Math.max(
-      bounds.minX + safeMarginCm + halfWidth,
-      Math.min(bounds.maxX - safeMarginCm - halfWidth, xCm)
+      safeMarginCm + halfWidth,
+      Math.min(canvasWidthCm - safeMarginCm - halfWidth, xCm)
     );
     const constrainedY = Math.max(
-      bounds.minY + safeMarginCm + halfHeight,
-      Math.min(bounds.maxY - safeMarginCm - halfHeight, yCm)
+      safeMarginCm + halfHeight,
+      Math.min(canvasHeightCm - safeMarginCm - halfHeight, yCm)
     );
     
     return { x: constrainedX, y: constrainedY };
