@@ -140,7 +140,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Download high-resolution rectified image
   app.get("/api/calibrate/download-rectified", async (_req, res) => {
     try {
-      const rectifiedPath = path.join(process.cwd(), 'data', 'latest_calibration_rectified.jpg');
+      // Use the labeled version for download (clean version is only for QR validation)
+      const rectifiedPath = path.join(process.cwd(), 'data', 'latest_calibration_rectified_labeled.jpg');
       
       // Check if file exists
       try {

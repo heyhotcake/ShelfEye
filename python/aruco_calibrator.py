@@ -323,6 +323,16 @@ class ArucoCornerCalibrator:
                             logger.info(f"✓ File location: {highres_path}")
                             logger.info(f"✓ This is the CLEAN image (no overlays) that QR validation will use")
                             
+                            # Also save a labeled version for download/display
+                            rectified_highres_labeled = generate_rectified_image_from_frame(
+                                frame, homography, highres_size, paper_size_cm, templates,  # WITH templates - labeled image
+                                camera_matrix, dist_coeffs
+                            )
+                            highres_labeled_path = os.path.join(data_dir, 'latest_calibration_rectified_labeled.jpg')
+                            cv2.imwrite(highres_labeled_path, rectified_highres_labeled, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                            logger.info(f"✓ Saved LABELED native-resolution rectified image for download")
+                            logger.info(f"✓ File location: {highres_labeled_path}")
+                            
                             # Then, generate downscaled version for UI preview
                             logger.info(f"Generating UI preview: {preview_output_size[0]}x{preview_output_size[1]}px")
                             rectified_preview = generate_rectified_image_from_frame(
