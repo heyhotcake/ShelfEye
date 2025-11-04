@@ -1660,12 +1660,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'H': 'H'
       };
 
+      // Use 'scale' parameter which directly sets pixels per module
+      // For simple numeric data like "1"-"60", QR version 1 needs 21x21 modules
+      // With scale=50, each module is 50px = total ~1050px image for easy scanning
       const qrOptions = {
         errorCorrectionLevel: errorCorrectionMap[errorCorrection] || 'L',
         type: 'image/png' as const,
         quality: 1,
-        margin: 1,
-        width: moduleSize * 25, // Larger multiplier for bigger modules (was *10)
+        margin: 2, // 2 module quiet zone
+        scale: moduleNum, // Direct pixels per module (e.g., 60 = 60px per square)
       };
 
       // Generate QR code as base64
@@ -1674,11 +1677,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extract base64 data without the data URL prefix
       const base64Data = qrCodeBase64.split(',')[1];
 
+      // Calculate approximate dimensions (21-25 modules for numeric data + margin)
+      const estimatedSize = moduleNum * 25; // 21 modules + 4 margin @ scale
+      
       res.json({
         ok: true,
         payload,
         qrCode: base64Data,
-        dimensions: { width: qrOptions.width, height: qrOptions.width }
+        dimensions: { width: estimatedSize, height: estimatedSize }
       });
 
     } catch (error) {
