@@ -3,6 +3,9 @@
 ## Overview
 A Raspberry Pi-based automated tool monitoring system utilizing computer vision, QR codes, and ArUco markers for real-time tool tracking across multiple cameras. Its core purpose is to prevent tool loss and improve accountability in workshops by tracking tool presence and checkout status. Key features include QR code validation, temporal smoothing for presence detection, multi-channel alerting (email, Google Sheets, sound), and a React web dashboard for calibration, configurable slot management, analytics, and system administration. The system supports 4K cameras with intelligent dual-resolution modes for live preview and high-accuracy calibration/capture.
 
+## Recent Changes (Nov 4, 2025)
+- **Fixed QR Validation Data Flow Bug**: Python script was using incorrect field names (snake_case `expected_qr_id` instead of camelCase `id`) causing empty expected QR IDs during validation. Updated `validate_slot_qrs.py` to correctly read camelCase JSON fields from backend (`id`, `slotId`, `x`, `y`, `width`, `height` instead of `expected_qr_id`, `slot_id`, `x_cm`, `y_cm`, `width_cm`, `height_cm`). QR validation now works correctly with per-slot ROI scanning and matching.
+
 ## User Preferences
 - Preferred communication style: Simple, everyday language.
 - **Deployment Context**: User runs the application on a Raspberry Pi at `http://naniwatanacheck.local:5000`. **ALL debugging, testing, and issue reports refer to the Pi deployment, NOT the Replit web preview.** The Replit environment is for code development only; actual hardware features (camera, GPIO) only work on the Raspberry Pi. When user reports issues or provides screenshots, they are ALWAYS from the Pi, not from Replit webview.
