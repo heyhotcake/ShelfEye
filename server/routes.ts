@@ -396,8 +396,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     graceWindow: '08:00-17:00',
                   });
 
+                  // Update template rectangle with slot ID and simplified numbered QR code
                   await storage.updateTemplateRectangle(template.id, {
                     slotId: slot.id,
+                    autoQrId: slot.slotNumber.toString(), // Use simplified slot number for QR codes
                   });
 
                   createdSlots.push(slot);

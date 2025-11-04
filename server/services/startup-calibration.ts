@@ -178,8 +178,10 @@ export class StartupCalibrationService {
                   graceWindow: '08:00-17:00',
                 });
 
+                // Update template rectangle with slot ID and simplified numbered QR code
                 await storage.updateTemplateRectangle(template.id, {
                   slotId: slot.id,
+                  autoQrId: slot.slotNumber.toString(), // Use simplified slot number for QR codes
                 });
 
               } catch (slotError) {
