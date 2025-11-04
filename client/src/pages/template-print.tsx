@@ -289,12 +289,6 @@ export default function TemplatePrint() {
   const handleDownload = () => {
     if (!arucoMarkers || !qrCodes) return;
 
-    console.log('[PDF] Starting PDF generation');
-    console.log('[PDF] Using template rectangles:', templatesWithCategories.length);
-    templatesWithCategories.forEach((rect, i) => {
-      console.log(`[PDF] Rect ${i}: xCm=${rect.xCm}, yCm=${rect.yCm}, width=${rect.category.widthCm}cm, height=${rect.category.heightCm}cm`);
-    });
-
     // Helper to convert cm to mm
     const cmToMm = (cm: number) => cm * 10;
 
@@ -391,16 +385,11 @@ export default function TemplatePrint() {
           const overlapsSheet = !(rectRightMm <= sheetLeftMm || rectLeftMm >= sheetRightMm ||
                                   rectBottomMm <= sheetTopMm || rectTopMm >= sheetBottomMm);
           
-          console.log(`[PDF] Sheet ${sheetNum}, Rect ${rectIndex}: center=(${xMm}, ${yMm}), bounds=[${rectLeftMm}, ${rectTopMm}, ${rectRightMm}, ${rectBottomMm}]`);
-          console.log(`[PDF] Sheet ${sheetNum} bounds=[${sheetLeftMm}, ${sheetTopMm}, ${sheetRightMm}, ${sheetBottomMm}], overlaps=${overlapsSheet}`);
-          
           if (!overlapsSheet) return; // Skip if doesn't overlap this sheet
 
           // Adjust coordinates relative to sheet
           const localX = xMm - sheetOffsetX;
           const localY = yMm - sheetOffsetY;
-          
-          console.log(`[PDF] Sheet ${sheetNum}, Rect ${rectIndex}: Drawing at local=(${localX}, ${localY})`);
 
           pdf.saveGraphicsState();
           pdf.setDrawColor(0, 0, 0);
