@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { clampToBounds, checkBoundaryViolations } from "@/lib/templateBounds";
 import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
 
@@ -881,10 +882,14 @@ export default function SlotDrawing() {
       let newXCm = snapToGrid(pixelsToCm(newXPixels - canvasMargin, true));
       let newYCm = snapToGrid(pixelsToCm(newYPixels - canvasMargin, false));
 
-      // Constrain to sheet boundaries for 6-page format
-      const constrained = constrainToSheet(newXCm, newYCm, rect.widthCm, rect.heightCm);
-      newXCm = constrained.x;
-      newYCm = constrained.y;
+      // Apply boundary clamping to keep rectangle within printable area
+      const clamped = clampToBounds(
+        { xCm: newXCm, yCm: newYCm, widthCm: rect.widthCm, heightCm: rect.heightCm },
+        paperSize
+      );
+      
+      newXCm = clamped.xCm;
+      newYCm = clamped.yCm;
 
       // Update local state immediately for smooth dragging
       setTemplateRectangles(prev => prev.map(r => 
@@ -1196,7 +1201,44 @@ export default function SlotDrawing() {
           autoQrId: newRect.autoQrId,
         };
       });
-      setTemplateRectangles(loadedRects);
+      
+      // Validate and auto-correct any out-of-bounds rectangles
+      const validatedRects = loadedRects.map(rect => {
+        const violations = checkBoundaryViolations(
+          { xCm: rect.xCm, yCm: rect.yCm, widthCm: rect.widthCm, heightCm: rect.heightCm },
+          version.paperSize
+        );
+        
+        if (violations.length > 0) {
+          const clamped = clampToBounds(
+            { xCm: rect.xCm, yCm: rect.yCm, widthCm: rect.widthCm, heightCm: rect.heightCm },
+            version.paperSize
+          );
+          
+          toast({
+            title: "Template Auto-Corrected",
+            description: `"${rect.autoQrId}" was outside printable area and has been adjusted.`,
+            variant: "default",
+          });
+          
+          // Save corrected position to database
+          updateTemplateRectMutation.mutate({
+            id: rect.id,
+            data: {
+              categoryId: rect.categoryId,
+              paperSize: version.paperSize,
+              xCm: clamped.xCm,
+              yCm: clamped.yCm,
+              rotation: rect.rotation,
+            }
+          });
+          
+          return { ...rect, xCm: clamped.xCm, yCm: clamped.yCm };
+        }
+        return rect;
+      });
+      
+      setTemplateRectangles(validatedRects);
       
       // Update snapshot to mark as saved
       const snapshot = JSON.stringify(loadedRects.map(r => ({
