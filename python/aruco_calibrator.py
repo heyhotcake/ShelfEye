@@ -10,10 +10,15 @@ import sys
 import base64
 import logging
 import time
+import os
 from typing import Optional, Tuple, Dict
 import numpy as np
 import cv2
 from rectified_preview import generate_rectified_image_from_frame
+
+# Import camera utilities for consistent settings with preview
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from camera_utils import setup_camera_optimal, warmup_camera_properly
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -253,40 +258,13 @@ class ArucoCornerCalibrator:
             
             width, height = resolution
             
-            # DON'T force format - let camera choose best format for brightness
-            # The camera's auto-exposure works better with its default format
-            # Set resolution directly
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            # Use same camera setup as preview for consistent settings (MJPEG format, auto-exposure, etc.)
+            setup_camera_optimal(cap, resolution=(width, height))
             
-            # Enable all automatic features - trust the camera to adjust properly
-            cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
-            cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+            # Use same warmup as preview (10 seconds) - settings don't reset when switching from preview
+            warmup_camera_properly(cap, duration_seconds=10)
             
-            # Log actual camera resolution (verify camera is at requested resolution)
-            actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            actual_fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
-            fourcc_str = "".join([chr((actual_fourcc >> 8 * i) & 0xFF) for i in range(4)])
-            logger.info(f"[CALIBRATION] Requested: {width}x{height}, Actual: {actual_width}x{actual_height}, Format: {fourcc_str}")
-            print(f"[CALIBRATION] Camera resolution: {actual_width}x{actual_height} (requested {width}x{height}), Format: {fourcc_str}", file=sys.stderr)
-            
-            if actual_width != width or actual_height != height:
-                logger.warning(f"[CALIBRATION] WARNING: Camera did not accept requested resolution!")
-                print(f"[CALIBRATION] WARNING: Camera running at {actual_width}x{actual_height} instead of {width}x{height}", file=sys.stderr)
-            sys.stderr.flush()
-            
-            # Give autofocus and auto-exposure time to adjust (critical for proper lighting and sharp QR codes)
-            # Many cameras need 5-8 seconds for both to settle properly
-            logger.info("Warming up autofocus and auto-exposure (discarding 75 frames over 15 seconds)...")
-            print(f"[CALIBRATION] Waiting for autofocus and auto-exposure to settle...", file=sys.stderr)
-            for i in range(75):
-                cap.read()
-                time.sleep(0.2)  # 200ms between frames = 15 seconds total
-            logger.info("Camera warmup complete")
-            
-            # Capture frame
+            # Capture single frame to avoid RAM overload (no multi-frame capture)
             ret, frame = cap.read()
             if not ret:
                 raise Exception("Failed to capture frame from camera")
