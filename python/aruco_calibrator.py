@@ -261,13 +261,14 @@ class ArucoCornerCalibrator:
             # Use same camera setup as preview for consistent settings (MJPEG format, auto-exposure, etc.)
             setup_camera_optimal(cap, resolution=(width, height))
             
-            # Extended warmup for better autofocus stability (20 seconds)
-            warmup_camera_properly(cap, duration_seconds=20)
+            # MAXIMUM warmup for bulletproof autofocus/auto-exposure stability (40 seconds)
+            # At 4K MJPEG (~7fps), this is 280+ frames for autofocus to fully converge
+            warmup_camera_properly(cap, duration_seconds=40)
             
             # Use multi-frame sharpness selection for best focus
-            # Takes 10 frames and keeps the sharpest one
+            # Takes 50 frames and keeps the sharpest one - maximum reliability
             from camera_utils import capture_optimal_frame
-            frame = capture_optimal_frame(cap)
+            frame = capture_optimal_frame(cap, num_frames=50)
             if frame is None:
                 raise Exception("Failed to capture frame from camera")
             

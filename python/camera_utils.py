@@ -116,16 +116,22 @@ def warmup_camera_properly(cap, duration_seconds=10):
     
     logger.info(f"Warmup complete: {frame_count} frames over {duration_seconds}s")
 
-def capture_optimal_frame(cap):
+def capture_optimal_frame(cap, num_frames=50):
     """
     Capture frame with full quality pipeline (produces CRISP images)
-    Takes 15 frames and picks the sharpest one for best autofocus quality
+    Takes multiple frames and picks the sharpest one for best autofocus quality
+    
+    Args:
+        cap: OpenCV VideoCapture object
+        num_frames: Number of frames to sample (default 50 for maximum reliability)
     """
     # Take multiple frames and pick the sharpest
     best_frame = None
     best_sharpness = 0
     
-    for i in range(15):
+    logger.info(f"Capturing {num_frames} frames to select sharpest...")
+    
+    for i in range(num_frames):
         ret, frame = cap.read()
         if ret:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -133,7 +139,10 @@ def capture_optimal_frame(cap):
             if sharpness > best_sharpness:
                 best_sharpness = sharpness
                 best_frame = frame
+                logger.info(f"Frame {i+1}/{num_frames}: New best sharpness = {sharpness:.1f}")
         time.sleep(0.033)  # 30fps pace
+    
+    logger.info(f"Selected frame with sharpness = {best_sharpness:.1f}")
     
     if best_frame is None:
         return None
