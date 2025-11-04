@@ -304,23 +304,24 @@ class ArucoCornerCalibrator:
                             logger.info(f"Using MEASURED pixel density: {pixels_per_cm:.1f} px/cm (no upsampling)")
                             
                             logger.info(f"Generating native-resolution rectified image: {highres_width}x{highres_height}px ({(highres_width*highres_height/1_000_000):.1f} MP) for QR validation")
-                            rectified_highres = generate_rectified_image_from_frame(
-                                frame, homography, highres_size, paper_size_cm, templates,
+                            # Generate CLEAN version without overlays for QR validation
+                            rectified_highres_clean = generate_rectified_image_from_frame(
+                                frame, homography, highres_size, paper_size_cm, None,  # No templates - clean image
                                 camera_matrix, dist_coeffs
                             )
                             
-                            # Save high-res version to disk for QR validation
+                            # Save clean high-res version to disk for QR validation
                             import os
                             data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
                             os.makedirs(data_dir, exist_ok=True)
                             highres_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
-                            cv2.imwrite(highres_path, rectified_highres, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                            cv2.imwrite(highres_path, rectified_highres_clean, [cv2.IMWRITE_JPEG_QUALITY, 95])
                             
                             # Verify saved dimensions
-                            saved_height, saved_width = rectified_highres.shape[:2]
-                            logger.info(f"✓ Saved native-resolution rectified image: {saved_width}×{saved_height} px ({(saved_width*saved_height/1_000_000):.1f} MP)")
+                            saved_height, saved_width = rectified_highres_clean.shape[:2]
+                            logger.info(f"✓ Saved CLEAN native-resolution rectified image: {saved_width}×{saved_height} px ({(saved_width*saved_height/1_000_000):.1f} MP)")
                             logger.info(f"✓ File location: {highres_path}")
-                            logger.info(f"✓ This is the EXACT image that QR validation will use (no upsampling)")
+                            logger.info(f"✓ This is the CLEAN image (no overlays) that QR validation will use")
                             
                             # Then, generate downscaled version for UI preview
                             logger.info(f"Generating UI preview: {preview_output_size[0]}x{preview_output_size[1]}px")
