@@ -387,9 +387,24 @@ export default function TemplatePrint() {
           
           if (!overlapsSheet) return; // Skip if doesn't overlap this sheet
 
-          // Adjust coordinates relative to sheet
-          const localX = xMm - sheetOffsetX;
-          const localY = yMm - sheetOffsetY;
+          // CLAMP rectangle center to stay within sheet's safe zone
+          // Safe zone is 10mm from all edges of the sheet
+          const halfWidthMm = widthMm / 2;
+          const halfHeightMm = heightMm / 2;
+          
+          // Calculate safe zone bounds for this sheet (in global coordinates)
+          const sheetSafeLeft = sheetOffsetX + safeMarginMm + halfWidthMm;
+          const sheetSafeRight = sheetOffsetX + a4WidthMm - safeMarginMm - halfWidthMm;
+          const sheetSafeTop = sheetOffsetY + safeMarginMm + halfHeightMm;
+          const sheetSafeBottom = sheetOffsetY + a4HeightMm - safeMarginMm - halfHeightMm;
+          
+          // Clamp center position to safe zone
+          const clampedXMm = Math.max(sheetSafeLeft, Math.min(sheetSafeRight, xMm));
+          const clampedYMm = Math.max(sheetSafeTop, Math.min(sheetSafeBottom, yMm));
+
+          // Adjust coordinates relative to sheet (using clamped positions)
+          const localX = clampedXMm - sheetOffsetX;
+          const localY = clampedYMm - sheetOffsetY;
 
           pdf.saveGraphicsState();
           pdf.setDrawColor(0, 0, 0);
