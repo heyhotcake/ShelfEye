@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { clampToBounds, checkBoundaryViolations } from "@/lib/templateBounds";
-import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye } from "lucide-react";
+import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye, CheckCircle } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
 
 interface Point {
@@ -312,6 +312,36 @@ export default function SlotDrawing() {
     onError: (error) => {
       toast({
         title: "Failed to Update Template",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const validateAndFixMutation = useMutation({
+    mutationFn: (paperSize: string) => 
+      apiRequest('POST', '/api/template-rectangles/validate', { paperSize }),
+    onSuccess: (data: any) => {
+      if (data.fixed > 0) {
+        toast({
+          title: "Rectangles Auto-Corrected",
+          description: `Fixed ${data.fixed} rectangle(s) that were outside safe zones. Details: ${data.details.fixed.map((f: any) => f.autoQrId).join(', ')}`,
+          variant: "default",
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
+        // Reload the current template to show fixed positions
+        syncFromDatabase();
+      } else {
+        toast({
+          title: "All Clear",
+          description: "All rectangles are within safe zones.",
+          variant: "default",
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Validation Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -1887,6 +1917,25 @@ export default function SlotDrawing() {
                           Import File
                         </Button>
                       </div>
+                      
+                      {/* Validate & Fix Button */}
+                      <Button 
+                        onClick={() => validateAndFixMutation.mutate(paperSize)} 
+                        variant="outline"
+                        className="w-full"
+                        disabled={validateAndFixMutation.isPending}
+                        data-testid="button-validate-fix"
+                        title="Check and fix rectangles outside safe zones"
+                      >
+                        {validateAndFixMutation.isPending ? (
+                          <>Validating...</>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Validate & Fix Safe Zones
+                          </>
+                        )}
+                      </Button>
 
                       {/* Saved Template Designs List */}
                       {savedTemplateVersions.length > 0 && (

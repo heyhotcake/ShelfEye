@@ -33,6 +33,150 @@ function getCameraDeviceSource(camera: { devicePath?: string | null; deviceIndex
 // Global scheduler instance
 let scheduler: CaptureScheduler;
 
+// Server-side boundary validation (mirrors client/src/lib/templateBounds.ts)
+interface RectangleServer {
+  xCm: number;
+  yCm: number;
+  widthCm: number;
+  heightCm: number;
+}
+
+interface BoundaryViolationServer {
+  edge: 'left' | 'right' | 'top' | 'bottom';
+  amount: number;
+}
+
+function get6PageSafeBoundsServer(): { minX: number; maxX: number; minY: number; maxY: number }[] {
+  const a4WidthCm = 29.7;
+  const a4HeightCm = 21.0;
+  const safeMarginCm = 1.0;
+  
+  const sheetBounds = [];
+  
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 3; col++) {
+      const sheetOffsetX = col * a4WidthCm;
+      const sheetOffsetY = row * a4HeightCm;
+      
+      sheetBounds.push({
+        minX: sheetOffsetX + safeMarginCm,
+        maxX: sheetOffsetX + a4WidthCm - safeMarginCm,
+        minY: sheetOffsetY + safeMarginCm,
+        maxY: sheetOffsetY + a4HeightCm - safeMarginCm,
+      });
+    }
+  }
+  
+  return sheetBounds;
+}
+
+function checkBoundaryViolationsServer(rect: RectangleServer, paperSize: string): BoundaryViolationServer[] {
+  const violations: BoundaryViolationServer[] = [];
+  
+  const halfWidth = rect.widthCm / 2;
+  const halfHeight = rect.heightCm / 2;
+  
+  const leftEdge = rect.xCm - halfWidth;
+  const rightEdge = rect.xCm + halfWidth;
+  const topEdge = rect.yCm - halfHeight;
+  const bottomEdge = rect.yCm + halfHeight;
+  
+  if (paperSize === '6-page-3x2') {
+    const sheetSafeBounds = get6PageSafeBoundsServer();
+    
+    let fitsInAnySheet = false;
+    for (const sheet of sheetSafeBounds) {
+      if (leftEdge >= sheet.minX && rightEdge <= sheet.maxX &&
+          topEdge >= sheet.minY && bottomEdge <= sheet.maxY) {
+        fitsInAnySheet = true;
+        break;
+      }
+    }
+    
+    if (!fitsInAnySheet) {
+      const col = Math.floor(rect.xCm / 29.7);
+      const row = Math.floor(rect.yCm / 21.0);
+      const sheetIndex = Math.min(Math.max(row * 3 + col, 0), 5);
+      const sheet = sheetSafeBounds[sheetIndex];
+      
+      if (leftEdge < sheet.minX) violations.push({ edge: 'left', amount: sheet.minX - leftEdge });
+      if (rightEdge > sheet.maxX) violations.push({ edge: 'right', amount: rightEdge - sheet.maxX });
+      if (topEdge < sheet.minY) violations.push({ edge: 'top', amount: sheet.minY - topEdge });
+      if (bottomEdge > sheet.maxY) violations.push({ edge: 'bottom', amount: bottomEdge - sheet.maxY });
+    }
+  } else {
+    const safeMarginCm = 1.0;
+    const paperBounds: Record<string, { widthCm: number; heightCm: number }> = {
+      'A5-landscape': { widthCm: 21.0, heightCm: 14.8 },
+      'A4-landscape': { widthCm: 29.7, heightCm: 21.0 },
+      'A3-landscape': { widthCm: 42.0, heightCm: 29.7 },
+      '2xA5-landscape': { widthCm: 42.0, heightCm: 14.8 },
+      '3xA5-landscape': { widthCm: 63.0, heightCm: 14.8 },
+    };
+    
+    const bounds = paperBounds[paperSize];
+    if (bounds) {
+      const minX = safeMarginCm;
+      const maxX = bounds.widthCm - safeMarginCm;
+      const minY = safeMarginCm;
+      const maxY = bounds.heightCm - safeMarginCm;
+      
+      if (leftEdge < minX) violations.push({ edge: 'left', amount: minX - leftEdge });
+      if (rightEdge > maxX) violations.push({ edge: 'right', amount: rightEdge - maxX });
+      if (topEdge < minY) violations.push({ edge: 'top', amount: minY - topEdge });
+      if (bottomEdge > maxY) violations.push({ edge: 'bottom', amount: bottomEdge - maxY });
+    }
+  }
+  
+  return violations;
+}
+
+function clampToBoundsServer(rect: RectangleServer, paperSize: string): { xCm: number; yCm: number } {
+  const halfWidth = rect.widthCm / 2;
+  const halfHeight = rect.heightCm / 2;
+  
+  if (paperSize === '6-page-3x2') {
+    const sheetSafeBounds = get6PageSafeBoundsServer();
+    
+    const col = Math.floor(rect.xCm / 29.7);
+    const row = Math.floor(rect.yCm / 21.0);
+    const sheetIndex = Math.min(Math.max(row * 3 + col, 0), 5);
+    const sheet = sheetSafeBounds[sheetIndex];
+    
+    const minX = sheet.minX + halfWidth;
+    const maxX = sheet.maxX - halfWidth;
+    const minY = sheet.minY + halfHeight;
+    const maxY = sheet.maxY - halfHeight;
+    
+    return {
+      xCm: Math.max(minX, Math.min(maxX, rect.xCm)),
+      yCm: Math.max(minY, Math.min(maxY, rect.yCm)),
+    };
+  } else {
+    const safeMarginCm = 1.0;
+    const paperBounds: Record<string, { widthCm: number; heightCm: number }> = {
+      'A5-landscape': { widthCm: 21.0, heightCm: 14.8 },
+      'A4-landscape': { widthCm: 29.7, heightCm: 21.0 },
+      'A3-landscape': { widthCm: 42.0, heightCm: 29.7 },
+      '2xA5-landscape': { widthCm: 42.0, heightCm: 14.8 },
+      '3xA5-landscape': { widthCm: 63.0, heightCm: 14.8 },
+    };
+    
+    const bounds = paperBounds[paperSize];
+    if (!bounds) return { xCm: rect.xCm, yCm: rect.yCm };
+    
+    const minX = safeMarginCm + halfWidth;
+    const maxX = bounds.widthCm - safeMarginCm - halfWidth;
+    const minY = safeMarginCm + halfHeight;
+    const maxY = bounds.heightCm - safeMarginCm - halfHeight;
+    
+    return {
+      xCm: Math.max(minX, Math.min(maxX, rect.xCm)),
+      yCm: Math.max(minY, Math.min(maxY, rect.yCm)),
+    };
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   scheduler = new CaptureScheduler(storage);
   await scheduler.initialize();
@@ -2075,6 +2219,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete template rectangle", error });
+    }
+  });
+
+  // Validate and auto-correct template rectangles for a paper size
+  app.post("/api/template-rectangles/validate", async (req, res) => {
+    try {
+      const { paperSize } = req.body;
+      if (!paperSize || typeof paperSize !== 'string') {
+        return res.status(400).json({ message: "Paper size is required" });
+      }
+
+      const rectangles = await storage.getTemplateRectanglesByPaperSize(paperSize);
+      const categories = await storage.getToolCategories();
+      
+      const fixed: any[] = [];
+      const errors: any[] = [];
+
+      for (const rect of rectangles) {
+        const category = categories.find(c => c.id === rect.categoryId);
+        if (!category) {
+          errors.push({ id: rect.id, autoQrId: rect.autoQrId, error: "Category not found" });
+          continue;
+        }
+
+        const violations = checkBoundaryViolationsServer(
+          { xCm: rect.xCm, yCm: rect.yCm, widthCm: category.widthCm, heightCm: category.heightCm },
+          paperSize
+        );
+
+        if (violations.length > 0) {
+          const clamped = clampToBoundsServer(
+            { xCm: rect.xCm, yCm: rect.yCm, widthCm: category.widthCm, heightCm: category.heightCm },
+            paperSize
+          );
+
+          await storage.updateTemplateRectangle(rect.id, {
+            xCm: clamped.xCm,
+            yCm: clamped.yCm,
+          });
+
+          fixed.push({
+            id: rect.id,
+            autoQrId: rect.autoQrId,
+            oldPosition: { xCm: rect.xCm, yCm: rect.yCm },
+            newPosition: { xCm: clamped.xCm, yCm: clamped.yCm },
+            violations: violations.map(v => v.edge),
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        fixed: fixed.length,
+        errors: errors.length,
+        details: { fixed, errors },
+      });
+    } catch (error) {
+      console.error('Error validating template rectangles:', error);
+      res.status(500).json({ message: "Failed to validate template rectangles", error });
     }
   });
 
