@@ -289,6 +289,12 @@ export default function TemplatePrint() {
   const handleDownload = () => {
     if (!arucoMarkers || !qrCodes) return;
 
+    console.log('[PDF] Starting PDF generation');
+    console.log('[PDF] Using template rectangles:', templatesWithCategories.length);
+    templatesWithCategories.forEach((rect, i) => {
+      console.log(`[PDF] Rect ${i}: xCm=${rect.xCm}, yCm=${rect.yCm}, width=${rect.category.widthCm}cm, height=${rect.category.heightCm}cm`);
+    });
+
     // Helper to convert cm to mm
     const cmToMm = (cm: number) => cm * 10;
 
