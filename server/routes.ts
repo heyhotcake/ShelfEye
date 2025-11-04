@@ -662,6 +662,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get slots for this camera
       const slots = await storage.getSlotsByCamera(cameraId);
       console.log(`[Validation] Found ${slots.length} slots for camera`);
+      
+      // DEBUG: Log raw slot data from database
+      console.log(`[Validation] DEBUG: Raw slots from database:`, slots.map(s => ({ 
+        id: s.id, 
+        slotId: s.slotId, 
+        expectedQrId: s.expectedQrId,
+        toolName: s.toolName 
+      })));
+      
       if (slots.length === 0) {
         console.error(`[Validation] No slots configured for this camera`);
         return res.status(400).json({ message: "No slots configured for this camera" });
@@ -685,6 +694,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Validation] ${idx + 1}. ${slot.id} (${slot.toolName}): x=${slot.x.toFixed(2)}cm, y=${slot.y.toFixed(2)}cm, size=${slot.width}x${slot.height}cm, rot=${slot.rotation}°`);
       });
       console.log(`[Validation] ==================================================`);
+      
+      // DEBUG: Log the exact JSON being passed to Python
+      console.log(`[Validation] DEBUG: expectedSlots JSON:`, JSON.stringify(expectedSlots, null, 2));
 
       // Acquire exclusive camera lock AFTER validation succeeds
       // This includes a 10-second delay to ensure any preview process has fully released the camera
