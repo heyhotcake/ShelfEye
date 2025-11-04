@@ -552,6 +552,11 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         
         print(f"  ROI size: {roi.shape[1]}x{roi.shape[0]}px at ({roi_x1},{roi_y1})", file=sys.stderr)
         
+        # DEBUG: Save ROI image to inspect what we're actually scanning
+        debug_roi_path = os.path.join(data_dir, f'validation_roi_{slot_id}.jpg')
+        cv2.imwrite(debug_roi_path, roi)
+        print(f"  DEBUG: Saved ROI to {debug_roi_path}", file=sys.stderr)
+        
         # Scan this ROI for QR codes (limit to 1 expected in this slot)
         roi_qr_results = decode_qr_codes(roi, expected_count=1)
         
