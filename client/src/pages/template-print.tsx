@@ -102,9 +102,8 @@ export default function TemplatePrint() {
               body: JSON.stringify({
                 type: 'slot',
                 id: rect.autoQrId,
-                errorCorrection: 'L',
-                moduleSize: 15,
-                includeHmac: true,
+                errorCorrection: 'L', // Lowest error correction = largest modules
+                moduleSize: 40, // Larger modules for 3cm x 3cm QR codes (was 15)
               }),
             });
             
