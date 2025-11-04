@@ -1094,14 +1094,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Turn on LED light for consistent illumination during preview (matches calibration)
-      console.log('[Preview] Turning on white LED light...');
-      const ledResult = await setWhiteLight(true);
-      console.log('[Preview] LED white light result:', ledResult);
-      
-      // Small delay to ensure LED is on
-      await new Promise(resolve => setTimeout(resolve, 500));
-
       // Call Python preview script
       // Use device path if available, otherwise use device index
       const deviceSource = camera.devicePath || camera.deviceIndex?.toString() || '0';
@@ -1150,11 +1142,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      pythonProcess.on('close', async (code) => {
+      pythonProcess.on('close', (code) => {
         if (responseSent) return;
-        
-        // Turn off LED light after preview capture
-        await turnOffLED().catch(err => console.error('[Preview] LED turnoff error:', err));
         
         // Note: Preview lock is auto-expired after 5 seconds, so no explicit release needed
         // The lock will be cleaned up automatically by the session manager
@@ -1172,8 +1161,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      // Turn off LED on unexpected errors
-      await turnOffLED();
       res.status(500).json({ message: "Preview error", error });
     }
   });

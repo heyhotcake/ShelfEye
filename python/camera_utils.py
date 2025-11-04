@@ -71,8 +71,9 @@ def setup_camera_optimal(cap, resolution=(3840, 2160)):
     """
     width, height = resolution
     
-    # Don't force format - let camera choose best
-    # cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))  # DON'T FORCE
+    # Force MJPEG format for 4K - YUYV saturates USB bandwidth and throttles to 0.1fps
+    # MJPEG compression allows 7-10fps at 4K, which lets auto-exposure converge
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     
     # Set resolution
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -86,7 +87,9 @@ def setup_camera_optimal(cap, resolution=(3840, 2160)):
     # Log what was actually set
     actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    logger.info(f"Camera resolution: {actual_width}x{actual_height}")
+    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+    fourcc_str = "".join([chr((fourcc >> 8 * i) & 0xFF) for i in range(4)])
+    logger.info(f"Camera format: {fourcc_str}, resolution: {actual_width}x{actual_height}")
     
 def warmup_camera_properly(cap, duration_seconds=10):
     """
