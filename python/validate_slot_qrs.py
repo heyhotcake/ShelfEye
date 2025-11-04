@@ -298,6 +298,9 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         sys.stderr.flush()
         cap = cv2.VideoCapture(0)
         
+        # Force MJPEG format for 4K - YUYV saturates USB bandwidth and throttles to 0.1fps
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        
         # Set camera to highest resolution for better QR detection
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)

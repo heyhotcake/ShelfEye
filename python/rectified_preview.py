@@ -199,7 +199,9 @@ def generate_rectified_preview(
         
         width, height = resolution
         
-        # Let OpenCV choose best format (YUV2, MJPEG, etc.) based on camera capability
+        # Force MJPEG format - YUYV at high res throttles to 0.1fps
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         

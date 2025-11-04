@@ -66,6 +66,9 @@ class CameraDiagnostic:
             
             result['details']['accessible'] = True
             
+            # Force MJPEG format - YUYV at high res throttles to 0.1fps
+            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+            
             # Check 2: Set resolution
             width, height = resolution
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)

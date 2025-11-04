@@ -111,6 +111,9 @@ def validate_slot_qrs(camera_id, mode='visible'):
     # Camera capture at MAXIMUM resolution
     cap = cv2.VideoCapture(0)
     
+    # Force MJPEG format - YUYV at high res throttles to 0.1fps
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    
     # Try to set maximum 4K resolution for best QR detection
     # Camera will fall back to best supported resolution if 4K not available
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)

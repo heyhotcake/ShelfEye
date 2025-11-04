@@ -34,6 +34,9 @@ class CameraManager:
                 logger.error(f"Failed to open camera {self.camera_index}")
                 return False
             
+            # Force MJPEG format - YUYV at high res throttles to 0.1fps
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+            
             # Set camera properties
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
