@@ -548,8 +548,8 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         width_px = int(width_cm * scale_x)
         height_px = int(height_cm * scale_y)
         
-        # Add 20% padding around slot for better QR detection (in case QR is slightly outside)
-        padding = 0.2
+        # Add 40% padding around slot for better QR detection (in case QR is slightly outside)
+        padding = 0.4
         padded_width = int(width_px * (1 + padding))
         padded_height = int(height_px * (1 + padding))
         
