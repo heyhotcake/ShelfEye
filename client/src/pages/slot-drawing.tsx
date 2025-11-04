@@ -1704,6 +1704,42 @@ export default function SlotDrawing() {
                           </div>
                           
                           <div className="mt-3 pt-3 border-t border-blue-500/20">
+                            <label className="text-xs font-medium text-blue-500 block mb-1">
+                              Expected QR ID
+                            </label>
+                            <Input
+                              placeholder="e.g., pen-004, tool-001"
+                              value={selectedTemplateRect.autoQrId || ''}
+                              onChange={(e) => {
+                                const newQrId = e.target.value;
+                                setTemplateRectangles(prev => prev.map(r => 
+                                  r.id === selectedTemplateRect.id ? { ...r, autoQrId: newQrId } : r
+                                ));
+                                setSelectedTemplateRect({ ...selectedTemplateRect, autoQrId: newQrId });
+                              }}
+                              onBlur={() => {
+                                // Save to database when user leaves the field
+                                updateTemplateRectMutation.mutate({
+                                  id: selectedTemplateRect.id,
+                                  data: {
+                                    categoryId: selectedTemplateRect.categoryId,
+                                    paperSize: paperSize,
+                                    xCm: selectedTemplateRect.xCm,
+                                    yCm: selectedTemplateRect.yCm,
+                                    rotation: selectedTemplateRect.rotation || 0,
+                                    autoQrId: selectedTemplateRect.autoQrId,
+                                  }
+                                });
+                              }}
+                              className="text-sm"
+                              data-testid="input-expected-qr-id"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1 italic">
+                              QR code ID that should be detected in this slot
+                            </p>
+                          </div>
+                          
+                          <div className="mt-3 pt-3 border-t border-blue-500/20">
                             <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
