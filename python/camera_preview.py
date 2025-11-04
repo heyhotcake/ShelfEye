@@ -2,6 +2,7 @@
 """
 Camera Preview Script
 Captures a single frame from camera and saves as base64 for web display
+Uses October 31st proven pipeline for bright, natural images
 """
 
 import cv2
@@ -9,6 +10,11 @@ import sys
 import json
 import base64
 import logging
+import os
+
+# Add parent directory to path to import camera_utils
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from camera_utils import setup_camera_optimal, warmup_camera_properly, capture_optimal_frame
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,6 +22,7 @@ logger = logging.getLogger(__name__)
 def capture_preview(device_source, width: int = 2560, height: int = 1440):
     """
     Capture a single frame from camera and return as base64 JPEG
+    Uses the October 31st proven pipeline that produced bright, natural images
     
     Args:
         device_source: Camera device index (int) or device path (str like /dev/video0)
@@ -43,43 +50,23 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
                 'error': f'Cannot open camera device {device_source}'
             }
         
-        # Force MJPEG format for better color and dynamic range at high resolution
-        # YUYV can have exaggerated shadows and limited dynamic range
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        # Use October 31st proven camera setup
+        setup_camera_optimal(cap, resolution=(width, height))
         
-        # Set resolution
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        # Warmup camera properly (10 seconds at 30fps - proven on Oct 31st)
+        warmup_camera_properly(cap, duration_seconds=10)
         
-        # Enable auto-exposure and let camera handle everything
-        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode)
-        cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+        # Capture optimal frame with multi-frame selection and post-processing
+        # This applies: auto brightness/contrast, gamma correction, sharpening
+        frame = capture_optimal_frame(cap)
         
-        # Log what format was actually set
-        fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
-        fourcc_str = "".join([chr((fourcc >> 8 * i) & 0xFF) for i in range(4)])
-        logger.info(f"Camera format: {fourcc_str}, Resolution: {int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))}")
-        
-        # Don't set brightness/contrast/saturation/gain - let camera decide
-        
-        # Warmup: Let auto-exposure and autofocus settle (discard first few frames)
-        # Camera needs time BETWEEN frames to analyze and adjust - not just frame count
-        import time
-        logger.info("Warming up camera (auto-exposure, autofocus, white balance)...")
-        for i in range(75):
-            cap.read()
-            time.sleep(0.2)  # 200ms between frames = 15 seconds total
-        
-        # Capture frame
-        ret, frame = cap.read()
-        if not ret or frame is None:
+        if frame is None:
             return {
                 'ok': False,
                 'error': 'Failed to capture frame'
             }
         
-        # Encode as JPEG with high quality to preserve camera's natural output
+        # Encode as JPEG with high quality
         _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
         
         # Convert to base64
