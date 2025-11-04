@@ -1,14 +1,16 @@
 # Tool Tracking System - Compressed Development Guide
 
 ## Overview
-A Raspberry Pi-based automated tool monitoring system utilizing computer vision, QR codes, and ArUco markers for real-time tool tracking across multiple cameras. Its core purpose is to prevent tool loss and improve accountability in workshops by tracking tool presence and checkout status. Key features include QR code validation, temporal smoothing for presence detection, multi-channel alerting (email, Google Sheets, sound), and a React web dashboard for calibration, configurable slot management, analytics, and system administration. The system supports 4K cameras with intelligent dual-resolution modes for live preview and high-accuracy calibration/capture.
+A Raspberry Pi-based automated tool monitoring system utilizing computer vision and ArUco markers for real-time tool tracking across multiple cameras. Its core purpose is to prevent tool loss and improve accountability in workshops by tracking tool presence and checkout status. Key features include ArUco marker validation, temporal smoothing for presence detection, multi-channel alerting (email, Google Sheets, sound), and a React web dashboard for calibration, configurable slot management, analytics, and system administration. The system supports 4K cameras with intelligent dual-resolution modes for live preview and high-accuracy calibration/capture. Worker QR codes are still used for checkout tracking.
 
 ## Recent Changes (Nov 4, 2025)
-- **Switched from QR Codes to ArUco Markers for Slots**: Replaced QR code-based slot identification with ArUco markers for simplicity and better integration with existing calibration system.
-  - **Corner markers**: IDs 96-99 (reserved high IDs to avoid conflicts) - A=96 (top-left), B=97 (top-right), C=98 (bottom-right), D=99 (bottom-left)
-  - **Slot markers**: IDs 1-50 (supports up to 50 slots per camera)
-  - **Dictionary**: DICT_4X4_100 (supports IDs 0-99)
-  - Updated: `aruco_calibrator.py`, `validate_slot_qrs.py`, `template-print.tsx`, `aruco_generator.py`
+- **Completed QR-to-ArUco Migration Cleanup**: Fully transitioned from QR code-based slot identification to ArUco marker system with comprehensive code cleanup.
+  - **ArUco Marker IDs**: Corner markers (96-99), Slot markers (1-50), Dictionary (DICT_4X4_100)
+  - **API Endpoints**: Renamed `/validate-qrs-*` to `/validate-markers-*` for clarity
+  - **Frontend**: Updated all UI labels, toast messages, and mutation names to reflect ArUco marker terminology
+  - **Database Schema**: Added clarifying comments to legacy columns (expectedQrId, qrId, autoQrId now store ArUco marker IDs)
+  - **Code Cleanup**: Removed unused QR detection Python scripts (aggressive_qr_detection.py, diagnose_qr_detection.py, find_actual_qr_positions.py, qr_detector.py, test_qr_detection.py, validate_slot_qrs_highres.py)
+  - **Backward Compatibility**: Database column names preserved to avoid breaking existing data
 
 ## User Preferences
 - Preferred communication style: Simple, everyday language.
@@ -24,7 +26,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 ### Backend Architecture
 - **Framework & Runtime**: Express.js on Node.js with TypeScript and ESM modules.
 - **API Design**: RESTful endpoints in JSON format, handling child process spawning for Python CV operations and file system operations.
-- **Python Integration**: OpenCV-based computer vision modules (ArUco calibration, QR decoding, homography) executed as child processes for perspective correction and slot QR visibility detection.
+- **Python Integration**: OpenCV-based computer vision modules (ArUco calibration, ArUco marker detection, homography) executed as child processes for perspective correction and slot marker visibility detection.
 
 ### Data Storage
 - **Database**: PostgreSQL (Neon serverless) using Drizzle ORM for persistent storage of cameras, slots, detection logs, alert rules, system config, and workers.
@@ -32,8 +34,8 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - **Data Retention & Cleanup**: Detection logs (3 years), ROI images (3 months), sent alerts (30 days). Daily maintenance runs at 3:00 AM JST. Emergency/accelerated cleanup triggered by disk usage thresholds.
 
 ### System Design Choices
-- **UI/UX**: Calibration system uses paper size formats (e.g., "A4-landscape"). Rectified preview with grid and template overlays. 6-Page multi-sheet template system for large areas with automated slot creation. Dual-image calibration output: clean version for QR validation (no overlays) and labeled version for user download (with grid/labels).
-- **Technical Implementations**: Auto-start and auto-update via systemd services. GPIO LED light strip integration for dual-purpose lighting and visual alerts. Worker QR validation against a database for checkout tracking. Simplified QR-based detection logic.
+- **UI/UX**: Calibration system uses paper size formats (e.g., "A4-landscape"). Rectified preview with grid and template overlays. 6-Page multi-sheet template system for large areas with automated slot creation. Dual-image calibration output: clean version for marker validation (no overlays) and labeled version for user download (with grid/labels).
+- **Technical Implementations**: Auto-start and auto-update via systemd services. GPIO LED light strip integration for dual-purpose lighting and visual alerts. Worker QR codes used for checkout tracking. Binary ArUco marker detection logic for slot monitoring.
 - **LED Strip Configuration**: Two WS2812B LED strips (99 total LEDs) on GPIO 18 (BCM), requiring an external 5V power supply and a 3.3V to 5V logic level shifter for data signal.
 - **Detection & Alert System**: State machine for tool presence. Binary detection logic based on ArUco marker visibility. Worker validation. Time-based monitoring with grace periods. Queue-based alerts with retry logic.
 - **ArUco Marker Strategy**: Per-slot ROI (Region of Interest) scanning for optimal accuracy with up to 50 slots. Each slot is identified by a unique ArUco marker (IDs 1-50). Corner markers (IDs 96-99) are used for calibration and perspective correction. ArUco detection is simpler and more robust than QR codes, with built-in OpenCV support.
@@ -53,7 +55,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - **Warmup**: 10 seconds continuous frame capture to allow auto-exposure convergence (152+ frames at 1920x1080, 70-100 frames at 4K)
 - **Post-processing Pipeline**: Multi-frame sharpness selection → auto brightness/contrast → gamma correction (1.15) → sharpening
 - **Memory Optimization**: Buffer size = 1, single-frame calibration, immediate grayscale conversion for validation
-- **ALL Python scripts** must force MJPEG: camera_preview.py, aruco_calibrator.py, validate_slot_qrs.py, camera_manager.py, rectified_preview.py, process_cameras.py, camera_diagnostic.py, validate_slot_qrs_highres.py
+- **ALL Python scripts** must force MJPEG: camera_preview.py, aruco_calibrator.py, validate_slot_qrs.py, camera_manager.py, rectified_preview.py, process_cameras.py, camera_diagnostic.py
 
 ## External Dependencies
 
@@ -63,8 +65,8 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision,
 - **Google Sheets API**: Secondary logging destination.
 
 ### Computer Vision Libraries
-- **OpenCV**: ArUco detection, image processing, homography, QR decoding.
-- **pyzbar**: Primary QR code decoder.
+- **OpenCV**: ArUco marker detection, image processing, homography, perspective correction.
+- **pyzbar**: Worker QR code decoder for checkout tracking.
 
 ### UI Component Libraries
 - **Radix UI Primitives**: Accessible UI components.
