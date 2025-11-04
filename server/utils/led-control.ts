@@ -54,7 +54,7 @@ export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
         path.join(process.cwd(), 'python/unified_led_controller.py'),
         '--pin', pin.toString(),
         '--action', 'white',
-        '--num-leds', '27',
+        '--num-leds', '99',
         '--brightness', '100'  // Reduced brightness for new 4K camera
       ]);
 
