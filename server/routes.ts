@@ -1098,12 +1098,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use device path if available, otherwise use device index
       const deviceSource = camera.devicePath || camera.deviceIndex?.toString() || '0';
       
-      // Use full camera resolution for preview to ensure sharp QR codes
-      // The camera's auto-exposure and autofocus work best at native resolution
-      const previewWidth = camera.resolution[0];
-      const previewHeight = camera.resolution[1];
+      // Use 1920x1080 for preview to avoid RAM overload on 2GB Raspberry Pi
+      // Calibration uses full resolution (3840x2160) but same camera settings
+      const previewWidth = 1920;
+      const previewHeight = 1080;
       
-      console.log(`[Preview] Using full camera resolution: ${previewWidth}x${previewHeight}`);
+      console.log(`[Preview] Using lower resolution for RAM efficiency: ${previewWidth}x${previewHeight}`);
       
       const pythonProcess = spawn('python3', [
         path.join(process.cwd(), 'python/camera_preview.py'),
