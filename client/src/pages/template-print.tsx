@@ -391,10 +391,8 @@ export default function TemplatePrint() {
           const overlapsSheet = !(rectRightMm <= sheetLeftMm || rectLeftMm >= sheetRightMm ||
                                   rectBottomMm <= sheetTopMm || rectTopMm >= sheetBottomMm);
           
-          if (sheetNum === 6) {
-            console.log(`[PDF] Sheet 6, Rect ${rectIndex}: center=(${xMm}, ${yMm}), bounds=[${rectLeftMm}, ${rectTopMm}, ${rectRightMm}, ${rectBottomMm}]`);
-            console.log(`[PDF] Sheet bounds=[${sheetLeftMm}, ${sheetTopMm}, ${sheetRightMm}, ${sheetBottomMm}], overlaps=${overlapsSheet}`);
-          }
+          console.log(`[PDF] Sheet ${sheetNum}, Rect ${rectIndex}: center=(${xMm}, ${yMm}), bounds=[${rectLeftMm}, ${rectTopMm}, ${rectRightMm}, ${rectBottomMm}]`);
+          console.log(`[PDF] Sheet ${sheetNum} bounds=[${sheetLeftMm}, ${sheetTopMm}, ${sheetRightMm}, ${sheetBottomMm}], overlaps=${overlapsSheet}`);
           
           if (!overlapsSheet) return; // Skip if doesn't overlap this sheet
 
@@ -402,9 +400,7 @@ export default function TemplatePrint() {
           const localX = xMm - sheetOffsetX;
           const localY = yMm - sheetOffsetY;
           
-          if (sheetNum === 6) {
-            console.log(`[PDF] Sheet 6, Rect ${rectIndex}: Drawing at local=(${localX}, ${localY})`);
-          }
+          console.log(`[PDF] Sheet ${sheetNum}, Rect ${rectIndex}: Drawing at local=(${localX}, ${localY})`);
 
           pdf.saveGraphicsState();
           pdf.setDrawColor(0, 0, 0);
