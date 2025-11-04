@@ -298,17 +298,24 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         sys.stderr.flush()
         cap = cv2.VideoCapture(0)
         
-        # Don't force MJPEG - let camera firmware choose best format for quality
-        # High-quality cameras often have better native formats than MJPEG
+        # Force MJPEG format for 4K capture reliability
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
         
         # Set camera to highest resolution for better QR detection
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
         
-        # Enable all automatic features - trust the camera to adjust properly
+        # Manual exposure control for low-light conditions
         cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
         cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # Manual mode
+        cap.set(cv2.CAP_PROP_EXPOSURE, -6)  # Longer exposure
+        
+        # Aggressive brightness/contrast/gain for low-light
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, 160)
+        cap.set(cv2.CAP_PROP_CONTRAST, 150)
+        cap.set(cv2.CAP_PROP_SATURATION, 130)
+        cap.set(cv2.CAP_PROP_GAIN, 100)
         
         # Log actual resolution achieved
         actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))

@@ -78,13 +78,19 @@ def setup_camera_optimal(cap, resolution=(3840, 2160)):
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
     
-    # Enable all auto features - trust camera firmware completely
+    # Enable autofocus and auto white balance
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # Mode 3 = Aperture Priority
     cap.set(cv2.CAP_PROP_AUTO_WB, 1)
     
-    # Don't override brightness/contrast/saturation/gain - let camera firmware decide
-    # High-quality cameras have excellent automatic processing
+    # Manual exposure control for low-light - disable auto-exposure
+    cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # 0.25 = manual mode
+    cap.set(cv2.CAP_PROP_EXPOSURE, -6)  # Longer exposure for low-light (1/8 second)
+    
+    # Aggressive brightness/contrast/gain for low-light ArUco detection
+    cap.set(cv2.CAP_PROP_BRIGHTNESS, 160)  # Boosted from default 128
+    cap.set(cv2.CAP_PROP_CONTRAST, 150)    # Higher contrast for sharp markers
+    cap.set(cv2.CAP_PROP_SATURATION, 130)  # Moderate saturation
+    cap.set(cv2.CAP_PROP_GAIN, 100)        # Significant gain boost for low-light
     
     # Log what was actually set
     actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
