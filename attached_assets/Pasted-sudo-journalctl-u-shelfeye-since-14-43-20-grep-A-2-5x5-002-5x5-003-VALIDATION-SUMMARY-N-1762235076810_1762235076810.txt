@@ -1,0 +1,24 @@
+sudo journalctl -u shelfeye --since "14:43:20" | grep -A 2 "5x5-002\|5x5-003\|VALIDATION SUMMARY"
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [VALIDATION] Slot 6/7: 5x5-002 (expected QR: '5x5-002')
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   ROI size: 188x188px at (2427,1107)
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_5x5-002.jpg
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [Validation] Python stderr:   DEBUG: ROI shape=(188, 188), dtype=uint8, min=20, max=194
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   DEBUG: Starting QR decode for slot 5x5-002...
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [Validation] Python stderr: QR detected via pyzbar_binary_150_x2.0: 5x5-002
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [DECODE] Early exit: found 1/1 QRs at scale 3.0
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   DEBUG: Decode complete. Found 1 QR codes
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [Validation] Python stderr:   ✓ Detected QR: '5x5-002' via pyzbar_binary_150_x2.0
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   ✓ CORRECT: Matches expected QR '5x5-002'
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [VALIDATION] Slot 7/7: 5x5-003 (expected QR: '5x5-003')
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   ROI size: 188x170px at (192,1160)
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_5x5-003.jpg
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   DEBUG: ROI shape=(170, 188), dtype=uint8, min=28, max=196
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   DEBUG: Starting QR decode for slot 5x5-003...
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [Validation] Python stderr: QR detected via pyzbar_binary_150_x2.0: 5x5-003
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [DECODE] Early exit: found 1/1 QRs at scale 3.0
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   DEBUG: Decode complete. Found 1 QR codes
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   ✓ Detected QR: '5x5-003' via pyzbar_binary_150_x2.0
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [Validation] Python stderr:   ✓ CORRECT: Matches expected QR '5x5-003'
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]: [VALIDATION] Summary:
+Nov 04 14:43:21 NaniwaTanaCheck pi-startup.sh[5620]:   - Success: False
+naniwa@NaniwaTanaCheck:~/ShelfEye $

@@ -88,11 +88,44 @@ def decode_qr_codes(image, expected_count=None):
                 pass
             return False
         
+        # Helper function to try OpenCV QR detector (fallback when pyzbar fails)
+        def try_opencv_decode(img, method_name):
+            try:
+                data, points, _ = opencv_detector.detectAndDecode(img)
+                if data and data not in found_qr_data:
+                    found_qr_data.add(data)
+                    # Estimate center from points
+                    if points is not None and len(points) > 0:
+                        pts = points[0]
+                        x = int(np.mean(pts[:, 0]) / scale)
+                        y = int(np.mean(pts[:, 1]) / scale)
+                        w = int((np.max(pts[:, 0]) - np.min(pts[:, 0])) / scale)
+                        h = int((np.max(pts[:, 1]) - np.min(pts[:, 1])) / scale)
+                    else:
+                        x, y, w, h = 0, 0, img.shape[1], img.shape[0]
+                    
+                    results.append({
+                        'data': data,
+                        'type': 'QRCODE',
+                        'rect': {'x': x, 'y': y, 'width': w, 'height': h},
+                        'polygon': [(int(p[0]/scale), int(p[1]/scale)) for p in points[0]] if points is not None else [],
+                        'center': (x + w / 2, y + h / 2),
+                        'detection_method': f'opencv_{method_name}'
+                    })
+                    print(f"QR detected via opencv_{method_name}: {data}", file=sys.stderr)
+                    
+                    if expected_count and len(found_qr_data) >= expected_count:
+                        return True
+            except:
+                pass
+            return False
+        
         # Try preprocessing methods in order, with early exit
         # Process and discard immediately to save memory
         
         # 1. Original grayscale (input is already grayscale)
         if try_decode(scaled_gray, f'grayscale_x{scale}'): continue
+        if try_opencv_decode(scaled_gray, f'grayscale_x{scale}'): continue
         
         # 2. Binary threshold - try most effective value first
         _, binary_127 = cv2.threshold(scaled_gray, 127, 255, cv2.THRESH_BINARY)
