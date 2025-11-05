@@ -1485,16 +1485,15 @@ export default function SlotDrawing() {
     const category = toolCategories.find((c: any) => c.id === categoryId);
     if (!category) return;
 
-    // Generate unique ArUco marker ID (per-template sequential numbering)
-    // Get all rectangles for this template/paper size
-    const templateRectsForSize = templateRectangles.filter(r => r.paperSize === paperSize);
-    const nextSlotNumber = templateRectsForSize.length + 1;
+    // Generate unique ArUco marker ID (per-saved-template-design sequential numbering)
+    // Count slots in the CURRENT template design only
+    const nextSlotNumber = templateRectangles.length + 1;
     
     // ArUco marker IDs: 1-50 for slots (96-99 reserved for corners)
     if (nextSlotNumber > 50) {
       toast({
         title: "Slot Limit Reached",
-        description: "Maximum 50 slots per template. ArUco marker IDs 1-50 are used for slots, 96-99 are reserved for corners.",
+        description: "Maximum 50 slots per template design. ArUco marker IDs 1-50 are used for slots, 96-99 are reserved for corners.",
         variant: "destructive",
       });
       return;
