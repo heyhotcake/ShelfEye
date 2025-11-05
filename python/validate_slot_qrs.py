@@ -19,7 +19,7 @@ os.environ['OPENCV_LOG_LEVEL'] = 'FATAL'
 cv2.setLogLevel(0)
 
 def decode_aruco_markers(image, expected_count=None):
-    """Decode all ArUco markers in image
+    """Decode all ArUco markers in image with robust detection for printed markers
     
     Args:
         image: Input image to scan for ArUco markers
@@ -32,6 +32,24 @@ def decode_aruco_markers(image, expected_count=None):
     # Slot markers: 1-50, Corner markers: 96-99 (reserved)
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     aruco_params = cv2.aruco.DetectorParameters()
+    
+    # CRITICAL: Relax parameters for printed markers (not perfect lab conditions)
+    # These settings are optimized for real-world printed markers with potential:
+    # - Print imperfections, slight distortion, varying lighting
+    # - Similar to what worked for QR code detection
+    aruco_params.adaptiveThreshWinSizeMin = 3
+    aruco_params.adaptiveThreshWinSizeMax = 53
+    aruco_params.adaptiveThreshWinSizeStep = 4
+    aruco_params.minMarkerPerimeterRate = 0.03
+    aruco_params.maxMarkerPerimeterRate = 4.0
+    aruco_params.polygonalApproxAccuracyRate = 0.05
+    aruco_params.minCornerDistanceRate = 0.05
+    aruco_params.minDistanceToBorder = 3
+    aruco_params.minMarkerDistanceRate = 0.05
+    aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+    aruco_params.cornerRefinementWinSize = 5
+    aruco_params.cornerRefinementMaxIterations = 30
+    aruco_params.cornerRefinementMinAccuracy = 0.1
     
     # Input is already grayscale from rectification (memory-optimized)
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -468,26 +486,23 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"  DEBUG: Saved ROI to {debug_roi_path}", file=sys.stderr)
         print(f"  DEBUG: ROI shape={roi.shape}, dtype={roi.dtype}, min={roi.min()}, max={roi.max()}", file=sys.stderr)
         
-        # ALWAYS apply contrast boost to improve QR detection reliability
-        # Even "good" overall contrast doesn't guarantee QR codes are readable
-        print(f"  DEBUG: Pixel range={roi.max() - roi.min()}, applying contrast boost", file=sys.stderr)
-        
-        # Normalize to full 0-255 range
-        roi_to_scan = cv2.normalize(roi, None, 0, 255, cv2.NORM_MINMAX)
-        
-        # Apply CLAHE for local contrast enhancement (critical for washed-out QR codes)
-        clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8,8))
-        roi_to_scan = clahe.apply(roi_to_scan)
-        
-        # Save boosted version for debugging
-        boosted_path = os.path.join(data_dir, f'validation_roi_{slot_id}_boosted.jpg')
-        cv2.imwrite(boosted_path, roi_to_scan)
-        print(f"  DEBUG: Saved contrast-boosted ROI to {boosted_path}", file=sys.stderr)
-        
-        # Scan this ROI for ArUco markers (limit to 1 expected in this slot)
-        print(f"  DEBUG: Starting ArUco decode for slot {slot_id}...", file=sys.stderr)
-        roi_marker_results = decode_aruco_markers(roi_to_scan, expected_count=1)
+        # For ArUco markers, try detection on ORIGINAL image first (no preprocessing)
+        # ArUco markers are simpler patterns than QR codes and work better without aggressive preprocessing
+        print(f"  DEBUG: Starting ArUco decode for slot {slot_id} (original image)...", file=sys.stderr)
+        roi_marker_results = decode_aruco_markers(roi, expected_count=1)
         print(f"  DEBUG: Decode complete. Found {len(roi_marker_results)} ArUco markers", file=sys.stderr)
+        
+        # If no markers found, try with light preprocessing as fallback
+        if not roi_marker_results:
+            print(f"  DEBUG: No markers on original, trying with normalization...", file=sys.stderr)
+            roi_normalized = cv2.normalize(roi, None, 0, 255, cv2.NORM_MINMAX)
+            
+            # Save normalized version for debugging
+            boosted_path = os.path.join(data_dir, f'validation_roi_{slot_id}_normalized.jpg')
+            cv2.imwrite(boosted_path, roi_normalized)
+            
+            roi_marker_results = decode_aruco_markers(roi_normalized, expected_count=1)
+            print(f"  DEBUG: Normalized attempt found {len(roi_marker_results)} ArUco markers", file=sys.stderr)
         
         if roi_marker_results:
             # ArUco marker detected in this slot's ROI
