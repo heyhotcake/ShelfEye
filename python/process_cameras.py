@@ -263,9 +263,14 @@ class CameraProcessor:
             Processing result
         """
         camera_id = camera_data.get('id')
+        device_path = camera_data.get('devicePath')
         device_index = camera_data.get('deviceIndex', 0)
         resolution = camera_data.get('resolution', [2560, 1440])
         homography = camera_data.get('homographyMatrix')
+        
+        # Convert device path to index if needed
+        if device_path and device_path.startswith('/dev/video'):
+            device_index = int(device_path.replace('/dev/video', ''))
         
         logger.info(f"Processing camera: {camera_id} (device {device_index})")
         
@@ -284,39 +289,27 @@ class CameraProcessor:
             logger.error(f"Camera {camera_id}: Not calibrated")
             return result
         
+        picam2 = None
         try:
-            # Open camera
-            cap = cv2.VideoCapture(device_index)
-            if not cap.isOpened():
-                result['status'] = 'failed'
-                result['errors'].append(f'Cannot open camera device {device_index}')
-                logger.error(f"Camera {camera_id}: Cannot open device")
-                return result
+            # Setup camera with Picamera2
+            from camera_utils_picam2 import setup_camera_picam2, warmup_camera_picam2
             
-            # Force MJPEG format - YUYV at high res throttles to 0.1fps
-            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-            
-            # Set resolution
             width, height = resolution
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-            
-            # Enable all automatic features - trust the camera to adjust properly
-            cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
-            cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+            picam2 = setup_camera_picam2(device_index, resolution=(width, height))
+            picam2.start()
             
             # Give autofocus time to adjust (critical for sharp images)
             logger.info(f"Camera {camera_id}: Warming up autofocus...")
-            for i in range(5):
-                cap.read()
-                time.sleep(0.2)  # 200ms between frames
+            warmup_camera_picam2(picam2, duration_seconds=1)
             
-            # Capture frame
-            ret, frame = cap.read()
-            cap.release()
+            # Capture frame from 'main' stream and convert RGB to BGR for OpenCV
+            frame_rgb = picam2.capture_array("main")
+            frame = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+            picam2.stop()
+            picam2.close()
+            picam2 = None
             
-            if not ret or frame is None:
+            if frame is None:
                 result['status'] = 'failed'
                 result['errors'].append('Failed to capture frame')
                 logger.error(f"Camera {camera_id}: Frame capture failed")

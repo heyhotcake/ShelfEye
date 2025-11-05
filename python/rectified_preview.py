@@ -172,7 +172,7 @@ def generate_rectified_preview(
     Returns:
         Dictionary with ok status and base64 encoded image or error
     """
-    cap = None
+    picam2 = None
     try:
         # LED control disabled for preview to avoid constant flashing
         # User can manually control LED via Config page if needed
@@ -190,37 +190,29 @@ def generate_rectified_preview(
         else:
             logger.info("No camera calibration parameters provided - skipping undistortion")
         
-        # Initialize camera - use device path if provided, otherwise use index
-        camera_source = device_path if device_path else camera_index
-        logger.info(f"Opening camera: {camera_source}")
-        cap = cv2.VideoCapture(camera_source)
-        if not cap.isOpened():
-            raise Exception(f"Could not open camera {camera_source}")
+        # Convert device path to index if needed
+        if device_path and device_path.startswith('/dev/video'):
+            cam_idx = int(device_path.replace('/dev/video', ''))
+        else:
+            cam_idx = camera_index
+        
+        logger.info(f"Opening camera: {cam_idx}")
         
         width, height = resolution
         
-        # Force MJPEG format - YUYV at high res throttles to 0.1fps
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        # Setup camera with Picamera2
+        from camera_utils_picam2 import setup_camera_picam2, warmup_camera_picam2
+        picam2 = setup_camera_picam2(cam_idx, resolution=(width, height))
+        picam2.start()
         
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        
-        # Enable all automatic features - trust the camera to adjust properly
-        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
-        cap.set(cv2.CAP_PROP_AUTO_WB, 1)
-        
-        # Warmup: Let auto-exposure and autofocus settle (discard first few frames)
-        # Camera needs time BETWEEN frames to analyze and adjust - not just frame count
-        import time
+        # Warmup: Let auto-exposure and autofocus settle
         logger.info("Warming up camera (auto-exposure, autofocus, white balance)...")
-        for i in range(75):
-            cap.read()
-            time.sleep(0.2)  # 200ms between frames = 15 seconds total
+        warmup_camera_picam2(picam2, duration_seconds=15)
         
-        # Capture frame
-        ret, frame = cap.read()
-        if not ret:
+        # Capture frame from 'main' stream and convert RGB to BGR for OpenCV
+        frame_rgb = picam2.capture_array("main")
+        frame = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+        if frame is None:
             raise Exception("Failed to capture frame from camera")
         
         # Generate rectified image using shared helper (with undistortion if parameters provided)
@@ -246,8 +238,9 @@ def generate_rectified_preview(
             'error': str(e)
         }
     finally:
-        if cap is not None:
-            cap.release()
+        if picam2 is not None:
+            picam2.stop()
+            picam2.close()
 
 def main():
     parser = argparse.ArgumentParser(description='Generate rectified preview using homography')

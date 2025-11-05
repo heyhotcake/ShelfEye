@@ -18,7 +18,7 @@ from rectified_preview import generate_rectified_image_from_frame
 
 # Import camera utilities for consistent settings with preview
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from camera_utils import setup_camera_optimal, warmup_camera_properly
+from camera_utils_picam2 import setup_camera_picam2, warmup_camera_picam2, capture_optimal_frame_picam2
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -240,37 +240,29 @@ class ArucoCornerCalibrator:
         Returns:
             Dictionary with calibration results (and optional rectified preview)
         """
-        cap = None
+        picam2 = None
         try:
-            # Initialize camera - use device path if provided, otherwise use index
-            camera_source = device_path if device_path else camera_index
-            logger.info(f"Opening camera: {camera_source}")
-            cap = cv2.VideoCapture(camera_source)
+            # Convert device path to index if needed
+            if device_path and device_path.startswith('/dev/video'):
+                cam_idx = int(device_path.replace('/dev/video', ''))
+            else:
+                cam_idx = camera_index
             
-            # If device path fails (e.g., /dev/video0 on Windows), try camera index as fallback
-            if not cap.isOpened() and device_path and device_path.startswith('/'):
-                logger.warning(f"Device path {device_path} failed, falling back to camera index {camera_index}")
-                print(f"[CALIBRATION] Device path {device_path} not accessible, using camera index {camera_index}", file=sys.stderr)
-                sys.stderr.flush()
-                camera_source = camera_index
-                cap = cv2.VideoCapture(camera_source)
-            
-            if not cap.isOpened():
-                raise Exception(f"Could not open camera {camera_source}")
+            logger.info(f"Opening camera: {cam_idx}")
             
             width, height = resolution
             
-            # Use same camera setup as preview for consistent settings (MJPEG format, auto-exposure, etc.)
-            setup_camera_optimal(cap, resolution=(width, height))
+            # Setup camera with Picamera2
+            picam2 = setup_camera_picam2(cam_idx, resolution=(width, height))
+            picam2.start()
             
             # MAXIMUM warmup for bulletproof autofocus/auto-exposure stability (40 seconds)
             # At 4K MJPEG (~7fps), this is 280+ frames for autofocus to fully converge
-            warmup_camera_properly(cap, duration_seconds=40)
+            warmup_camera_picam2(picam2, duration_seconds=40)
             
             # Use multi-frame sharpness selection for best focus
             # Takes 50 frames and keeps the sharpest one - maximum reliability
-            from camera_utils import capture_optimal_frame
-            frame = capture_optimal_frame(cap, num_frames=50)
+            frame = capture_optimal_frame_picam2(picam2, num_frames=50)
             if frame is None:
                 raise Exception("Failed to capture frame from camera")
             
@@ -385,8 +377,9 @@ class ArucoCornerCalibrator:
                 'markers_detected': 0
             }
         finally:
-            if cap is not None:
-                cap.release()
+            if picam2 is not None:
+                picam2.stop()
+                picam2.close()
 
 def main():
     parser = argparse.ArgumentParser(description='ArUco 4-Corner Calibration')

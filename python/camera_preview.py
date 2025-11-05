@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Camera Preview Script
+Camera Preview Script using Picamera2
 Captures a single frame from camera and saves as base64 for web display
 Uses October 31st proven pipeline for bright, natural images
 """
@@ -14,14 +14,14 @@ import os
 
 # Add parent directory to path to import camera_utils
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from camera_utils import setup_camera_optimal, warmup_camera_properly, capture_optimal_frame
+from camera_utils_picam2 import setup_camera_picam2, warmup_camera_picam2, capture_optimal_frame_picam2
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def capture_preview(device_source, width: int = 2560, height: int = 1440):
     """
-    Capture a single frame from camera and return as base64 JPEG
+    Capture a single frame from camera using Picamera2 and return as base64 JPEG
     Uses the October 31st proven pipeline that produced bright, natural images
     
     Args:
@@ -32,33 +32,26 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
     Returns:
         JSON with base64 image data
     """
-    cap = None
+    picam2 = None
     try:
-        # Open camera with fallback: try device path first, then index
-        logger.info(f"Opening camera: {device_source}")
-        cap = cv2.VideoCapture(device_source)
+        # Convert device path to index if needed
+        if isinstance(device_source, str) and device_source.startswith('/dev/video'):
+            camera_index = int(device_source.replace('/dev/video', ''))
+        else:
+            camera_index = int(device_source) if isinstance(device_source, (int, str)) else 0
         
-        # If device path fails (e.g., /dev/video0 on Windows), try camera index 0
-        if not cap.isOpened() and isinstance(device_source, str) and device_source.startswith('/'):
-            logger.warning(f"Device path {device_source} failed, falling back to camera index 0")
-            device_source = 0
-            cap = cv2.VideoCapture(device_source)
+        logger.info(f"Opening camera: {camera_index}")
         
-        if not cap.isOpened():
-            return {
-                'ok': False,
-                'error': f'Cannot open camera device {device_source}'
-            }
-        
-        # Use October 31st proven camera setup
-        setup_camera_optimal(cap, resolution=(width, height))
+        # Setup camera with Picamera2
+        picam2 = setup_camera_picam2(camera_index, resolution=(width, height))
+        picam2.start()
         
         # Warmup camera properly (10 seconds at 30fps - proven on Oct 31st)
-        warmup_camera_properly(cap, duration_seconds=10)
+        warmup_camera_picam2(picam2, duration_seconds=10)
         
         # Capture optimal frame with multi-frame selection and post-processing
         # This applies: auto brightness/contrast, gamma correction, sharpening
-        frame = capture_optimal_frame(cap)
+        frame = capture_optimal_frame_picam2(picam2)
         
         if frame is None:
             return {
@@ -86,8 +79,9 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
             'error': str(e)
         }
     finally:
-        if cap is not None:
-            cap.release()
+        if picam2 is not None:
+            picam2.stop()
+            picam2.close()
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
