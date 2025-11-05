@@ -274,29 +274,32 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"[VALIDATION] ========== SLOT {idx+1}/{len(expected_slots)} ==========", file=sys.stderr)
         print(f"[VALIDATION] Slot ID: {slot_id}", file=sys.stderr)
         print(f"[VALIDATION] Expected ArUco ID: '{expected_qr}'", file=sys.stderr)
+        print(f"[VALIDATION] Slot dimensions: {width_cm}x{height_cm} cm (slot size)", file=sys.stderr)
         
-        # Convert slot position from cm to pixels
+        # Convert slot center position from cm to pixels
         center_x_px = int(x_cm * scale_x)
         center_y_px = int(y_cm * scale_y)
-        width_px = int(width_cm * scale_x)
-        height_px = int(height_cm * scale_y)
         
-        # Add 40% padding around slot for better QR detection (in case QR is slightly outside)
-        padding = 0.4
-        padded_width = int(width_px * (1 + padding))
-        padded_height = int(height_px * (1 + padding))
+        # TIGHT ROI EXTRACTION: Extract only marker area, ignoring slot borders
+        # Markers are 3x3cm, use 4x4cm ROI to give 0.5cm margin while avoiding slot outline
+        # This completely avoids slot borders which confuse detection (hundreds of rejections)
+        marker_roi_size_cm = 4.0  # Fixed size for all slots
+        roi_width_px = int(marker_roi_size_cm * scale_x)
+        roi_height_px = int(marker_roi_size_cm * scale_y)
         
-        # Calculate ROI boundaries (top-left corner)
-        roi_x1 = max(0, center_x_px - padded_width // 2)
-        roi_y1 = max(0, center_y_px - padded_height // 2)
+        print(f"[VALIDATION] Using tight marker ROI: {marker_roi_size_cm}x{marker_roi_size_cm}cm = {roi_width_px}x{roi_height_px}px", file=sys.stderr)
+        
+        # Calculate ROI boundaries centered on slot position
+        roi_x1 = max(0, center_x_px - roi_width_px // 2)
+        roi_y1 = max(0, center_y_px - roi_height_px // 2)
         
         # Check if rectified exists before accessing shape
         if rectified is None:
             print(f"  ERROR: Rectified image is None for slot {slot_id}", file=sys.stderr)
             continue
             
-        roi_x2 = min(rectified.shape[1], center_x_px + padded_width // 2)
-        roi_y2 = min(rectified.shape[0], center_y_px + padded_height // 2)
+        roi_x2 = min(rectified.shape[1], center_x_px + roi_width_px // 2)
+        roi_y2 = min(rectified.shape[0], center_y_px + roi_height_px // 2)
         
         # Extract ROI
         roi = rectified[roi_y1:roi_y2, roi_x1:roi_x2]

@@ -391,7 +391,7 @@ def main():
     parser = argparse.ArgumentParser(description='ArUco 4-Corner Calibration')
     parser.add_argument('--camera', type=int, default=0, help='Camera device index (fallback if --device-path not provided)')
     parser.add_argument('--device-path', type=str, help='Camera device path for Raspberry Pi (e.g., /dev/video0)')
-    parser.add_argument('--resolution', type=str, default='2560x1440', help='Camera resolution (WxH)')
+    parser.add_argument('--resolution', type=str, default='3840x2160', help='Camera resolution (WxH) - 4K for best quality')
     parser.add_argument('--paper-size', type=str, default='29.7x21.0', help='Paper size in cm (WidthxHeight)')
     parser.add_argument('--generate-preview', action='store_true', help='Generate rectified preview from calibration frame')
     parser.add_argument('--preview-output-size', type=str, help='Preview output size (WxH)')
