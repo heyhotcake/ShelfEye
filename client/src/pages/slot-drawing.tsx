@@ -1485,29 +1485,31 @@ export default function SlotDrawing() {
     const category = toolCategories.find((c: any) => c.id === categoryId);
     if (!category) return;
 
-    // Generate unique QR ID
-    const categoryRects = templateRectangles.filter(r => r.categoryId === categoryId);
-    const nextIndex = categoryRects.length + 1;
-    const qrId = `${category.name}-${String(nextIndex).padStart(3, '0')}`;
+    // Generate unique ArUco marker ID (per-template sequential numbering)
+    // Get all rectangles for this template/paper size
+    const templateRectsForSize = templateRectangles.filter(r => r.paperSize === paperSize);
+    const nextSlotNumber = templateRectsForSize.length + 1;
+    
+    // ArUco marker IDs: 1-50 for slots (96-99 reserved for corners)
+    if (nextSlotNumber > 50) {
+      toast({
+        title: "Slot Limit Reached",
+        description: "Maximum 50 slots per template. ArUco marker IDs 1-50 are used for slots, 96-99 are reserved for corners.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const autoQrId = `slot-${nextSlotNumber}`;
 
     try {
       // Show loading toast
       toast({
-        title: "Generating QR Code",
-        description: `Creating QR code for ${qrId}...`,
+        title: "Adding Slot",
+        description: `Creating slot ${nextSlotNumber} (ArUco marker ID ${nextSlotNumber})...`,
       });
 
-      // Call QR generation API
-      const qrResponse = await apiRequest('POST', '/api/qr-generate', {
-        type: 'slot',
-        id: qrId,
-        toolType: category.toolType,
-        errorCorrection: 'L',
-        moduleSize: 25,
-      });
-
-      const qrData = await qrResponse.json();
-
+      // No QR code generation needed - ArUco markers are generated during print
       // Place at center of canvas
       const canvasMargin = 40;
       const paperWidth = canvasDimensions.width - (canvasMargin * 2);
@@ -1526,18 +1528,18 @@ export default function SlotDrawing() {
         xCm: centerXCm,
         yCm: centerYCm,
         rotation: 0,
-        autoQrId: qrId,
+        autoQrId: autoQrId,
       });
 
       // Show success toast
       toast({
-        title: "QR Code Generated",
-        description: `Successfully created QR code: ${qrId}`,
+        title: "Slot Added",
+        description: `Successfully created slot ${nextSlotNumber} for ${category.name}`,
       });
     } catch (error) {
       toast({
-        title: "Failed to Generate QR",
-        description: error instanceof Error ? error.message : "Failed to generate QR code",
+        title: "Failed to Add Slot",
+        description: error instanceof Error ? error.message : "Failed to add slot to template",
         variant: "destructive",
       });
     }
