@@ -779,6 +779,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sync adjusted template positions to slots (fixes cut-off markers issue)
+  app.post("/api/slots/sync-positions/:cameraId", async (req, res) => {
+    try {
+      const { cameraId } = req.params;
+      
+      // Get current slots
+      const slots = await storage.getSlotsByCamera(cameraId);
+      
+      // Get adjusted template rectangles  
+      const camera = await storage.getCamera(cameraId);
+      if (!camera || !camera.paperSizeFormat) {
+        return res.status(400).json({ message: "Camera not calibrated" });
+      }
+      
+      const templates = await storage.getTemplateRectanglesByPaperSize(camera.paperSizeFormat);
+      console.log(`[SlotSync] Found ${templates.length} adjusted templates and ${slots.length} slots`);
+      
+      let updated = 0;
+      for (const slot of slots) {
+        // Find matching template by ArUco ID
+        const template = templates.find(t => t.autoQrId === slot.expectedQrId);
+        if (template) {
+          // Update slot with adjusted template positions
+          await storage.updateSlot(slot.id, {
+            xCm: template.xCm,
+            yCm: template.yCm
+          });
+          console.log(`[SlotSync] Updated slot ${slot.slotNumber} position to x=${template.xCm}, y=${template.yCm}`);
+          updated++;
+        }
+      }
+      
+      res.json({ 
+        message: `Synced positions for ${updated} slots`,
+        updated,
+        total: slots.length
+      });
+    } catch (error) {
+      console.error('[SlotSync] Error:', error);
+      res.status(500).json({ message: "Failed to sync slot positions", error });
+    }
+  });
+
   // Diagnostic endpoint to show current slot coordinates (for debugging)
   app.get("/api/slots/diagnostic/:cameraId", async (req, res) => {
     try {
