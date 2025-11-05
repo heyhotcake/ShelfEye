@@ -296,62 +296,56 @@ class ArucoCornerCalibrator:
                         }
                     }
                     
+                    # ALWAYS save the high-resolution rectified image for validation
+                    # (Even if preview not requested)
+                    import os
+                    data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+                    os.makedirs(data_dir, exist_ok=True)
+                    
+                    # Calculate native resolution rectified image
+                    frame_height, frame_width = frame.shape[:2]
+                    pixels_per_cm = self.measured_px_per_cm
+                    
+                    # Use the LARGER of: measured pixel density OR input frame size
+                    measured_width = int(paper_size_cm[0] * pixels_per_cm)
+                    measured_height = int(paper_size_cm[1] * pixels_per_cm)
+                    
+                    # Use whichever is larger: measured or input frame size
+                    highres_width = max(measured_width, frame_width)
+                    highres_height = max(measured_height, frame_height)
+                    highres_size = (highres_width, highres_height)
+                    
+                    try:
+                        logger.info(f"Saving high-resolution rectified image: {highres_width}x{highres_height}px")
+                        # Generate CLEAN version without overlays for validation
+                        rectified_highres_clean = generate_rectified_image_from_frame(
+                            frame, homography, highres_size, paper_size_cm, None,  # No templates - clean image
+                            camera_matrix, dist_coeffs
+                        )
+                        
+                        # Save clean high-res version to disk for validation
+                        highres_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
+                        cv2.imwrite(highres_path, rectified_highres_clean, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                        
+                        saved_height, saved_width = rectified_highres_clean.shape[:2]
+                        logger.info(f"✓ Saved rectified image for validation: {saved_width}×{saved_height} px at {highres_path}")
+                    except Exception as save_err:
+                        logger.warning(f"Failed to save rectified image: {save_err}")
+                        # Don't fail calibration if saving fails
+                    
                     # Generate rectified preview if requested
                     if generate_preview and preview_output_size:
                         try:
-                            # First, generate HIGH-RESOLUTION rectified image for ArUco validation
-                            # Use INPUT CAMERA RESOLUTION to preserve maximum detail
-                            # Calculate what the output size should be based on the INPUT frame dimensions
-                            frame_height, frame_width = frame.shape[:2]
-                            pixels_per_cm = self.measured_px_per_cm
-                            
-                            # Use the LARGER of: measured pixel density OR input frame size
-                            # This ensures we never downscale from the camera's native resolution
-                            measured_width = int(paper_size_cm[0] * pixels_per_cm)
-                            measured_height = int(paper_size_cm[1] * pixels_per_cm)
-                            
-                            # Use whichever is larger: measured or input frame size
-                            highres_width = max(measured_width, frame_width)
-                            highres_height = max(measured_height, frame_height)
-                            highres_size = (highres_width, highres_height)
-                            
-                            actual_px_per_cm_width = highres_width / paper_size_cm[0]
-                            actual_px_per_cm_height = highres_height / paper_size_cm[1]
-                            logger.info(f"Input camera resolution: {frame_width}x{frame_height}px")
-                            logger.info(f"Measured pixel density: {pixels_per_cm:.1f} px/cm → {measured_width}x{measured_height}px")
-                            logger.info(f"Using MAXIMUM resolution: {highres_width}x{highres_height}px ({actual_px_per_cm_width:.1f}x{actual_px_per_cm_height:.1f} px/cm)")
-                            
-                            logger.info(f"Generating high-resolution rectified image: {highres_width}x{highres_height}px ({(highres_width*highres_height/1_000_000):.1f} MP) for ArUco validation")
-                            # Generate CLEAN version without overlays for QR validation
-                            rectified_highres_clean = generate_rectified_image_from_frame(
-                                frame, homography, highres_size, paper_size_cm, None,  # No templates - clean image
-                                camera_matrix, dist_coeffs
-                            )
-                            
-                            # Save clean high-res version to disk for QR validation
-                            import os
-                            data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
-                            os.makedirs(data_dir, exist_ok=True)
-                            highres_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
-                            cv2.imwrite(highres_path, rectified_highres_clean, [cv2.IMWRITE_JPEG_QUALITY, 95])
-                            
-                            # Verify saved dimensions
-                            saved_height, saved_width = rectified_highres_clean.shape[:2]
-                            logger.info(f"✓ Saved CLEAN native-resolution rectified image: {saved_width}×{saved_height} px ({(saved_width*saved_height/1_000_000):.1f} MP)")
-                            logger.info(f"✓ File location: {highres_path}")
-                            logger.info(f"✓ This is the CLEAN image (no overlays) that QR validation will use")
-                            
-                            # Also save a labeled version for download/display
-                            rectified_highres_labeled = generate_rectified_image_from_frame(
+                            # Also save a labeled version for download/display (using already calculated highres_size)
+                            highres_labeled = generate_rectified_image_from_frame(
                                 frame, homography, highres_size, paper_size_cm, templates,  # WITH templates - labeled image
                                 camera_matrix, dist_coeffs
                             )
                             highres_labeled_path = os.path.join(data_dir, 'latest_calibration_rectified_labeled.jpg')
-                            cv2.imwrite(highres_labeled_path, rectified_highres_labeled, [cv2.IMWRITE_JPEG_QUALITY, 95])
-                            logger.info(f"✓ Saved LABELED native-resolution rectified image for download")
-                            logger.info(f"✓ File location: {highres_labeled_path}")
+                            cv2.imwrite(highres_labeled_path, highres_labeled, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                            logger.info(f"✓ Saved LABELED high-resolution rectified image for download")
                             
-                            # Then, generate downscaled version for UI preview
+                            # Generate downscaled version for UI preview
                             logger.info(f"Generating UI preview: {preview_output_size[0]}x{preview_output_size[1]}px")
                             rectified_preview = generate_rectified_image_from_frame(
                                 frame, homography, preview_output_size, paper_size_cm, templates,

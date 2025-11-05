@@ -178,6 +178,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     import os
     enable_debug_images = os.environ.get('DEBUG_IMAGES', '1') == '1'  # Default enabled for compatibility
     debug_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+    data_dir = debug_dir  # Use same directory for both debug and data files
     os.makedirs(debug_dir, exist_ok=True)
     
     # Validate and print received parameters
@@ -189,51 +190,50 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     print(f"  - Use saved rectified: {use_saved_rectified}", file=sys.stderr)
     sys.stderr.flush()
     
+    # Initialize variables that will be used later
+    rectified = None
+    scale_x = 1.0
+    scale_y = 1.0
+    
     # Branch based on whether to use saved rectified image
     if use_saved_rectified:
         # LOAD SAVED HIGH-RES RECTIFIED IMAGE PATH
         print(f"[VALIDATION] Using saved calibration rectified image", file=sys.stderr)
-        data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
         saved_rectified_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
         
         if not os.path.exists(saved_rectified_path):
             print(f"[VALIDATION] ERROR: Saved rectified image not found at {saved_rectified_path}", file=sys.stderr)
-            print(f"[VALIDATION] Run ArUco calibration first to generate the rectified image", file=sys.stderr)
-            sys.stderr.flush()
-            return {
-                'success': False,
-                'error': 'Saved rectified image not found. Run ArUco calibration first.'
-            }
-        
-        rectified = cv2.imread(saved_rectified_path, cv2.IMREAD_GRAYSCALE)
-        
-        if rectified is None:
-            print(f"[VALIDATION] ERROR: Failed to load rectified image", file=sys.stderr)
-            sys.stderr.flush()
-            return {
-                'success': False,
-                'error': 'Failed to load saved rectified image'
-            }
-        
-        print(f"[VALIDATION] Loaded rectified image: {rectified.shape[1]}x{rectified.shape[0]}px", file=sys.stderr)
-        print(f"[VALIDATION] Found {len(expected_slots)} expected slots for validation", file=sys.stderr)
-        sys.stderr.flush()
-        
-        # Calculate ACTUAL scale factors from the loaded image dimensions
-        # This supports any resolution (native camera resolution, not hardcoded upsampling)
-        if paper_width_cm and paper_height_cm:
-            actual_px_per_cm_width = rectified.shape[1] / paper_width_cm
-            actual_px_per_cm_height = rectified.shape[0] / paper_height_cm
-            pixels_per_cm = min(actual_px_per_cm_width, actual_px_per_cm_height)
-            scale_x = actual_px_per_cm_width
-            scale_y = actual_px_per_cm_height
-            print(f"[VALIDATION] Calculated pixel density from saved image: {actual_px_per_cm_width:.1f} px/cm (width), {actual_px_per_cm_height:.1f} px/cm (height)", file=sys.stderr)
-            print(f"[VALIDATION] Using {pixels_per_cm:.1f} px/cm for coordinate conversion", file=sys.stderr)
+            print(f"[VALIDATION] FALLBACK: Will capture new frame instead", file=sys.stderr)
+            # Instead of failing, fall back to capturing a new frame
+            use_saved_rectified = False
         else:
-            scale_x = scale_y = 1.0
-            print(f"[VALIDATION] No paper dimensions provided, using scale 1.0", file=sys.stderr)
+            rectified = cv2.imread(saved_rectified_path, cv2.IMREAD_GRAYSCALE)
+            
+            if rectified is None:
+                print(f"[VALIDATION] ERROR: Failed to load rectified image", file=sys.stderr)
+                print(f"[VALIDATION] FALLBACK: Will capture new frame instead", file=sys.stderr)
+                use_saved_rectified = False
+            else:
+                print(f"[VALIDATION] Loaded rectified image: {rectified.shape[1]}x{rectified.shape[0]}px", file=sys.stderr)
+                print(f"[VALIDATION] Found {len(expected_slots)} expected slots for validation", file=sys.stderr)
+                sys.stderr.flush()
+                
+                # Calculate ACTUAL scale factors from the loaded image dimensions
+                # This supports any resolution (native camera resolution, not hardcoded upsampling)
+                if paper_width_cm and paper_height_cm:
+                    actual_px_per_cm_width = rectified.shape[1] / paper_width_cm
+                    actual_px_per_cm_height = rectified.shape[0] / paper_height_cm
+                    pixels_per_cm = min(actual_px_per_cm_width, actual_px_per_cm_height)
+                    scale_x = actual_px_per_cm_width
+                    scale_y = actual_px_per_cm_height
+                    print(f"[VALIDATION] Calculated pixel density from saved image: {actual_px_per_cm_width:.1f} px/cm (width), {actual_px_per_cm_height:.1f} px/cm (height)", file=sys.stderr)
+                    print(f"[VALIDATION] Using {pixels_per_cm:.1f} px/cm for coordinate conversion", file=sys.stderr)
+                else:
+                    scale_x = scale_y = 1.0
+                    print(f"[VALIDATION] No paper dimensions provided, using scale 1.0", file=sys.stderr)
     
-    else:
+    # If we don't have a saved rectified image or it failed to load, capture a new one
+    if not use_saved_rectified:
         # CAPTURE NEW FRAME AND APPLY HOMOGRAPHY PATH
         print(f"[VALIDATION] Capturing new frame from camera", file=sys.stderr)
         print(f"[VALIDATION] Found {len(expected_slots)} expected slots for validation", file=sys.stderr)
