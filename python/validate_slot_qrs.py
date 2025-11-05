@@ -71,15 +71,19 @@ def decode_aruco_markers(image, expected_count=None, include_workers=False):
         if ids is not None and len(ids) > 0:
             for i, marker_id in enumerate(ids.flatten()):
                 # Filter markers based on type:
-                # - Slot markers: 1-50
+                # - Slot markers: 0-50 (including 0 for compatibility with printed templates)
                 # - Worker markers: 51-95 (only if include_workers=True)
                 # - Corner markers: 96-99 (exclude)
-                is_slot = 1 <= marker_id <= 50
+                is_slot = 0 <= marker_id <= 50
                 is_worker = 51 <= marker_id <= 95
                 is_corner = 96 <= marker_id <= 99
                 
-                # Skip corner markers
-                if is_corner or marker_id < 1:
+                # Skip corner markers but allow marker ID 0 (it's a valid slot marker)
+                if is_corner:
+                    continue
+                
+                # Skip negative marker IDs (invalid)
+                if marker_id < 0:
                     continue
                 
                 # Skip worker markers unless explicitly requested
@@ -450,6 +454,9 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     incorrectly_visible = []
     detected_qrs_list = []
     
+    # DIAGNOSTIC MODE: Track raw detections for debugging
+    raw_detections = {}  # slot_id -> detected_marker_id mapping
+    
     # Process each expected slot - extract ROI and scan individually
     for idx, slot in enumerate(expected_slots):
         # Backend sends camelCase JSON, handle both snake_case (legacy) and camelCase (current)
@@ -461,7 +468,9 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         height_cm = slot.get('height') or slot.get('height_cm', 3.0)
         rotation = slot.get('rotation', 0)
         
-        print(f"[VALIDATION] Slot {idx+1}/{len(expected_slots)}: {slot_id} (expected QR: '{expected_qr}')", file=sys.stderr)
+        print(f"[VALIDATION] ========== SLOT {idx+1}/{len(expected_slots)} ==========", file=sys.stderr)
+        print(f"[VALIDATION] Slot ID: {slot_id}", file=sys.stderr)
+        print(f"[VALIDATION] Expected ArUco ID: '{expected_qr}'", file=sys.stderr)
         
         # Convert slot position from cm to pixels
         center_x_px = int(x_cm * scale_x)
@@ -547,7 +556,11 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                 marker_data = slot_marker['data']
                 detected_qrs_list.append(marker_data)
                 
-                print(f"  ✓ Detected Slot ArUco: '{marker_data}' via {slot_marker['detection_method']}", file=sys.stderr)
+                # Store raw detection for diagnostic output
+                raw_detections[slot_id] = marker_data
+                
+                print(f"  ✓✓✓ DETECTED ArUco Marker ID: {marker_data} ✓✓✓", file=sys.stderr)
+                print(f"  Detection method: {slot_marker['detection_method']}", file=sys.stderr)
                 
                 # Check if there's also a worker marker
                 if worker_markers:
@@ -637,7 +650,8 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                     print(f"  ✗ ERROR: Expected slot marker '{expected_qr}' not detected", file=sys.stderr)
         else:
             # No ArUco marker detected in this slot's ROI
-            print(f"  ✗ No ArUco marker detected in ROI", file=sys.stderr)
+            raw_detections[slot_id] = "NONE"
+            print(f"  XXX NO ArUco MARKER DETECTED IN THIS SLOT XXX", file=sys.stderr)
             
             if mode == 'visible':
                 # ArUco marker should be visible but isn't - MISSING
@@ -694,6 +708,27 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
             'details': validation_details,
             'debug_image': rectified_path
         }
+    
+    # DIAGNOSTIC OUTPUT: Show raw detection data for all slots
+    print(f"\n[VALIDATION] ========================================", file=sys.stderr)
+    print(f"[VALIDATION] RAW DETECTION SUMMARY (DIAGNOSTIC)", file=sys.stderr)
+    print(f"[VALIDATION] ========================================", file=sys.stderr)
+    for idx, slot in enumerate(expected_slots):
+        slot_id = slot.get('slotId', 'unknown')
+        expected = slot.get('id', 'unknown')
+        detected = raw_detections.get(slot_id, "NOT_PROCESSED")
+        match_status = "✓ MATCH" if detected == expected else "✗ MISMATCH" if detected != "NONE" else "- NO DETECTION"
+        print(f"[VALIDATION] Slot #{idx+1} ({slot_id}):", file=sys.stderr)
+        print(f"[VALIDATION]   Expected ArUco ID: {expected}", file=sys.stderr)
+        print(f"[VALIDATION]   Detected ArUco ID: {detected}", file=sys.stderr)
+        print(f"[VALIDATION]   Status: {match_status}", file=sys.stderr)
+    print(f"[VALIDATION] ========================================", file=sys.stderr)
+    
+    # Count unique detected ArUco IDs
+    unique_detected = set([v for v in raw_detections.values() if v != "NONE" and v != "NOT_PROCESSED"])
+    print(f"[VALIDATION] Unique ArUco IDs detected: {sorted(unique_detected) if unique_detected else 'None'}", file=sys.stderr)
+    print(f"[VALIDATION] Total unique markers found: {len(unique_detected)}", file=sys.stderr)
+    print(f"[VALIDATION] ========================================", file=sys.stderr)
     
     print(f"\n[VALIDATION] Summary:", file=sys.stderr)
     print(f"  - Success: {success}", file=sys.stderr)
