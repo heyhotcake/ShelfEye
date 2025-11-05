@@ -336,9 +336,11 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         center_y_px = int(y_cm * scale_y)
         
         # TIGHT ROI EXTRACTION: Extract only marker area, ignoring slot borders
-        # Markers are 3x3cm, use 4x4cm ROI to give 0.5cm margin while avoiding slot outline
-        # This completely avoids slot borders which confuse detection (hundreds of rejections)
-        marker_roi_size_cm = 4.0  # Fixed size for all slots
+        # Adjust this based on your actual marker size:
+        # - If markers are 2x2cm, use 3.0
+        # - If markers are 3x3cm, use 4.0 
+        # - If markers are 4x4cm, use 5.0
+        marker_roi_size_cm = 4.0  # CHANGE THIS to match your marker size + 1cm margin
         roi_width_px = int(marker_roi_size_cm * scale_x)
         roi_height_px = int(marker_roi_size_cm * scale_y)
         
