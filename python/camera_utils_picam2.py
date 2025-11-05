@@ -8,7 +8,14 @@ import cv2
 import numpy as np
 import time
 import logging
-from picamera2 import Picamera2
+
+# Try to import Picamera2 - only available on Raspberry Pi
+try:
+    from picamera2 import Picamera2
+    PICAMERA2_AVAILABLE = True
+except ImportError:
+    PICAMERA2_AVAILABLE = False
+    Picamera2 = None
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +77,9 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160)):
         camera_index: Camera device index (0 for /dev/video0, 1 for /dev/video1, etc.)
         resolution: Tuple of (width, height)
     """
+    if not PICAMERA2_AVAILABLE:
+        raise ImportError("Picamera2 is not available. This module only works on Raspberry Pi.")
+    
     width, height = resolution
     
     logger.info(f"Initializing Picamera2 on camera {camera_index}")
