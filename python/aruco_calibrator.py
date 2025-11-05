@@ -323,9 +323,9 @@ class ArucoCornerCalibrator:
                             camera_matrix, dist_coeffs
                         )
                         
-                        # Save clean high-res version to disk for validation
-                        highres_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
-                        cv2.imwrite(highres_path, rectified_highres_clean, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                        # Save clean high-res version to disk for validation (PNG for lossless quality)
+                        highres_path = os.path.join(data_dir, 'latest_calibration_rectified.png')
+                        cv2.imwrite(highres_path, rectified_highres_clean, [cv2.IMWRITE_PNG_COMPRESSION, 3])
                         
                         saved_height, saved_width = rectified_highres_clean.shape[:2]
                         logger.info(f"✓ Saved rectified image for validation: {saved_width}×{saved_height} px at {highres_path}")
@@ -341,8 +341,8 @@ class ArucoCornerCalibrator:
                                 frame, homography, highres_size, paper_size_cm, templates,  # WITH templates - labeled image
                                 camera_matrix, dist_coeffs
                             )
-                            highres_labeled_path = os.path.join(data_dir, 'latest_calibration_rectified_labeled.jpg')
-                            cv2.imwrite(highres_labeled_path, highres_labeled, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                            highres_labeled_path = os.path.join(data_dir, 'latest_calibration_rectified_labeled.png')
+                            cv2.imwrite(highres_labeled_path, highres_labeled, [cv2.IMWRITE_PNG_COMPRESSION, 3])
                             logger.info(f"✓ Saved LABELED high-resolution rectified image for download")
                             
                             # Generate downscaled version for UI preview

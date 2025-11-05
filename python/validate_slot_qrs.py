@@ -18,8 +18,25 @@ import argparse
 os.environ['OPENCV_LOG_LEVEL'] = 'FATAL'
 cv2.setLogLevel(0)
 
+# Log OpenCV version for debugging
+OPENCV_VERSION = cv2.__version__
+OPENCV_MAJOR = int(OPENCV_VERSION.split('.')[0])
+OPENCV_MINOR = int(OPENCV_VERSION.split('.')[1])
+OPENCV_PATCH = int(OPENCV_VERSION.split('.')[2]) if len(OPENCV_VERSION.split('.')) > 2 else 0
+
+# Check for known bugs
+OPENCV_HAS_455_BUG = (OPENCV_MAJOR == 4 and OPENCV_MINOR == 5 and OPENCV_PATCH >= 5)
+if OPENCV_HAS_455_BUG:
+    print(f"[WARNING] OpenCV {OPENCV_VERSION} has known ArUco detection bug (over-aggressive filtering)", file=sys.stderr)
+    print(f"[WARNING] Consider upgrading to 4.6+ or using workarounds", file=sys.stderr)
+
 def decode_aruco_markers(image, expected_count=None, include_workers=False):
-    """Decode all ArUco markers in image with robust detection for printed markers
+    """Decode all ArUco markers in image with multi-pass detection for robustness
+    
+    Multi-pass strategy (like old QR system):
+    1. Original grayscale image
+    2. CLAHE enhanced (improves local contrast)
+    3. Adaptive threshold binarization (clean black/white)
     
     Args:
         image: Input image to scan for ArUco markers
@@ -34,97 +51,129 @@ def decode_aruco_markers(image, expected_count=None, include_workers=False):
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     aruco_params = cv2.aruco.DetectorParameters()
     
-    # EXTREME: Maximum relaxation for printed markers
+    # Balanced parameters for printed markers
     aruco_params.adaptiveThreshWinSizeMin = 3
-    aruco_params.adaptiveThreshWinSizeMax = 200
+    aruco_params.adaptiveThreshWinSizeMax = 50
     aruco_params.adaptiveThreshWinSizeStep = 10
     aruco_params.adaptiveThreshConstant = 7
-    aruco_params.minMarkerPerimeterRate = 0.005  # Very relaxed
-    aruco_params.maxMarkerPerimeterRate = 8.0
-    aruco_params.polygonalApproxAccuracyRate = 0.15  # Very tolerant
-    aruco_params.minCornerDistanceRate = 0.01
-    aruco_params.minDistanceToBorder = 0
-    aruco_params.minMarkerDistanceRate = 0.005
+    aruco_params.minMarkerPerimeterRate = 0.01
+    aruco_params.maxMarkerPerimeterRate = 4.0
+    aruco_params.polygonalApproxAccuracyRate = 0.05
+    aruco_params.minCornerDistanceRate = 0.05
+    aruco_params.minDistanceToBorder = 1
+    aruco_params.minMarkerDistanceRate = 0.05
     aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
     aruco_params.cornerRefinementWinSize = 5
-    aruco_params.cornerRefinementMaxIterations = 50
+    aruco_params.cornerRefinementMaxIterations = 30
     aruco_params.cornerRefinementMinAccuracy = 0.01
     aruco_params.markerBorderBits = 1
-    aruco_params.perspectiveRemovePixelPerCell = 4
-    aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.1
-    aruco_params.maxErroneousBitsInBorderRate = 0.40  # Balanced - detect markers but prevent false IDs
-    aruco_params.minOtsuStdDev = 2.0
-    aruco_params.errorCorrectionRate = 0.8  # Moderate error correction for printed markers
+    aruco_params.perspectiveRemovePixelPerCell = 8
+    aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.13
+    aruco_params.maxErroneousBitsInBorderRate = 0.35
+    aruco_params.minOtsuStdDev = 5.0
+    aruco_params.errorCorrectionRate = 0.6
     
     # Input is already grayscale from rectification (memory-optimized)
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
+    # MULTI-PASS DETECTION: Try multiple preprocessing approaches (like old QR system)
+    preprocessing_passes = [
+        ('original', gray),
+        ('clahe', None),  # Will be generated
+        ('adaptive_threshold', None),  # Will be generated
+    ]
+    
+    # Generate CLAHE enhanced image
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe_enhanced = clahe.apply(gray)
+    preprocessing_passes[1] = ('clahe', clahe_enhanced)
+    
+    # Generate adaptive threshold image
+    adaptive_thresh = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+    )
+    preprocessing_passes[2] = ('adaptive_threshold', adaptive_thresh)
+    
     # DEBUG: Print image stats
     print(f"    [ArUco Debug] Image size: {gray.shape}, dtype: {gray.dtype}, range: [{gray.min()}, {gray.max()}]", file=sys.stderr)
     
-    # Detect ArUco markers
-    try:
-        corners, ids, rejected = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
-        
-        print(f"    [ArUco Debug] Detection results: {len(ids) if ids is not None else 0} markers, {len(rejected)} rejected candidates", file=sys.stderr)
-        
-        if ids is not None and len(ids) > 0:
-            for i, marker_id in enumerate(ids.flatten()):
-                # Filter markers based on type:
-                # - Slot markers: 0-50 (including 0 for compatibility with printed templates)
-                # - Worker markers: 51-95 (only if include_workers=True)
-                # - Corner markers: 96-99 (exclude)
-                is_slot = 0 <= marker_id <= 50
-                is_worker = 51 <= marker_id <= 95
-                is_corner = 96 <= marker_id <= 99
+    # Try each preprocessing approach until we find markers
+    for pass_name, processed_image in preprocessing_passes:
+        try:
+            corners, ids, rejected = cv2.aruco.detectMarkers(processed_image, aruco_dict, parameters=aruco_params)
+            
+            markers_found = len(ids) if ids is not None else 0
+            print(f"    [ArUco Debug] Pass '{pass_name}': {markers_found} markers, {len(rejected)} rejected", file=sys.stderr)
+            
+            if ids is not None and len(ids) > 0:
+                # Process detected markers
+                for i, marker_id in enumerate(ids.flatten()):
+                    # Filter markers based on type:
+                    # - Slot markers: 0-50 (including 0 for compatibility with printed templates)
+                    # - Worker markers: 51-95 (only if include_workers=True)
+                    # - Corner markers: 96-99 (exclude)
+                    is_slot = 0 <= marker_id <= 50
+                    is_worker = 51 <= marker_id <= 95
+                    is_corner = 96 <= marker_id <= 99
+                    
+                    # Skip corner markers but allow marker ID 0 (it's a valid slot marker)
+                    if is_corner:
+                        continue
+                    
+                    # Skip negative marker IDs (invalid)
+                    if marker_id < 0:
+                        continue
+                    
+                    # Skip worker markers unless explicitly requested
+                    if is_worker and not include_workers:
+                        continue
+                    
+                    if marker_id not in found_marker_ids:
+                        found_marker_ids.add(marker_id)
+                        
+                        # Get marker corners
+                        marker_corners = corners[i][0]
+                        
+                        # Calculate center
+                        center_x = int(np.mean(marker_corners[:, 0]))
+                        center_y = int(np.mean(marker_corners[:, 1]))
+                        
+                        # Calculate bounding box
+                        x_min = int(np.min(marker_corners[:, 0]))
+                        y_min = int(np.min(marker_corners[:, 1]))
+                        x_max = int(np.max(marker_corners[:, 0]))
+                        y_max = int(np.max(marker_corners[:, 1]))
+                        
+                        # Determine marker category
+                        marker_category = 'worker' if is_worker else 'slot'
+                        
+                        results.append({
+                            'data': str(marker_id),  # Store marker ID as string for compatibility
+                            'type': 'ARUCO',
+                            'category': marker_category,  # 'slot' or 'worker'
+                            'rect': {'x': x_min, 'y': y_min, 'width': x_max - x_min, 'height': y_max - y_min},
+                            'polygon': [(int(p[0]), int(p[1])) for p in marker_corners],
+                            'center': (center_x, center_y),
+                            'detection_method': f'aruco_{pass_name}'  # Track which pass succeeded
+                        })
+                        print(f"    [ArUco] Marker ID {marker_id} ({marker_category}) detected via '{pass_name}' at ({center_x}, {center_y})", file=sys.stderr)
                 
-                # Skip corner markers but allow marker ID 0 (it's a valid slot marker)
-                if is_corner:
-                    continue
-                
-                # Skip negative marker IDs (invalid)
-                if marker_id < 0:
-                    continue
-                
-                # Skip worker markers unless explicitly requested
-                if is_worker and not include_workers:
-                    continue
-                
-                if marker_id not in found_marker_ids:
-                    found_marker_ids.add(marker_id)
+                # Check if we found all expected markers (early exit optimization)
+                if expected_count and len(found_marker_ids) >= expected_count:
+                    print(f"    [ArUco Debug] SUCCESS: Found all {len(found_marker_ids)} expected markers using '{pass_name}' preprocessing", file=sys.stderr)
+                    return results
                     
-                    # Get marker corners
-                    marker_corners = corners[i][0]
-                    
-                    # Calculate center
-                    center_x = int(np.mean(marker_corners[:, 0]))
-                    center_y = int(np.mean(marker_corners[:, 1]))
-                    
-                    # Calculate bounding box
-                    x_min = int(np.min(marker_corners[:, 0]))
-                    y_min = int(np.min(marker_corners[:, 1]))
-                    x_max = int(np.max(marker_corners[:, 0]))
-                    y_max = int(np.max(marker_corners[:, 1]))
-                    
-                    # Determine marker category
-                    marker_category = 'worker' if is_worker else 'slot'
-                    
-                    results.append({
-                        'data': str(marker_id),  # Store marker ID as string for compatibility
-                        'type': 'ARUCO',
-                        'category': marker_category,  # 'slot' or 'worker'
-                        'rect': {'x': x_min, 'y': y_min, 'width': x_max - x_min, 'height': y_max - y_min},
-                        'polygon': [(int(p[0]), int(p[1])) for p in marker_corners],
-                        'center': (center_x, center_y),
-                        'detection_method': 'aruco_opencv'
-                    })
-                    print(f"ArUco marker detected: ID {marker_id} ({marker_category}) at ({center_x}, {center_y})", file=sys.stderr)
-                    
-                    # Early exit if we found all expected markers (only count slot markers for early exit)
-                    if expected_count and marker_category == 'slot' and len([m for m in results if m.get('category') == 'slot']) >= expected_count:
-                        break
-    except Exception as e:
-        print(f"[ERROR] ArUco detection failed: {e}", file=sys.stderr)
+        except Exception as e:
+            print(f"    [ERROR] ArUco detection pass '{pass_name}' failed: {e}", file=sys.stderr)
+            continue
+    
+    # After all passes, report results
+    if results:
+        print(f"    [ArUco Debug] Completed all passes: Found {len(results)} markers total", file=sys.stderr)
+    
+    # If no markers found after all passes
+    if not results:
+        print(f"    [ArUco Debug] FAILED: No markers found after all {len(preprocessing_passes)} preprocessing passes", file=sys.stderr)
     
     return results
 
@@ -170,6 +219,9 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         Dictionary with validation results
     """
     print(f"[VALIDATION] Starting validation for camera {camera_id} in mode '{mode}'", file=sys.stderr)
+    print(f"[VALIDATION] OpenCV version: {OPENCV_VERSION}", file=sys.stderr)
+    if OPENCV_HAS_455_BUG:
+        print(f"[VALIDATION] WARNING: OpenCV {OPENCV_VERSION} has known ArUco bug - using multi-pass detection", file=sys.stderr)
     if use_saved_rectified:
         print(f"[VALIDATION] Will use saved calibration rectified image", file=sys.stderr)
     sys.stderr.flush()
@@ -197,7 +249,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     # VALIDATION ALWAYS USES SAVED RECTIFIED IMAGE FROM CALIBRATION
     # No camera capture allowed in validation - calibration creates the high-res rectified image
     print(f"[VALIDATION] Loading saved calibration rectified image (NO CAMERA CAPTURE)", file=sys.stderr)
-    saved_rectified_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
+    saved_rectified_path = os.path.join(data_dir, 'latest_calibration_rectified.png')
     
     if not os.path.exists(saved_rectified_path):
         print(f"[VALIDATION] ERROR: Saved rectified image not found at {saved_rectified_path}", file=sys.stderr)
@@ -236,10 +288,10 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"[VALIDATION] No paper dimensions provided, using scale 1.0", file=sys.stderr)
     
     
-    # Save debug rectified image (if enabled)
-    rectified_path = os.path.join(debug_dir, 'validation_rectified_debug.jpg')
+    # Save debug rectified image (if enabled) - PNG for lossless quality
+    rectified_path = os.path.join(debug_dir, 'validation_rectified_debug.png')
     if enable_debug_images and rectified is not None:
-        cv2.imwrite(rectified_path, rectified, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        cv2.imwrite(rectified_path, rectified, [cv2.IMWRITE_PNG_COMPRESSION, 3])
         print(f"[VALIDATION] Saved rectified view to: {rectified_path}", file=sys.stderr)
         sys.stderr.flush()
     else:
