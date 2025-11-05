@@ -1,0 +1,129 @@
+sudo journalctl -u shelfeye -f
+Nov 05 09:03:25 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Camera warmup: 10 seconds at 30fps pace...
+Nov 05 09:03:35 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Warmup complete: 154 frames over 10s
+Nov 05 09:03:35 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Capturing 50 frames to select sharpest...
+Nov 05 09:03:35 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Frame 1/50: New best sharpness = 30.6
+Nov 05 09:03:35 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Frame 2/50: New best sharpness = 30.8
+Nov 05 09:03:36 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Frame 10/50: New best sharpness = 30.8
+Nov 05 09:03:36 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Frame 11/50: New best sharpness = 31.0
+Nov 05 09:03:38 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Frame 21/50: New best sharpness = 31.1
+Nov 05 09:03:43 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Selected frame with sharpness = 31.1
+Nov 05 09:03:43 NaniwaTanaCheck pi-startup.sh[8778]: 9:03:43 AM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 19736ms :: …
+Nov 05 09:03:51 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Starting ArUco marker validation (visible) for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Nov 05 09:03:51 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Camera found: { hasHomography: true, hasCameraMatrix: true, hasDistCoeffs: true }
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Found 7 slots for camera
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] ====== SLOT COORDINATES BEING USED FOR VALIDATION ======
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] 1. 1 (pen): x=3.55cm, y=7.86cm, size=7x4cm, rot=0°
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] 2. 2 (pen): x=44.66cm, y=4.39cm, size=7x4cm, rot=0°
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] 3. 3 (pen): x=79.95cm, y=2.21cm, size=7x4cm, rot=0°
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] 4. 4 (5x5): x=44.66cm, y=28.29cm, size=5x5cm, rot=0°
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] 5. 5 (pen): x=44.66cm, y=40.11cm, size=7x4cm, rot=0°
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] 6. 6 (5x5): x=81.04cm, y=39.06cm, size=5x5cm, rot=0°
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] 7. 7 (5x5): x=7.62cm, y=39.61cm, size=5x5cm, rot=0°
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] ==================================================
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [CameraSessionManager] Exclusive lock set for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81 - blocking new previews
+Nov 05 09:03:52 NaniwaTanaCheck pi-startup.sh[8778]: [CameraSessionManager] Waiting for in-flight previews to complete...
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]: [CameraSessionManager] Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81 should now be available for exclusive use
+Nov 05 09:04:02 NaniwaTanaCheck sudo[8937]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/pkill -9 -f unified_led_controller.py
+Nov 05 09:04:02 NaniwaTanaCheck sudo[8937]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]: [LED] Error killing stuck processes: Error: Command failed: sudo pkill -9 -f unified_led_controller.py || true
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:     at genericNodeError (node:internal/errors:984:15)
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:     at wrappedFn (node:internal/errors:538:14)
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:     at ChildProcess.exithandler (node:child_process:422:12)
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:     at ChildProcess.emit (node:events:524:28)
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:     at maybeClose (node:internal/child_process:1104:16)
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:     at Socket.<anonymous> (node:internal/child_process:456:11)
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:     at Socket.emit (node:events:524:28)
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:     at Pipe.<anonymous> (node:net:343:12) {
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:   code: null,
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:   killed: false,
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:   signal: 'SIGKILL',
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:   cmd: 'sudo pkill -9 -f unified_led_controller.py || true',
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:   stdout: '',
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]:   stderr: ''
+Nov 05 09:04:02 NaniwaTanaCheck pi-startup.sh[8778]: }
+Nov 05 09:04:03 NaniwaTanaCheck sudo[8940]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action white --num-leds 27 --brightness 100
+Nov 05 09:04:03 NaniwaTanaCheck sudo[8940]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 05 09:04:03 NaniwaTanaCheck sudo[8940]: pam_unix(sudo:session): session closed for user root
+Nov 05 09:04:03 NaniwaTanaCheck pi-startup.sh[8778]: [LED] White light turned ON
+Nov 05 09:04:03 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Using paper dimensions: 89.1x42 cm
+Nov 05 09:04:03 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Using camera calibration parameters
+Nov 05 09:04:03 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Using device path: /dev/video0
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: [VALIDATION] Starting validation for camera /dev/video0 in mode 'visible'
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Will use saved calibration rectified image
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: [VALIDATION] Received parameters:
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Homography matrix: Yes
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Camera matrix: Yes
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Distortion coeffs: Yes
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Paper size: 89.1x42.0 cm
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Use saved rectified: True
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Using saved calibration rectified image
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: [VALIDATION] Loaded rectified image: 2821x1329px
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Found 7 expected slots for validation
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Calculated pixel density from saved image: 31.7 px/cm (width), 31.6 px/cm (height)
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: [VALIDATION] Using 31.6 px/cm for coordinate conversion
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: [VALIDATION] Saved rectified view to: /home/naniwa/ShelfEye/data/validation_rectified_debug.jpg
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Starting per-slot ROI QR code detection...
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Slot 1/7: 1 (expected QR: '1')
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr:   ROI size: 266x176px at (0,160)
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_1.jpg
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr:   DEBUG: ROI shape=(176, 266), dtype=uint8, min=0, max=255
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr:   DEBUG: Pixel range=255, applying contrast boost
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr:   DEBUG: Saved contrast-boosted ROI to /home/naniwa/ShelfEye/data/validation_roi_1_boosted.jpg
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   DEBUG: Starting QR decode for slot 1...
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: Traceback (most recent call last):
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr:   File "/home/naniwa/ShelfEye/python/validate_slot_qrs.py", line 657, in <module>
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:     result = validate_slot_qrs(
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:         camera_id=camera_id,
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:     ...<7 lines>...
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:         use_saved_rectified=args.use_saved_rectified
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:     )
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   File "/home/naniwa/ShelfEye/python/validate_slot_qrs.py", line 489, in validate_slot_qrs
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:     roi_qr_results = decode_qr_codes(roi_to_scan, expected_count=1)
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:                      ^^^^^^^^^^^^^^^
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: NameError: name 'decode_qr_codes' is not defined
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Failed to parse Python output. Exit code: 1
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Result:
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Error output: [VALIDATION] Starting validation for camera /dev/video0 in mode 'visible'
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Will use saved calibration rectified image
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Received parameters:
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Homography matrix: Yes
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Camera matrix: Yes
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Distortion coeffs: Yes
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Paper size: 89.1x42.0 cm
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   - Use saved rectified: True
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Using saved calibration rectified image
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Loaded rectified image: 2821x1329px
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Found 7 expected slots for validation
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Calculated pixel density from saved image: 31.7 px/cm (width), 31.6 px/cm (height)
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Using 31.6 px/cm for coordinate conversion
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Saved rectified view to: /home/naniwa/ShelfEye/data/validation_rectified_debug.jpg
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Starting per-slot ROI QR code detection...
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [VALIDATION] Slot 1/7: 1 (expected QR: '1')
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   ROI size: 266x176px at (0,160)
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_1.jpg
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   DEBUG: ROI shape=(176, 266), dtype=uint8, min=0, max=255
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   DEBUG: Pixel range=255, applying contrast boost
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   DEBUG: Saved contrast-boosted ROI to /home/naniwa/ShelfEye/data/validation_roi_1_boosted.jpg
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   DEBUG: Starting QR decode for slot 1...
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: Traceback (most recent call last):
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   File "/home/naniwa/ShelfEye/python/validate_slot_qrs.py", line 657, in <module>
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:     result = validate_slot_qrs(
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:         camera_id=camera_id,
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:     ...<7 lines>...
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:         use_saved_rectified=args.use_saved_rectified
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:     )
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:   File "/home/naniwa/ShelfEye/python/validate_slot_qrs.py", line 489, in validate_slot_qrs
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:     roi_qr_results = decode_qr_codes(roi_to_scan, expected_count=1)
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]:                      ^^^^^^^^^^^^^^^
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: NameError: name 'decode_qr_codes' is not defined
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [CameraSessionManager] Released exclusive lock for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: 9:04:04 AM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81/validate-markers-visib…
+Nov 05 09:04:04 NaniwaTanaCheck sudo[8947]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action off --num-leds 99
+Nov 05 09:04:04 NaniwaTanaCheck sudo[8947]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 05 09:04:04 NaniwaTanaCheck sudo[8947]: pam_unix(sudo:session): session closed for user root
+Nov 05 09:04:04 NaniwaTanaCheck pi-startup.sh[8778]: [LED] LED light turned OFF
+Nov 05 09:04:05 NaniwaTanaCheck pi-startup.sh[8778]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Nov 05 09:04:05 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Nov 05 09:04:05 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Camera format: MJPG, resolution: 1920x1080
+Nov 05 09:04:05 NaniwaTanaCheck pi-startup.sh[8778]: [Validation] Python stderr: INFO:camera_utils:Camera warmup: 10 seconds at 30fps pace...

@@ -484,31 +484,31 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         cv2.imwrite(boosted_path, roi_to_scan)
         print(f"  DEBUG: Saved contrast-boosted ROI to {boosted_path}", file=sys.stderr)
         
-        # Scan this ROI for QR codes (limit to 1 expected in this slot)
-        print(f"  DEBUG: Starting QR decode for slot {slot_id}...", file=sys.stderr)
-        roi_qr_results = decode_qr_codes(roi_to_scan, expected_count=1)
-        print(f"  DEBUG: Decode complete. Found {len(roi_qr_results)} QR codes", file=sys.stderr)
+        # Scan this ROI for ArUco markers (limit to 1 expected in this slot)
+        print(f"  DEBUG: Starting ArUco decode for slot {slot_id}...", file=sys.stderr)
+        roi_marker_results = decode_aruco_markers(roi_to_scan, expected_count=1)
+        print(f"  DEBUG: Decode complete. Found {len(roi_marker_results)} ArUco markers", file=sys.stderr)
         
-        if roi_qr_results:
-            # QR detected in this slot's ROI
-            qr = roi_qr_results[0]
-            qr_data = qr['data']
-            detected_qrs_list.append(qr_data)
+        if roi_marker_results:
+            # ArUco marker detected in this slot's ROI
+            marker = roi_marker_results[0]
+            marker_data = marker['data']
+            detected_qrs_list.append(marker_data)
             
-            print(f"  ✓ Detected QR: '{qr_data}' via {qr['detection_method']}", file=sys.stderr)
+            print(f"  ✓ Detected ArUco: '{marker_data}' via {marker['detection_method']}", file=sys.stderr)
             
             if mode == 'visible':
-                # QR should be visible - check if it matches expected
-                if qr_data == expected_qr:
+                # ArUco marker should be visible - check if it matches expected
+                if marker_data == expected_qr:
                     validation_details.append({
                         'slot_id': slot_id,
                         'expected_qr': expected_qr,
                         'status': 'correct',
                         'detected': True,
                         'in_bounds': True,
-                        'detection_method': qr['detection_method']
+                        'detection_method': marker['detection_method']
                     })
-                    print(f"  ✓ CORRECT: Matches expected QR '{expected_qr}'", file=sys.stderr)
+                    print(f"  ✓ CORRECT: Matches expected marker ID '{expected_qr}'", file=sys.stderr)
                 else:
                     validation_details.append({
                         'slot_id': slot_id,
@@ -516,30 +516,30 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                         'status': 'wrong_qr',
                         'detected': True,
                         'in_bounds': True,
-                        'actual_qr': qr_data,
-                        'detection_method': qr['detection_method']
+                        'actual_qr': marker_data,
+                        'detection_method': marker['detection_method']
                     })
                     missing_qrs.append(expected_qr)
-                    print(f"  ✗ WRONG QR: Expected '{expected_qr}' but found '{qr_data}'", file=sys.stderr)
+                    print(f"  ✗ WRONG MARKER: Expected '{expected_qr}' but found '{marker_data}'", file=sys.stderr)
             else:
-                # QR should NOT be visible (tool should cover it)
+                # ArUco marker should NOT be visible (tool should cover it)
                 validation_details.append({
                     'slot_id': slot_id,
                     'expected_qr': expected_qr,
                     'status': 'incorrect',
                     'detected': True,
                     'in_bounds': True,
-                    'actual_qr': qr_data,
-                    'detection_method': qr['detection_method']
+                    'actual_qr': marker_data,
+                    'detection_method': marker['detection_method']
                 })
                 incorrectly_visible.append(expected_qr)
-                print(f"  ✗ ERROR: QR '{qr_data}' is visible but should be covered", file=sys.stderr)
+                print(f"  ✗ ERROR: Marker '{marker_data}' is visible but should be covered", file=sys.stderr)
         else:
-            # No QR detected in this slot's ROI
-            print(f"  ✗ No QR detected in ROI", file=sys.stderr)
+            # No ArUco marker detected in this slot's ROI
+            print(f"  ✗ No ArUco marker detected in ROI", file=sys.stderr)
             
             if mode == 'visible':
-                # QR should be visible but isn't - MISSING
+                # ArUco marker should be visible but isn't - MISSING
                 validation_details.append({
                     'slot_id': slot_id,
                     'expected_qr': expected_qr,
@@ -548,9 +548,9 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                     'in_bounds': False
                 })
                 missing_qrs.append(expected_qr)
-                print(f"  ✗ ERROR: Expected QR '{expected_qr}' not detected", file=sys.stderr)
+                print(f"  ✗ ERROR: Expected marker ID '{expected_qr}' not detected", file=sys.stderr)
             else:
-                # QR not visible - CORRECT (tool is covering it)
+                # ArUco marker not visible - CORRECT (tool is covering it)
                 validation_details.append({
                     'slot_id': slot_id,
                     'expected_qr': expected_qr,
@@ -558,7 +558,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
                     'detected': False,
                     'in_bounds': True
                 })
-                print(f"  ✓ CORRECT: QR is covered as expected", file=sys.stderr)
+                print(f"  ✓ CORRECT: Marker is covered as expected", file=sys.stderr)
     
     # Calculate summary
     expected_visible = 0
