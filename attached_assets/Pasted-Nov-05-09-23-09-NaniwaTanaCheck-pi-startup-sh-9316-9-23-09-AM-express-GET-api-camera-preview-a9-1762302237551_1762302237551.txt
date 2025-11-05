@@ -1,0 +1,147 @@
+Nov 05 09:23:09 NaniwaTanaCheck pi-startup.sh[9316]: 9:23:09 AM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 19630ms :: …
+Nov 05 09:23:21 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Starting ArUco marker validation (visible) for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Camera found: { hasHomography: true, hasCameraMatrix: true, hasDistCoeffs: true }
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Found 7 slots for camera
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] ====== SLOT COORDINATES BEING USED FOR VALIDATION ======
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] 1. 1 (pen): x=3.55cm, y=7.86cm, size=7x4cm, rot=0°
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] 2. 2 (pen): x=44.66cm, y=4.39cm, size=7x4cm, rot=0°
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] 3. 3 (pen): x=79.95cm, y=2.21cm, size=7x4cm, rot=0°
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] 4. 4 (5x5): x=44.66cm, y=28.29cm, size=5x5cm, rot=0°
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] 5. 5 (pen): x=44.66cm, y=40.11cm, size=7x4cm, rot=0°
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] 6. 6 (5x5): x=81.04cm, y=39.06cm, size=5x5cm, rot=0°
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] 7. 7 (5x5): x=7.62cm, y=39.61cm, size=5x5cm, rot=0°
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] ==================================================
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [CameraSessionManager] Exclusive lock set for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81 - blocking new previews
+Nov 05 09:23:22 NaniwaTanaCheck pi-startup.sh[9316]: [CameraSessionManager] Waiting for in-flight previews to complete...
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]: [CameraSessionManager] Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81 should now be available for exclusive use
+Nov 05 09:23:32 NaniwaTanaCheck sudo[9427]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/pkill -9 -f unified_led_controller.py
+Nov 05 09:23:32 NaniwaTanaCheck sudo[9427]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]: [LED] Error killing stuck processes: Error: Command failed: sudo pkill -9 -f unified_led_controller.py || true
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:     at genericNodeError (node:internal/errors:984:15)
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:     at wrappedFn (node:internal/errors:538:14)
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:     at ChildProcess.exithandler (node:child_process:422:12)
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:     at ChildProcess.emit (node:events:524:28)
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:     at maybeClose (node:internal/child_process:1104:16)
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:     at Socket.<anonymous> (node:internal/child_process:456:11)
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:     at Socket.emit (node:events:524:28)
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:     at Pipe.<anonymous> (node:net:343:12) {
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:   code: null,
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:   killed: false,
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:   signal: 'SIGKILL',
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:   cmd: 'sudo pkill -9 -f unified_led_controller.py || true',
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:   stdout: '',
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]:   stderr: ''
+Nov 05 09:23:32 NaniwaTanaCheck pi-startup.sh[9316]: }
+Nov 05 09:23:33 NaniwaTanaCheck sudo[9430]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action white --num-leds 27 --brightness 100
+Nov 05 09:23:33 NaniwaTanaCheck sudo[9430]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 05 09:23:33 NaniwaTanaCheck sudo[9430]: pam_unix(sudo:session): session closed for user root
+Nov 05 09:23:33 NaniwaTanaCheck pi-startup.sh[9316]: [LED] White light turned ON
+Nov 05 09:23:33 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Using paper dimensions: 89.1x42 cm
+Nov 05 09:23:33 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Using camera calibration parameters
+Nov 05 09:23:33 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Using device path: /dev/video0
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: [VALIDATION] Starting validation for camera /dev/video0 in mode 'visible'
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [VALIDATION] Will use saved calibration rectified image
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: [VALIDATION] Received parameters:
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   - Homography matrix: Yes
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   - Camera matrix: Yes
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   - Distortion coeffs: Yes
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   - Paper size: 89.1x42.0 cm
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   - Use saved rectified: True
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [VALIDATION] Using saved calibration rectified image
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: [VALIDATION] Loaded rectified image: 2831x1334px
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: [VALIDATION] Found 7 expected slots for validation
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [VALIDATION] Calculated pixel density from saved image: 31.8 px/cm (width), 31.8 px/cm (height)
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [VALIDATION] Using 31.8 px/cm for coordinate conversion
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: [VALIDATION] Saved rectified view to: /home/naniwa/ShelfEye/data/validation_rectified_debug.jpg
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [VALIDATION] Starting per-slot ROI QR code detection...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: [VALIDATION] Slot 1/7: 1 (expected QR: '1')
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ROI size: 267x176px at (0,161)
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_1.jpg
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: ROI shape=(176, 267), dtype=uint8, min=0, max=245
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: Starting ArUco decode for slot 1 (original image)...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Decode complete. Found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: No markers on original, trying with normalization...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Normalized attempt found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ No ArUco marker detected in ROI
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ ERROR: Expected marker ID '1' not detected
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: [VALIDATION] Slot 2/7: 2 (expected QR: '2')
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ROI size: 310x176px at (1263,51)
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_2.jpg
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: ROI shape=(176, 310), dtype=uint8, min=4, max=255
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: Starting ArUco decode for slot 2 (original image)...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Decode complete. Found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: No markers on original, trying with normalization...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Normalized attempt found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ No ArUco marker detected in ROI
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ ERROR: Expected marker ID '2' not detected
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: [VALIDATION] Slot 3/7: 3 (expected QR: '3')
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ROI size: 310x158px at (2385,0)
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_3.jpg
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: ROI shape=(158, 310), dtype=uint8, min=1, max=255
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: Starting ArUco decode for slot 3 (original image)...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Decode complete. Found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: No markers on original, trying with normalization...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Normalized attempt found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ No ArUco marker detected in ROI
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ ERROR: Expected marker ID '3' not detected
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [VALIDATION] Slot 4/7: 4 (expected QR: '4')
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   ROI size: 220x220px at (1308,788)
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_4.jpg
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: ROI shape=(220, 220), dtype=uint8, min=1, max=255
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: Starting ArUco decode for slot 4 (original image)...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Decode complete. Found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: No markers on original, trying with normalization...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Normalized attempt found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ No ArUco marker detected in ROI
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ ERROR: Expected marker ID '4' not detected
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [VALIDATION] Slot 5/7: 5 (expected QR: '5')
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   ROI size: 310x148px at (1263,1186)
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_5.jpg
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: ROI shape=(148, 310), dtype=uint8, min=0, max=255
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: Starting ArUco decode for slot 5 (original image)...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Decode complete. Found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: No markers on original, trying with normalization...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Normalized attempt found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ No ArUco marker detected in ROI
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ ERROR: Expected marker ID '5' not detected
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: [VALIDATION] Slot 6/7: 6 (expected QR: '6')
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ROI size: 220x204px at (2464,1130)
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_6.jpg
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: ROI shape=(204, 220), dtype=uint8, min=0, max=255
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: Starting ArUco decode for slot 6 (original image)...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Decode complete. Found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: No markers on original, trying with normalization...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Normalized attempt found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ No ArUco marker detected in ROI
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ ERROR: Expected marker ID '6' not detected
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [VALIDATION] Slot 7/7: 7 (expected QR: '7')
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   ROI size: 220x186px at (132,1148)
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Saved ROI to /home/naniwa/ShelfEye/data/validation_roi_7.jpg
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: ROI shape=(186, 220), dtype=uint8, min=0, max=255
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: Starting ArUco decode for slot 7 (original image)...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Decode complete. Found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   DEBUG: No markers on original, trying with normalization...
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:   DEBUG: Normalized attempt found 0 ArUco markers
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ No ArUco marker detected in ROI
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   ✗ ERROR: Expected marker ID '7' not detected
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr:
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [VALIDATION] Summary:
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   - Success: False
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   - Expected visible: 7
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   - Actually visible: 0
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]:   - Missing: 1, 2, 3, 4, 5, 6, 7
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: [CameraSessionManager] Released exclusive lock for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Nov 05 09:23:34 NaniwaTanaCheck pi-startup.sh[9316]: 9:23:34 AM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81/validate-markers-visib…
+Nov 05 09:23:34 NaniwaTanaCheck sudo[9437]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action off --num-leds 99
+Nov 05 09:23:34 NaniwaTanaCheck sudo[9437]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 05 09:23:35 NaniwaTanaCheck sudo[9437]: pam_unix(sudo:session): session closed for user root
+Nov 05 09:23:35 NaniwaTanaCheck pi-startup.sh[9316]: [LED] LED light turned OFF
+Nov 05 09:23:35 NaniwaTanaCheck pi-startup.sh[9316]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Nov 05 09:23:35 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: INFO:__main__:Opening camera: /dev/video0
+Nov 05 09:23:36 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: INFO:camera_utils:Camera format: MJPG, resolution: 1920x1080
+Nov 05 09:23:36 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: INFO:camera_utils:Camera warmup: 10 seconds at 30fps pace...
+Nov 05 09:23:46 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: INFO:camera_utils:Warmup complete: 154 frames over 10s
+Nov 05 09:23:46 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: INFO:camera_utils:Capturing 50 frames to select sharpest...
+Nov 05 09:23:46 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: INFO:camera_utils:Frame 1/50: New best sharpness = 29.8
+Nov 05 09:23:48 NaniwaTanaCheck pi-startup.sh[9316]: [Validation] Python stderr: INFO:camera_utils:Frame 12/50: New best sharpness = 29.9
+Nov 05 09:23:53 NaniwaTanaCheck pi-startup

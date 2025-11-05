@@ -33,30 +33,39 @@ def decode_aruco_markers(image, expected_count=None):
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     aruco_params = cv2.aruco.DetectorParameters()
     
-    # CRITICAL: Relax parameters for printed markers (not perfect lab conditions)
-    # These settings are optimized for real-world printed markers with potential:
-    # - Print imperfections, slight distortion, varying lighting
-    # - Similar to what worked for QR code detection
+    # EXTREME: Maximum relaxation for printed markers
     aruco_params.adaptiveThreshWinSizeMin = 3
-    aruco_params.adaptiveThreshWinSizeMax = 53
-    aruco_params.adaptiveThreshWinSizeStep = 4
-    aruco_params.minMarkerPerimeterRate = 0.03
-    aruco_params.maxMarkerPerimeterRate = 4.0
-    aruco_params.polygonalApproxAccuracyRate = 0.05
-    aruco_params.minCornerDistanceRate = 0.05
-    aruco_params.minDistanceToBorder = 3
-    aruco_params.minMarkerDistanceRate = 0.05
+    aruco_params.adaptiveThreshWinSizeMax = 200
+    aruco_params.adaptiveThreshWinSizeStep = 10
+    aruco_params.adaptiveThreshConstant = 7
+    aruco_params.minMarkerPerimeterRate = 0.005  # Very relaxed
+    aruco_params.maxMarkerPerimeterRate = 8.0
+    aruco_params.polygonalApproxAccuracyRate = 0.15  # Very tolerant
+    aruco_params.minCornerDistanceRate = 0.01
+    aruco_params.minDistanceToBorder = 0
+    aruco_params.minMarkerDistanceRate = 0.005
     aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
     aruco_params.cornerRefinementWinSize = 5
-    aruco_params.cornerRefinementMaxIterations = 30
-    aruco_params.cornerRefinementMinAccuracy = 0.1
+    aruco_params.cornerRefinementMaxIterations = 50
+    aruco_params.cornerRefinementMinAccuracy = 0.01
+    aruco_params.markerBorderBits = 1
+    aruco_params.perspectiveRemovePixelPerCell = 4
+    aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.1
+    aruco_params.maxErroneousBitsInBorderRate = 0.5  # Allow 50% error in border
+    aruco_params.minOtsuStdDev = 2.0
+    aruco_params.errorCorrectionRate = 1.0  # Maximum error correction
     
     # Input is already grayscale from rectification (memory-optimized)
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
+    # DEBUG: Print image stats
+    print(f"    [ArUco Debug] Image size: {gray.shape}, dtype: {gray.dtype}, range: [{gray.min()}, {gray.max()}]", file=sys.stderr)
+    
     # Detect ArUco markers
     try:
         corners, ids, rejected = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
+        
+        print(f"    [ArUco Debug] Detection results: {len(ids) if ids is not None else 0} markers, {len(rejected)} rejected candidates", file=sys.stderr)
         
         if ids is not None and len(ids) > 0:
             for i, marker_id in enumerate(ids.flatten()):
