@@ -68,7 +68,7 @@ def apply_gamma_correction(image, gamma=1.15):
                       for i in np.arange(0, 256)]).astype("uint8")
     return cv2.LUT(image, table)
 
-def setup_camera_picam2(camera_index=0, resolution=(3840, 2160)):
+def setup_camera_picam2(camera_index=0, resolution=(3840, 2160), max_retries=3):
     """
     Setup Picamera2 with optimal settings for quality
     Returns configured Picamera2 instance
@@ -76,14 +76,28 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160)):
     Args:
         camera_index: Camera device index (0 for /dev/video0, 1 for /dev/video1, etc.)
         resolution: Tuple of (width, height)
+        max_retries: Number of retries if camera is busy
     """
     if not PICAMERA2_AVAILABLE:
         raise ImportError("Picamera2 is not available. This module only works on Raspberry Pi.")
     
     width, height = resolution
     
-    logger.info(f"Initializing Picamera2 on camera {camera_index}")
-    picam2 = Picamera2(camera_index)
+    # Retry logic for "Pipeline handler in use" errors
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Initializing Picamera2 on camera {camera_index} (attempt {attempt + 1}/{max_retries})")
+            picam2 = Picamera2(camera_index)
+            break  # Success!
+        except Exception as e:
+            if "in use" in str(e).lower() and attempt < max_retries - 1:
+                logger.warning(f"Camera busy, retrying in 2 seconds... ({e})")
+                time.sleep(2)
+                continue
+            else:
+                raise  # Re-raise if not a "busy" error or out of retries
+    else:
+        raise Exception(f"Failed to initialize camera after {max_retries} attempts")
     
     # Create configuration with minimal settings to avoid unsupported controls
     # Use video configuration to get exact resolution without cropping
