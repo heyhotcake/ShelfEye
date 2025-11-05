@@ -214,10 +214,94 @@ class ArucoCornerCalibrator:
             logger.info(f"Camera matrix and distortion coefficients estimated (distortion currently set to zero)")
             
             return True, homography, reprojection_error, camera_matrix, dist_coeffs
-            
         except Exception as e:
             logger.error(f"Error calculating homography: {e}")
             return False, None, float('inf'), None, None
+    
+    def validate_slot_markers_on_raw_frame(self, frame: np.ndarray, homography: np.ndarray, 
+                                          paper_size_cm: Tuple[float, float], 
+                                          templates: list) -> dict:
+        """
+        Validate slot ArUco markers on the RAW camera frame (before any warpPerspective)
+        This avoids interpolation artifacts that corrupt markers
+        
+        Args:
+            frame: Raw camera frame
+            homography: Homography matrix (cm → pixels)
+            paper_size_cm: Paper size in cm
+            templates: List of template slot configurations with x, y positions in cm
+            
+        Returns:
+            Dictionary with validation results
+        """
+        # ArUco detector setup (same dictionary as corner markers)
+        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+        aruco_params = cv2.aruco.DetectorParameters()
+        aruco_params.perspectiveRemovePixelPerCell = 16
+        
+        results = {
+            'total_count': len(templates),
+            'valid_count': 0,
+            'invalid_count': 0,
+            'slots': []
+        }
+        
+        for i, template in enumerate(templates):
+            slot_id = template.get('autoQrId', str(i + 1))
+            expected_marker_id = int(slot_id) if slot_id.isdigit() else None
+            x_cm = template.get('x', 0)
+            y_cm = template.get('y', 0)
+            
+            # Map slot position (cm) → raw pixel coordinates using homography
+            slot_pos_cm = np.array([[x_cm, y_cm]], dtype=np.float32).reshape(-1, 1, 2)
+            slot_pos_px = cv2.perspectiveTransform(slot_pos_cm, homography)[0][0]
+            
+            # Extract ROI from raw frame (4cm = ~127px at 31.8 px/cm)
+            roi_size_cm = 4.0
+            roi_size_px = int(roi_size_cm * self.measured_px_per_cm)
+            half_roi = roi_size_px // 2
+            
+            x1 = max(0, int(slot_pos_px[0]) - half_roi)
+            y1 = max(0, int(slot_pos_px[1]) - half_roi)
+            x2 = min(frame.shape[1], x1 + roi_size_px)
+            y2 = min(frame.shape[0], y1 + roi_size_px)
+            
+            roi = frame[y1:y2, x1:x2]
+            
+            # Convert to grayscale if needed
+            if len(roi.shape) == 3:
+                roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            else:
+                roi_gray = roi
+            
+            # Detect ArUco markers in ROI
+            corners, ids, rejected = cv2.aruco.detectMarkers(roi_gray, aruco_dict, parameters=aruco_params)
+            
+            detected = False
+            detected_id = None
+            if ids is not None and len(ids) > 0:
+                detected_id = int(ids[0][0])
+                detected = (detected_id == expected_marker_id)
+            
+            slot_result = {
+                'slot_id': slot_id,
+                'expected_id': expected_marker_id,
+                'detected': detected,
+                'detected_id': detected_id,
+                'position_cm': (x_cm, y_cm),
+                'position_px': (int(slot_pos_px[0]), int(slot_pos_px[1]))
+            }
+            
+            results['slots'].append(slot_result)
+            
+            if detected:
+                results['valid_count'] += 1
+                logger.info(f"✓ Slot {slot_id}: Marker {expected_marker_id} detected")
+            else:
+                results['invalid_count'] += 1
+                logger.warning(f"✗ Slot {slot_id}: Expected {expected_marker_id}, got {detected_id if detected_id else 'nothing'}")
+        
+        return results
     
     def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int], 
                              paper_size_cm: Tuple[float, float] = (29.7, 21.0),
@@ -288,6 +372,16 @@ class ArucoCornerCalibrator:
                             for id, center in marker_centers.items()
                         }
                     }
+                    
+                    # INTEGRATED SLOT VALIDATION on raw camera frame
+                    # Validate slot markers on the SAME raw frame (no warpPerspective corruption)
+                    if templates and len(templates) > 0:
+                        logger.info(f"Validating {len(templates)} slot markers on raw camera frame...")
+                        slot_validation_results = self.validate_slot_markers_on_raw_frame(
+                            frame, homography, paper_size_cm, templates
+                        )
+                        result['slot_validation'] = slot_validation_results
+                        logger.info(f"Slot validation: {slot_validation_results['valid_count']}/{slot_validation_results['total_count']} markers detected")
                     
                     # ALWAYS save the high-resolution rectified image for validation
                     # (Even if preview not requested)
