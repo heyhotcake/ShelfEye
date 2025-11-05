@@ -344,6 +344,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { paperSize, templateTimestamp } = req.body; // Expected: paperSize: "6-page-3x2", templateTimestamp: ISO string
       
+      // Kill any lingering Python processes that might be holding the camera
+      // This fixes the "works on third try" issue
+      try {
+        const { exec } = require('child_process');
+        const killPromises = [
+          // Kill calibration processes
+          new Promise((resolve) => {
+            exec('pkill -f "aruco_calibrator.py" || true', () => resolve(null));
+          }),
+          // Kill preview processes  
+          new Promise((resolve) => {
+            exec('pkill -f "camera_preview.py" || true', () => resolve(null));
+          }),
+          // Kill validation processes
+          new Promise((resolve) => {
+            exec('pkill -f "validate_slot_qrs.py" || true', () => resolve(null));
+          })
+        ];
+        await Promise.all(killPromises);
+        // Give OS time to fully release camera resources
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('[Calibration] Cleaned up any lingering camera processes');
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
         return res.status(404).json({ message: "Camera not found" });
