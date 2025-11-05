@@ -1,0 +1,99 @@
+Short answer: not true. ArUco runs on Raspberry Pi. Problems are versioning, camera stack, or build choices, not a “fundamental” Pi defect.
+
+What I can verify:
+
+Many users run ArUco on Pi 3/4 at usable rates. Example: Pi 4 reports ~9 FPS at 1080p and higher at 640×480; 20 Hz at 640×480 on Pi-class hardware has been reported in the literature. 
+Raspberry Pi Forums
++1
+
+One real blocker exists on some setups: OpenCV 4.6 on Pi 5 + Bookworm can segfault in cv2.aruco.detectMarkers. Upgrading OpenCV fixes it. 
+GitHub
+
+If you install opencv-python (base) instead of opencv-contrib-python, the ArUco module is missing. Use the contrib build. Latest wheels are published for aarch64. 
+Stack Overflow
++1
+
+Camera stack matters. OpenCV still doesn’t natively capture from libcamera on Pi OS; use Picamera2 to grab frames or expose V4L2. Misusing VideoCapture on Bullseye/Bookworm causes “no frames” or timeouts. 
+GitHub
++2
+GitHub
++2
+
+Printed-marker quality and size drive detection. Larger tags, adequate “quiet zone,” sharp focus, and light are required. 
+Robotics Stack Exchange
++1
+
+AprilTag vs ArUco is a trade-off, not a Pi limitation: ArUco tends to be faster but a bit jittery; AprilTag slower but more robust. 
+Chief Delphi
+
+Root causes I see in Pi complaints
+
+Wrong package: opencv-python instead of opencv-contrib-python. Result: cv2.aruco missing. 
+Stack Overflow
+
+Old/broken OpenCV: 4.6 on Pi 5 segfaults; upgrade to a newer contrib wheel. 
+GitHub
++1
+
+Camera capture path: trying cv2.VideoCapture(0) on Bullseye/Bookworm without V4L2 bridge. Use Picamera2 (picamera2.capture_array() to NumPy). 
+GitHub
++1
+
+Marker generation/printing: no white quiet zone, low DPI, glossy paper, motion blur. 
+Stack Overflow
++1
+
+Dictionary mismatch: e.g., reading DICT_4X4_100 with markers printed from DICT_4X4_50 yields wrong IDs like “7 vs 17.” This is configuration, not hardware.
+
+Expectations on frame size: asking 1080p on Pi 4 drops FPS; downscale to 640×480 if you need speed. 
+Raspberry Pi Forums
+
+Minimal known-good path on Pi 4/5 (Bookworm, 64-bit)
+
+Install dependencies:
+
+sudo apt update
+sudo apt install -y python3-opencv python3-picamera2
+# or, if you need newer OpenCV: python -m pip install --upgrade pip
+python -m pip install --upgrade opencv-contrib-python
+
+
+Packages via apt work with Picamera2; PyPI gives you the latest contrib build. 
+Raspberry Pi Forums
++1
+
+Smoke test (uses Picamera2, ArUco 4×4/100):
+
+from picamera2 import Picamera2
+import cv2 as cv
+
+picam2 = Picamera2()
+picam2.configure(picam2.create_preview_configuration(main={"size": (640,480)}))
+picam2.start()
+
+dict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_100)
+params = cv.aruco.DetectorParameters()
+detector = cv.aruco.ArucoDetector(dict, params)
+
+frame = picam2.capture_array()
+gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+corners, ids, _ = detector.detectMarkers(gray)
+print(ids)
+
+
+If this crashes on Pi 5 with OpenCV 4.6, upgrade OpenCV. That crash is a known issue. 
+GitHub
+
+If detection is flaky, fix inputs first
+
+Print larger tags and add a white border ≥1 module around the code. Matte paper. Bright, even light. Keep shutter fast to avoid motion blur. 
+Stack Overflow
++1
+
+Downscale frames to 640×480 for speed or crop ROI before detection. Pi 4 at 1080p ~9 FPS is expected. 
+Raspberry Pi Forums
+
+Confirm dictionary and borderBits match how your tags were generated.
+
+Bottom line: ArUco on Raspberry Pi is viable. Fix package selection, camera capture path, and known-bad OpenCV versions. AprilTag remains an option if you prefer robustness over speed. 
+Chief Delphi
