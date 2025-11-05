@@ -52,9 +52,9 @@ def decode_aruco_markers(image, expected_count=None, include_workers=False):
     aruco_params.markerBorderBits = 1
     aruco_params.perspectiveRemovePixelPerCell = 4
     aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.1
-    aruco_params.maxErroneousBitsInBorderRate = 0.5  # Allow 50% error in border
+    aruco_params.maxErroneousBitsInBorderRate = 0.35  # Stricter - prevent false IDs (was 0.5)
     aruco_params.minOtsuStdDev = 2.0
-    aruco_params.errorCorrectionRate = 1.0  # Maximum error correction
+    aruco_params.errorCorrectionRate = 0.6  # Balanced error correction (was 1.0)
     
     # Input is already grayscale from rectification (memory-optimized)
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -194,254 +194,47 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     print(f"  - Use saved rectified: {use_saved_rectified}", file=sys.stderr)
     sys.stderr.flush()
     
-    # Initialize variables that will be used later
-    rectified = None
-    scale_x = 1.0
-    scale_y = 1.0
+    # VALIDATION ALWAYS USES SAVED RECTIFIED IMAGE FROM CALIBRATION
+    # No camera capture allowed in validation - calibration creates the high-res rectified image
+    print(f"[VALIDATION] Loading saved calibration rectified image (NO CAMERA CAPTURE)", file=sys.stderr)
+    saved_rectified_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
     
-    # Branch based on whether to use saved rectified image
-    if use_saved_rectified:
-        # LOAD SAVED HIGH-RES RECTIFIED IMAGE PATH
-        print(f"[VALIDATION] Using saved calibration rectified image", file=sys.stderr)
-        saved_rectified_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
-        
-        if not os.path.exists(saved_rectified_path):
-            print(f"[VALIDATION] ERROR: Saved rectified image not found at {saved_rectified_path}", file=sys.stderr)
-            print(f"[VALIDATION] ERROR: You must complete calibration first before validating!", file=sys.stderr)
-            print(f"[VALIDATION] ERROR: Calibration saves a high-resolution rectified image that validation uses.", file=sys.stderr)
-            sys.stderr.flush()
-            # Return error instead of falling back to capture
-            return {
-                'success': False,
-                'error': 'No calibration image found. Please complete calibration first to save a rectified image for validation.'
-            }
-        else:
-            rectified = cv2.imread(saved_rectified_path, cv2.IMREAD_GRAYSCALE)
-            
-            if rectified is None:
-                print(f"[VALIDATION] ERROR: Failed to load rectified image from {saved_rectified_path}", file=sys.stderr)
-                print(f"[VALIDATION] ERROR: The file exists but cannot be read. It may be corrupted.", file=sys.stderr)
-                sys.stderr.flush()
-                # Return error instead of falling back to capture
-                return {
-                    'success': False,
-                    'error': 'Failed to load calibration image. Please run calibration again.'
-                }
-            else:
-                print(f"[VALIDATION] Loaded rectified image: {rectified.shape[1]}x{rectified.shape[0]}px", file=sys.stderr)
-                print(f"[VALIDATION] Found {len(expected_slots)} expected slots for validation", file=sys.stderr)
-                sys.stderr.flush()
-                
-                # Calculate ACTUAL scale factors from the loaded image dimensions
-                # This supports any resolution (native camera resolution, not hardcoded upsampling)
-                if paper_width_cm and paper_height_cm:
-                    actual_px_per_cm_width = rectified.shape[1] / paper_width_cm
-                    actual_px_per_cm_height = rectified.shape[0] / paper_height_cm
-                    pixels_per_cm = min(actual_px_per_cm_width, actual_px_per_cm_height)
-                    scale_x = actual_px_per_cm_width
-                    scale_y = actual_px_per_cm_height
-                    print(f"[VALIDATION] Calculated pixel density from saved image: {actual_px_per_cm_width:.1f} px/cm (width), {actual_px_per_cm_height:.1f} px/cm (height)", file=sys.stderr)
-                    print(f"[VALIDATION] Using {pixels_per_cm:.1f} px/cm for coordinate conversion", file=sys.stderr)
-                else:
-                    scale_x = scale_y = 1.0
-                    print(f"[VALIDATION] No paper dimensions provided, using scale 1.0", file=sys.stderr)
+    if not os.path.exists(saved_rectified_path):
+        print(f"[VALIDATION] ERROR: Saved rectified image not found at {saved_rectified_path}", file=sys.stderr)
+        print(f"[VALIDATION] ERROR: You must complete calibration first before validating!", file=sys.stderr)
+        print(f"[VALIDATION] ERROR: Calibration saves a high-resolution rectified image that validation uses.", file=sys.stderr)
+        sys.stderr.flush()
+        return {
+            'success': False,
+            'error': 'No calibration image found. Please complete calibration first to save a rectified image for validation.'
+        }
     
-    # If we don't have a saved rectified image or it failed to load, capture a new one
-    if not use_saved_rectified:
-        # CAPTURE NEW FRAME AND APPLY HOMOGRAPHY PATH
-        print(f"[VALIDATION] Capturing new frame from camera", file=sys.stderr)
-        print(f"[VALIDATION] Found {len(expected_slots)} expected slots for validation", file=sys.stderr)
-        
-        # Validate required parameters
-        if not homography_matrix:
-            print(f"[VALIDATION] ERROR: No homography matrix provided", file=sys.stderr)
-            sys.stderr.flush()
-            return {
-                'success': False,
-                'error': 'No homography matrix provided'
-            }
-        
-        # Capture frame from camera
-        # Use camera_id if it's a device path, otherwise use index 0
-        device_source = camera_id if camera_id and camera_id.startswith('/dev/') else 0
-        print(f"[VALIDATION] Opening camera: {device_source}", file=sys.stderr)
+    rectified = cv2.imread(saved_rectified_path, cv2.IMREAD_GRAYSCALE)
+    
+    if rectified is None:
+        print(f"[VALIDATION] ERROR: Failed to load rectified image from {saved_rectified_path}", file=sys.stderr)
+        print(f"[VALIDATION] ERROR: The file exists but cannot be read. It may be corrupted.", file=sys.stderr)
         sys.stderr.flush()
-        
-        # Try to open camera with device path first
-        cap = cv2.VideoCapture(device_source)
-        
-        # If device path fails, fall back to camera index 0
-        if not cap.isOpened() and isinstance(device_source, str) and device_source.startswith('/'):
-            print(f"[VALIDATION] WARNING: Device path {device_source} failed, falling back to camera index 0", file=sys.stderr)
-            sys.stderr.flush()
-            device_source = 0
-            cap = cv2.VideoCapture(device_source)
-        
-        # Force MJPEG format for 4K - YUYV saturates USB bandwidth and throttles to 0.1fps
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc(*'MJPG'))
-        
-        # Set camera to highest resolution for better QR detection
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
-        
-        # Enable all automatic features - let camera firmware handle everything
-        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
-        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Auto mode (aperture priority)
-        cap.set(cv2.CAP_PROP_AUTO_WB, 1)
-        
-        # Log actual resolution achieved
-        actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(f"[VALIDATION] Camera resolution: {actual_width}x{actual_height} (requested 3840x2160)", file=sys.stderr)
-        
-        # Reduce buffer size to get fresh frames
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        
-        if not cap.isOpened():
-            print(f"[VALIDATION] ERROR: Failed to open camera", file=sys.stderr)
-            sys.stderr.flush()
-            return {
-                'success': False,
-                'error': 'Failed to open camera',
-                'missing_qrs': [],
-                'incorrectly_visible': [],
-                'expected_visible': 0,
-                'actual_visible': 0,
-                'expected_hidden': 0,
-                'actual_hidden': 0,
-                'details': []
-            }
-        
-        # Get actual camera resolution
-        actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        print(f"[VALIDATION] Camera resolution: {actual_width}x{actual_height}", file=sys.stderr)
-        sys.stderr.flush()
-        
-        # Discard first few frames (camera warmup and autofocus)
-        # Give autofocus time to settle (critical for sharp QR codes)
-        print(f"[VALIDATION] Warming up autofocus (discarding 20 frames over 4 seconds)...", file=sys.stderr)
-        sys.stderr.flush()
-        for i in range(20):
-            cap.read()
-            time.sleep(0.2)  # 200ms between frames = 4 seconds total
-        
-        # Memory-optimized: Capture frames one at a time, keep only the sharpest
-        # This avoids storing 5 full frames simultaneously (~70MB → ~14MB)
-        num_frames = 5
-        best_frame = None
-        best_sharpness = -1
-        best_frame_idx = -1
-        
-        print(f"[VALIDATION] Capturing {num_frames} frames for sharpness analysis (memory-optimized)", file=sys.stderr)
-        sys.stderr.flush()
-        
-        for i in range(num_frames):
-            ret, frame = cap.read()
-            if ret:
-                # Calculate sharpness using Laplacian variance (higher = sharper)
-                # Work on grayscale to save memory
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
-                
-                # Keep this frame only if it's the sharpest so far
-                if sharpness > best_sharpness:
-                    best_frame = frame  # Old frame will be garbage collected
-                    best_sharpness = sharpness
-                    best_frame_idx = i
-                
-                print(f"[VALIDATION] Frame {i+1}/{num_frames} captured, sharpness={sharpness:.2f}", file=sys.stderr)
-                sys.stderr.flush()
-        
-        cap.release()
-        print(f"[VALIDATION] Camera released", file=sys.stderr)
-        sys.stderr.flush()
-        
-        if best_frame is None:
-            print(f"[VALIDATION] ERROR: Failed to capture any frames", file=sys.stderr)
-            sys.stderr.flush()
-            return {
-                'success': False,
-                'error': 'Failed to capture any frames'
-            }
-        
-        # Use the sharpest frame
-        frame = best_frame
-        print(f"[VALIDATION] Selected frame {best_frame_idx+1}/{num_frames} with sharpness {best_sharpness:.2f}", file=sys.stderr)
-        sys.stderr.flush()
-        
-        # Signal that frame capture is complete - LED can turn off now
-        print("[LED_OFF_SIGNAL]", file=sys.stderr)
-        sys.stderr.flush()
-        
-        # Save the raw captured frame for debugging (optional, controlled by env var)
-        if enable_debug_images:
-            raw_frame_path = os.path.join(debug_dir, 'validation_raw_frame.jpg')
-            cv2.imwrite(raw_frame_path, frame)
-            print(f"[VALIDATION] Saved raw captured frame to: {raw_frame_path}", file=sys.stderr)
-            sys.stderr.flush()
-        else:
-            print(f"[VALIDATION] Debug images disabled (set DEBUG_IMAGES=1 to enable)", file=sys.stderr)
-            sys.stderr.flush()
-        
-        # Apply lens distortion correction if camera calibration parameters provided
-        # Skip undistortion if all distortion coefficients are zero (to avoid interpolation artifacts)
-        if camera_matrix is not None and dist_coeffs is not None:
-            D = np.array(dist_coeffs)
-            if np.any(D != 0):
-                print(f"Applying lens undistortion before warp", file=sys.stderr)
-                K = np.array(camera_matrix).reshape(3, 3)
-                frame = cv2.undistort(frame, K, D)
-            else:
-                print(f"Skipping undistortion (all coefficients are zero)", file=sys.stderr)
-        
-        # Apply homography transformation to get rectified view
-        # Use SAME transformation logic as rectified_preview.py
-        H = np.array(homography_matrix, dtype=np.float32).reshape(3, 3)
-        
-        # Calculate output size based on paper dimensions (if provided)
-        if paper_width_cm and paper_height_cm:
-            # Memory-optimized: 100 px/cm for reliable 30mm QR detection (300x300 pixels)
-            # With grayscale output: 8910×4200×1 = ~37MB vs RGB 112MB (saves 75MB)
-            # Multi-scale upsampling (3x) gives 900x900 pixels - excellent for detection
-            pixels_per_cm = 100  # Required for 30-40 QR codes per camera
-            output_width = int(paper_width_cm * pixels_per_cm)
-            output_height = int(paper_height_cm * pixels_per_cm)
-            print(f"Using paper-based output size: {output_width}x{output_height} ({paper_width_cm}x{paper_height_cm} cm) @ {pixels_per_cm}px/cm", file=sys.stderr)
-            
-            # Build transformation matrix like rectified_preview.py
-            scale_x = output_width / paper_width_cm
-            scale_y = output_height / paper_height_cm
-            
-            # Scaling matrix: cm → output pixels
-            S = np.array([
-                [scale_x, 0, 0],
-                [0, scale_y, 0],
-                [0, 0, 1]
-            ], dtype=np.float32)
-            
-            # Invert homography: camera pixels → cm
-            H_inv = np.linalg.inv(H)
-            
-            # Combined warp: camera_pixel → cm → output_pixel
-            M = S @ H_inv
-            
-            # Use INTER_NEAREST for sharp edges (best for QR codes)
-            rectified = cv2.warpPerspective(frame, M, (output_width, output_height), 
-                                           flags=cv2.INTER_NEAREST,
-                                           borderMode=cv2.BORDER_CONSTANT,
-                                           borderValue=(255, 255, 255))
-            
-            # Convert to grayscale immediately to save memory (3x reduction)
-            # QR detection works on grayscale, no need for color
-            rectified = cv2.cvtColor(rectified, cv2.COLOR_BGR2GRAY)
-            print(f"[VALIDATION] Converted rectified image to grayscale (saves 75MB)", file=sys.stderr)
-        else:
-            # Fallback to direct homography (no scaling)
-            rectified = cv2.warpPerspective(frame, np.linalg.inv(H), (frame.shape[1], frame.shape[0]))
-            rectified = cv2.cvtColor(rectified, cv2.COLOR_BGR2GRAY)
-            scale_x = scale_y = 1.0
-            print(f"Using direct homography warp (no paper size)", file=sys.stderr)
+        return {
+            'success': False,
+            'error': 'Failed to load calibration image. Please run calibration again.'
+        }
+    
+    print(f"[VALIDATION] ✓ Loaded rectified image: {rectified.shape[1]}x{rectified.shape[0]}px (from saved calibration)", file=sys.stderr)
+    print(f"[VALIDATION] Found {len(expected_slots)} expected slots for validation", file=sys.stderr)
+    sys.stderr.flush()
+    
+    # Calculate ACTUAL scale factors from the loaded image dimensions
+    if paper_width_cm and paper_height_cm:
+        scale_x = rectified.shape[1] / paper_width_cm
+        scale_y = rectified.shape[0] / paper_height_cm
+        pixels_per_cm = min(scale_x, scale_y)
+        print(f"[VALIDATION] Calculated pixel density: {scale_x:.1f} px/cm (width), {scale_y:.1f} px/cm (height)", file=sys.stderr)
+        print(f"[VALIDATION] Using {pixels_per_cm:.1f} px/cm for coordinate conversion", file=sys.stderr)
+    else:
+        scale_x = scale_y = 1.0
+        print(f"[VALIDATION] No paper dimensions provided, using scale 1.0", file=sys.stderr)
+    
     
     # Save debug rectified image (if enabled)
     rectified_path = os.path.join(debug_dir, 'validation_rectified_debug.jpg')

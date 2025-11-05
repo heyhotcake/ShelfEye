@@ -48,16 +48,17 @@ def find_all_aruco_markers(image_path):
     aruco_params.markerBorderBits = 1
     aruco_params.perspectiveRemovePixelPerCell = 4
     aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.1
-    aruco_params.maxErroneousBitsInBorderRate = 0.5
+    aruco_params.maxErroneousBitsInBorderRate = 0.35  # Stricter - prevent false IDs (was 0.5)
     aruco_params.minOtsuStdDev = 2.0
-    aruco_params.errorCorrectionRate = 1.0
+    aruco_params.errorCorrectionRate = 0.6  # Balanced error correction (was 1.0)
     
     all_markers = {}  # Use dict to avoid duplicates
     
     # Try multiple preprocessing methods
+    normalized = np.zeros_like(img)
     preprocessing_methods = [
         ("Original", img),
-        ("Normalized", cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX)),
+        ("Normalized", cv2.normalize(img, normalized, 0, 255, cv2.NORM_MINMAX)),
         ("Gaussian Blur", cv2.GaussianBlur(img, (3, 3), 0)),
         ("Bilateral Filter", cv2.bilateralFilter(img, 5, 50, 50)),
         ("CLAHE", cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8)).apply(img)),
