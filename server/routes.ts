@@ -344,49 +344,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { paperSize, templateTimestamp } = req.body; // Expected: paperSize: "6-page-3x2", templateTimestamp: ISO string
       
-      // Get camera info first to know device path
+      // Get camera info first
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
         return res.status(404).json({ message: "Camera not found" });
       }
       
-      // Kill any lingering Python processes that might be holding the camera
-      // This fixes the "works on third try" issue
+      // CRITICAL FIX: Acquire lock FIRST before any cleanup
+      // This blocks frontend from spawning new preview processes during calibration
+      console.log('[Calibration] Acquiring exclusive camera lock to prevent preview race condition...');
+      await cameraSessionManager.acquireExclusiveLock(cameraId);
+      lockAcquired = true;
+      console.log('[Calibration] Lock acquired. No new previews can start.');
+      
+      // Now kill any existing Python processes that might be holding the camera
+      // The lock prevents new ones from spawning during cleanup
       try {
         const { exec } = require('child_process');
         const killPromises = [
-          // Kill calibration processes
           new Promise((resolve) => {
             exec('pkill -9 -f "aruco_calibrator.py" || true', () => resolve(null));
           }),
-          // Kill preview processes  
           new Promise((resolve) => {
             exec('pkill -9 -f "camera_preview.py" || true', () => resolve(null));
           }),
-          // Kill validation processes
           new Promise((resolve) => {
             exec('pkill -9 -f "validate_slot_qrs.py" || true', () => resolve(null));
           }),
-          // Kill rectified preview processes
           new Promise((resolve) => {
             exec('pkill -9 -f "rectified_preview.py" || true', () => resolve(null));
           }),
-          // Kill ANY Python process using THIS camera's device (using actual device path)
           new Promise((resolve) => {
             const devicePath = camera.devicePath || '/dev/video0';
             exec(`fuser -k ${devicePath} 2>/dev/null || true`, () => resolve(null));
           }),
-          // Also try common video devices as fallback
           new Promise((resolve) => {
             exec('fuser -k /dev/video0 /dev/video1 /dev/video2 2>/dev/null || true', () => resolve(null));
           })
         ];
         await Promise.all(killPromises);
-        // Give OS time to fully release camera resources (5 seconds for maximum reliability)
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        console.log('[Calibration] Cleaned up any lingering camera processes, waiting 5s for device release');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        console.log('[Calibration] Killed existing camera processes, waited 3s for device release');
       } catch (e) {
-        // Ignore cleanup errors
         console.error('[Calibration] Error killing stuck processes:', e);
       }
 
@@ -408,11 +407,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: err instanceof Error ? err.message : 'Unknown error'
         });
       }
-
-      // Acquire exclusive camera lock AFTER validation succeeds
-      // This includes a 10-second delay to ensure any preview process has fully released the camera
-      await cameraSessionManager.acquireExclusiveLock(cameraId);
-      lockAcquired = true;
 
       // Turn on LED light for consistent illumination during calibration (unified controller)
       // Kill stuck LED processes first to ensure clean state (prevents issues when calibrating after alert)
