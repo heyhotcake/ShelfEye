@@ -207,16 +207,26 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         
         if not os.path.exists(saved_rectified_path):
             print(f"[VALIDATION] ERROR: Saved rectified image not found at {saved_rectified_path}", file=sys.stderr)
-            print(f"[VALIDATION] FALLBACK: Will capture new frame instead", file=sys.stderr)
-            # Instead of failing, fall back to capturing a new frame
-            use_saved_rectified = False
+            print(f"[VALIDATION] ERROR: You must complete calibration first before validating!", file=sys.stderr)
+            print(f"[VALIDATION] ERROR: Calibration saves a high-resolution rectified image that validation uses.", file=sys.stderr)
+            sys.stderr.flush()
+            # Return error instead of falling back to capture
+            return {
+                'success': False,
+                'error': 'No calibration image found. Please complete calibration first to save a rectified image for validation.'
+            }
         else:
             rectified = cv2.imread(saved_rectified_path, cv2.IMREAD_GRAYSCALE)
             
             if rectified is None:
-                print(f"[VALIDATION] ERROR: Failed to load rectified image", file=sys.stderr)
-                print(f"[VALIDATION] FALLBACK: Will capture new frame instead", file=sys.stderr)
-                use_saved_rectified = False
+                print(f"[VALIDATION] ERROR: Failed to load rectified image from {saved_rectified_path}", file=sys.stderr)
+                print(f"[VALIDATION] ERROR: The file exists but cannot be read. It may be corrupted.", file=sys.stderr)
+                sys.stderr.flush()
+                # Return error instead of falling back to capture
+                return {
+                    'success': False,
+                    'error': 'Failed to load calibration image. Please run calibration again.'
+                }
             else:
                 print(f"[VALIDATION] Loaded rectified image: {rectified.shape[1]}x{rectified.shape[0]}px", file=sys.stderr)
                 print(f"[VALIDATION] Found {len(expected_slots)} expected slots for validation", file=sys.stderr)
