@@ -1589,6 +1589,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (code === 0) {
           try {
             const previewData = JSON.parse(result);
+            // Add no-cache headers to prevent browser from caching stale rectified preview
+            res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('Expires', '0');
             res.json(previewData);
           } catch (parseError) {
             console.error('[Rectified Preview] Parse error:', parseError);
