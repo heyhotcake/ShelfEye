@@ -29,9 +29,9 @@ def decode_aruco_markers(image, expected_count=None, include_workers=False):
     results = []
     found_marker_ids = set()
     
-    # Initialize ArUco detector (using 5x5_100 dictionary to match printed templates)
+    # Initialize ArUco detector (using 4x4_100 dictionary, IDs 0-99)
     # Slot markers: 1-50, Worker markers: 51-95, Corner markers: 96-99 (reserved)
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     aruco_params = cv2.aruco.DetectorParameters()
     
     # EXTREME: Maximum relaxation for printed markers

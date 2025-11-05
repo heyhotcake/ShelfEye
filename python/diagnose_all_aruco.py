@@ -26,8 +26,8 @@ def find_all_aruco_markers(image_path):
     print(f"Pixel range: [{img.min()}, {img.max()}]")
     print()
     
-    # Initialize ArUco detector (using 5x5_100 to match printed templates)
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_100)
+    # Initialize ArUco detector
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     aruco_params = cv2.aruco.DetectorParameters()
     
     # EXTREME relaxation for printed markers
