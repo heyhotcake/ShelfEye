@@ -85,13 +85,12 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160)):
     logger.info(f"Initializing Picamera2 on camera {camera_index}")
     picam2 = Picamera2(camera_index)
     
-    # Create configuration with optimal settings
-    # Use video configuration instead of still to get exact resolution without cropping
+    # Create configuration with minimal settings to avoid unsupported controls
+    # Use video configuration to get exact resolution without cropping
     # RGB888 format - will convert to BGR after capture for OpenCV compatibility
     config = picam2.create_video_configuration(
         main={"size": (width, height), "format": "RGB888"},
-        buffer_count=1,  # Minimize memory usage
-        controls={"FrameDurationLimits": (33333, 33333)}  # ~30fps
+        buffer_count=1  # Minimize memory usage
     )
     
     # DON'T align - it auto-crops to sensor aspect ratio
