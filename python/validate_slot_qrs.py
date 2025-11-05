@@ -67,7 +67,10 @@ def decode_aruco_markers(image, expected_count=None, include_workers=False):
     aruco_params.cornerRefinementMaxIterations = 30
     aruco_params.cornerRefinementMinAccuracy = 0.01
     aruco_params.markerBorderBits = 1
-    aruco_params.perspectiveRemovePixelPerCell = 8
+    # CRITICAL: Higher resolution prevents bit pattern corruption during canonicalization
+    # 3cm markers at 31.8 px/cm = ~95px. With 6 cells (4x4 + borders), need 14-16 px/cell
+    # to preserve detail. Default 8 px/cell downsamples to 48px total, corrupting bits.
+    aruco_params.perspectiveRemovePixelPerCell = 16  # Increased from 8 to preserve marker detail
     aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.13
     aruco_params.maxErroneousBitsInBorderRate = 0.35
     aruco_params.minOtsuStdDev = 5.0
