@@ -302,18 +302,18 @@ class ArucoCornerCalibrator:
                     data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
                     os.makedirs(data_dir, exist_ok=True)
                     
-                    # Calculate native resolution rectified image
+                    # Calculate native resolution rectified image with UNIFORM pixel density
+                    # CRITICAL: Must maintain aspect ratio to prevent ArUco marker distortion
                     frame_height, frame_width = frame.shape[:2]
                     pixels_per_cm = self.measured_px_per_cm
                     
-                    # Use the LARGER of: measured pixel density OR input frame size
-                    measured_width = int(paper_size_cm[0] * pixels_per_cm)
-                    measured_height = int(paper_size_cm[1] * pixels_per_cm)
-                    
-                    # Use whichever is larger: measured or input frame size
-                    highres_width = max(measured_width, frame_width)
-                    highres_height = max(measured_height, frame_height)
+                    # Use measured dimensions ONLY (no stretching to match frame size)
+                    # This ensures uniform pixel density (critical for ArUco detection)
+                    highres_width = int(paper_size_cm[0] * pixels_per_cm)
+                    highres_height = int(paper_size_cm[1] * pixels_per_cm)
                     highres_size = (highres_width, highres_height)
+                    
+                    logger.info(f"Rectified image will be {highres_width}x{highres_height}px at uniform {pixels_per_cm:.1f} px/cm")
                     
                     try:
                         logger.info(f"Saving high-resolution rectified image: {highres_width}x{highres_height}px")
