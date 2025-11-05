@@ -816,7 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Prepare expected slots data with full geometry for spatial validation and overlay
       // IMPORTANT: These coordinates come from the DATABASE which contains ADJUSTED coordinates after save
       const expectedSlots = slots.map(slot => ({
-        id: slot.slotNumber?.toString() || slot.expectedQrId, // Use simplified slot number (e.g., "1", "2", "3") instead of complex IDs
+        id: slot.autoQrId || slot.slotNumber?.toString() || slot.expectedQrId, // Use autoQrId (ArUco marker ID) for validation
         slotId: slot.slotId,
         toolName: slot.toolName,
         x: slot.xCm, // Center position in cm (FROM DATABASE - ADJUSTED if saved)
@@ -1020,7 +1020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Prepare expected slots data with full geometry for spatial validation and overlay
       // IMPORTANT: These coordinates come from the DATABASE which contains ADJUSTED coordinates after save
       const expectedSlots = slots.map(slot => ({
-        id: slot.slotNumber?.toString() || slot.expectedQrId, // Use simplified slot number (e.g., "1", "2", "3") instead of complex IDs
+        id: slot.autoQrId || slot.slotNumber?.toString() || slot.expectedQrId, // Use autoQrId (ArUco marker ID) for validation
         slotId: slot.slotId,
         toolName: slot.toolName,
         x: slot.xCm, // Center position in cm (FROM DATABASE - ADJUSTED if saved)
