@@ -280,11 +280,14 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     if paper_width_cm and paper_height_cm:
         scale_x = rectified.shape[1] / paper_width_cm
         scale_y = rectified.shape[0] / paper_height_cm
-        pixels_per_cm = min(scale_x, scale_y)
+        # Use uniform scaling to prevent marker distortion - CRITICAL for ArUco detection
+        pixels_per_cm = min(scale_x, scale_y)  # Use the smaller scale to fit within bounds
         print(f"[VALIDATION] Calculated pixel density: {scale_x:.1f} px/cm (width), {scale_y:.1f} px/cm (height)", file=sys.stderr)
-        print(f"[VALIDATION] Using {pixels_per_cm:.1f} px/cm for coordinate conversion", file=sys.stderr)
+        print(f"[VALIDATION] Using uniform {pixels_per_cm:.1f} px/cm to prevent marker distortion", file=sys.stderr)
+        # Override scales with uniform value to keep markers square
+        scale_x = scale_y = pixels_per_cm
     else:
-        scale_x = scale_y = 1.0
+        scale_x = scale_y = pixels_per_cm = 1.0
         print(f"[VALIDATION] No paper dimensions provided, using scale 1.0", file=sys.stderr)
     
     
