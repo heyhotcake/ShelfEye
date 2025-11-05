@@ -2438,12 +2438,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const workerData = insertWorkerSchema.parse(req.body);
       
-      // Auto-assign ArUco ID (50-95, reusing deleted numbers)
+      // Auto-assign ArUco ID (51-95, reusing deleted numbers)
       const existingWorkers = await storage.getWorkers();
       const usedArucoIds = new Set(existingWorkers.map(w => w.arucoId));
       
       let nextArucoId = null;
-      for (let id = 50; id <= 95; id++) {
+      for (let id = 51; id <= 95; id++) {
         if (!usedArucoIds.has(id)) {
           nextArucoId = id;
           break;
@@ -2452,7 +2452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (nextArucoId === null) {
         return res.status(400).json({ 
-          message: "Worker limit reached. Maximum 45 workers allowed (ArUco IDs 50-95 are reserved for workers)." 
+          message: "Worker limit reached. Maximum 45 workers allowed (ArUco IDs 51-95 are reserved for workers)." 
         });
       }
       

@@ -18,18 +18,19 @@ import argparse
 os.environ['OPENCV_LOG_LEVEL'] = 'FATAL'
 cv2.setLogLevel(0)
 
-def decode_aruco_markers(image, expected_count=None):
+def decode_aruco_markers(image, expected_count=None, include_workers=False):
     """Decode all ArUco markers in image with robust detection for printed markers
     
     Args:
         image: Input image to scan for ArUco markers
         expected_count: If provided, exit early once this many markers are found (optimization)
+        include_workers: If True, include worker markers (50-95) in results
     """
     results = []
     found_marker_ids = set()
     
     # Initialize ArUco detector (using 4x4_100 dictionary, IDs 0-99)
-    # Slot markers: 1-50, Corner markers: 96-99 (reserved)
+    # Slot markers: 1-50, Worker markers: 51-95, Corner markers: 96-99 (reserved)
     aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
     aruco_params = cv2.aruco.DetectorParameters()
     
@@ -69,8 +70,20 @@ def decode_aruco_markers(image, expected_count=None):
         
         if ids is not None and len(ids) > 0:
             for i, marker_id in enumerate(ids.flatten()):
-                # Only process slot markers (IDs 1-50, excluding corner markers 96-99)
-                if marker_id < 1 or marker_id > 95:
+                # Filter markers based on type:
+                # - Slot markers: 1-50
+                # - Worker markers: 51-95 (only if include_workers=True)
+                # - Corner markers: 96-99 (exclude)
+                is_slot = 1 <= marker_id <= 50
+                is_worker = 51 <= marker_id <= 95
+                is_corner = 96 <= marker_id <= 99
+                
+                # Skip corner markers
+                if is_corner or marker_id < 1:
+                    continue
+                
+                # Skip worker markers unless explicitly requested
+                if is_worker and not include_workers:
                     continue
                 
                 if marker_id not in found_marker_ids:
@@ -89,18 +102,22 @@ def decode_aruco_markers(image, expected_count=None):
                     x_max = int(np.max(marker_corners[:, 0]))
                     y_max = int(np.max(marker_corners[:, 1]))
                     
+                    # Determine marker category
+                    marker_category = 'worker' if is_worker else 'slot'
+                    
                     results.append({
                         'data': str(marker_id),  # Store marker ID as string for compatibility
                         'type': 'ARUCO',
+                        'category': marker_category,  # 'slot' or 'worker'
                         'rect': {'x': x_min, 'y': y_min, 'width': x_max - x_min, 'height': y_max - y_min},
                         'polygon': [(int(p[0]), int(p[1])) for p in marker_corners],
                         'center': (center_x, center_y),
                         'detection_method': 'aruco_opencv'
                     })
-                    print(f"ArUco marker detected: ID {marker_id} at ({center_x}, {center_y})", file=sys.stderr)
+                    print(f"ArUco marker detected: ID {marker_id} ({marker_category}) at ({center_x}, {center_y})", file=sys.stderr)
                     
-                    # Early exit if we found all expected markers
-                    if expected_count and len(found_marker_ids) >= expected_count:
+                    # Early exit if we found all expected markers (only count slot markers for early exit)
+                    if expected_count and marker_category == 'slot' and len([m for m in results if m.get('category') == 'slot']) >= expected_count:
                         break
     except Exception as e:
         print(f"[ERROR] ArUco detection failed: {e}", file=sys.stderr)
@@ -497,8 +514,9 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         
         # For ArUco markers, try detection on ORIGINAL image first (no preprocessing)
         # ArUco markers are simpler patterns than QR codes and work better without aggressive preprocessing
+        # IMPORTANT: Scan for BOTH slot markers (1-50) AND worker markers (51-95)
         print(f"  DEBUG: Starting ArUco decode for slot {slot_id} (original image)...", file=sys.stderr)
-        roi_marker_results = decode_aruco_markers(roi, expected_count=1)
+        roi_marker_results = decode_aruco_markers(roi, expected_count=1, include_workers=True)
         print(f"  DEBUG: Decode complete. Found {len(roi_marker_results)} ArUco markers", file=sys.stderr)
         
         # If no markers found, try with light preprocessing as fallback
@@ -510,54 +528,113 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
             boosted_path = os.path.join(data_dir, f'validation_roi_{slot_id}_normalized.jpg')
             cv2.imwrite(boosted_path, roi_normalized)
             
-            roi_marker_results = decode_aruco_markers(roi_normalized, expected_count=1)
+            roi_marker_results = decode_aruco_markers(roi_normalized, expected_count=1, include_workers=True)
             print(f"  DEBUG: Normalized attempt found {len(roi_marker_results)} ArUco markers", file=sys.stderr)
         
         if roi_marker_results:
-            # ArUco marker detected in this slot's ROI
-            marker = roi_marker_results[0]
-            marker_data = marker['data']
-            detected_qrs_list.append(marker_data)
+            # Separate slot markers from worker markers
+            slot_markers = [m for m in roi_marker_results if m.get('category') == 'slot']
+            worker_markers = [m for m in roi_marker_results if m.get('category') == 'worker']
             
-            print(f"  ✓ Detected ArUco: '{marker_data}' via {marker['detection_method']}", file=sys.stderr)
+            # NEW WORKER TRACKING LOGIC:
+            # - Slot marker visible + worker marker visible → tool in use by worker (OK)
+            # - Slot marker visible + NO worker marker → ERROR (missing without checkout)
+            # - Slot marker NOT visible → tool present (OK)
             
-            if mode == 'visible':
-                # ArUco marker should be visible - check if it matches expected
-                if marker_data == expected_qr:
+            if slot_markers:
+                # Slot marker detected in ROI
+                slot_marker = slot_markers[0]
+                marker_data = slot_marker['data']
+                detected_qrs_list.append(marker_data)
+                
+                print(f"  ✓ Detected Slot ArUco: '{marker_data}' via {slot_marker['detection_method']}", file=sys.stderr)
+                
+                # Check if there's also a worker marker
+                if worker_markers:
+                    worker_marker = worker_markers[0]
+                    worker_id = worker_marker['data']
+                    print(f"  ✓ Detected Worker ArUco: '{worker_id}' - Tool in use by worker", file=sys.stderr)
+                
+                if mode == 'visible':
+                    # ArUco marker should be visible - check if it matches expected
+                    if marker_data == expected_qr:
+                        validation_details.append({
+                            'slot_id': slot_id,
+                            'expected_qr': expected_qr,
+                            'status': 'correct',
+                            'detected': True,
+                            'in_bounds': True,
+                            'detection_method': slot_marker['detection_method']
+                        })
+                        print(f"  ✓ CORRECT: Matches expected marker ID '{expected_qr}'", file=sys.stderr)
+                    else:
+                        validation_details.append({
+                            'slot_id': slot_id,
+                            'expected_qr': expected_qr,
+                            'status': 'wrong_qr',
+                            'detected': True,
+                            'in_bounds': True,
+                            'actual_qr': marker_data,
+                            'detection_method': slot_marker['detection_method']
+                        })
+                        missing_qrs.append(expected_qr)
+                        print(f"  ✗ WRONG MARKER: Expected '{expected_qr}' but found '{marker_data}'", file=sys.stderr)
+                else:
+                    # Slot marker should NOT be visible (tool should cover it)
+                    # NEW LOGIC: Check if worker marker is present
+                    if worker_markers:
+                        # Worker marker present → tool in use (OK, not an error)
+                        worker_id = worker_markers[0]['data']
+                        validation_details.append({
+                            'slot_id': slot_id,
+                            'expected_qr': expected_qr,
+                            'status': 'in_use',  # Tool is being used by worker
+                            'detected': True,
+                            'in_bounds': True,
+                            'actual_qr': marker_data,
+                            'worker_id': worker_id,  # Include worker ID
+                            'detection_method': slot_marker['detection_method']
+                        })
+                        print(f"  ✓ TOOL IN USE: Worker {worker_id} is using the tool", file=sys.stderr)
+                    else:
+                        # NO worker marker → ERROR (tool missing without checkout)
+                        validation_details.append({
+                            'slot_id': slot_id,
+                            'expected_qr': expected_qr,
+                            'status': 'missing_without_checkout',  # ERROR: Missing tool without worker checkout
+                            'detected': True,
+                            'in_bounds': True,
+                            'actual_qr': marker_data,
+                            'detection_method': slot_marker['detection_method']
+                        })
+                        incorrectly_visible.append(expected_qr)
+                        print(f"  ✗ ERROR: Slot marker '{marker_data}' is visible but NO worker marker detected - Tool missing without checkout", file=sys.stderr)
+            
+            elif worker_markers:
+                # Only worker marker detected (no slot marker) - This shouldn't happen but handle it
+                worker_id = worker_markers[0]['data']
+                print(f"  ⚠ WARNING: Worker marker {worker_id} detected but no slot marker", file=sys.stderr)
+                # Treat this as if slot marker is covered (tool present with worker tag)
+                if mode == 'covered':
                     validation_details.append({
                         'slot_id': slot_id,
                         'expected_qr': expected_qr,
                         'status': 'correct',
-                        'detected': True,
+                        'detected': False,
                         'in_bounds': True,
-                        'detection_method': marker['detection_method']
+                        'worker_id': worker_id
                     })
-                    print(f"  ✓ CORRECT: Matches expected marker ID '{expected_qr}'", file=sys.stderr)
+                    print(f"  ✓ CORRECT: Tool covered, worker {worker_id} present", file=sys.stderr)
                 else:
                     validation_details.append({
                         'slot_id': slot_id,
                         'expected_qr': expected_qr,
-                        'status': 'wrong_qr',
-                        'detected': True,
-                        'in_bounds': True,
-                        'actual_qr': marker_data,
-                        'detection_method': marker['detection_method']
+                        'status': 'missing',
+                        'detected': False,
+                        'in_bounds': False
                     })
                     missing_qrs.append(expected_qr)
-                    print(f"  ✗ WRONG MARKER: Expected '{expected_qr}' but found '{marker_data}'", file=sys.stderr)
-            else:
-                # ArUco marker should NOT be visible (tool should cover it)
-                validation_details.append({
-                    'slot_id': slot_id,
-                    'expected_qr': expected_qr,
-                    'status': 'incorrect',
-                    'detected': True,
-                    'in_bounds': True,
-                    'actual_qr': marker_data,
-                    'detection_method': marker['detection_method']
-                })
-                incorrectly_visible.append(expected_qr)
-                print(f"  ✗ ERROR: Marker '{marker_data}' is visible but should be covered", file=sys.stderr)
+                    print(f"  ✗ ERROR: Expected slot marker '{expected_qr}' not detected", file=sys.stderr)
         else:
             # No ArUco marker detected in this slot's ROI
             print(f"  ✗ No ArUco marker detected in ROI", file=sys.stderr)

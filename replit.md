@@ -1,15 +1,24 @@
 # Tool Tracking System - Compressed Development Guide
 
 ## Overview
-A Raspberry Pi-based automated tool monitoring system utilizing computer vision and ArUco markers for real-time tool tracking across multiple cameras. Its core purpose is to prevent tool loss and improve accountability in workshops by tracking tool presence and checkout status. Key features include ArUco marker validation, temporal smoothing for presence detection, multi-channel alerting (email, Google Sheets, sound), and a React web dashboard for calibration, configurable slot management, analytics, and system administration. The system supports 4K cameras with intelligent dual-resolution modes for live preview and high-accuracy calibration/capture. Worker QR codes are still used for checkout tracking.
+A Raspberry Pi-based automated tool monitoring system utilizing computer vision and ArUco markers for real-time tool tracking across multiple cameras. Its core purpose is to prevent tool loss and improve accountability in workshops by tracking tool presence and checkout status. Key features include ArUco marker validation, temporal smoothing for presence detection, multi-channel alerting (email, Google Sheets, sound), and a React web dashboard for calibration, configurable slot management, analytics, and system administration. The system supports 4K cameras with intelligent dual-resolution modes for live preview and high-accuracy calibration/capture. Worker tracking uses ArUco markers (IDs 51-95) with printable 5cm×15cm identification tags.
 
-## Recent Changes (Nov 4, 2025)
-- **Completed QR-to-ArUco Migration Cleanup**: Fully transitioned from QR code-based slot identification to ArUco marker system with comprehensive code cleanup.
+## Recent Changes (Nov 5, 2025)
+- **Worker Tracking System with ArUco Markers**: Implemented comprehensive worker identification system using ArUco markers for tool usage tracking.
+  - **Worker ArUco IDs**: Auto-assigned from 51-95 range (max 45 workers), unique across all camera stations, reusable after deletion
+  - **Worker Registration**: Japanese name (required) + optional team field, auto-generated worker codes (W001, W002, etc.)
+  - **Printable Worker Tags**: 5cm×15cm tags with ArUco marker, name, team, and scissor-cut corner guides
+  - **Tag Printing**: A4 layout with 3cm safety margins, 3 tags per page, multi-page support for bulk printing
+  - **Worker Management UI**: Checkbox selection, bulk Print Tags button, streamlined registration form
+  - **Database Schema**: Added arucoId (integer, unique) and team fields to workers table
+  - **Detection Logic**: Worker ArUco at slot = tool in use, visible slot marker = ERROR (missing tool without worker tag)
+
+- **Completed QR-to-ArUco Migration Cleanup** (Nov 4, 2025): Fully transitioned from QR code-based slot identification to ArUco marker system.
   - **ArUco Marker IDs**: Corner markers (96-99), Slot markers (1-50), Dictionary (DICT_4X4_100)
   - **API Endpoints**: Renamed `/validate-qrs-*` to `/validate-markers-*` for clarity
   - **Frontend**: Updated all UI labels, toast messages, and mutation names to reflect ArUco marker terminology
   - **Database Schema**: Added clarifying comments to legacy columns (expectedQrId, qrId, autoQrId now store ArUco marker IDs)
-  - **Code Cleanup**: Removed unused QR detection Python scripts (aggressive_qr_detection.py, diagnose_qr_detection.py, find_actual_qr_positions.py, qr_detector.py, test_qr_detection.py, validate_slot_qrs_highres.py)
+  - **Code Cleanup**: Removed unused QR detection Python scripts
   - **Backward Compatibility**: Database column names preserved to avoid breaking existing data
 
 ## User Preferences
@@ -35,10 +44,10 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
 
 ### System Design Choices
 - **UI/UX**: Calibration system uses paper size formats (e.g., "A4-landscape"). Rectified preview with grid and template overlays. 6-Page multi-sheet template system for large areas with automated slot creation. Dual-image calibration output: clean version for marker validation (no overlays) and labeled version for user download (with grid/labels).
-- **Technical Implementations**: Auto-start and auto-update via systemd services. GPIO LED light strip integration for dual-purpose lighting and visual alerts. Worker QR codes used for checkout tracking. Binary ArUco marker detection logic for slot monitoring.
+- **Technical Implementations**: Auto-start and auto-update via systemd services. GPIO LED light strip integration for dual-purpose lighting and visual alerts. Worker ArUco markers (IDs 51-95) for checkout tracking. Binary ArUco marker detection logic for slot monitoring.
 - **LED Strip Configuration**: Two WS2812B LED strips (99 total LEDs) on GPIO 18 (BCM), requiring an external 5V power supply and a 3.3V to 5V logic level shifter for data signal.
-- **Detection & Alert System**: State machine for tool presence. Binary detection logic based on ArUco marker visibility. Worker validation. Time-based monitoring with grace periods. Queue-based alerts with retry logic.
-- **ArUco Marker Strategy**: Per-slot ROI (Region of Interest) scanning for optimal accuracy with up to 50 slots. Each slot is identified by a unique ArUco marker (IDs 1-50). Corner markers (IDs 96-99) are used for calibration and perspective correction. ArUco detection is simpler and more robust than QR codes, with built-in OpenCV support.
+- **Detection & Alert System**: State machine for tool presence. Binary detection logic based on ArUco marker visibility. Worker validation using ArUco markers (IDs 51-95). Time-based monitoring with grace periods. Queue-based alerts with retry logic.
+- **ArUco Marker Strategy**: Per-slot ROI (Region of Interest) scanning for optimal accuracy with up to 50 slots. ArUco ID allocation: 1-50 for tool slots, 51-95 for worker identification (max 45 workers), 96-99 for corner calibration. Dictionary: DICT_4X4_100. Each slot is identified by a unique ArUco marker with per-template-design sequential numbering (1-X for each saved design). Corner markers are used for calibration and perspective correction. Worker markers enable tool usage tracking.
 
 ### Camera Configuration (CRITICAL)
 - **Format**: MJPEG (Motion-JPEG) format MUST be forced on all camera captures. YUYV format at high resolutions throttles to 0.1fps, preventing auto-exposure convergence. MJPEG achieves 7-10fps at 4K and 15-60fps at 1080p.
@@ -66,7 +75,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
 
 ### Computer Vision Libraries
 - **OpenCV**: ArUco marker detection, image processing, homography, perspective correction.
-- **pyzbar**: Worker QR code decoder for checkout tracking.
+- **pyzbar**: Legacy QR code decoder (may be deprecated in future).
 
 ### UI Component Libraries
 - **Radix UI Primitives**: Accessible UI components.
