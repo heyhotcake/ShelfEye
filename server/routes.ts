@@ -2437,7 +2437,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/workers", async (req, res) => {
     try {
       const workerData = insertWorkerSchema.parse(req.body);
-      const worker = await storage.createWorker(workerData);
+      
+      // Auto-assign ArUco ID (50-95, reusing deleted numbers)
+      const existingWorkers = await storage.getWorkers();
+      const usedArucoIds = new Set(existingWorkers.map(w => w.arucoId));
+      
+      let nextArucoId = null;
+      for (let id = 50; id <= 95; id++) {
+        if (!usedArucoIds.has(id)) {
+          nextArucoId = id;
+          break;
+        }
+      }
+      
+      if (nextArucoId === null) {
+        return res.status(400).json({ 
+          message: "Worker limit reached. Maximum 45 workers allowed (ArUco IDs 50-95 are reserved for workers)." 
+        });
+      }
+      
+      // Create worker with auto-assigned ArUco ID
+      const worker = await storage.createWorker({
+        ...workerData,
+        arucoId: nextArucoId,
+        workerCode: `W${nextArucoId}`, // Auto-generate from ArUco ID
+      });
       res.json(worker);
     } catch (error) {
       res.status(400).json({ message: "Invalid worker data", error });

@@ -120,10 +120,12 @@ export const templateRectangles = pgTable("template_rectangles", {
 
 export const workers = pgTable("workers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  workerCode: text("worker_code").notNull().unique(),
-  name: text("name").notNull(),
-  department: text("department"),
-  qrPayload: json("qr_payload"),
+  workerCode: text("worker_code").notNull().unique(), // Legacy - auto-generated from arucoId
+  arucoId: integer("aruco_id").notNull().unique(), // ArUco marker ID (50-95, auto-assigned, reusable)
+  name: text("name").notNull(), // Japanese name
+  team: text("team"), // Optional team assignment
+  department: text("department"), // Legacy field - kept for backward compatibility
+  qrPayload: json("qr_payload"), // Legacy field - kept for backward compatibility
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
@@ -163,7 +165,7 @@ export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({ 
 export const insertUserSchema = createInsertSchema(users).pick({ username: true, password: true, email: true, role: true });
 export const insertToolCategorySchema = createInsertSchema(toolCategories).omit({ id: true, createdAt: true });
 export const insertTemplateRectangleSchema = createInsertSchema(templateRectangles).omit({ id: true, createdAt: true });
-export const insertWorkerSchema = createInsertSchema(workers).omit({ id: true, createdAt: true, qrPayload: true });
+export const insertWorkerSchema = createInsertSchema(workers).omit({ id: true, createdAt: true, qrPayload: true, workerCode: true, arucoId: true, department: true });
 export const insertCaptureRunSchema = createInsertSchema(captureRuns).omit({ id: true, timestamp: true });
 export const insertGoogleOAuthCredentialSchema = createInsertSchema(googleOAuthCredentials).omit({ id: true, updatedAt: true });
 

@@ -2,24 +2,26 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/api";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, QrCode, Download, Trash2, User } from "lucide-react";
+import { UserPlus, Printer, Trash2, User } from "lucide-react";
 import { insertWorkerSchema, type InsertWorker } from "@shared/schema";
 
 interface Worker {
   id: string;
   workerCode: string;
+  arucoId: number;
   name: string;
+  team: string | null;
   department: string | null;
-  qrPayload: any;
   isActive: boolean;
   createdAt: string;
 }
@@ -27,15 +29,15 @@ interface Worker {
 export default function Workers() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [isAddWorkerOpen, setIsAddWorkerOpen] = useState(false);
-  const [selectedQR, setSelectedQR] = useState<{ worker: Worker; qrData: string } | null>(null);
+  const [selectedWorkers, setSelectedWorkers] = useState<Set<string>>(new Set());
 
   const form = useForm<InsertWorker>({
     resolver: zodResolver(insertWorkerSchema),
     defaultValues: {
-      workerCode: "",
       name: "",
-      department: "",
+      team: "",
       isActive: true,
     },
   });
@@ -67,12 +69,17 @@ export default function Workers() {
 
   const deleteWorkerMutation = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/workers/${id}`),
-    onSuccess: () => {
+    onSuccess: (_data, deletedId) => {
       toast({
         title: "Worker Deleted",
-        description: "Worker removed successfully",
+        description: "Worker removed and ArUco ID freed for reuse",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/workers'] });
+      setSelectedWorkers(prev => {
+        const next = new Set(prev);
+        next.delete(deletedId);
+        return next;
+      });
     },
     onError: (error) => {
       toast({
@@ -83,106 +90,44 @@ export default function Workers() {
     },
   });
 
-  const generateQRMutation = useMutation({
-    mutationFn: async (workerId: string) => {
-      const response = await apiRequest('POST', `/api/workers/${workerId}/generate-qr`);
-      return response.json();
-    },
-    onSuccess: async (data: any, workerId: string) => {
-      const worker = workers?.find(w => w.id === workerId);
-      if (worker && data.qrCode) {
-        setSelectedQR({ worker, qrData: data.qrCode });
-        toast({
-          title: "QR Code Generated",
-          description: `Worker badge ready for ${worker.name} (ID: ${worker.workerCode})`,
-        });
-      }
-      queryClient.invalidateQueries({ queryKey: ['/api/workers'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to Generate QR",
-        description: error.message || "An error occurred while generating the QR code",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleAddWorker = (data: InsertWorker) => {
     createWorkerMutation.mutate(data);
   };
 
-  const downloadQRBadge = () => {
-    if (!selectedQR) return;
+  const handleToggleWorker = (workerId: string) => {
+    setSelectedWorkers(prev => {
+      const next = new Set(prev);
+      if (next.has(workerId)) {
+        next.delete(workerId);
+      } else {
+        next.add(workerId);
+      }
+      return next;
+    });
+  };
 
-    const { worker, qrData } = selectedQR;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { alpha: true }); // Enable RGBA
-    if (!ctx) return;
-
-    canvas.width = 400;
-    canvas.height = 500;
-
-    // Fill with white background
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Worker name
-    ctx.fillStyle = 'black';
-    ctx.font = 'bold 24px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(worker.name, 200, 40);
-
-    // Worker code
-    ctx.font = '16px Arial';
-    ctx.fillText(worker.workerCode, 200, 70);
-
-    // Department (optional)
-    if (worker.department) {
-      ctx.font = '14px Arial';
-      ctx.fillStyle = '#666';
-      ctx.fillText(worker.department, 200, 95);
+  const handleSelectAll = () => {
+    if (workers) {
+      setSelectedWorkers(new Set(workers.map(w => w.id)));
     }
+  };
 
-    const img = new Image();
-    img.onload = () => {
-      // Draw QR code
-      ctx.drawImage(img, 50, 120, 300, 300);
+  const handleDeselectAll = () => {
+    setSelectedWorkers(new Set());
+  };
 
-      // Draw border
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
-
-      // Export as RGBA PNG
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `worker-badge-${worker.workerCode}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-
-          toast({
-            title: "Badge Downloaded",
-            description: `Badge for ${worker.name} saved as RGBA PNG`,
-          });
-        }
-      }, 'image/png'); // Explicitly specify PNG format
-    };
-
-    img.onerror = () => {
+  const handlePrintTags = () => {
+    if (selectedWorkers.size === 0) {
       toast({
-        title: "Download Failed",
-        description: "Failed to load QR code image",
+        title: "No Workers Selected",
+        description: "Please select workers to print tags",
         variant: "destructive",
       });
-    };
+      return;
+    }
 
-    img.src = `data:image/png;base64,${qrData}`;
+    const workerIds = Array.from(selectedWorkers).join(',');
+    navigate(`/worker-tags?workers=${workerIds}`);
   };
 
   return (
@@ -193,16 +138,26 @@ export default function Workers() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Worker Management</h1>
-              <p className="text-muted-foreground mt-2">Manage workers and generate QR badge IDs</p>
+              <p className="text-muted-foreground mt-2">Register workers with ArUco marker tags (IDs 50-95)</p>
             </div>
-            <Dialog open={isAddWorkerOpen} onOpenChange={setIsAddWorkerOpen}>
-              <DialogTrigger asChild>
-                <Button data-testid="button-add-worker">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add Worker
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handlePrintTags}
+                disabled={selectedWorkers.size === 0}
+                data-testid="button-print-tags"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print Tags ({selectedWorkers.size})
+              </Button>
+              <Dialog open={isAddWorkerOpen} onOpenChange={setIsAddWorkerOpen}>
+                <DialogTrigger asChild>
+                  <Button data-testid="button-add-worker">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Worker
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Add New Worker</DialogTitle>
                 </DialogHeader>
@@ -210,25 +165,12 @@ export default function Workers() {
                   <form onSubmit={form.handleSubmit(handleAddWorker)} className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="workerCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Worker Code *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="W-001" data-testid="input-worker-code" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name *</FormLabel>
+                          <FormLabel>Name (Japanese) *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Tanaka Hiroshi" data-testid="input-worker-name" {...field} />
+                            <Input placeholder="田中 広" data-testid="input-worker-name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -236,17 +178,20 @@ export default function Workers() {
                     />
                     <FormField
                       control={form.control}
-                      name="department"
+                      name="team"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Department</FormLabel>
+                          <FormLabel>Team (Optional)</FormLabel>
                           <FormControl>
-                            <Input placeholder="Assembly Line A" data-testid="input-worker-department" {...field} value={field.value || ""} />
+                            <Input placeholder="組立ラインA" data-testid="input-worker-team" {...field} value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                      ArUco marker ID will be auto-assigned (50-95)
+                    </div>
                     <Button
                       type="submit"
                       disabled={createWorkerMutation.isPending}
@@ -257,13 +202,24 @@ export default function Workers() {
                     </Button>
                   </form>
                 </Form>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Registered Workers</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Registered Workers ({workers?.length || 0} / 45 max)</CardTitle>
+              {workers && workers.length > 0 && (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleSelectAll} data-testid="button-select-all">
+                    Select All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleDeselectAll} data-testid="button-deselect-all">
+                    Deselect All
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -277,6 +233,11 @@ export default function Workers() {
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-center gap-4">
+                        <Checkbox
+                          checked={selectedWorkers.has(worker.id)}
+                          onCheckedChange={() => handleToggleWorker(worker.id)}
+                          data-testid={`checkbox-worker-${worker.id}`}
+                        />
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <User className="h-5 w-5 text-primary" />
                         </div>
@@ -285,34 +246,15 @@ export default function Workers() {
                             {worker.name}
                           </div>
                           <div className="text-sm text-muted-foreground flex items-center gap-2">
-                            <span data-testid={`text-worker-code-${worker.id}`}>{worker.workerCode}</span>
-                            {worker.department && (
+                            {worker.team && (
                               <>
-                                <span>•</span>
-                                <span data-testid={`text-worker-department-${worker.id}`}>{worker.department}</span>
+                                <span data-testid={`text-worker-team-${worker.id}`}>{worker.team}</span>
                               </>
                             )}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {worker.qrPayload ? (
-                          <Badge variant="outline" className="bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300">
-                            QR Generated
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">No QR</Badge>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => generateQRMutation.mutate(worker.id)}
-                          disabled={generateQRMutation.isPending}
-                          data-testid={`button-generate-qr-${worker.id}`}
-                        >
-                          <QrCode className="h-4 w-4 mr-1" />
-                          Generate QR
-                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -335,41 +277,6 @@ export default function Workers() {
               )}
             </CardContent>
           </Card>
-
-          {selectedQR && (
-            <Dialog open={!!selectedQR} onOpenChange={() => setSelectedQR(null)}>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Worker QR Badge</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <h3 className="font-semibold text-lg">{selectedQR.worker.name}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedQR.worker.workerCode}</p>
-                    {selectedQR.worker.department && (
-                      <p className="text-sm text-muted-foreground">{selectedQR.worker.department}</p>
-                    )}
-                  </div>
-                  <div className="flex justify-center bg-white p-4 rounded-lg">
-                    <img
-                      src={`data:image/png;base64,${selectedQR.qrData}`}
-                      alt="Worker QR Code"
-                      className="w-64 h-64"
-                      data-testid="img-qr-code"
-                    />
-                  </div>
-                  <Button
-                    onClick={downloadQRBadge}
-                    className="w-full"
-                    data-testid="button-download-badge"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Badge
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
         </div>
       </div>
     </div>

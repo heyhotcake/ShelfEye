@@ -13,6 +13,7 @@ import Analytics from "@/pages/analytics";
 import DetectionLogs from "@/pages/detection-logs";
 import TemplatePrint from "@/pages/template-print";
 import Workers from "@/pages/workers";
+import WorkerTags from "@/pages/worker-tags";
 import GoogleOAuthSetup from "@/pages/google-oauth-setup";
 import NotFound from "@/pages/not-found";
 
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/detection-logs" component={DetectionLogs} />
       <Route path="/workers" component={Workers} />
+      <Route path="/worker-tags" component={WorkerTags} />
       <Route path="/google-oauth" component={GoogleOAuthSetup} />
       <Route component={NotFound} />
     </Switch>

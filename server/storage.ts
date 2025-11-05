@@ -73,7 +73,7 @@ export interface IStorage {
   getActiveWorkers(): Promise<Worker[]>;
   getWorker(id: string): Promise<Worker | undefined>;
   getWorkerByCode(workerCode: string): Promise<Worker | undefined>;
-  createWorker(worker: InsertWorker): Promise<Worker>;
+  createWorker(worker: InsertWorker & { arucoId: number; workerCode: string }): Promise<Worker>;
   updateWorker(id: string, updates: Partial<Worker>): Promise<Worker | undefined>;
   deleteWorker(id: string): Promise<boolean>;
 
@@ -497,7 +497,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.workers.values()).find(w => w.workerCode === workerCode);
   }
 
-  async createWorker(worker: InsertWorker): Promise<Worker> {
+  async createWorker(worker: InsertWorker & { arucoId: number; workerCode: string }): Promise<Worker> {
     const existing = Array.from(this.workers.values()).find(w => w.workerCode === worker.workerCode);
     if (existing) {
       throw new Error(`Worker with code ${worker.workerCode} already exists`);
@@ -507,7 +507,9 @@ export class MemStorage implements IStorage {
     const newWorker: Worker = {
       id,
       workerCode: worker.workerCode,
+      arucoId: worker.arucoId,
       name: worker.name,
+      team: worker.team ?? null,
       department: worker.department ?? null,
       qrPayload: null,
       isActive: worker.isActive ?? true,
@@ -909,7 +911,7 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async createWorker(worker: InsertWorker): Promise<Worker> {
+  async createWorker(worker: InsertWorker & { arucoId: number; workerCode: string }): Promise<Worker> {
     const result = await db.insert(schema.workers).values(worker).returning();
     return result[0];
   }
