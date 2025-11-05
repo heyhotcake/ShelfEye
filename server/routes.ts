@@ -351,23 +351,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const killPromises = [
           // Kill calibration processes
           new Promise((resolve) => {
-            exec('pkill -f "aruco_calibrator.py" || true', () => resolve(null));
+            exec('pkill -9 -f "aruco_calibrator.py" || true', () => resolve(null));
           }),
           // Kill preview processes  
           new Promise((resolve) => {
-            exec('pkill -f "camera_preview.py" || true', () => resolve(null));
+            exec('pkill -9 -f "camera_preview.py" || true', () => resolve(null));
           }),
           // Kill validation processes
           new Promise((resolve) => {
-            exec('pkill -f "validate_slot_qrs.py" || true', () => resolve(null));
+            exec('pkill -9 -f "validate_slot_qrs.py" || true', () => resolve(null));
+          }),
+          // Kill rectified preview processes
+          new Promise((resolve) => {
+            exec('pkill -9 -f "rectified_preview.py" || true', () => resolve(null));
+          }),
+          // Kill ANY Python process using video device (last resort)
+          new Promise((resolve) => {
+            exec('fuser -k /dev/video0 2>/dev/null || true', () => resolve(null));
           })
         ];
         await Promise.all(killPromises);
-        // Give OS time to fully release camera resources
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Give OS time to fully release camera resources (3 seconds for reliability)
+        await new Promise(resolve => setTimeout(resolve, 3000));
         console.log('[Calibration] Cleaned up any lingering camera processes');
       } catch (e) {
         // Ignore cleanup errors
+        console.error('[Calibration] Error killing stuck processes:', e);
       }
       
       const camera = await storage.getCamera(cameraId);
