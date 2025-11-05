@@ -96,14 +96,23 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160)):
     config = picam2.align_configuration(config)
     picam2.configure(config)
     
-    # Set automatic controls for optimal image quality
-    picam2.set_controls({
-        "AfMode": 2,  # Auto focus continuous
-        "AwbEnable": True,  # Auto white balance
-        "AeEnable": True,  # Auto exposure
-    })
+    # Set automatic controls for optimal image quality (only if supported)
+    try:
+        picam2.set_controls({
+            "AwbEnable": True,  # Auto white balance
+            "AeEnable": True,  # Auto exposure
+        })
+        logger.info(f"Camera configured: {width}x{height}, format: RGB888 with AWB/AE")
+    except Exception as e:
+        logger.warning(f"Could not set auto controls: {e}")
+        logger.info(f"Camera configured: {width}x{height}, format: RGB888 (no auto-controls)")
     
-    logger.info(f"Camera configured: {width}x{height}, format: RGB888 with auto-controls")
+    # Try to enable auto-focus if supported (some cameras don't have it)
+    try:
+        picam2.set_controls({"AfMode": 2})  # Auto focus continuous
+        logger.info("Auto-focus enabled")
+    except Exception as e:
+        logger.info("Auto-focus not available (fixed-focus camera)")
     return picam2
 
 def warmup_camera_picam2(picam2, duration_seconds=10):
