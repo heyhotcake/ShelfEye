@@ -1353,6 +1353,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Serve validation debug images from data directory
+  app.get("/api/validation-images/:filename", (req, res) => {
+    try {
+      const { filename } = req.params;
+      const dataDir = path.join(process.cwd(), 'data');
+      const filePath = path.join(dataDir, filename);
+      
+      console.log(`[Validation Images] Request for: ${filename}`);
+      console.log(`[Validation Images] Full path: ${filePath}`);
+      
+      // Security: prevent directory traversal
+      if (!filePath.startsWith(dataDir)) {
+        console.log(`[Validation Images] Access denied - path traversal attempt`);
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Check if file exists
+      if (!fsSync.existsSync(filePath)) {
+        return res.status(404).json({ message: "Validation image not found" });
+      }
+      
+      // Serve the image
+      res.sendFile(filePath);
+    } catch (error) {
+      console.error(`[Validation Images] Error:`, error);
+      res.status(500).json({ message: "Failed to serve validation image", error });
+    }
+  });
+
   // Rectified preview route
   app.get("/api/rectified-preview/:cameraId", async (req, res) => {
     try {
