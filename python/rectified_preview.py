@@ -72,8 +72,10 @@ def generate_rectified_image_from_frame(
     # Combined warp for warpPerspective: camera_pixel → cm → output_pixel
     M = S @ H_inv
     
-    # Warp the image
-    rectified = cv2.warpPerspective(frame, M, output_size)
+    # Warp the image using NEAREST NEIGHBOR interpolation
+    # CRITICAL: INTER_NEAREST preserves sharp ArUco marker edges (no blur from interpolation)
+    # Default INTER_LINEAR blurs edges and breaks ArUco bit decoding
+    rectified = cv2.warpPerspective(frame, M, output_size, flags=cv2.INTER_NEAREST)
     
     # Draw grid overlay for visual reference
     for x in range(0, output_size[0], 50):
