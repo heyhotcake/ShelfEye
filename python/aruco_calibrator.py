@@ -34,6 +34,7 @@ class ArucoCornerCalibrator:
         # Initialize ArUco dictionary and detector
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(dictionary_type)
         self.detector_params = cv2.aruco.DetectorParameters()
+        self.detector_params.perspectiveRemovePixelPerCell = 16  # CRITICAL: Increased from 8 to preserve 95px slot markers
         
         # Expected corner marker IDs: 96-99 (reserved high IDs to avoid conflict with slot markers 1-50)
         # A=96 (top-left), B=97 (top-right), C=98 (bottom-right), D=99 (bottom-left)
