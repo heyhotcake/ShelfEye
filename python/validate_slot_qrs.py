@@ -52,9 +52,9 @@ def decode_aruco_markers(image, expected_count=None, include_workers=False):
     aruco_params.markerBorderBits = 1
     aruco_params.perspectiveRemovePixelPerCell = 4
     aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.1
-    aruco_params.maxErroneousBitsInBorderRate = 0.35  # Stricter - prevent false IDs (was 0.5)
+    aruco_params.maxErroneousBitsInBorderRate = 0.40  # Balanced - detect markers but prevent false IDs
     aruco_params.minOtsuStdDev = 2.0
-    aruco_params.errorCorrectionRate = 0.6  # Balanced error correction (was 1.0)
+    aruco_params.errorCorrectionRate = 0.8  # Moderate error correction for printed markers
     
     # Input is already grayscale from rectification (memory-optimized)
     gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
