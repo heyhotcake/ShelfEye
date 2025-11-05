@@ -60,12 +60,34 @@ if ids is not None and len(ids) > 0:
 else:
     print(f"\n✗ FAILED - No markers detected")
     
-    # Try with different perspectiveRemovePixelPerCell values
-    print(f"\nTesting different perspectiveRemovePixelPerCell values:")
-    for cell_size in [8, 12, 16, 20, 24, 32]:
-        aruco_params.perspectiveRemovePixelPerCell = cell_size
+    # Try with different markerBorderBits values
+    print(f"\nTesting different markerBorderBits values:")
+    aruco_params.perspectiveRemovePixelPerCell = 16  # Reset to 16
+    for border_bits in [1, 2]:
+        aruco_params.markerBorderBits = border_bits
         corners, ids, rejected = cv2.aruco.detectMarkers(image, aruco_dict, parameters=aruco_params)
         found = len(ids) if ids is not None else 0
-        print(f"  {cell_size} px/cell: {found} markers, {len(rejected)} rejected")
+        print(f"  markerBorderBits={border_bits}: {found} markers, {len(rejected)} rejected")
         if found > 0:
-            print(f"    → IDs: {ids.flatten().tolist()}")
+            print(f"    ✓ SUCCESS with markerBorderBits={border_bits}! IDs: {ids.flatten().tolist()}")
+    
+    # Try different dictionaries
+    print(f"\nTesting different ArUco dictionaries:")
+    aruco_params.markerBorderBits = 1  # Reset
+    dictionaries = [
+        ('DICT_4X4_50', cv2.aruco.DICT_4X4_50),
+        ('DICT_4X4_100', cv2.aruco.DICT_4X4_100),
+        ('DICT_4X4_250', cv2.aruco.DICT_4X4_250),
+        ('DICT_4X4_1000', cv2.aruco.DICT_4X4_1000),
+        ('DICT_5X5_50', cv2.aruco.DICT_5X5_50),
+        ('DICT_5X5_100', cv2.aruco.DICT_5X5_100),
+        ('DICT_6X6_50', cv2.aruco.DICT_6X6_50),
+        ('DICT_6X6_100', cv2.aruco.DICT_6X6_100),
+    ]
+    for dict_name, dict_type in dictionaries:
+        test_dict = cv2.aruco.getPredefinedDictionary(dict_type)
+        corners, ids, rejected = cv2.aruco.detectMarkers(image, test_dict, parameters=aruco_params)
+        found = len(ids) if ids is not None else 0
+        print(f"  {dict_name}: {found} markers, {len(rejected)} rejected")
+        if found > 0:
+            print(f"    ✓ SUCCESS with {dict_name}! IDs: {ids.flatten().tolist()}")
