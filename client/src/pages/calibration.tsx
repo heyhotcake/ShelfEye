@@ -622,57 +622,65 @@ export default function Calibration() {
                             <strong>Step 1:</strong> Position camera to see all 4 ArUco corner markers (A/B/C/D), then run calibration.
                           </p>
                         </div>
-                        <Button 
-                          className="w-full"
-                          onClick={() => {
-                            if (activeCamera) {
-                              // Determine paper size from selected template design
-                              let paperSize = 'A4-landscape'; // default fallback
-                              
-                              // Template is REQUIRED when templates exist
-                              if (relevantDesigns.length > 0) {
-                                if (!selectedTemplate || selectedTemplate === '') {
+                        <div className="space-y-2">
+                          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">
+                              <strong>Note:</strong> Calibration includes a 40-second camera warmup for optimal auto-focus and auto-exposure. Please be patient during this process.
+                            </p>
+                          </div>
+                          
+                          <Button 
+                            className="w-full"
+                            onClick={() => {
+                              if (activeCamera) {
+                                // Determine paper size from selected template design
+                                let paperSize = 'A4-landscape'; // default fallback
+                                
+                                // Template is REQUIRED when templates exist
+                                if (relevantDesigns.length > 0) {
+                                  if (!selectedTemplate || selectedTemplate === '') {
+                                    toast({
+                                      title: "Template Design Required",
+                                      description: "Please select a template design before calibrating.",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
+                                  const design = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+                                  if (!design) {
+                                    toast({
+                                      title: "Invalid Template Design",
+                                      description: "The selected template design is not found.",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  paperSize = design.paperSize;
+                                } else {
+                                  // No templates exist - cannot calibrate
                                   toast({
-                                    title: "Template Design Required",
-                                    description: "Please select a template design before calibrating.",
+                                    title: "No Templates Available",
+                                    description: "Please create a template design in Template Designer first.",
                                     variant: "destructive",
                                   });
                                   return;
                                 }
                                 
-                                const design = relevantDesigns.find(d => d.timestamp === selectedTemplate);
-                                if (!design) {
-                                  toast({
-                                    title: "Invalid Template Design",
-                                    description: "The selected template design is not found.",
-                                    variant: "destructive",
-                                  });
-                                  return;
-                                }
-                                paperSize = design.paperSize;
-                              } else {
-                                // No templates exist - cannot calibrate
-                                toast({
-                                  title: "No Templates Available",
-                                  description: "Please create a template design in Template Designer first.",
-                                  variant: "destructive",
-                                });
-                                return;
+                                calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize, templateTimestamp: selectedTemplate });
                               }
-                              
-                              calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize, templateTimestamp: selectedTemplate });
+                            }}
+                            disabled={
+                              !activeCamera || 
+                              calibrationMutation.isPending ||
+                              (relevantDesigns.length > 0 && !selectedTemplate)
                             }
-                          }}
-                          disabled={
-                            !activeCamera || 
-                            calibrationMutation.isPending ||
-                            (relevantDesigns.length > 0 && !selectedTemplate)
-                          }
-                          data-testid="button-start-calibration"
-                        >
-                          <Camera className="w-4 h-4 mr-2" />
-                          {calibrationMutation.isPending ? 'Calibrating...' : 'Run ArUco Calibration'}
-                        </Button>
+                            data-testid="button-start-calibration"
+                          >
+                            <Camera className="w-4 h-4 mr-2" />
+                            {calibrationMutation.isPending ? 'Warming up camera & calibrating (~60s)...' : 'Run ArUco Calibration'}
+                          </Button>
+                        </div>
                       </div>
                     )}
 
