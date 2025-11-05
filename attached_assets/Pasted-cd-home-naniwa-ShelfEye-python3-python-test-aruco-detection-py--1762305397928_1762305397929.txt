@@ -1,0 +1,63 @@
+cd /home/naniwa/ShelfEye
+python3 python/test_aruco_detection.py
+
+============================================================
+Testing: validation_roi_1.jpg
+============================================================
+Loaded image: (176, 267), dtype=uint8, range=[0, 248]
+
+=== Testing different ArUco dictionaries ===
+✗ DICT_4X4_50: No markers detected (11 rejected)
+✗ DICT_4X4_100: No markers detected (11 rejected)
+✗ DICT_4X4_250: No markers detected (11 rejected)
+✗ DICT_5X5_50: No markers detected (11 rejected)
+✗ DICT_6X6_50: No markers detected (11 rejected)
+
+=== Testing relaxed detection parameters (DICT_4X4_100) ===
+✗ Relaxed params: No markers detected (28 rejected)
+
+=== Testing different preprocessing ===
+Original image: 0 markers
+Binary (Otsu): 0 markers
+Gaussian blur: 1 markers
+Normalized only: 0 markers
+
+============================================================
+Testing: validation_roi_1_boosted.jpg
+============================================================
+Loaded image: (176, 267), dtype=uint8, range=[0, 255]
+
+=== Testing different ArUco dictionaries ===
+✗ DICT_4X4_50: No markers detected (22 rejected)
+✗ DICT_4X4_100: No markers detected (22 rejected)
+✗ DICT_4X4_250: No markers detected (22 rejected)
+✗ DICT_5X5_50: No markers detected (22 rejected)
+✗ DICT_6X6_50: No markers detected (22 rejected)
+
+=== Testing relaxed detection parameters (DICT_4X4_100) ===
+✗ Relaxed params: No markers detected (215 rejected)
+
+=== Testing different preprocessing ===
+Original image: 0 markers
+Binary (Otsu): 0 markers
+Gaussian blur: 0 markers
+Normalized only: 0 markers
+
+============================================================
+Testing: validation_roi_2.jpg
+============================================================
+Loaded image: (176, 310), dtype=uint8, range=[3, 255]
+
+=== Testing different ArUco dictionaries ===
+✗ DICT_4X4_50: No markers detected (22 rejected)
+✗ DICT_4X4_100: No markers detected (22 rejected)
+✗ DICT_4X4_250: No markers detected (22 rejected)
+✗ DICT_5X5_50: No markers detected (22 rejected)
+✗ DICT_6X6_50: No markers detected (22 rejected)
+
+=== Testing relaxed detection parameters (DICT_4X4_100) ===
+✗ Relaxed params: No markers detected (39 rejected)
+
+=== Testing different preprocessing ===
+Original image: 0 markers
+Binary (Otsu): 1 markers
