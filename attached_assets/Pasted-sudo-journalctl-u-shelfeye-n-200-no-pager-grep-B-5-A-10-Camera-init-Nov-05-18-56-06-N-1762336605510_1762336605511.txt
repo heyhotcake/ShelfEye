@@ -1,0 +1,19 @@
+sudo journalctl -u shelfeye -n 200 --no-pager | grep -B 5 -A 10 "Camera __init__"
+Nov 05 18:56:06 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0
+Nov 05 18:56:06 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: [31:45:02.935020129] [20392]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Nov 05 18:56:06 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: [31:45:02.966042334] [20396]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.2:1.0-1bcf:284c' for pipeline handler uvcvideo
+Nov 05 18:56:07 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Nov 05 18:56:07 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: [31:45:02.996969115] [20392]  INFO Camera camera.cpp:1020 Pipeline handler in use by another process
+Nov 05 18:56:07 NaniwaTanaCheck pi-startup.sh[20212]: ERROR:picamera2.picamera2:Camera __init__ sequence did not complete.
+Nov 05 18:56:07 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: ERROR:__main__:Preview error: Camera __init__ sequence did not complete.
+Nov 05 18:56:07 NaniwaTanaCheck pi-startup.sh[20212]: 6:56:07 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 1733ms :: {…
+Nov 05 18:56:15 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 81 metadata polls over 10s
+Nov 05 18:56:15 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Nov 05 18:56:16 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 29.1
+Nov 05 18:56:16 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 29.2
+Nov 05 18:56:16 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 3/50: New best sharpness = 29.2
+Nov 05 18:56:16 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 29.3
+Nov 05 18:56:17 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 6/50: New best sharpness = 29.4
+Nov 05 18:56:17 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 8/50: New best sharpness = 29.4
+Nov 05 18:56:21 NaniwaTanaCheck pi-startup.sh[20212]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 27/50: New best sharpness = 29.5
+naniwa@NaniwaTanaCheck:~/ShelfEye $
