@@ -906,95 +906,95 @@ export default function Calibration() {
                     )}
                   </div>
                 </div>
-                
-                {/* Rectified Preview - Show after ArUco calibration (Step 2) */}
-                {calibrationStep >= 1 && (() => {
-                  // Get paper dimensions from selected template
-                  const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
-                  const paperSize = selectedDesign?.paperSize || 'A4-landscape';
-                  
-                  const getPaperDimensions = (paperSize: string): { width: number; height: number } => {
-                    const dimensions: Record<string, { width: number; height: number }> = {
-                      'A5-landscape': { width: 21.0, height: 14.8 },
-                      'A4-landscape': { width: 29.7, height: 21.0 },
-                      'A3-landscape': { width: 42.0, height: 29.7 },
-                      '2xA5-landscape': { width: 42.0, height: 14.8 },
-                      '3xA5-landscape': { width: 63.0, height: 14.8 },
-                      '6-page-3x2': { width: 89.1, height: 42.0 },
-                    };
-                    return dimensions[paperSize] || { width: 29.7, height: 21.0 }; // Default A4
-                  };
-                  
-                  const paperDimensions = getPaperDimensions(paperSize);
-                  const aspectRatio = paperDimensions.width / paperDimensions.height;
-                  
-                  // Get templates with categories for the canvas - use DB data if available, fallback to localStorage
-                  // dbTemplateRectangles is fetched at top level (lines 93-96)
-                  const templatesWithCategories = (dbTemplateRectangles || selectedDesign?.templateRectangles || []).map((rect: any) => {
-                    // Match category from selectedDesign for dimension info
-                    const category = selectedDesign?.categories?.find((c: any) => c.id === rect.categoryId);
-                    return {
-                      id: rect.id,
-                      categoryId: rect.categoryId,
-                      categoryName: category?.name || 'Unknown',
-                      xCm: rect.xCm,
-                      yCm: rect.yCm,
-                      widthCm: category?.widthCm || 0,
-                      heightCm: category?.heightCm || 0,
-                      rotation: rect.rotation || 0,
-                      autoQrId: rect.autoQrId,
-                    };
-                  });
-                  
-                  return (
-                  <div className="mt-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-semibold text-foreground">Rectified Preview with Template Overlay</h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          window.open('/api/calibrate/download-rectified', '_blank');
-                        }}
-                        data-testid="button-download-rectified"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download High-Res
-                      </Button>
-                    </div>
-                    <div className="canvas-container">
-                      <div className="bg-muted rounded overflow-hidden" style={{ aspectRatio: `${aspectRatio.toFixed(3)} / 1` }}>
-                        {calibrationResult?.rectifiedPreview && templatesWithCategories.length > 0 ? (
-                          <RectifiedPreviewCanvas
-                            baseImage={calibrationResult.rectifiedPreview}
-                            templates={adjustedTemplates.length > 0 ? adjustedTemplates : templatesWithCategories}
-                            paperWidthCm={paperDimensions.width}
-                            paperHeightCm={paperDimensions.height}
-                            onTemplatesAdjusted={(templates) => {
-                              setAdjustedTemplates(templates);
-                              setHasTemplateAdjustments(true);
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex flex-col items-center justify-center p-6 text-center">
-                            <div className="text-amber-500 mb-3">
-                              <svg className="w-12 h-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                            <p className="text-sm font-medium text-foreground mb-2">Preview Not Available</p>
-                            <p className="text-xs text-muted-foreground max-w-md">
-                              The rectified preview was not generated during calibration. This may indicate a camera or processing issue.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  );
-                })()}
               </div>
             </div>
+            
+            {/* Rectified Preview - Show after ArUco calibration (Step 2) - FULL WIDTH */}
+            {calibrationStep >= 1 && (() => {
+              // Get paper dimensions from selected template
+              const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+              const paperSize = selectedDesign?.paperSize || 'A4-landscape';
+              
+              const getPaperDimensions = (paperSize: string): { width: number; height: number } => {
+                const dimensions: Record<string, { width: number; height: number }> = {
+                  'A5-landscape': { width: 21.0, height: 14.8 },
+                  'A4-landscape': { width: 29.7, height: 21.0 },
+                  'A3-landscape': { width: 42.0, height: 29.7 },
+                  '2xA5-landscape': { width: 42.0, height: 14.8 },
+                  '3xA5-landscape': { width: 63.0, height: 14.8 },
+                  '6-page-3x2': { width: 89.1, height: 42.0 },
+                };
+                return dimensions[paperSize] || { width: 29.7, height: 21.0 }; // Default A4
+              };
+              
+              const paperDimensions = getPaperDimensions(paperSize);
+              const aspectRatio = paperDimensions.width / paperDimensions.height;
+              
+              // Get templates with categories for the canvas - use DB data if available, fallback to localStorage
+              // dbTemplateRectangles is fetched at top level (lines 93-96)
+              const templatesWithCategories = (dbTemplateRectangles || selectedDesign?.templateRectangles || []).map((rect: any) => {
+                // Match category from selectedDesign for dimension info
+                const category = selectedDesign?.categories?.find((c: any) => c.id === rect.categoryId);
+                return {
+                  id: rect.id,
+                  categoryId: rect.categoryId,
+                  categoryName: category?.name || 'Unknown',
+                  xCm: rect.xCm,
+                  yCm: rect.yCm,
+                  widthCm: category?.widthCm || 0,
+                  heightCm: category?.heightCm || 0,
+                  rotation: rect.rotation || 0,
+                  autoQrId: rect.autoQrId,
+                };
+              });
+              
+              return (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-foreground">Rectified Preview with Template Overlay</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      window.open('/api/calibrate/download-rectified', '_blank');
+                    }}
+                    data-testid="button-download-rectified"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download High-Res
+                  </Button>
+                </div>
+                <div className="canvas-container w-full">
+                  <div className="bg-muted rounded overflow-hidden" style={{ aspectRatio: `${aspectRatio.toFixed(3)} / 1` }}>
+                    {calibrationResult?.rectifiedPreview && templatesWithCategories.length > 0 ? (
+                      <RectifiedPreviewCanvas
+                        baseImage={calibrationResult.rectifiedPreview}
+                        templates={adjustedTemplates.length > 0 ? adjustedTemplates : templatesWithCategories}
+                        paperWidthCm={paperDimensions.width}
+                        paperHeightCm={paperDimensions.height}
+                        onTemplatesAdjusted={(templates) => {
+                          setAdjustedTemplates(templates);
+                          setHasTemplateAdjustments(true);
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex flex-col items-center justify-center p-6 text-center">
+                        <div className="text-amber-500 mb-3">
+                          <svg className="w-12 h-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <p className="text-sm font-medium text-foreground mb-2">Preview Not Available</p>
+                        <p className="text-xs text-muted-foreground max-w-md">
+                          The rectified preview was not generated during calibration. This may indicate a camera or processing issue.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              );
+            })()}
           </div>
         </div>
       </main>
