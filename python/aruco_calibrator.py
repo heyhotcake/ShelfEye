@@ -299,15 +299,29 @@ class ArucoCornerCalibrator:
                     # Generate rectified preview if requested
                     if generate_preview and preview_output_size:
                         try:
-                            # First, generate HIGH-RESOLUTION rectified image for QR validation
-                            # Use MEASURED pixel density from detected markers (no upsampling)
+                            # First, generate HIGH-RESOLUTION rectified image for ArUco validation
+                            # Use INPUT CAMERA RESOLUTION to preserve maximum detail
+                            # Calculate what the output size should be based on the INPUT frame dimensions
+                            frame_height, frame_width = frame.shape[:2]
                             pixels_per_cm = self.measured_px_per_cm
-                            highres_width = int(paper_size_cm[0] * pixels_per_cm)
-                            highres_height = int(paper_size_cm[1] * pixels_per_cm)
-                            highres_size = (highres_width, highres_height)
-                            logger.info(f"Using MEASURED pixel density: {pixels_per_cm:.1f} px/cm (no upsampling)")
                             
-                            logger.info(f"Generating native-resolution rectified image: {highres_width}x{highres_height}px ({(highres_width*highres_height/1_000_000):.1f} MP) for QR validation")
+                            # Use the LARGER of: measured pixel density OR input frame size
+                            # This ensures we never downscale from the camera's native resolution
+                            measured_width = int(paper_size_cm[0] * pixels_per_cm)
+                            measured_height = int(paper_size_cm[1] * pixels_per_cm)
+                            
+                            # Use whichever is larger: measured or input frame size
+                            highres_width = max(measured_width, frame_width)
+                            highres_height = max(measured_height, frame_height)
+                            highres_size = (highres_width, highres_height)
+                            
+                            actual_px_per_cm_width = highres_width / paper_size_cm[0]
+                            actual_px_per_cm_height = highres_height / paper_size_cm[1]
+                            logger.info(f"Input camera resolution: {frame_width}x{frame_height}px")
+                            logger.info(f"Measured pixel density: {pixels_per_cm:.1f} px/cm → {measured_width}x{measured_height}px")
+                            logger.info(f"Using MAXIMUM resolution: {highres_width}x{highres_height}px ({actual_px_per_cm_width:.1f}x{actual_px_per_cm_height:.1f} px/cm)")
+                            
+                            logger.info(f"Generating high-resolution rectified image: {highres_width}x{highres_height}px ({(highres_width*highres_height/1_000_000):.1f} MP) for ArUco validation")
                             # Generate CLEAN version without overlays for QR validation
                             rectified_highres_clean = generate_rectified_image_from_frame(
                                 frame, homography, highres_size, paper_size_cm, None,  # No templates - clean image
