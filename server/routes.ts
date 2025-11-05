@@ -344,6 +344,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { paperSize, templateTimestamp } = req.body; // Expected: paperSize: "6-page-3x2", templateTimestamp: ISO string
       
+      // Get camera info first to know device path
+      const camera = await storage.getCamera(cameraId);
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      
       // Kill any lingering Python processes that might be holding the camera
       // This fixes the "works on third try" issue
       try {
@@ -365,23 +371,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           new Promise((resolve) => {
             exec('pkill -9 -f "rectified_preview.py" || true', () => resolve(null));
           }),
-          // Kill ANY Python process using video device (last resort)
+          // Kill ANY Python process using THIS camera's device (using actual device path)
           new Promise((resolve) => {
-            exec('fuser -k /dev/video0 2>/dev/null || true', () => resolve(null));
+            const devicePath = camera.devicePath || '/dev/video0';
+            exec(`fuser -k ${devicePath} 2>/dev/null || true`, () => resolve(null));
+          }),
+          // Also try common video devices as fallback
+          new Promise((resolve) => {
+            exec('fuser -k /dev/video0 /dev/video1 /dev/video2 2>/dev/null || true', () => resolve(null));
           })
         ];
         await Promise.all(killPromises);
-        // Give OS time to fully release camera resources (3 seconds for reliability)
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        console.log('[Calibration] Cleaned up any lingering camera processes');
+        // Give OS time to fully release camera resources (5 seconds for maximum reliability)
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        console.log('[Calibration] Cleaned up any lingering camera processes, waiting 5s for device release');
       } catch (e) {
         // Ignore cleanup errors
         console.error('[Calibration] Error killing stuck processes:', e);
-      }
-      
-      const camera = await storage.getCamera(cameraId);
-      if (!camera) {
-        return res.status(404).json({ message: "Camera not found" });
       }
 
       // Get paper dimensions from format with validation
