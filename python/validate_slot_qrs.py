@@ -278,7 +278,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
             cap = cv2.VideoCapture(device_source)
         
         # Force MJPEG format for 4K - YUYV saturates USB bandwidth and throttles to 0.1fps
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc(*'MJPG'))
         
         # Set camera to highest resolution for better QR detection
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3840)
@@ -445,7 +445,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     
     # Save debug rectified image (if enabled)
     rectified_path = os.path.join(debug_dir, 'validation_rectified_debug.jpg')
-    if enable_debug_images:
+    if enable_debug_images and rectified is not None:
         cv2.imwrite(rectified_path, rectified, [cv2.IMWRITE_JPEG_QUALITY, 95])
         print(f"[VALIDATION] Saved rectified view to: {rectified_path}", file=sys.stderr)
         sys.stderr.flush()
@@ -496,6 +496,12 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         # Calculate ROI boundaries (top-left corner)
         roi_x1 = max(0, center_x_px - padded_width // 2)
         roi_y1 = max(0, center_y_px - padded_height // 2)
+        
+        # Check if rectified exists before accessing shape
+        if rectified is None:
+            print(f"  ERROR: Rectified image is None for slot {slot_id}", file=sys.stderr)
+            continue
+            
         roi_x2 = min(rectified.shape[1], center_x_px + padded_width // 2)
         roi_y2 = min(rectified.shape[0], center_y_px + padded_height // 2)
         
@@ -541,7 +547,8 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         # If no markers found, try with light preprocessing as fallback
         if not roi_marker_results:
             print(f"  DEBUG: No markers on original, trying with normalization...", file=sys.stderr)
-            roi_normalized = cv2.normalize(roi, None, 0, 255, cv2.NORM_MINMAX)
+            roi_normalized = np.zeros_like(roi)
+            cv2.normalize(roi, roi_normalized, 0, 255, cv2.NORM_MINMAX)
             
             # Save normalized version for debugging
             boosted_path = os.path.join(data_dir, f'validation_roi_{slot_id}_normalized.jpg')

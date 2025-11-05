@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Camera Manager for Tool Tracking System
-Handles camera capture, slot detection, and QR analysis
+Handles camera capture, slot detection, and ArUco marker analysis
 """
 
 import argparse
@@ -13,8 +13,6 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 import cv2
 
-from qr_detector import QRDetector
-
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -23,8 +21,10 @@ class CameraManager:
     def __init__(self, camera_index: int = 0, homography_matrix: Optional[np.ndarray] = None):
         self.camera_index = camera_index
         self.homography_matrix = homography_matrix
-        self.qr_detector = QRDetector()
         self.cap = None
+        # Initialize ArUco detector (using 4x4_100 dictionary, IDs 0-99)
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+        self.aruco_params = cv2.aruco.DetectorParameters()
         
     def initialize_camera(self) -> bool:
         """Initialize camera capture"""
@@ -35,7 +35,7 @@ class CameraManager:
                 return False
             
             # Force MJPEG format - YUYV at high res throttles to 0.1fps
-            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc(*'MJPG'))
             
             # Set camera properties
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
@@ -106,27 +106,57 @@ class CameraManager:
             logger.error(f"Error extracting ROI: {e}")
             return None
     
+    def detect_aruco_in_roi(self, roi: np.ndarray) -> Optional[Dict]:
+        """Detect ArUco markers in a given ROI"""
+        try:
+            # Convert to grayscale if needed
+            gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) == 3 else roi
+            
+            # Detect ArUco markers
+            corners, ids, rejected = cv2.aruco.detectMarkers(
+                gray, self.aruco_dict, parameters=self.aruco_params
+            )
+            
+            if ids is not None and len(ids) > 0:
+                # Return the first detected marker
+                marker_id = int(ids[0][0])
+                
+                # Determine marker type based on ID range
+                # Slot markers: 1-50, Worker markers: 51-95, Corner markers: 96-99
+                if 1 <= marker_id <= 50:
+                    return {'id': marker_id, 'type': 'slot'}
+                elif 51 <= marker_id <= 95:
+                    return {'id': marker_id, 'type': 'worker', 'worker_name': f'Worker_{marker_id}'}
+                else:
+                    return {'id': marker_id, 'type': 'other'}
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error detecting ArUco markers: {e}")
+            return None
+    
     def process_slot(self, image: np.ndarray, slot_config: Dict) -> Dict:
         """
-        Process a single slot using simplified QR-based detection
+        Process a single slot using ArUco marker detection
         
         Detection Logic:
-        - Slot QR visible → EMPTY (tool missing, trigger alarm)
-        - Worker QR visible → CHECKED_OUT (signed out by worker)
-        - No QR visible → ITEM_PRESENT (tool covering slot QR)
+        - Slot ArUco visible → EMPTY (tool missing, trigger alarm)
+        - Worker ArUco visible → CHECKED_OUT (signed out by worker)
+        - No ArUco visible → ITEM_PRESENT (tool covering slot marker)
         """
         slot_id = slot_config['id']
         coords = slot_config['coords']
-        slot_qr_id = slot_config.get('expectedQr')  # This is the slot's own QR ID
+        expected_aruco_id = slot_config.get('slotNumber')  # This is the slot's ArUco ID
         
-        logger.info(f"Processing slot {slot_id}")
+        logger.info(f"Processing slot {slot_id} (ArUco ID: {expected_aruco_id})")
         
         result = {
             'slot_id': slot_id,
             'status': 'ITEM_PRESENT',  # Default: assume tool present
             'present': True,
             'pose_quality': 0.0,
-            'qr_id': None,
+            'aruco_id': None,
             'worker_name': None,
             'image_path': None,
             'alert_triggered': False,
@@ -155,30 +185,35 @@ class CameraManager:
             last_roi_path = f"data/{slot_id}_last.png"
             cv2.imwrite(last_roi_path, roi)
             
-            # QR Detection (the core of simplified logic)
-            qr_results = self.qr_detector.detect_qr_codes(roi)
+            # ArUco Detection (the core of simplified logic)
+            aruco_result = self.detect_aruco_in_roi(roi)
             
-            if qr_results:
-                qr_data = qr_results[0]  # Take first QR code found
-                result['qr_id'] = qr_data.get('id')
-                qr_type = qr_data.get('type')
+            if aruco_result:
+                result['aruco_id'] = aruco_result.get('id')
+                marker_type = aruco_result.get('type')
                 
-                if qr_type == 'worker':
+                if marker_type == 'worker':
                     # Worker badge visible → checked out
                     result['status'] = 'CHECKED_OUT'
-                    result['worker_name'] = qr_data.get('worker_name')
+                    result['worker_name'] = aruco_result.get('worker_name')
                     result['present'] = True  # Item is "present" with worker
                     result['alert_triggered'] = False
                     
-                elif qr_type == 'slot':
-                    # Slot QR visible → tool missing!
-                    result['status'] = 'EMPTY'
-                    result['present'] = False
-                    result['alert_triggered'] = True
-                    logger.warning(f"Slot {slot_id} QR visible - tool missing!")
+                elif marker_type == 'slot':
+                    # Check if it's the expected slot marker
+                    if result['aruco_id'] == expected_aruco_id:
+                        # Slot ArUco visible → tool missing!
+                        result['status'] = 'EMPTY'
+                        result['present'] = False
+                        result['alert_triggered'] = True
+                        logger.warning(f"Slot {slot_id} ArUco visible - tool missing!")
+                    else:
+                        # Wrong slot marker detected - possible misalignment
+                        result['status'] = 'ERROR'
+                        logger.error(f"Slot {slot_id} detected wrong ArUco ID: {result['aruco_id']} (expected: {expected_aruco_id})")
                     
             else:
-                # No QR detected → tool is covering the slot QR
+                # No ArUco detected → tool is covering the slot marker
                 result['status'] = 'ITEM_PRESENT'
                 result['present'] = True
                 result['alert_triggered'] = False
@@ -276,7 +311,7 @@ def main():
     
     finally:
         try:
-            if 'camera_manager' in locals():
+            if camera_manager is not None:
                 camera_manager.cleanup()
         except:
             pass

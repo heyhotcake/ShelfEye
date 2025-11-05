@@ -312,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Download validation debug image
   app.get("/api/calibrate/download-debug", async (_req, res) => {
     try {
-      const debugPath = path.join(process.cwd(), 'data', 'validatio_rectified_debug.jpg');
+      const debugPath = path.join(process.cwd(), 'data', 'validation_rectified_debug.jpg');
       
       // Check if file exists
       try {
