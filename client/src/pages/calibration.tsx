@@ -196,9 +196,14 @@ export default function Calibration() {
   });
 
   const calibrationMutation = useMutation({
-    mutationFn: ({ cameraId, paperSize, templateTimestamp }: { cameraId: string; paperSize: string; templateTimestamp?: string }) => {
+    mutationFn: async ({ cameraId, paperSize, templateTimestamp }: { cameraId: string; paperSize: string; templateTimestamp?: string }) => {
       // Lock camera BEFORE starting calibration to stop preview polling
       setIsCameraLocked(true);
+      
+      // Wait 1 second to ensure any in-flight preview requests complete
+      // This prevents "Pipeline handler in use by another" errors
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       return apiRequest('POST', `/api/calibrate/${cameraId}`, { paperSize, templateTimestamp });
     },
     onSuccess: async (response) => {

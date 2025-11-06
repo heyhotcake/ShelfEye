@@ -23,10 +23,16 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
   
 - **UI/UX Improvements**: 
   - Removed legacy /validate-markers-visible endpoint (215 lines)
-  - Fixed worker checkbox selection bug (onCheckedChange now properly receives checked parameter)
-  - Camera preview polling automatically pauses during calibration via isCameraLocked flag
+  - Fixed worker checkbox selection bug: Changed state from `Set<string>` to `string[]` array for proper React re-rendering
+  - Camera preview polling automatically pauses during calibration via isCameraLocked flag with 1-second delay to prevent "Pipeline handler in use by another" race condition
   - Error state banner with clear instructions for recalibration
   - Dynamic button text: "Recalibrate" (no adjustments) or "Save Adjustments & Recalibrate" (with adjustments)
+  
+- **Worker Tag Printing**: 
+  - 3cm × 3cm ArUco markers on 5cm × 15cm tags (A4 layout, 3 tags per page)
+  - Browser print function supports Japanese characters (PDF download removed due to jsPDF limitations)
+  - Worker tags include ArUco marker, name, team, and scissor-cut corner guides
+  - Fixed ArUco generation: Must specify `mode: 'single'` in API request
   
 - **Remaining Legacy Code**: validate_slot_qrs.py (679 lines) still used by /validate-markers-covered endpoint. Will be removed when covered validation is reworked to use raw-frame detection.
 
