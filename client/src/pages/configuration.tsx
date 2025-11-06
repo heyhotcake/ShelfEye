@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Download, FileCode, FileText, RotateCcw, X, Plus, Camera, Trash, Power, Lightbulb, Search } from "lucide-react";
+import { Upload, Download, FileCode, FileText, RotateCcw, X, Plus, Camera, Trash, Power, Lightbulb, Search, Edit } from "lucide-react";
 
 interface SystemConfig {
   key: string;
@@ -41,6 +41,12 @@ export default function Configuration() {
   const [newCameraDevicePath, setNewCameraDevicePath] = useState("");
   const [showDetectedCameras, setShowDetectedCameras] = useState(false);
   const [detectedCameras, setDetectedCameras] = useState<any[]>([]);
+  
+  // Edit camera state
+  const [editingCamera, setEditingCamera] = useState<any>(null);
+  const [editCameraName, setEditCameraName] = useState("");
+  const [editResolutionWidth, setEditResolutionWidth] = useState("");
+  const [editResolutionHeight, setEditResolutionHeight] = useState("");
 
   const detectCamerasMutation = useMutation({
     mutationFn: async () => {
@@ -103,6 +109,27 @@ export default function Configuration() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
       await queryClient.refetchQueries({ queryKey: ['/api/cameras'] });
+    },
+  });
+
+  const updateCameraMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: any }) =>
+      apiRequest('PUT', `/api/cameras/${id}`, updates),
+    onSuccess: async () => {
+      toast({
+        title: "Camera Updated",
+        description: "Camera settings saved successfully",
+      });
+      setEditingCamera(null);
+      await queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/cameras'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Update Camera",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -379,6 +406,19 @@ export default function Configuration() {
                           >
                             {camera.isActive ? "Active" : "Inactive"}
                           </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingCamera(camera);
+                              setEditCameraName(camera.name);
+                              setEditResolutionWidth(camera.resolution?.[0]?.toString() || "1920");
+                              setEditResolutionHeight(camera.resolution?.[1]?.toString() || "1080");
+                            }}
+                            data-testid={`button-edit-camera-${camera.id}`}
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
@@ -827,6 +867,99 @@ export default function Configuration() {
                 <Badge variant="outline">Available</Badge>
               </div>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Camera Dialog */}
+      <Dialog open={!!editingCamera} onOpenChange={(open) => !open && setEditingCamera(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Camera Settings</DialogTitle>
+            <DialogDescription>
+              Update camera name and resolution. Recalibrate after changing resolution.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label htmlFor="edit-camera-name">Camera Name</Label>
+              <Input
+                id="edit-camera-name"
+                value={editCameraName}
+                onChange={(e) => setEditCameraName(e.target.value)}
+                placeholder="e.g., Camera 2 (Shelf 2)"
+                data-testid="input-edit-camera-name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="edit-resolution-width">Resolution Width</Label>
+                <Input
+                  id="edit-resolution-width"
+                  type="number"
+                  value={editResolutionWidth}
+                  onChange={(e) => setEditResolutionWidth(e.target.value)}
+                  placeholder="1920"
+                  data-testid="input-edit-resolution-width"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Common: 1920, 2560, 3840</p>
+              </div>
+              <div>
+                <Label htmlFor="edit-resolution-height">Resolution Height</Label>
+                <Input
+                  id="edit-resolution-height"
+                  type="number"
+                  value={editResolutionHeight}
+                  onChange={(e) => setEditResolutionHeight(e.target.value)}
+                  placeholder="1080"
+                  data-testid="input-edit-resolution-height"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Common: 1080, 1440, 2160</p>
+              </div>
+            </div>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                <strong>Important:</strong> After changing resolution, you must recalibrate the camera. The actual resolution used will be logged during calibration - check the server logs to verify.
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditingCamera(null)}
+                className="flex-1"
+                data-testid="button-cancel-edit"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const width = parseInt(editResolutionWidth);
+                  const height = parseInt(editResolutionHeight);
+                  
+                  if (!editCameraName || isNaN(width) || isNaN(height)) {
+                    toast({
+                      title: "Invalid Input",
+                      description: "Please provide valid camera name and resolution values",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
+                  updateCameraMutation.mutate({
+                    id: editingCamera.id,
+                    updates: {
+                      name: editCameraName,
+                      resolution: [width, height],
+                    },
+                  });
+                }}
+                disabled={updateCameraMutation.isPending}
+                className="flex-1"
+                data-testid="button-save-camera"
+              >
+                {updateCameraMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
