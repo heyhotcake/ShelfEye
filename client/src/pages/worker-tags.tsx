@@ -36,12 +36,12 @@ export default function WorkerTags() {
   // Generate ArUco markers for all selected workers
   useEffect(() => {
     const generateMarkers = async () => {
-      console.log('[WorkerTags] Generating ArUco markers for', selectedWorkers.length, 'workers');
-      const images: Record<number, string> = {};
+      console.log('[WorkerTags] Generating ArUco markers for', selectedWorkers.length, 'workers (parallel)');
       
-      for (const worker of selectedWorkers) {
+      // Generate all markers in PARALLEL to speed up on slow devices (Raspberry Pi)
+      const promises = selectedWorkers.map(async (worker) => {
         try {
-          console.log(`[WorkerTags] Generating ArUco ID ${worker.arucoId} for ${worker.name}`);
+          console.log(`[WorkerTags] Starting ArUco ID ${worker.arucoId} for ${worker.name}`);
           const response = await fetch('/api/aruco-generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -55,12 +55,25 @@ export default function WorkerTags() {
           const data = await response.json();
           console.log(`[WorkerTags] Response for ArUco ${worker.arucoId}:`, { ok: data.ok, hasImage: !!data.image });
           if (data.ok && data.image) {
-            images[worker.arucoId] = data.image;
+            return { arucoId: worker.arucoId, image: data.image };
           }
+          return null;
         } catch (error) {
           console.error(`Failed to generate ArUco marker for worker ${worker.name}:`, error);
+          return null;
         }
-      }
+      });
+      
+      // Wait for all requests to complete
+      const results = await Promise.all(promises);
+      
+      // Build images object from results
+      const images: Record<number, string> = {};
+      results.forEach(result => {
+        if (result) {
+          images[result.arucoId] = result.image;
+        }
+      });
       
       console.log('[WorkerTags] Setting ArUco images:', Object.keys(images));
       setArucoImages(images);
