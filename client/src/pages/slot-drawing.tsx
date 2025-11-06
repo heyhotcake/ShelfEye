@@ -173,20 +173,30 @@ export default function SlotDrawing() {
     }
   }, []);
 
-  // Load saved template versions from localStorage (scoped by camera ID)
+  // Load saved template versions from localStorage (camera-specific for multi-camera support)
   useEffect(() => {
-    const storageKey = 'templateConfigVersions';
+    if (!selectedCameraId) {
+      setSavedTemplateVersions([]);
+      return;
+    }
+    
+    // Camera-scoped storage key to prevent template conflicts between cameras
+    const storageKey = `templateConfigVersions_${selectedCameraId}`;
     const saved = localStorage.getItem(storageKey);
+    
     if (saved) {
       try {
         setSavedTemplateVersions(JSON.parse(saved));
+        console.log(`[SlotDrawing] Loaded ${JSON.parse(saved).length} template designs for camera ${selectedCameraId}`);
       } catch (e) {
         console.error('Failed to load saved template versions:', e);
+        setSavedTemplateVersions([]);
       }
     } else {
+      console.log(`[SlotDrawing] No saved templates found for camera ${selectedCameraId}`);
       setSavedTemplateVersions([]);
     }
-  }, [selectedCameraId]);
+  }, [selectedCameraId]); // Re-load when camera changes
 
   // Load existing slots as regions when slots data changes
   useEffect(() => {
@@ -1057,11 +1067,12 @@ export default function SlotDrawing() {
         categories: relevantCategories,
       };
 
-      // Save to localStorage
+      // Save to localStorage (camera-specific to prevent multi-camera conflicts)
       const updated = [...savedTemplateVersions, newVersion];
       setSavedTemplateVersions(updated);
-      const storageKey = 'templateConfigVersions';
+      const storageKey = `templateConfigVersions_${selectedCameraId}`;
       localStorage.setItem(storageKey, JSON.stringify(updated));
+      console.log(`[SlotDrawing] Saved template design "${templateVersionName}" for camera ${selectedCameraId}`);
       
       // ALSO save to database so calibration can use it immediately
       // First, ensure categories exist in the database
@@ -1321,13 +1332,17 @@ export default function SlotDrawing() {
   };
 
   const confirmDeleteTemplateVersion = () => {
-    if (!templateToDelete) return;
+    if (!templateToDelete || !selectedCameraId) return;
     
     const versionToDelete = savedTemplateVersions.find(v => v.timestamp === templateToDelete);
     const updated = savedTemplateVersions.filter(v => v.timestamp !== templateToDelete);
     setSavedTemplateVersions(updated);
-    const storageKey = 'templateConfigVersions';
+    
+    // Camera-scoped storage key to prevent multi-camera conflicts
+    const storageKey = `templateConfigVersions_${selectedCameraId}`;
     localStorage.setItem(storageKey, JSON.stringify(updated));
+    console.log(`[SlotDrawing] Deleted template design for camera ${selectedCameraId}`);
+    
     toast({
       title: "Template Design Deleted",
       description: versionToDelete ? `"${versionToDelete.paperSize} - ${versionToDelete.name}" removed` : "Design removed",

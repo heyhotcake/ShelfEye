@@ -119,20 +119,30 @@ export default function Calibration() {
     },
   });
 
-  // Load saved template designs from localStorage (shared across all cameras)
+  // Load saved template designs from localStorage (camera-specific for multi-camera support)
   useEffect(() => {
-    const storageKey = 'templateConfigVersions';
+    if (!selectedCameraId) {
+      setSavedTemplateDesigns([]);
+      return;
+    }
+    
+    // Camera-scoped storage key to prevent template conflicts between cameras
+    const storageKey = `templateConfigVersions_${selectedCameraId}`;
     const saved = localStorage.getItem(storageKey);
+    
     if (saved) {
       try {
         setSavedTemplateDesigns(JSON.parse(saved));
+        console.log(`[Calibration] Loaded ${JSON.parse(saved).length} template designs for camera ${selectedCameraId}`);
       } catch (e) {
         console.error('Failed to load saved template designs:', e);
+        setSavedTemplateDesigns([]);
       }
     } else {
+      console.log(`[Calibration] No saved templates found for camera ${selectedCameraId}`);
       setSavedTemplateDesigns([]);
     }
-  }, []);
+  }, [selectedCameraId]); // Re-load when camera changes
 
   // Show all saved template designs for this camera
   const relevantDesigns = savedTemplateDesigns;
