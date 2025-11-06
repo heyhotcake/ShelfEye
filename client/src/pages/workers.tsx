@@ -235,7 +235,17 @@ export default function Workers() {
                       <div className="flex items-center gap-4">
                         <Checkbox
                           checked={selectedWorkers.has(worker.id)}
-                          onCheckedChange={() => handleToggleWorker(worker.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedWorkers(prev => new Set(prev).add(worker.id));
+                            } else {
+                              setSelectedWorkers(prev => {
+                                const next = new Set(prev);
+                                next.delete(worker.id);
+                                return next;
+                              });
+                            }
+                          }}
                           data-testid={`checkbox-worker-${worker.id}`}
                         />
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
