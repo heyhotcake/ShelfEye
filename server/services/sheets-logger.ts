@@ -5,7 +5,8 @@ export interface SheetsLogEntry {
   timestamp: string;
   alertType: string;
   status: string;
-  cameraId?: string;
+  cameraName?: string; // User-friendly camera name
+  cameraId?: string; // Camera UUID (technical)
   slotId?: string;
   errorMessage?: string;
   details?: Record<string, any>;
@@ -28,7 +29,7 @@ export class SheetsLogger {
     this.formattingConfig = formatConfig?.value || {
       tabCreation: 'monthly',
       tabNamePattern: 'Alerts-{YYYY-MM}',
-      columnOrder: ['timestamp', 'alertType', 'status', 'cameraId', 'slotId', 'errorMessage', 'details'],
+      columnOrder: ['timestamp', 'cameraName', 'alertType', 'status', 'cameraId', 'slotId', 'errorMessage', 'details'],
       includeHeaders: true,
       freezeHeaderRow: true,
       autoResize: true
@@ -65,6 +66,7 @@ export class SheetsLogger {
       const headerRow = this.formattingConfig.columnOrder.map((col: string) => {
         const headers: Record<string, string> = {
           timestamp: 'Timestamp',
+          cameraName: 'Camera',
           alertType: 'Alert Type',
           status: 'Status',
           cameraId: 'Camera ID',
@@ -148,6 +150,7 @@ export class SheetsLogger {
         const headerRow = this.formattingConfig.columnOrder.map((col: string) => {
           const headers: Record<string, string> = {
             timestamp: 'Timestamp',
+            cameraName: 'Camera',
             alertType: 'Alert Type',
             status: 'Status',
             cameraId: 'Camera ID',
@@ -207,6 +210,7 @@ export class SheetsLogger {
       // Build row according to column order
       const rowData: Record<string, string> = {
         timestamp: entry.timestamp,
+        cameraName: entry.cameraName || 'Unknown Camera',
         alertType: entry.alertType,
         status: entry.status,
         cameraId: entry.cameraId || '',
