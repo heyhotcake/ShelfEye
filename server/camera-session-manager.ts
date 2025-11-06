@@ -9,6 +9,10 @@ interface CameraLock {
 class CameraSessionManager {
   private locks: Map<string, CameraLock> = new Map();
   private readonly PREVIEW_TIMEOUT = 5000; // 5 seconds for preview locks
+  
+  // Global calibration lock - ensures only one camera can calibrate at a time (2GB RAM constraint)
+  private globalCalibrationLock: { cameraId: string; timestamp: number } | null = null;
+  private readonly CALIBRATION_TIMEOUT = 300000; // 5 minutes max for calibration
 
   /**
    * Attempt to acquire a lock for camera preview (shared, short-lived)
@@ -98,6 +102,61 @@ class CameraSessionManager {
     }
 
     return { locked: true, type: 'preview' };
+  }
+
+  /**
+   * Acquire global calibration lock - ensures only ONE camera can calibrate at a time (2GB RAM constraint)
+   * Returns true if lock acquired, false if another camera is already calibrating
+   */
+  acquireGlobalCalibrationLock(cameraId: string): boolean {
+    // Check if global lock exists and isn't expired
+    if (this.globalCalibrationLock) {
+      const elapsed = Date.now() - this.globalCalibrationLock.timestamp;
+      
+      // If lock is expired (calibration took too long), release it
+      if (elapsed > this.CALIBRATION_TIMEOUT) {
+        console.log(`[CameraSessionManager] Global calibration lock expired for camera ${this.globalCalibrationLock.cameraId}, releasing`);
+        this.globalCalibrationLock = null;
+      } else if (this.globalCalibrationLock.cameraId !== cameraId) {
+        // Another camera is calibrating
+        console.log(`[CameraSessionManager] Cannot acquire global calibration lock for camera ${cameraId} - camera ${this.globalCalibrationLock.cameraId} is already calibrating`);
+        return false;
+      }
+    }
+    
+    // Acquire the global lock
+    this.globalCalibrationLock = {
+      cameraId,
+      timestamp: Date.now()
+    };
+    console.log(`[CameraSessionManager] Global calibration lock acquired for camera ${cameraId}`);
+    return true;
+  }
+
+  /**
+   * Release the global calibration lock
+   */
+  releaseGlobalCalibrationLock(cameraId: string): void {
+    if (this.globalCalibrationLock?.cameraId === cameraId) {
+      console.log(`[CameraSessionManager] Global calibration lock released for camera ${cameraId}`);
+      this.globalCalibrationLock = null;
+    }
+  }
+
+  /**
+   * Check if any camera is currently calibrating
+   */
+  isAnyCalibrationInProgress(): { inProgress: boolean; cameraId?: string } {
+    if (this.globalCalibrationLock) {
+      const elapsed = Date.now() - this.globalCalibrationLock.timestamp;
+      if (elapsed <= this.CALIBRATION_TIMEOUT) {
+        return { 
+          inProgress: true, 
+          cameraId: this.globalCalibrationLock.cameraId 
+        };
+      }
+    }
+    return { inProgress: false };
   }
 }
 
