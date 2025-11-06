@@ -63,6 +63,7 @@ export interface IStorage {
   // Template rectangle methods
   getTemplateRectangles(): Promise<TemplateRectangle[]>;
   getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]>;
+  getTemplateRectanglesByPaperSizeAndCamera(paperSize: string, cameraId: string): Promise<TemplateRectangle[]>;
   getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined>;
   createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle>;
   updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined>;
@@ -452,6 +453,23 @@ export class MemStorage implements IStorage {
       .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0)); // Order by creation time
   }
 
+  async getTemplateRectanglesByPaperSizeAndCamera(paperSize: string, cameraId: string): Promise<TemplateRectangle[]> {
+    // First try to get camera-specific templates
+    const cameraSpecific = Array.from(this.templateRectangles.values())
+      .filter(rect => rect.paperSize === paperSize && rect.cameraId === cameraId)
+      .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
+    
+    // If camera-specific templates exist, return them
+    if (cameraSpecific.length > 0) {
+      return cameraSpecific;
+    }
+    
+    // Otherwise, fall back to shared templates (cameraId is null)
+    return Array.from(this.templateRectangles.values())
+      .filter(rect => rect.paperSize === paperSize && rect.cameraId === null)
+      .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
+  }
+
   async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {
     return this.templateRectangles.get(id);
   }
@@ -566,7 +584,7 @@ export class MemStorage implements IStorage {
 
 import { db } from './db';
 import * as schema from '@shared/schema';
-import { eq, desc, and, gte, lte } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, isNull } from 'drizzle-orm';
 
 export class DbStorage implements IStorage {
   constructor() {
@@ -870,6 +888,33 @@ export class DbStorage implements IStorage {
     return await db.select().from(schema.templateRectangles)
       .where(eq(schema.templateRectangles.paperSize, paperSize))
       .orderBy(schema.templateRectangles.createdAt); // Order by creation time for consistency
+  }
+
+  async getTemplateRectanglesByPaperSizeAndCamera(paperSize: string, cameraId: string): Promise<TemplateRectangle[]> {
+    // First try to get camera-specific templates
+    const cameraSpecific = await db.select().from(schema.templateRectangles)
+      .where(
+        and(
+          eq(schema.templateRectangles.paperSize, paperSize),
+          eq(schema.templateRectangles.cameraId, cameraId)
+        )
+      )
+      .orderBy(schema.templateRectangles.createdAt);
+    
+    // If camera-specific templates exist, return them
+    if (cameraSpecific.length > 0) {
+      return cameraSpecific;
+    }
+    
+    // Otherwise, fall back to shared templates (cameraId is null)
+    return await db.select().from(schema.templateRectangles)
+      .where(
+        and(
+          eq(schema.templateRectangles.paperSize, paperSize),
+          isNull(schema.templateRectangles.cameraId)
+        )
+      )
+      .orderBy(schema.templateRectangles.createdAt);
   }
 
   async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {

@@ -108,6 +108,7 @@ export const toolCategories = pgTable("tool_categories", {
 
 export const templateRectangles = pgTable("template_rectangles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }), // Camera-specific templates for adjusted coordinates
   categoryId: varchar("category_id").references(() => toolCategories.id, { onDelete: "cascade" }).notNull(),
   paperSize: text("paper_size").notNull(), // A3, A4, A5, etc.
   xCm: real("x_cm").notNull(),
@@ -116,7 +117,8 @@ export const templateRectangles = pgTable("template_rectangles", {
   autoQrId: text("auto_qr_id"), // Legacy column name - stores ArUco marker ID (1-50)
   slotId: varchar("slot_id").references(() => slots.id, { onDelete: "set null" }), // Auto-generated slot
   createdAt: timestamp("created_at").default(sql`now()`),
-  // Templates are now camera-independent - assigned to cameras during calibration via slots
+  // Templates can be camera-specific (when cameraId is set) or shared (when cameraId is null)
+  // Camera-specific templates are created during calibration with adjusted coordinates
 });
 
 export const workers = pgTable("workers", {
