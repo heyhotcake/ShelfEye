@@ -236,14 +236,17 @@ export default function Workers() {
                         <Checkbox
                           checked={selectedWorkers.has(worker.id)}
                           onCheckedChange={(checked) => {
+                            console.log('[Checkbox] onCheckedChange called:', { workerId: worker.id, checked, currentSize: selectedWorkers.size });
                             if (checked === true) {
-                              setSelectedWorkers(prev => new Set(prev).add(worker.id));
+                              const newSet = new Set(selectedWorkers);
+                              newSet.add(worker.id);
+                              console.log('[Checkbox] Adding worker, new size:', newSet.size);
+                              setSelectedWorkers(newSet);
                             } else {
-                              setSelectedWorkers(prev => {
-                                const next = new Set(prev);
-                                next.delete(worker.id);
-                                return next;
-                              });
+                              const newSet = new Set(selectedWorkers);
+                              newSet.delete(worker.id);
+                              console.log('[Checkbox] Removing worker, new size:', newSet.size);
+                              setSelectedWorkers(newSet);
                             }
                           }}
                           data-testid={`checkbox-worker-${worker.id}`}
