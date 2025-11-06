@@ -1,0 +1,19 @@
+sudo journalctl -u shelfeye -f
+Nov 06 09:43:38 NaniwaTanaCheck pi-startup.sh[23608]: [Validation] Python stderr: INFO:__main__:✓ Saved LABELED high-resolution rectified image for download
+Nov 06 09:43:38 NaniwaTanaCheck pi-startup.sh[23608]: [Validation] Python stderr: INFO:__main__:Generating UI preview: 891x420px
+Nov 06 09:43:38 NaniwaTanaCheck pi-startup.sh[23608]: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Nov 06 09:43:38 NaniwaTanaCheck pi-startup.sh[23608]: [Validation] Python stderr: INFO:rectified_preview:Drawing 7 template overlays
+Nov 06 09:43:38 NaniwaTanaCheck pi-startup.sh[23608]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 3.4143603, 'y': 7.2126565, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.694244, 'y': 3.2738929, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 80.96104, 'y': 2.1469972, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 44.658825, 'y': 28.681847, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 44.736366, 'y': 39.93055, 'width': 7, 'height': 4, 'rotation': 0, 'categoryName': 'pen'}, {'x': 81.95754, 'y': 39.43055, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}, {'x': 6.778821, 'y': 39.508095, 'width': 5, 'height': 5, 'rotation': 0, 'categoryName': '5x5'}]
+Nov 06 09:43:38 NaniwaTanaCheck pi-startup.sh[23608]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Nov 06 09:43:38 NaniwaTanaCheck pi-startup.sh[23608]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Nov 06 09:43:38 NaniwaTanaCheck pi-startup.sh[23608]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Nov 06 09:43:41 NaniwaTanaCheck pi-startup.sh[23608]: [Calibration] Deleted 7 existing slots
+Nov 06 09:43:41 NaniwaTanaCheck pi-startup.sh[23608]: [Calibration] Creating slots for 7 templates (paper size: 6-page-3x2)
+Nov 06 09:43:46 NaniwaTanaCheck pi-startup.sh[23608]: [Calibration] Saved paper size format to config: 6-page-3x2
+Nov 06 09:43:46 NaniwaTanaCheck pi-startup.sh[23608]: [CameraSessionManager] Released exclusive lock for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Nov 06 09:43:46 NaniwaTanaCheck pi-startup.sh[23608]: 9:43:46 AM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 80610ms :: {"ok…
+Nov 06 09:43:46 NaniwaTanaCheck sudo[23774]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action off --num-leds 99
+Nov 06 09:43:46 NaniwaTanaCheck sudo[23774]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 06 09:43:46 NaniwaTanaCheck sudo[23774]: pam_unix(sudo:session): session closed for user root
+Nov 06 09:43:46 NaniwaTanaCheck pi-startup.sh[23608]: [LED] LED light turned OFF
+Nov 06 09:43:47 NaniwaTanaCheck pi-startup.sh[23608]: 9:43:47 AM [express] GET /api/cameras 200 in 703ms :: [{"id":"a91d43f1-47bf-4d75-8a7d-d2faf0503f81",…
