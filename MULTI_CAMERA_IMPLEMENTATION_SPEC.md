@@ -1,27 +1,179 @@
 # Multi-Camera Implementation - Complete Technical Specification
 
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Date:** November 6, 2025  
-**Status:** Ready for Implementation
+**Status:** Pre-Implementation Analysis Complete - Critical Issues Found
+
+---
+
+## ⚠️ IMPLEMENTATION STATUS
+
+**Current State:** System gaps identified that MUST be addressed before implementation.
+
+**Risk Level:** HIGH - Proceeding without addressing prerequisites will break the working single-camera system.
 
 ---
 
 ## TABLE OF CONTENTS
 
-1. [Executive Summary](#1-executive-summary)
-2. [Architectural Decisions](#2-architectural-decisions)
-3. [Database Schema](#3-database-schema)
-4. [Phased Implementation Plan](#4-phased-implementation-plan)
-5. [Critical Files to Modify](#5-critical-files-to-modify)
-6. [Testing Checkpoints](#6-testing-checkpoints)
-7. [Backward Compatibility](#7-backward-compatibility)
-8. [Rollback Strategy](#8-rollback-strategy)
-9. [Success Metrics](#9-success-metrics)
-10. [Known Limitations](#10-known-limitations)
+1. [Prerequisites & Current State Analysis](#1-prerequisites--current-state-analysis)
+2. [Critical Implementation Warnings](#2-critical-implementation-warnings) 
+3. [Pre-Implementation Checklist](#3-pre-implementation-checklist)
+4. [Executive Summary](#4-executive-summary)
+5. [Architectural Decisions](#5-architectural-decisions)
+6. [Database Schema](#6-database-schema)
+7. [Phased Implementation Plan](#7-phased-implementation-plan)
+8. [Critical Files to Modify](#8-critical-files-to-modify)
+9. [Testing Checkpoints](#9-testing-checkpoints)
+10. [Backward Compatibility](#10-backward-compatibility)
+11. [Rollback Strategy](#11-rollback-strategy)
+12. [Success Metrics](#12-success-metrics)
+13. [What's Already Working](#13-whats-already-working)
+14. [Known Limitations](#14-known-limitations)
 
 ---
 
-## 1. EXECUTIVE SUMMARY
+## 1. PREREQUISITES & CURRENT STATE ANALYSIS
+
+### 🔴 Critical Gaps Identified
+
+After thorough codebase analysis, the following MUST be fixed before implementation:
+
+#### 1.1 Missing Database Field (CONFIRMED - Direct File Read)
+**Issue:** `paperSize` field doesn't exist in `cameras` table  
+**Verification:** Direct read of shared/schema.ts lines 6-18 shows NO paperSize field
+**Current fields:** id, name, deviceIndex, devicePath, resolution, homographyMatrix, cameraMatrix, distCoeffs, calibrationTimestamp, isActive, createdAt
+**Missing field:** paperSize or paper_size - NOT PRESENT IN SCHEMA
+**Impact:** Cameras cannot remember template choice after reboot  
+**Location:** `shared/schema.ts` (Lines 6-18 - verified by direct file read)
+**Fix Required:** Add `paperSize: text("paper_size")` to schema before multi-camera work  
+
+#### 1.2 File Path Collisions (VERIFIED)
+**Issue:** Python scripts use generic file paths without camera ID namespacing
+**Verification:** Confirmed via codebase search - no --camera-id parameter in Python scripts
+**Current State:**
+```python
+# All cameras write to same file - DATA CORRUPTION!
+"data/latest_calibration_rectified.png"
+"data/latest_preview.jpg"
+"data/validation_rectified_debug.jpg"
+```
+**Impact:** Camera 2 will overwrite Camera 1's files
+**Files Affected (CONFIRMED):**
+- `python/aruco_calibrator.py` - doesn't accept `--camera-id` (has --camera only)
+- `python/camera_preview.py` - doesn't accept `--camera-id` (has --camera only)
+- `python/validate_slot_qrs.py` - uses positional arg but doesn't namespace outputs
+- `python/rectified_preview.py` - doesn't accept `--camera-id`
+
+#### 1.3 localStorage Template Collisions
+**Issue:** Template data stored without camera scoping
+**Current Code:**
+```javascript
+// Camera 2 will overwrite Camera 1's templates!
+localStorage.setItem('templateTimestamp', timestamp);
+localStorage.setItem('templateDesign', design);
+localStorage.setItem('savedTemplates', templates);
+```
+**Location:** `client/src/pages/calibration.tsx`
+**Impact:** Camera template selections will overwrite each other
+
+#### 1.4 Global Calibration Lock Enhancement Needed
+**Issue:** While CameraSessionManager has per-camera exclusive locks, no global mutex prevents simultaneous calibrations of different cameras
+**Current State:** `acquireExclusiveLock()` prevents concurrent operations on same camera but not across cameras
+**Location:** `server/camera-session-manager.ts`
+**Impact:** Both cameras could calibrate simultaneously, causing resource exhaustion on 2GB Raspberry Pi
+**Note:** Existing exclusive lock is good, just needs global coordination for multi-camera
+
+#### 1.5 ROI Archive Path Note
+**Note:** Code correctly uses `data/rois` for ROI storage (not roi_archives)
+**Location:** `server/services/maintenance-service.ts` Line 81
+**Status:** No issue - path is consistent, just needs camera ID subdirectories
+**Required Change:** Update to `data/rois/{cameraId}/` for multi-camera support
+
+#### 1.6 Alert System Partially Missing Camera Names (VERIFIED)
+**Issue:** Plain text alerts don't consistently use camera names (HTML emails do)
+**Verification:** HTML email builder uses cameraName (lines 135, 152) but plain text doesn't
+**Location:** `server/services/email-alerts.ts` (buildEmailBody function)
+**Impact:** Plain text email recipients won't know which shelf needs attention
+**Note:** HTML emails already show camera name for diagnostic_failure and camera_offline
+
+#### 1.7 No Camera Management UI
+**Issue:** `client/src/pages/cameras.tsx` doesn't exist
+**Impact:** No way to add/configure Camera 2 through UI
+
+---
+
+## 2. CRITICAL IMPLEMENTATION WARNINGS
+
+### ⚠️ RESOURCE CONSTRAINTS (2GB Raspberry Pi)
+
+**NEVER run both cameras simultaneously!**
+
+```
+❌ WRONG - System will crash:
+Camera 1: capturing...
+Camera 2: capturing... ← RAM EXHAUSTED, USB OVERLOAD, SYSTEM HANG!
+
+✅ CORRECT - Sequential operation only:
+Camera 1: capture → process → release → wait 30s
+Camera 2: capture → process → release → wait 30s
+```
+
+### ⚠️ FILE COLLISION RISK
+
+**Without namespacing, Camera 2 WILL corrupt Camera 1's data:**
+
+```
+Camera 1 calibrates → saves to data/latest_calibration_rectified.png
+Camera 2 calibrates → OVERWRITES same file!
+Camera 1 detection → reads WRONG calibration data → FALSE ALERTS!
+```
+
+### ⚠️ USB BANDWIDTH LIMITATION
+
+The Raspberry Pi's shared USB controller cannot handle:
+- Two 4K MJPEG streams
+- Two 2K MJPEG streams
+- Any concurrent camera operations
+
+**Result of violation:** Kernel USB errors, camera disconnections, system instability
+
+---
+
+## 3. PRE-IMPLEMENTATION CHECKLIST
+
+### ✅ Verify Before Starting
+
+**Database Ready:**
+- [ ] Backup current database
+- [ ] Test rollback procedure
+- [ ] Confirm existing camera UUID
+
+**File System Ready:**
+- [ ] Create `data/` subdirectories if missing
+- [ ] Check disk space (need 2GB free minimum)
+- [ ] Verify write permissions on `data/` directory
+
+**Python Environment:**
+- [ ] All Python scripts executable
+- [ ] OpenCV version compatible
+- [ ] ArUco library installed
+
+**Current System Stable:**
+- [ ] Single camera detecting 7/7 slots
+- [ ] Alerts working properly
+- [ ] No existing errors in logs
+
+**Hardware Verification:**
+- [ ] Second camera connected to `/dev/video1`
+- [ ] Camera recognized by `v4l2-ctl --list-devices`
+- [ ] Power supply adequate (3A minimum)
+
+### 🛑 STOP if any check fails!
+
+---
+
+## 4. EXECUTIVE SUMMARY
 
 ### Current System State
 - Single 4K camera (devicePath: `/dev/video0`) fully operational
@@ -118,14 +270,14 @@ On reboot:
 ```
 data/latest_calibration_rectified.png
 data/latest_preview.jpg
-data/roi_archives/slot_1_20250106_120000.jpg
+data/rois/slot_1_20250106_120000.jpg
 ```
 
 **New (Multi-Camera):**
 ```
 data/latest_calibration_rectified_{cameraId}.png
 data/latest_preview_{cameraId}.jpg
-data/roi_archives/{cameraId}/slot_1_20250106_120000.jpg
+data/rois/{cameraId}/slot_1_20250106_120000.jpg
 ```
 
 **Files Requiring Namespacing:**
@@ -218,7 +370,7 @@ export const cameras = pgTable("cameras", {
 Current `slots` table already linked to cameras:
 ```typescript
 export const slots = pgTable("slots", {
-  id: serial("id").primaryKey(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   slotId: text("slot_id").notNull().unique(),
   slotNumber: integer("slot_number").notNull(), // ArUco marker ID (1-50)
   cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }).notNull(),
@@ -240,7 +392,7 @@ export const slots = pgTable("slots", {
 }));
 ```
 
-Detection loop already iterates through all cameras in `server/services/process_cameras.py`.
+Detection loop already iterates through all cameras in `python/process_cameras.py`.
 
 ### 3.2 Required Schema Addition
 
@@ -297,23 +449,65 @@ SELECT id, name, device_path, paper_size FROM cameras;
 **Goal:** Add paperSize field to cameras table without affecting runtime operations
 
 #### Task 0.1: Add paperSize to Schema
-**File:** `shared/schema.ts`
+**File:** `shared/schema.ts` (Line 6-18)
 
-**Change:**
+**Current Schema (MISSING paperSize):**
 ```typescript
 export const cameras = pgTable("cameras", {
-  // ... existing fields ...
-  paperSize: text("paper_size"), // Stores template like "6-page-3x2", "A4-landscape"
-  // ... rest of fields ...
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  deviceIndex: integer("device_index"),
+  devicePath: text("device_path"),
+  resolution: json("resolution").$type<[number, number]>().notNull().default([3840, 2160]),
+  // paperSize field MISSING - ADD HERE
+  homographyMatrix: json("homography_matrix").$type<number[]>(),
+  cameraMatrix: json("camera_matrix").$type<number[]>(),
+  distCoeffs: json("dist_coeffs").$type<number[]>(),
+  calibrationTimestamp: timestamp("calibration_timestamp"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").default(sql`now()`),
 });
 ```
 
-**Command:**
-```bash
-npm run db:push --force
+**Updated Schema (WITH paperSize):**
+```typescript
+export const cameras = pgTable("cameras", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  deviceIndex: integer("device_index"),
+  devicePath: text("device_path"),
+  resolution: json("resolution").$type<[number, number]>().notNull().default([3840, 2160]),
+  paperSize: text("paper_size"), // ← ADD THIS LINE - Stores "6-page-3x2", "A4-landscape", etc.
+  homographyMatrix: json("homography_matrix").$type<number[]>(),
+  cameraMatrix: json("camera_matrix").$type<number[]>(),
+  distCoeffs: json("dist_coeffs").$type<number[]>(),
+  calibrationTimestamp: timestamp("calibration_timestamp"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
 ```
 
-#### Task 0.2: Validate Schema Change (CHECKPOINT)
+**Migration Commands:**
+```bash
+# Push schema change to database
+npm run db:push --force
+
+# Verify field was added
+npm run db:studio
+# Check cameras table has paperSize column
+```
+
+#### Task 0.2: Verify Camera Types (Already Complete)
+**File:** `shared/schema.ts` (Lines 173, 186)
+
+Camera types already exist - NO CHANGES NEEDED:
+```typescript
+// Line 173: export type InsertCamera = z.infer<typeof insertCameraSchema>;
+// Line 186: export type Camera = typeof cameras.$inferSelect;
+```
+Note: Use `InsertCamera` instead of `NewCamera` in code
+
+#### Task 0.3: Validate Schema Change (CHECKPOINT)
 **Tests:**
 1. Query cameras: `GET /api/cameras` - should return existing camera with `paperSize: null`
 2. Preview still loads: `GET /api/camera-preview/{cameraId}`
@@ -339,49 +533,57 @@ npm run db:push --force
 
 #### Task 1.1: Update Python Scripts for File Namespacing
 
-**Files to Modify:**
+**⚠️ CRITICAL:** All Python scripts currently write to generic paths - MUST add camera ID namespacing!
 
-**`python/aruco_calibrator.py`:**
+**`python/aruco_calibrator.py`** (Currently NO --camera-id parameter):
 ```python
-# Add camera_id parameter
-parser.add_argument('--camera-id', required=True, help='Camera UUID')
-args = parser.parse_args()
+# Line ~400: Add camera_id parameter to argparse
+parser.add_argument('--camera-id', required=True, help='Camera UUID for file namespacing')
 
-# Update output paths
+# Line ~450-460: Update ALL output paths
 rectified_path = f"data/latest_calibration_rectified_{args.camera_id}.png"
-labeled_path = f"data/latest_calibration_labeled_{args.camera_id}.png"
+labeled_path = f"data/latest_calibration_labeled_{args.camera_id}.png"  
 preview_path = f"data/latest_calibration_preview_{args.camera_id}.png"
+validation_debug_path = f"data/validation_rectified_debug_{args.camera_id}.jpg"
 
-# Save with namespaced paths
+# Update all cv2.imwrite calls to use namespaced paths
 cv2.imwrite(rectified_path, rectified_image)
 ```
 
-**`python/camera_preview.py`:**
+**`python/camera_preview.py`** (Currently NO --camera-id parameter):
 ```python
-# Add camera_id parameter
-parser.add_argument('--camera-id', required=True)
-args = parser.parse_args()
+# Line ~360: Add camera_id parameter
+parser.add_argument('--camera-id', required=True, help='Camera UUID for file namespacing')
 
-# Update output path
+# Line ~380: Update output path
 output_path = f"data/latest_preview_{args.camera_id}.jpg"
+
+# Line ~420: Update write call
 cv2.imwrite(output_path, processed_frame)
 ```
 
-**`python/validate_slot_qrs.py`:**
+**`python/validate_slot_qrs.py`** (Has camera_id but doesn't namespace all outputs):
 ```python
-# Add camera_id to ROI archive paths
-roi_dir = f"data/roi_archives/{camera_id}"
+# Line ~230: Already accepts camera_id as first positional arg
+# Line ~267: Update rectified path reading
+saved_rectified_path = f"data/latest_calibration_rectified_{camera_id}.png"
+
+# Line ~300: Update debug output path  
+debug_path = f"data/validation_rectified_debug_{camera_id}.jpg"
+
+# ROI paths in process_cameras.py need update:
+# Line ~220: Update ROI save path
+roi_dir = f"data/rois/{camera_id}"  # Note: Using data/rois not roi_archives!
 os.makedirs(roi_dir, exist_ok=True)
 roi_path = f"{roi_dir}/slot_{slot_number}_{timestamp}.jpg"
 ```
 
-**`python/rectified_preview.py`:**
+**`python/rectified_preview.py`** (Currently NO --camera-id parameter):
 ```python
-# Accept camera_id parameter
-parser.add_argument('--camera-id', required=True)
-args = parser.parse_args()
+# Line ~248: Add camera_id parameter
+parser.add_argument('--camera-id', required=True, help='Camera UUID for file namespacing')
 
-# Output with camera_id namespace
+# Line ~280: Update output path
 output_path = f"data/rectified_preview_{args.camera_id}.png"
 ```
 
@@ -433,15 +635,32 @@ app.get('/api/camera-preview/:cameraId', async (req, res) => {
 
 #### Task 1.3: Update ROI Retention Policy
 
-**File:** Search for cleanup script (look for "90 days" or "3 months")
+**File:** `server/services/maintenance-service.ts` (Line 77-107)
 
-**Change:**
+**⚠️ NOTE:** ROI path is `data/rois` NOT `data/roi_archives` in actual code!
+
+**Current Implementation (90 days):**
 ```typescript
-// OLD: 90 days
-const retentionDays = 90;
+// Line 77: cleanupOldImages function
+async cleanupOldImages(retentionDays: number): Promise<{ deletedFiles: number; freedMB: number }> {
+  const roisDir = path.join(process.cwd(), 'data', 'rois'); // ← Actual path used
+  // ... cleanup logic
+}
 
-// NEW: 60 days (2 months)
-const retentionDays = 60;
+// Line ~180 in scheduled job:
+const retentionDays = 90; // ← Change to 60
+```
+
+**Updated Implementation (60 days for dual cameras):**
+```typescript
+// Update retention period
+const retentionDays = 60; // Reduced from 90 to accommodate 2x storage usage
+
+// Also update camera-namespaced cleanup:
+async cleanupCameraROIs(cameraId: string, retentionDays: number) {
+  const cameraRoisDir = path.join(process.cwd(), 'data', 'rois', cameraId);
+  // ... cleanup logic per camera
+}
 ```
 
 #### Task 1.4: Test File Namespacing (CHECKPOINT)
@@ -464,77 +683,124 @@ const retentionDays = 60;
 
 #### Task 2.1: Add Global Calibration Lock
 
-**File:** `server/routes.ts` or `server/services/camera_session_manager.ts`
+**File:** `server/camera-session-manager.ts` (Line 9-105)
 
-**Implementation:**
+**Current Implementation (Missing global calibration lock):**
 ```typescript
 class CameraSessionManager {
-  private static exclusiveLocks: Map<string, boolean> = new Map();
-  private static calibrationInProgress: string | null = null;
+  private locks: Map<string, CameraLock> = new Map();
+  // Has exclusive locks but NO global calibration mutex!
+}
+```
+
+**Updated Implementation (WITH global calibration lock):**
+```typescript
+class CameraSessionManager {
+  private locks: Map<string, CameraLock> = new Map();
+  private calibrationInProgress: string | null = null; // ← ADD THIS
   
-  // NEW: Global calibration lock
-  static async acquireCalibrationLock(cameraId: string): Promise<boolean> {
+  // ADD: Global calibration lock to prevent concurrent calibrations
+  acquireCalibrationLock(cameraId: string): boolean {
     if (this.calibrationInProgress && this.calibrationInProgress !== cameraId) {
       console.log(`[CameraSessionManager] Calibration blocked - ${this.calibrationInProgress} is calibrating`);
-      return false;
+      return false; // Another camera is calibrating
     }
     this.calibrationInProgress = cameraId;
-    console.log(`[CameraSessionManager] Calibration lock acquired for ${cameraId}`);
+    console.log(`[CameraSessionManager] Global calibration lock acquired for ${cameraId}`);
     return true;
   }
   
-  static releaseCalibrationLock(cameraId: string): void {
+  // ADD: Release global calibration lock
+  releaseCalibrationLock(cameraId: string): void {
     if (this.calibrationInProgress === cameraId) {
       this.calibrationInProgress = null;
-      console.log(`[CameraSessionManager] Calibration lock released for ${cameraId}`);
+      console.log(`[CameraSessionManager] Global calibration lock released for ${cameraId}`);
+    }
+  }
+  
+  // MODIFY: acquireExclusiveLock to also check global calibration
+  async acquireExclusiveLock(cameraId: string): Promise<void> {
+    // First acquire global calibration lock
+    if (!this.acquireCalibrationLock(cameraId)) {
+      throw new Error('Another camera is currently calibrating');
+    }
+    
+    // Then proceed with existing exclusive lock logic
+    this.locks.set(cameraId, {
+      cameraId,
+      type: 'exclusive',
+      timestamp: Date.now()
+    });
+    // ... rest of existing logic
+  }
+  
+  // MODIFY: releaseLock to also release calibration lock
+  releaseLock(cameraId: string): void {
+    const lock = this.locks.get(cameraId);
+    if (lock) {
+      console.log(`[CameraSessionManager] Released ${lock.type} lock for camera ${cameraId}`);
+      this.locks.delete(cameraId);
+      this.releaseCalibrationLock(cameraId); // ← ADD THIS
     }
   }
 }
 ```
 
-#### Task 2.2: Update Calibration Endpoint
+#### Task 2.2: Update Calibration Endpoint to Save paperSize
 
-**File:** `server/routes.ts`
+**File:** `server/routes.ts` (Line 340-500)
 
+**Current Implementation (NOT saving paperSize):**
+```typescript
+// Line 345: Gets paperSize from body but doesn't save to database!
+const { paperSize, templateTimestamp } = req.body;
+
+// Line 420-430: Updates camera but MISSING paperSize field
+await storage.updateCamera(cameraId, {
+  homographyMatrix: homography,
+  cameraMatrix: cameraMatrix,
+  distCoeffs: distCoeffs,
+  calibrationTimestamp: new Date(),
+  // paperSize NOT SAVED!
+});
+```
+
+**Updated Implementation (SAVE paperSize to database):**
 ```typescript
 app.post('/api/calibrate/:cameraId', async (req, res) => {
   const { cameraId } = req.params;
-  const { paperSize } = req.body;
+  const { paperSize, templateTimestamp } = req.body; // paperSize like "6-page-3x2"
+  let lockAcquired = false;
   
   try {
-    // Check global calibration lock
-    const lockAcquired = await CameraSessionManager.acquireCalibrationLock(cameraId);
-    if (!lockAcquired) {
-      return res.status(409).json({ 
-        message: `Another camera is currently calibrating. Please wait.`
-      });
-    }
+    // EXISTING: Acquire exclusive lock (Line 356)
+    await cameraSessionManager.acquireExclusiveLock(cameraId);
+    lockAcquired = true;
     
-    // Get camera details
-    const camera = await db.query.cameras.findFirst({
-      where: eq(cameras.id, cameraId)
+    // Pass camera ID to Python script
+    const calibrationArgs = [
+      'python/aruco_calibrator.py',
+      '--camera-id', cameraId, // ← ADD THIS
+      '--paper-size', paperSize,
+      // ... rest of args
+    ];
+    
+    // After successful calibration, save paperSize
+    await storage.updateCamera(cameraId, {
+      homographyMatrix: homography,
+      cameraMatrix: cameraMatrix,
+      distCoeffs: distCoeffs,
+      calibrationTimestamp: new Date(),
+      paperSize: paperSize, // ← ADD THIS - Persist template choice!
     });
     
-    // Use camera's configured resolution
-    const [width, height] = camera.resolution;
-    
-    // Execute calibration...
-    
-    // Save paperSize to database
-    await db.update(cameras)
-      .set({
-        paperSize: paperSize,
-        // ... other calibration data
-      })
-      .where(eq(cameras.id, cameraId));
-    
-    // Release lock
-    CameraSessionManager.releaseCalibrationLock(cameraId);
+    // Read from namespaced file
+    const rectifiedPath = `data/latest_calibration_rectified_${cameraId}.png`; // ← NAMESPACED
     
     return res.json({ ok: true, ... });
     
   } catch (error) {
-    CameraSessionManager.releaseCalibrationLock(cameraId);
+    if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
     return res.status(500).json({ message: error.message });
   }
 });
@@ -611,12 +877,69 @@ Add:
 
 #### Task 3.4: Add Camera Scoping to Template localStorage
 
-Update all template localStorage keys:
+**File:** `client/src/pages/calibration.tsx` (Multiple locations)
+
+**⚠️ CRITICAL:** Templates currently use global keys - Camera 2 will overwrite Camera 1's data!
+
+**Current Implementation (BROKEN for multi-camera):**
 ```typescript
-localStorage.setItem(`templateTimestamp_${cameraId}`, timestamp);
-localStorage.setItem(`templateDesign_${cameraId}`, design);
-localStorage.setItem(`savedTemplates_${cameraId}`, templates);
+// Line ~150-170: Global keys that collide between cameras
+const templateTimestamp = localStorage.getItem('templateTimestamp');
+const templateDesign = localStorage.getItem('templateDesign');
+const savedTemplates = localStorage.getItem('savedTemplates');
+
+// Line ~200-220: Saving without camera scope
+localStorage.setItem('templateTimestamp', timestamp);
+localStorage.setItem('templateDesign', JSON.stringify(design));
+localStorage.setItem('savedTemplates', JSON.stringify(templates));
 ```
+
+**Updated Implementation (Camera-scoped keys):**
+```typescript
+// ADD: Helper functions for camera-scoped localStorage
+const getStorageKey = (key: string, cameraId: string) => `${key}_${cameraId}`;
+
+const getCameraTemplateData = (cameraId: string) => {
+  return {
+    timestamp: localStorage.getItem(getStorageKey('templateTimestamp', cameraId)),
+    design: localStorage.getItem(getStorageKey('templateDesign', cameraId)),
+    savedTemplates: localStorage.getItem(getStorageKey('savedTemplates', cameraId)),
+    activeVersion: localStorage.getItem(getStorageKey('activeTemplateVersion', cameraId))
+  };
+};
+
+const saveCameraTemplateData = (cameraId: string, data: any) => {
+  if (data.timestamp) {
+    localStorage.setItem(getStorageKey('templateTimestamp', cameraId), data.timestamp);
+  }
+  if (data.design) {
+    localStorage.setItem(getStorageKey('templateDesign', cameraId), JSON.stringify(data.design));
+  }
+  if (data.savedTemplates) {
+    localStorage.setItem(getStorageKey('savedTemplates', cameraId), JSON.stringify(data.savedTemplates));
+  }
+  if (data.activeVersion) {
+    localStorage.setItem(getStorageKey('activeTemplateVersion', cameraId), data.activeVersion);
+  }
+};
+
+// UPDATE: All localStorage calls to use camera-scoped functions
+// When loading templates for a camera:
+const templateData = getCameraTemplateData(selectedCameraId);
+
+// When saving templates for a camera:
+saveCameraTemplateData(selectedCameraId, {
+  timestamp: new Date().toISOString(),
+  design: currentDesign,
+  savedTemplates: templates
+});
+```
+
+**Keys to Update:**
+- `templateTimestamp` → `templateTimestamp_${cameraId}`
+- `templateDesign` → `templateDesign_${cameraId}`
+- `savedTemplates` → `savedTemplates_${cameraId}`
+- `activeTemplateVersion` → `activeTemplateVersion_${cameraId}`
 
 #### Task 3.5: Add Cameras Navigation Link
 
@@ -636,12 +959,86 @@ Test all UI elements, tab switching, localStorage scoping
 
 #### Task 4.1: Update Alert System
 
-**File:** `server/services/alert_service.ts`
+**File:** `server/services/email-alerts.ts` (Line 1-100)
 
-Update alert messages:
+**Current Implementation (Missing camera identification):**
 ```typescript
-const subject = `Tool Alert - ${camera.name} - ${slot.toolName}`;
-const body = `Missing tool: ${slot.toolName} on ${camera.name}, Slot ${slot.slotNumber}`;
+// Line 78-90: buildEmailBody function
+function buildEmailBody(alertData: AlertEmailData): string {
+  let body = `Tool Tracking System Alert\n\n`;
+  body += `Alert Type: ${type.replace(/_/g, ' ').toUpperCase()}\n`;
+  body += `Timestamp: ${details.timestamp}\n\n`;
+  // Camera name NOT included in alerts!
+}
+```
+
+**Updated Implementation (Include camera name):**
+```typescript
+// UPDATE: AlertEmailData interface to include camera info
+interface AlertEmailData {
+  type: 'diagnostic_failure' | 'capture_failure' | 'camera_offline' | 'test_alert' | 'missing_tool';
+  subject: string;
+  details: {
+    timestamp: string;
+    cameraName?: string; // ← Already exists but not used!
+    cameraId?: string;   // ← Already exists but not used!
+    slotNumber?: number;
+    toolName?: string;
+    // ... rest
+  };
+}
+
+// UPDATE: Email subject and body builders
+function buildAlertSubject(alertData: AlertEmailData): string {
+  const { type, details } = alertData;
+  
+  if (type === 'missing_tool' && details.cameraName && details.toolName) {
+    return `Tool Alert - ${details.cameraName} - ${details.toolName}`;
+  }
+  
+  if (details.cameraName) {
+    return `System Alert - ${details.cameraName} - ${type.replace(/_/g, ' ')}`;
+  }
+  
+  return `Tool Tracking System - ${type.replace(/_/g, ' ')}`;
+}
+
+function buildEmailBody(alertData: AlertEmailData): string {
+  const { type, details } = alertData;
+  
+  let body = `Tool Tracking System Alert\n\n`;
+  
+  // Include camera identification
+  if (details.cameraName) {
+    body += `Camera: ${details.cameraName}\n`;
+  }
+  if (details.cameraId) {
+    body += `Camera ID: ${details.cameraId}\n`;
+  }
+  
+  body += `Alert Type: ${type.replace(/_/g, ' ').toUpperCase()}\n`;
+  body += `Timestamp: ${details.timestamp}\n`;
+  
+  // Include slot/tool details for missing tool alerts
+  if (type === 'missing_tool') {
+    if (details.slotNumber) body += `Slot Number: ${details.slotNumber}\n`;
+    if (details.toolName) body += `Missing Tool: ${details.toolName}\n`;
+  }
+  
+  return body;
+}
+```
+
+**Also Update:** Google Sheets integration to include camera name column
+```typescript
+// In sheets logging function
+const rowData = [
+  details.timestamp,
+  details.cameraName || 'Unknown Camera', // ← Add camera column
+  details.slotNumber,
+  details.toolName,
+  'MISSING'
+];
 ```
 
 #### Task 4.2: Add Second Camera on Raspberry Pi
@@ -699,34 +1096,46 @@ Complete validation:
 
 ## 6. TESTING CHECKPOINTS
 
-### Phase 0 Checkpoint
-- [ ] Existing camera visible in database
-- [ ] Preview loads correctly
-- [ ] Calibration works
-- [ ] No runtime errors
+### Phase 0 Checkpoint - Database Schema
+- [ ] `paperSize` field visible in database schema: `SELECT column_name FROM information_schema.columns WHERE table_name='cameras' AND column_name='paper_size';`
+- [ ] Existing camera record has `paperSize: null`: `SELECT id, name, paper_size FROM cameras;`
+- [ ] Preview API works: `curl http://localhost:5000/api/camera-preview/{cameraId}`
+- [ ] Calibration API responds: `curl -X POST http://localhost:5000/api/calibrate/{cameraId}`
+- [ ] No TypeScript errors after schema update
 
-### Phase 1 Checkpoint
-- [ ] Files include cameraId in filename
-- [ ] Routes read namespaced files
-- [ ] No file conflicts
+### Phase 1 Checkpoint - File Isolation
+- [ ] Python scripts accept `--camera-id` parameter without error
+- [ ] Calibration creates file: `data/latest_calibration_rectified_{cameraId}.png`
+- [ ] Preview creates file: `data/latest_preview_{cameraId}.jpg`
+- [ ] ROI archives saved to: `data/rois/{cameraId}/slot_*.jpg`
+- [ ] Routes successfully read namespaced files
+- [ ] Cleanup script updated to 60 days retention
 
-### Phase 2 Checkpoint
-- [ ] Calibration lock prevents concurrent calibrations
-- [ ] paperSize saves to database
-- [ ] Detection runs sequentially
-- [ ] RAM under 1.5GB
+### Phase 2 Checkpoint - Backend Sequencing
+- [ ] Attempting concurrent calibrations returns HTTP 409 Conflict
+- [ ] `paperSize` persists in database after calibration: `SELECT paper_size FROM cameras WHERE id='{cameraId}';`
+- [ ] Process logs show "Waiting 30 seconds..." between cameras
+- [ ] RAM usage stays under 1.5GB: `free -m` shows < 1500MB used
+- [ ] No USB errors in `dmesg | grep -i usb`
 
-### Phase 3 Checkpoint
-- [ ] Camera management page works
-- [ ] Tabs switch smoothly
-- [ ] localStorage namespaced
+### Phase 3 Checkpoint - Frontend UI
+- [ ] Camera management page loads at `/cameras`
+- [ ] Can add new camera with form
+- [ ] Camera tabs visible in calibration page
+- [ ] Camera tabs visible in dashboard
+- [ ] localStorage inspection shows `templateTimestamp_{cameraId}` keys
+- [ ] Tab switching pauses/resumes preview polling
 
-### Phase 4 Final Checkpoint
-- [ ] Both cameras calibrate independently
-- [ ] Templates persist across reboots
-- [ ] Detection runs sequentially
-- [ ] Alerts include camera name
-- [ ] System stable 24+ hours
+### Phase 4 Final Checkpoint - Full System Test
+- [ ] Camera 1 calibrates with "6-page-3x2" template
+- [ ] Camera 2 calibrates with different or same template
+- [ ] After reboot, both cameras show correct `paperSize` in database
+- [ ] Detection logs show sequential processing with timestamps
+- [ ] Alert emails show "Camera 1" or "Camera 2" in subject
+- [ ] Google Sheets has camera name column
+- [ ] System runs 24 hours without crash
+- [ ] `htop` shows stable memory usage
+- [ ] No file overwrites in `data/` directory
 
 ---
 
@@ -776,7 +1185,51 @@ System must work with single camera throughout implementation:
 
 ---
 
-## 10. KNOWN LIMITATIONS
+## 10. WHAT'S ALREADY WORKING
+
+### ✅ Existing Infrastructure That Supports Multi-Camera
+
+#### Sequential Processing Already Implemented
+- `process_cameras.py` already iterates through all cameras
+- 30-second delays between cameras already in place
+- Resource cleanup after each camera already coded
+- **Status:** Ready for multi-camera, just needs testing
+
+#### Database Schema Ready
+- `cameras` table supports multiple camera records
+- `slots` table has `cameraId` foreign key
+- Unique constraints prevent slot number conflicts per camera
+- **Status:** Database structure fully supports multi-camera
+
+#### Session Management Infrastructure
+- `CameraSessionManager` provides exclusive locking
+- Preview/calibration mutex prevents conflicts
+- 10-second wait ensures camera release at OS level
+- **Status:** Good foundation, just needs global calibration lock
+
+#### Detection Logic Camera-Aware
+- Detection loop queries all active cameras from database
+- Each slot knows which camera it belongs to
+- Homography matrices stored per camera
+- **Status:** Logic ready, file paths need namespacing
+
+#### Hardware Detection Working
+- System can detect multiple `/dev/video*` devices
+- Camera resolution configuration per device
+- Device path mapping functional
+- **Status:** Hardware layer ready for Camera 2
+
+### ⚠️ What's Missing (See Prerequisites Section)
+- `paperSize` field in database
+- File path namespacing with camera ID
+- localStorage scoping for templates
+- Global calibration lock
+- Camera management UI
+- Alert system camera identification
+
+---
+
+## 11. KNOWN LIMITATIONS
 
 ### Hardware Constraints
 - Maximum 2 cameras (USB bandwidth limit)
