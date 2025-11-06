@@ -449,8 +449,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Call Python calibration script with paper size and preview generation
       // Calculate preview output size maintaining correct aspect ratio
-      // Use same resolution as validation (80 px/cm) but scaled down for display
-      const previewScale = 10; // 10 px/cm for preview (vs 80 px/cm for validation)
+      // INCREASED from 10 to 30 px/cm for much sharper rectified preview images
+      // (Calibration captures at 4K, but rectified preview needs higher resolution for visual clarity)
+      const previewScale = 30; // 30 px/cm for preview (vs native ~31.8 px/cm for validation)
       const previewWidth = Math.round(paperDims.widthCm * previewScale);
       const previewHeight = Math.round(paperDims.heightCm * previewScale);
       console.log(`[Calibration] Preview output size: ${previewWidth}x${previewHeight} px (maintains ${(paperDims.widthCm/paperDims.heightCm).toFixed(2)}:1 aspect ratio)`);
