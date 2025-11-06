@@ -609,6 +609,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (calibrationData.rectified_preview) {
                 response.rectifiedPreview = calibrationData.rectified_preview;
               }
+              
+              // CRITICAL: Include slot validation results for smart calibration flow
+              // This allows frontend to auto-advance to Step 2 when all slots detected
+              if (calibrationData.slot_validation) {
+                response.slot_validation = calibrationData.slot_validation;
+                console.log(`[Calibration] Including slot validation in response: ${calibrationData.slot_validation.valid_count}/${calibrationData.slot_validation.total_count} markers detected`);
+              }
 
               res.json(response);
             } catch (parseError) {
