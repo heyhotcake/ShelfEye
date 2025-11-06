@@ -119,11 +119,9 @@ export default function Calibration() {
     },
   });
 
-  // Load saved template designs from localStorage (scoped by camera ID)
+  // Load saved template designs from localStorage (shared across all cameras)
   useEffect(() => {
-    if (!selectedCameraId) return;
-    
-    const storageKey = `templateConfigVersions_${selectedCameraId}`;
+    const storageKey = 'templateConfigVersions';
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
@@ -134,7 +132,7 @@ export default function Calibration() {
     } else {
       setSavedTemplateDesigns([]);
     }
-  }, [selectedCameraId]);
+  }, []);
 
   // Show all saved template designs for this camera
   const relevantDesigns = savedTemplateDesigns;
@@ -747,10 +745,8 @@ export default function Calibration() {
                                     const updatedDesigns = savedTemplateDesigns.map(d => 
                                       d.timestamp === selectedTemplate ? updatedDesign : d
                                     );
-                                    if (selectedCameraId) {
-                                      const storageKey = `templateConfigVersions_${selectedCameraId}`;
-                                      localStorage.setItem(storageKey, JSON.stringify(updatedDesigns));
-                                    }
+                                    const storageKey = 'templateConfigVersions';
+                                    localStorage.setItem(storageKey, JSON.stringify(updatedDesigns));
                                     setSavedTemplateDesigns(updatedDesigns);
                                     
                                     console.log('[RecalibrateButton] Successfully saved to DB and localStorage');

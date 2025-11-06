@@ -176,9 +176,7 @@ export default function SlotDrawing() {
 
   // Load saved template versions from localStorage (scoped by camera ID)
   useEffect(() => {
-    if (!selectedCameraId) return;
-    
-    const storageKey = `templateConfigVersions_${selectedCameraId}`;
+    const storageKey = 'templateConfigVersions';
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
@@ -1063,10 +1061,8 @@ export default function SlotDrawing() {
       // Save to localStorage
       const updated = [...savedTemplateVersions, newVersion];
       setSavedTemplateVersions(updated);
-      if (selectedCameraId) {
-      const storageKey = `templateConfigVersions_${selectedCameraId}`;
+      const storageKey = 'templateConfigVersions';
       localStorage.setItem(storageKey, JSON.stringify(updated));
-    }
       
       // ALSO save to database so calibration can use it immediately
       // First, ensure categories exist in the database
@@ -1331,10 +1327,8 @@ export default function SlotDrawing() {
     const versionToDelete = savedTemplateVersions.find(v => v.timestamp === templateToDelete);
     const updated = savedTemplateVersions.filter(v => v.timestamp !== templateToDelete);
     setSavedTemplateVersions(updated);
-    if (selectedCameraId) {
-      const storageKey = `templateConfigVersions_${selectedCameraId}`;
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-    }
+    const storageKey = 'templateConfigVersions';
+    localStorage.setItem(storageKey, JSON.stringify(updated));
     toast({
       title: "Template Design Deleted",
       description: versionToDelete ? `"${versionToDelete.paperSize} - ${versionToDelete.name}" removed` : "Design removed",
@@ -1424,10 +1418,8 @@ export default function SlotDrawing() {
         
         const updated = [...savedTemplateVersions, newVersion];
         setSavedTemplateVersions(updated);
-        if (selectedCameraId) {
-      const storageKey = `templateConfigVersions_${selectedCameraId}`;
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-    }
+        const storageKey = 'templateConfigVersions';
+        localStorage.setItem(storageKey, JSON.stringify(updated));
         
         toast({
           title: "Template Imported",
@@ -1501,10 +1493,8 @@ export default function SlotDrawing() {
       // Add to saved versions
       const updated = [...savedTemplateVersions, ...newVersions];
       setSavedTemplateVersions(updated);
-      if (selectedCameraId) {
-      const storageKey = `templateConfigVersions_${selectedCameraId}`;
+      const storageKey = 'templateConfigVersions';
       localStorage.setItem(storageKey, JSON.stringify(updated));
-    }
       
       toast({
         title: "Synced from Database",
