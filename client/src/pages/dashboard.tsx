@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Camera, Clock, CheckCircle, AlertTriangle, HelpCircle, ClipboardCheck, Users, Activity, XCircle, BellOff, Ruler } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 import type { CaptureRun } from "@shared/schema";
+import { CameraSelector } from "@/components/ui/camera-selector";
 
 const TIMEZONE = "Asia/Tokyo";
 
@@ -45,6 +46,7 @@ interface CaptureNowResponse {
 export default function Dashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedCameraId, setSelectedCameraId] = useState<string | undefined>(undefined);
   const [showResultsDialog, setShowResultsDialog] = useState(false);
   const [captureResults, setCaptureResults] = useState<CaptureNowResponse | null>(null);
 
@@ -64,6 +66,25 @@ export default function Dashboard() {
   const { data: cameras } = useQuery<any[]>({
     queryKey: ['/api/cameras'],
   });
+
+  // Initialize selected camera to first camera or saved preference
+  useEffect(() => {
+    if (cameras && cameras.length > 0 && !selectedCameraId) {
+      const savedCameraId = localStorage.getItem('selectedCameraId');
+      const initialCameraId = savedCameraId && cameras.find(c => c.id === savedCameraId)
+        ? savedCameraId
+        : cameras[0].id;
+      setSelectedCameraId(initialCameraId);
+    }
+  }, [cameras, selectedCameraId]);
+
+  // Handle camera change
+  const handleCameraChange = (cameraId: string) => {
+    setSelectedCameraId(cameraId);
+    localStorage.setItem('selectedCameraId', cameraId);
+  };
+
+  const selectedCamera = cameras?.find((c: any) => c.id === selectedCameraId);
 
   const { data: slots } = useQuery<any[]>({
     queryKey: ['/api/slots'],
@@ -90,11 +111,8 @@ export default function Dashboard() {
     refetchInterval: 30000,
   });
 
-  // Get active camera (the one with calibration)
-  const activeCamera = cameras?.find((c: any) => c.homographyMatrix);
-  
-  // Filter slots by active camera and get their latest status
-  const activeCameraSlots = slots?.filter((slot: any) => slot.cameraId === activeCamera?.id) || [];
+  // Filter slots by selected camera and get their latest status
+  const selectedCameraSlots = slots?.filter((slot: any) => slot.cameraId === selectedCamera?.id) || [];
   
   // Create a map of latest detection status for each slot
   const slotStatusMap = new Map();
@@ -193,7 +211,7 @@ export default function Dashboard() {
   };
 
   // Merge slots with their latest detection status
-  const slotGrid = activeCameraSlots.map((slot: any) => {
+  const slotGrid = selectedCameraSlots.map((slot: any) => {
     const latestStatus = slotStatusMap.get(slot.id);
     return {
       slotId: slot.slotId,
@@ -228,10 +246,15 @@ export default function Dashboard() {
                 Monitoring Dashboard
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {activeCamera?.name || 'No Calibrated Camera'} - Last updated: <span className="font-mono">{summary ? formatJSTTimestamp(summary.lastUpdate) : '--'}</span>
+                Last updated: <span className="font-mono">{summary ? formatJSTTimestamp(summary.lastUpdate) : '--'}</span>
               </p>
             </div>
             <div className="flex items-center gap-4">
+              <CameraSelector
+                cameras={cameras || []}
+                selectedCameraId={selectedCameraId}
+                onCameraChange={handleCameraChange}
+              />
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                 <span className="text-sm font-medium">System Online</span>
@@ -381,7 +404,7 @@ export default function Dashboard() {
           <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Tool Grid - {activeCamera?.name || 'No Calibrated Camera'}</CardTitle>
+                <CardTitle>Tool Grid - {selectedCamera?.name || 'No Camera Selected'}</CardTitle>
                 <div className="flex items-center gap-3">
                   <Select defaultValue="all">
                     <SelectTrigger className="w-40" data-testid="select-filter-status">
@@ -476,7 +499,7 @@ export default function Dashboard() {
                   </div>
                   
                   <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                    <p>Showing {slotGrid.length} of {activeCameraSlots.length} slots</p>
+                    <p>Showing {slotGrid.length} of {selectedCameraSlots.length} slots</p>
                     <Button variant="link" className="text-primary p-0" data-testid="link-view-all-slots">
                       View All Slots →
                     </Button>

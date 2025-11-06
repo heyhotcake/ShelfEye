@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { clampToBounds, checkBoundaryViolations } from "@/lib/templateBounds";
 import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye, CheckCircle } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
+import { CameraSelector } from "@/components/ui/camera-selector";
 
 interface Point {
   x: number;
@@ -50,6 +51,7 @@ export default function SlotDrawing() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedCameraId, setSelectedCameraId] = useState<string | undefined>(undefined);
   // Legacy slot drawing state (kept for backwards compatibility, but UI removed)
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentRegion, setCurrentRegion] = useState<SlotRegion | null>(null);
@@ -124,7 +126,26 @@ export default function SlotDrawing() {
     queryKey: ['/api/cameras'],
   });
 
-  const { data: slots } = useQuery<any[]>({
+  // Initialize selected camera to first camera or saved preference
+  useEffect(() => {
+    if (cameras && cameras.length > 0 && !selectedCameraId) {
+      const savedCameraId = localStorage.getItem('selectedCameraId');
+      const initialCameraId = savedCameraId && cameras.find(c => c.id === savedCameraId)
+        ? savedCameraId
+        : cameras[0].id;
+      setSelectedCameraId(initialCameraId);
+    }
+  }, [cameras, selectedCameraId]);
+
+  // Handle camera change
+  const handleCameraChange = (cameraId: string) => {
+    setSelectedCameraId(cameraId);
+    localStorage.setItem('selectedCameraId', cameraId);
+  };
+
+  const selectedCamera = cameras?.find((c: any) => c.id === selectedCameraId);
+
+  const { data: slots} = useQuery<any[]>({
     queryKey: ['/api/slots'],
   });
 
@@ -153,17 +174,22 @@ export default function SlotDrawing() {
     }
   }, []);
 
-  // Load saved template versions from localStorage on mount
+  // Load saved template versions from localStorage (scoped by camera ID)
   useEffect(() => {
-    const saved = localStorage.getItem('templateConfigVersions');
+    if (!selectedCameraId) return;
+    
+    const storageKey = `templateConfigVersions_${selectedCameraId}`;
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         setSavedTemplateVersions(JSON.parse(saved));
       } catch (e) {
         console.error('Failed to load saved template versions:', e);
       }
+    } else {
+      setSavedTemplateVersions([]);
     }
-  }, []);
+  }, [selectedCameraId]);
 
   // Load existing slots as regions when slots data changes
   useEffect(() => {
@@ -1037,7 +1063,10 @@ export default function SlotDrawing() {
       // Save to localStorage
       const updated = [...savedTemplateVersions, newVersion];
       setSavedTemplateVersions(updated);
-      localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
+      if (selectedCameraId) {
+      const storageKey = `templateConfigVersions_${selectedCameraId}`;
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    }
       
       // ALSO save to database so calibration can use it immediately
       // First, ensure categories exist in the database
@@ -1302,7 +1331,10 @@ export default function SlotDrawing() {
     const versionToDelete = savedTemplateVersions.find(v => v.timestamp === templateToDelete);
     const updated = savedTemplateVersions.filter(v => v.timestamp !== templateToDelete);
     setSavedTemplateVersions(updated);
-    localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
+    if (selectedCameraId) {
+      const storageKey = `templateConfigVersions_${selectedCameraId}`;
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    }
     toast({
       title: "Template Design Deleted",
       description: versionToDelete ? `"${versionToDelete.paperSize} - ${versionToDelete.name}" removed` : "Design removed",
@@ -1392,7 +1424,10 @@ export default function SlotDrawing() {
         
         const updated = [...savedTemplateVersions, newVersion];
         setSavedTemplateVersions(updated);
-        localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
+        if (selectedCameraId) {
+      const storageKey = `templateConfigVersions_${selectedCameraId}`;
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    }
         
         toast({
           title: "Template Imported",
@@ -1466,7 +1501,10 @@ export default function SlotDrawing() {
       // Add to saved versions
       const updated = [...savedTemplateVersions, ...newVersions];
       setSavedTemplateVersions(updated);
-      localStorage.setItem('templateConfigVersions', JSON.stringify(updated));
+      if (selectedCameraId) {
+      const storageKey = `templateConfigVersions_${selectedCameraId}`;
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    }
       
       toast({
         title: "Synced from Database",
@@ -1611,9 +1649,16 @@ export default function SlotDrawing() {
               </h2>
               <p className="text-sm text-muted-foreground mt-1">Design your tool layout - ArUco markers, templates, and QR codes on one sheet</p>
             </div>
-            <Button variant="outline" size="sm" data-testid="button-close-slot-drawing">
-              <X className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-4">
+              <CameraSelector
+                cameras={cameras || []}
+                selectedCameraId={selectedCameraId}
+                onCameraChange={handleCameraChange}
+              />
+              <Button variant="outline" size="sm" data-testid="button-close-slot-drawing">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </header>
         
