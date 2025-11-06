@@ -603,10 +603,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     graceWindow: '08:00-17:00',
                   });
 
-                  // Update template rectangle with slot ID and simplified numbered QR code
+                  // Update template rectangle with slot ID, QR code, and camera ID
+                  // This makes the coordinates camera-specific from first calibration
                   await storage.updateTemplateRectangle(template.id, {
                     slotId: slot.id,
                     autoQrId: slot.slotNumber.toString(), // Use simplified slot number for QR codes
+                    cameraId: cameraId, // Mark these coordinates as camera-specific
                   });
 
                   createdSlots.push(slot);
@@ -2105,11 +2107,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Template rectangle routes
   app.get("/api/template-rectangles", async (req, res) => {
     try {
-      const { paperSize } = req.query;
+      const { paperSize, cameraId } = req.query;
+      
+      // If both paperSize and cameraId are provided, use camera-specific query with fallback
+      if (paperSize && typeof paperSize === 'string' && cameraId && typeof cameraId === 'string') {
+        const rectangles = await storage.getTemplateRectanglesByPaperSizeAndCamera(paperSize, cameraId);
+        return res.json(rectangles);
+      }
+      
+      // If only paperSize is provided, get all templates for that paper size
       if (paperSize && typeof paperSize === 'string') {
         const rectangles = await storage.getTemplateRectanglesByPaperSize(paperSize);
         return res.json(rectangles);
       }
+      
+      // Otherwise return all templates
       const rectangles = await storage.getTemplateRectangles();
       res.json(rectangles);
     } catch (error) {

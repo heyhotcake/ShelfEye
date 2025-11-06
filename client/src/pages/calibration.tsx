@@ -103,17 +103,18 @@ export default function Calibration() {
   });
 
   // Fetch template rectangles from DATABASE for the selected paper size (for calibration overlay)
+  // This query now uses camera-specific coordinates with fallback to shared templates
   const selectedDesignForQuery = savedTemplateDesigns.find(d => d.timestamp === selectedTemplate);
   const paperSizeForQuery = selectedDesignForQuery?.paperSize || '6-page-3x2';
   const { data: dbTemplateRectangles } = useQuery<any[]>({
-    queryKey: ['/api/template-rectangles', paperSizeForQuery], // Fixed: use string instead of object
-    enabled: calibrationStep >= 1 && !!paperSizeForQuery,
+    queryKey: ['/api/template-rectangles', paperSizeForQuery, selectedCameraId],
+    enabled: calibrationStep >= 1 && !!paperSizeForQuery && !!selectedCameraId,
     queryFn: async () => {
-      console.log('[CalibrationOverlay] Fetching templates for paper size:', paperSizeForQuery);
-      const response = await fetch(`/api/template-rectangles?paperSize=${paperSizeForQuery}`);
+      console.log('[CalibrationOverlay] Fetching camera-specific templates for:', { paperSize: paperSizeForQuery, cameraId: selectedCameraId });
+      const response = await fetch(`/api/template-rectangles?paperSize=${paperSizeForQuery}&cameraId=${selectedCameraId}`);
       const data = await response.json();
-      console.log('[CalibrationOverlay] DB templates loaded:', data.length, 'templates');
-      console.log('[CalibrationOverlay] First template:', data[0]);
+      console.log('[CalibrationOverlay] DB templates loaded:', data.length, 'templates (camera-specific or shared)');
+      console.log('[CalibrationOverlay] First template cameraId:', data[0]?.cameraId);
       return data;
     },
   });
@@ -716,10 +717,11 @@ export default function Calibration() {
                                     for (const adjusted of adjustedTemplates) {
                                       const dbRect = dbRects.find((r: any) => r.autoQrId === adjusted.autoQrId);
                                       if (dbRect) {
-                                        console.log(`[RecalibrateButton] Updating ${dbRect.autoQrId}: (${adjusted.xCm}, ${adjusted.yCm})`);
+                                        console.log(`[RecalibrateButton] Updating ${dbRect.autoQrId}: (${adjusted.xCm}, ${adjusted.yCm}) for camera: ${selectedCamera?.id}`);
                                         await apiRequest('PUT', `/api/template-rectangles/${dbRect.id}`, {
                                           xCm: adjusted.xCm,
                                           yCm: adjusted.yCm,
+                                          cameraId: selectedCamera?.id,
                                         });
                                       } else {
                                         console.warn(`[RecalibrateButton] No DB match for autoQrId: ${adjusted.autoQrId}`);
