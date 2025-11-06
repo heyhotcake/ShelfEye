@@ -1,0 +1,56 @@
+Nov 06 08:58:30 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 300 metadata polls over 40s
+Nov 06 08:58:30 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Nov 06 08:58:31 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 19.8
+Nov 06 08:58:57 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 44/50: New best sharpness = 19.8
+Nov 06 08:58:59 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 47/50: New best sharpness = 19.8
+Nov 06 08:59:01 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 19.8
+Nov 06 08:59:02 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:__main__:Detected 3/4 corner markers: [np.int32(98), np.int32(97), np.int32(96)]
+Nov 06 08:59:02 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Nov 06 08:59:02 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Nov 06 08:59:03 NaniwaTanaCheck pi-startup.sh[22917]: [CameraSessionManager] Released exclusive lock for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Nov 06 08:59:03 NaniwaTanaCheck pi-startup.sh[22917]: 8:59:03 AM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 500 in 87484ms :: {"me…
+Nov 06 08:59:03 NaniwaTanaCheck pi-startup.sh[22917]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Nov 06 08:59:03 NaniwaTanaCheck sudo[23269]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action off --num-leds 99
+Nov 06 08:59:03 NaniwaTanaCheck sudo[23269]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 06 08:59:04 NaniwaTanaCheck sudo[23269]: pam_unix(sudo:session): session closed for user root
+Nov 06 08:59:04 NaniwaTanaCheck pi-startup.sh[22917]: [LED] LED light turned OFF
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: [45:48:01.078320436] [23268]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: [45:48:01.108936034] [23274]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.2:1.0-1bcf:284c' for pipeline handler uvcvideo
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: [45:48:01.215192580] [23268]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Nov 06 08:59:05 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Nov 06 08:59:15 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 80 metadata polls over 10s
+Nov 06 08:59:15 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Nov 06 08:59:15 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 48.6
+Nov 06 08:59:15 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 48.6
+Nov 06 08:59:15 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 3/50: New best sharpness = 48.8
+Nov 06 08:59:17 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 10/50: New best sharpness = 48.9
+Nov 06 08:59:25 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 48.9
+Nov 06 08:59:25 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Nov 06 08:59:25 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Nov 06 08:59:25 NaniwaTanaCheck pi-startup.sh[22917]: 8:59:25 AM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 22722ms :: …
+Nov 06 09:00:01 NaniwaTanaCheck pi-startup.sh[22917]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: [45:48:59.337137703] [23282]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: [45:48:59.367201516] [23285]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.2:1.0-1bcf:284c' for pipeline handler uvcvideo
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: [45:48:59.472777039] [23282]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Nov 06 09:00:03 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Nov 06 09:00:13 NaniwaTanaCheck pi-startup.sh[22917]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 81 metadata polls over 10s
