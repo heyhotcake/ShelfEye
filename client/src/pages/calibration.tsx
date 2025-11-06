@@ -56,8 +56,7 @@ export default function Calibration() {
   const { toast } = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [calibrationResult, setCalibrationResult] = useState<CalibrationResult | null>(null);
-  const [calibrationStep, setCalibrationStep] = useState<number>(0); // 0: ArUco, 1: QRs visible, 2: QRs covered
-  const [step1Result, setStep1Result] = useState<ValidationResult | null>(null);
+  const [calibrationStep, setCalibrationStep] = useState<number>(0); // 0: Calibrate, 1: Error state, 2: Verify covered
   const [step2Result, setStep2Result] = useState<ValidationResult | null>(null);
   const [isCameraLocked, setIsCameraLocked] = useState<boolean>(false);
   const [savedTemplateDesigns, setSavedTemplateDesigns] = useState<TemplateDesign[]>([]);
@@ -129,7 +128,6 @@ export default function Calibration() {
       console.log('[Calibration] Camera CHANGED, resetting...');
       setCalibrationResult(null);
       setCalibrationStep(0);
-      setStep1Result(null);
       setStep2Result(null);
       setIsCameraLocked(false);
       setSelectedTemplate(""); // Clear template selection when camera changes
@@ -301,102 +299,23 @@ export default function Calibration() {
     },
   });
 
-  const validateMarkersVisibleMutation = useMutation({
-    mutationFn: (cameraId: string) => {
-      // Lock camera BEFORE starting validation to stop preview polling
-      setIsCameraLocked(true);
-      return apiRequest('POST', `/api/calibrate/${cameraId}/validate-markers-visible`);
-    },
-    onSuccess: async (response) => {
-      const data: ValidationResult = await response.json();
-      setStep1Result(data);
-      setIsCameraLocked(false); // Clear lock state
-      
-      if (data.success) {
-        setCalibrationStep(3); // Move to step 4 (tools covering markers)
-        toast({
-          title: "Step 3 Complete - ArUco Markers Visible ✓",
-          description: `All ${data.detected_count} slot ArUco markers detected successfully. Now place ALL tools in their slots, then click the validation button.`,
-          duration: 8000, // Show longer to ensure user sees the instruction
-        });
-      } else {
-        // Handle error cases (camera open failure, etc.)
-        if (data.error) {
-          toast({
-            title: "Marker Validation Failed",
-            description: data.error,
-            variant: "destructive",
-            duration: 10000,
-          });
-        } else {
-          // Handle validation failure with counts
-          const invalidMarkersInfo = data.invalid_qrs && data.invalid_qrs.length > 0 
-            ? ` (Found ${data.invalid_qrs.length} non-matching marker(s): ${data.invalid_qrs.map((qr: any) => qr.data).join(', ')})`
-            : '';
-          const totalMarkersInfo = data.total_qrs_detected !== undefined 
-            ? ` Total markers detected: ${data.total_qrs_detected}.` 
-            : '';
-          
-          let description = data.message;
-          if (!description && data.detected_count !== undefined && data.expected_count !== undefined) {
-            description = `Only ${data.detected_count}/${data.expected_count} ArUco markers matched.`;
-          }
-          if (!description) {
-            description = 'Validation failed. Please check the camera and try again.';
-          }
-          
-          toast({
-            title: "Marker Validation Failed",
-            description: `${description}${totalMarkersInfo}${invalidMarkersInfo}`,
-            variant: "destructive",
-            duration: 10000,
-          });
-        }
-      }
-      // Resume preview polling
-      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
-    },
-    onError: async (error: any) => {
-      setIsCameraLocked(false); // Clear lock state on error
-      let errorMessage = "Marker validation failed";
-      if (error.response) {
-        try {
-          const errorData = await error.response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          errorMessage = error.message || errorMessage;
-        }
-      }
-      toast({
-        title: "Validation Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      // Resume preview polling even on error
-      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
-    },
-  });
-
   const validateMarkersCoveredMutation = useMutation({
     mutationFn: (cameraId: string) => {
-      // Lock camera BEFORE starting validation to stop preview polling
       setIsCameraLocked(true);
       return apiRequest('POST', `/api/calibrate/${cameraId}/validate-markers-covered`);
     },
     onSuccess: async (response) => {
       const data: ValidationResult = await response.json();
       setStep2Result(data);
-      setIsCameraLocked(false); // Clear lock state
+      setIsCameraLocked(false);
       
       if (data.success) {
         toast({
           title: "Calibration Complete",
           description: "All tools are properly covering ArUco markers. System is ready!",
         });
-        // Invalidate calibration-info query to immediately show Active Camera card on dashboard
         queryClient.invalidateQueries({ queryKey: ['/api/config/calibration-info'] });
       } else {
-        // Handle error cases (camera open failure, etc.)
         if (data.error) {
           toast({
             title: "Marker Validation Failed",
@@ -413,11 +332,10 @@ export default function Calibration() {
           });
         }
       }
-      // Resume preview polling
       queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
     },
     onError: async (error: any) => {
-      setIsCameraLocked(false); // Clear lock state on error
+      setIsCameraLocked(false);
       let errorMessage = "Marker validation failed";
       if (error.response) {
         try {
@@ -432,10 +350,10 @@ export default function Calibration() {
         description: errorMessage,
         variant: "destructive",
       });
-      // Resume preview polling even on error
       queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
     },
   });
+
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -845,57 +763,6 @@ export default function Calibration() {
                           <CheckCircle className="w-4 h-4 mr-2" />
                           {validateMarkersCoveredMutation.isPending ? 'Validating...' : 'Verify Tools Cover ArUco Markers'}
                         </Button>
-                        {step1Result && !step1Result.success && step1Result.missing_slots && (
-                          <>
-                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
-                              <p className="text-xs text-red-500 font-semibold mb-1">Missing ArUco Markers ({step1Result.detected_count}/{step1Result.expected_count} detected):</p>
-                              <ul className="text-xs text-muted-foreground list-disc list-inside">
-                                {step1Result.missing_slots.map((slot: any, idx: number) => (
-                                  <li key={idx}>{slot.slotId} - {slot.toolName}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mt-2">
-                              <p className="text-xs font-semibold text-amber-600 mb-1">Troubleshooting:</p>
-                              <ul className="text-xs text-muted-foreground list-disc list-inside space-y-0.5">
-                                <li>Check rectified preview above - are template outlines aligned?</li>
-                                <li>ArUco markers might be too small - try larger markers or better camera position</li>
-                                <li>Image quality might be poor - check lighting and camera focus</li>
-                                <li>Template positions might not match physical layout</li>
-                              </ul>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {calibrationStep === 3 && (
-                      <div className="space-y-2">
-                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
-                          <p className="text-xs text-muted-foreground">
-                            <strong>Step 4:</strong> Place ALL tools in their slots so they cover the ArUco markers. When ready, click the button below to verify.
-                          </p>
-                        </div>
-                        {!step2Result && (
-                          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 mb-2">
-                            <p className="text-xs text-amber-600">
-                              ⏳ Awaiting verification - Place tools then click button
-                            </p>
-                          </div>
-                        )}
-                        <Button 
-                          className="w-full"
-                          onClick={() => {
-                            if (activeCamera) {
-                              validateMarkersCoveredMutation.mutate(activeCamera.id);
-                            }
-                          }}
-                          disabled={!activeCamera || validateMarkersCoveredMutation.isPending}
-                          data-testid="button-validate-markers-covered"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          {validateMarkersCoveredMutation.isPending ? 'Validating...' : 'Verify Tools Are Covering ArUco Markers'}
-                        </Button>
                         {step2Result && !step2Result.success && step2Result.visible_qrs && (
                           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
                             <p className="text-xs text-red-500 font-semibold mb-1">ArUco Markers Still Visible:</p>
@@ -919,7 +786,6 @@ export default function Calibration() {
                         )}
                       </div>
                     )}
-                    
                     {/* Reset button - show if calibration started */}
                     {calibrationStep > 0 && (
                       <Button 
@@ -927,7 +793,6 @@ export default function Calibration() {
                         className="w-full"
                         onClick={() => {
                           setCalibrationStep(0);
-                          setStep1Result(null);
                           setStep2Result(null);
                           setCalibrationResult(null);
                           setIsCameraLocked(false); // Clear camera lock
