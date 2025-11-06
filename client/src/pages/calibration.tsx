@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Camera, CheckCircle, Ruler, X, Download } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 import { RectifiedPreviewCanvas } from "@/components/canvas/rectified-preview-canvas";
-import { CameraSelector } from "@/components/ui/camera-selector";
 
 const TIMEZONE = "Asia/Tokyo";
 
@@ -402,11 +401,6 @@ export default function Calibration() {
               <p className="text-sm text-muted-foreground mt-1">Position camera to see all 4 corner markers (A/B/C/D)</p>
             </div>
             <div className="flex items-center gap-4">
-              <CameraSelector
-                cameras={cameras || []}
-                selectedCameraId={selectedCameraId}
-                onCameraChange={handleCameraChange}
-              />
               <Button 
                 variant="outline" 
                 size="sm"
@@ -526,7 +520,7 @@ export default function Calibration() {
                 <div className="space-y-6">
                   <div>
                     <label className="text-sm text-muted-foreground mb-2 block">Active Camera</label>
-                    <Select value={selectedCamera?.id || ""} disabled>
+                    <Select value={selectedCamera?.id || ""} onValueChange={handleCameraChange}>
                       <SelectTrigger data-testid="select-active-camera">
                         <SelectValue placeholder="No active camera" />
                       </SelectTrigger>

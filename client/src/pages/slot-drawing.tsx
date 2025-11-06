@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { clampToBounds, checkBoundaryViolations } from "@/lib/templateBounds";
 import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye, CheckCircle } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
-import { CameraSelector } from "@/components/ui/camera-selector";
 
 interface Point {
   x: number;
@@ -1640,11 +1639,6 @@ export default function SlotDrawing() {
               <p className="text-sm text-muted-foreground mt-1">Design your tool layout - ArUco markers, templates, and QR codes on one sheet</p>
             </div>
             <div className="flex items-center gap-4">
-              <CameraSelector
-                cameras={cameras || []}
-                selectedCameraId={selectedCameraId}
-                onCameraChange={handleCameraChange}
-              />
               <Button variant="outline" size="sm" data-testid="button-close-slot-drawing">
                 <X className="w-4 h-4" />
               </Button>
