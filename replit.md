@@ -11,8 +11,18 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
   - **Solution**: Integrated slot marker validation directly into calibration step using inverse homography to map slot positions (cm) → raw pixel coordinates, then extract ROIs from raw frame.
   - **Architecture**: Single calibration process now: (1) Captures 4K raw frame, (2) Detects 4 corner markers, (3) Calculates homography, (4) Validates ALL slot markers on same raw frame, (5) Generates rectified preview for UI.
   - **Result**: 100% detection success (7/7 slot markers) with zero false positives/negatives on first deployment test.
-  - **Performance Optimizations**: Reduced warmup times (40s→20s for calibration, 10s→5s for preview). Uses single camera capture for both calibration and validation.
-  - **Code Cleanup**: Removed 679-line legacy validation script (validate_slot_qrs.py), simplified frontend calibration flow from 4 steps to 2 steps.
+  
+- **Performance Optimizations**: Reduced warmup times (40s→20s for calibration, 10s→5s for preview). Uses single camera capture for both calibration and validation. Maintains 140+ frames at 4K for auto-exposure convergence.
+
+- **UI/API Cleanup**: Simplified calibration flow from 4 steps to 2 steps:
+  - **Step 0**: Calibrate (automatically validates empty slots)
+  - **Step 2**: Verify tools cover markers
+  - Removed legacy /validate-markers-visible endpoint (215 lines)
+  - Removed redundant Step 1 (empty marker validation) and Step 3 (duplicate verify button) from UI
+  - Cleaned up dead state variables (step1Result) and unused mutations
+  - Camera preview polling properly paused during calibration via isCameraLocked flag
+  
+- **Remaining Legacy Code**: validate_slot_qrs.py (679 lines) still used by /validate-markers-covered endpoint. Will be removed when covered validation is reworked to use raw-frame detection.
 
 ### Nov 5, 2025
 - **Worker Tracking System with ArUco Markers**: Implemented comprehensive worker identification system using ArUco markers for tool usage tracking.
