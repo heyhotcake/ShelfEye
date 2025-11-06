@@ -630,9 +630,9 @@ export default function Calibration() {
 
                     {calibrationStep === 1 && (
                       <div className="space-y-2">
-                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-3">
+                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 2:</strong> Verify template alignment below in the rectified preview. Check that tool outlines match your physical layout. {hasTemplateAdjustments && <span className="text-green-600 font-semibold">Adjustments detected - they will be saved when you proceed.</span>}
+                            <strong>Slot Detection Failed:</strong> Not all ArUco markers were detected. Adjust slot positions in the rectified preview below to match your physical layout, then recalibrate. {hasTemplateAdjustments && <span className="text-green-600 font-semibold">Adjustments detected - they will be saved when you recalibrate.</span>}
                           </p>
                         </div>
                         
@@ -662,33 +662,33 @@ export default function Calibration() {
                         <Button 
                           className="w-full"
                           onClick={async () => {
-                            console.log('[SaveButton] Click detected', { hasTemplateAdjustments, adjustedTemplatesCount: adjustedTemplates.length });
+                            console.log('[RecalibrateButton] Click detected', { hasTemplateAdjustments, adjustedTemplatesCount: adjustedTemplates.length });
                             
                             // Save adjusted template positions if any
                             if (hasTemplateAdjustments && adjustedTemplates.length > 0) {
-                              console.log('[SaveButton] Saving adjusted templates to database...');
+                              console.log('[RecalibrateButton] Saving adjusted templates to database...');
                               try {
                                 const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
                                 if (selectedDesign) {
                                   // Fetch actual database template rectangles by paper size
                                   const paperSize = selectedDesign.paperSize;
-                                  console.log('[SaveButton] Fetching DB templates for paper size:', paperSize);
+                                  console.log('[RecalibrateButton] Fetching DB templates for paper size:', paperSize);
                                   const dbRectsResponse = await fetch(`/api/template-rectangles?paperSize=${paperSize}`);
                                   if (dbRectsResponse.ok) {
                                     const dbRects = await dbRectsResponse.json();
-                                    console.log('[SaveButton] Found DB templates:', dbRects.length);
+                                    console.log('[RecalibrateButton] Found DB templates:', dbRects.length);
                                     
                                     // Match adjusted templates to database rectangles by autoQrId and update DB
                                     for (const adjusted of adjustedTemplates) {
                                       const dbRect = dbRects.find((r: any) => r.autoQrId === adjusted.autoQrId);
                                       if (dbRect) {
-                                        console.log(`[SaveButton] Updating ${dbRect.autoQrId}: (${adjusted.xCm}, ${adjusted.yCm})`);
+                                        console.log(`[RecalibrateButton] Updating ${dbRect.autoQrId}: (${adjusted.xCm}, ${adjusted.yCm})`);
                                         await apiRequest('PUT', `/api/template-rectangles/${dbRect.id}`, {
                                           xCm: adjusted.xCm,
                                           yCm: adjusted.yCm,
                                         });
                                       } else {
-                                        console.warn(`[SaveButton] No DB match for autoQrId: ${adjusted.autoQrId}`);
+                                        console.warn(`[RecalibrateButton] No DB match for autoQrId: ${adjusted.autoQrId}`);
                                       }
                                     }
                                     
@@ -708,19 +708,19 @@ export default function Calibration() {
                                     localStorage.setItem('templateConfigVersions', JSON.stringify(updatedDesigns));
                                     setSavedTemplateDesigns(updatedDesigns);
                                     
-                                    console.log('[SaveButton] Successfully saved to DB and localStorage');
+                                    console.log('[RecalibrateButton] Successfully saved to DB and localStorage');
                                     toast({
                                       title: "Positions Saved",
-                                      description: `Updated ${adjustedTemplates.length} template positions in database and localStorage.`,
+                                      description: `Updated ${adjustedTemplates.length} template positions. Re-running calibration with adjusted coordinates...`,
                                     });
                                   } else {
                                     throw new Error('Failed to fetch database template rectangles');
                                   }
                                 } else {
-                                  console.error('[SaveButton] Selected design not found');
+                                  console.error('[RecalibrateButton] Selected design not found');
                                 }
                               } catch (error) {
-                                console.error('[SaveButton] Failed to save adjusted positions:', error);
+                                console.error('[RecalibrateButton] Failed to save adjusted positions:', error);
                                 toast({
                                   title: "Save Failed",
                                   description: "Failed to save adjusted positions. LocalStorage NOT updated to prevent inconsistency.",
@@ -729,16 +729,28 @@ export default function Calibration() {
                                 // Don't proceed if save failed
                                 return;
                               }
-                            } else {
-                              console.log('[SaveButton] No adjustments to save, proceeding to marker validation');
                             }
                             
-                            setCalibrationStep(2); // Move to marker validation step
+                            // Re-run full calibration with updated positions
+                            if (activeCamera) {
+                              const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+                              if (selectedDesign) {
+                                setCalibrationStep(0); // Reset to step 0 temporarily
+                                setAdjustedTemplates([]); // Clear adjustments
+                                setHasTemplateAdjustments(false);
+                                calibrationMutation.mutate({ 
+                                  cameraId: activeCamera.id, 
+                                  paperSize: selectedDesign.paperSize, 
+                                  templateTimestamp: selectedTemplate 
+                                });
+                              }
+                            }
                           }}
-                          data-testid="button-proceed-marker-validation"
+                          disabled={calibrationMutation.isPending}
+                          data-testid="button-recalibrate"
                         >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          {hasTemplateAdjustments ? 'Save Adjustments & Proceed to Marker Validation' : 'Proceed to Marker Validation'}
+                          <Camera className="w-4 h-4 mr-2" />
+                          {calibrationMutation.isPending ? 'Recalibrating...' : (hasTemplateAdjustments ? 'Save Adjustments & Recalibrate' : 'Recalibrate')}
                         </Button>
                       </div>
                     )}
