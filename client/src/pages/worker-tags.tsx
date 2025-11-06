@@ -45,7 +45,11 @@ export default function WorkerTags() {
           const response = await fetch('/api/aruco-generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ markerId: worker.arucoId }),
+            body: JSON.stringify({ 
+              mode: 'single',
+              markerId: worker.arucoId,
+              markerLengthCm: 3.0  // 3cm marker size
+            }),
           });
           
           const data = await response.json();
@@ -209,13 +213,9 @@ export default function WorkerTags() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDownloadPDF}>
-              <Download className="mr-2 h-4 w-4" />
-              Download PDF
-            </Button>
             <Button onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
-              Print
+              Print (supports Japanese)
             </Button>
           </div>
         </div>
