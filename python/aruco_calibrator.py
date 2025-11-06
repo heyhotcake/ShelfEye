@@ -340,9 +340,9 @@ class ArucoCornerCalibrator:
             picam2 = setup_camera_picam2(cam_idx, resolution=(width, height))
             picam2.start()
             
-            # MAXIMUM warmup for bulletproof autofocus/auto-exposure stability (40 seconds)
-            # At 4K MJPEG (~7fps), this is 280+ frames for autofocus to fully converge
-            warmup_camera_picam2(picam2, duration_seconds=40)
+            # Warmup for autofocus/auto-exposure stability (20 seconds)
+            # At 4K MJPEG (~7fps), this is 140+ frames for autofocus to converge
+            warmup_camera_picam2(picam2, duration_seconds=20)
             
             # Use multi-frame sharpness selection for best focus
             # Takes 50 frames and keeps the sharpest one - maximum reliability

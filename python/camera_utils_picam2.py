@@ -130,7 +130,7 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160), max_retries=3):
         logger.info("Auto-focus not available (fixed-focus camera)")
     return picam2
 
-def warmup_camera_picam2(picam2, duration_seconds=10):
+def warmup_camera_picam2(picam2, duration_seconds=5):
     """
     Proper warmup using metadata polling (Picamera2 best practice)
     Allows auto-exposure and auto-focus to converge without dropping frames

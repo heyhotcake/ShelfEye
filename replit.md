@@ -5,14 +5,14 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
 
 ## Recent Changes
 
-### Nov 6, 2025 - Integrated Calibration+Validation Architecture
+### Nov 6, 2025 - Integrated Calibration+Validation Architecture & System Cleanup
 - **Breakthrough: Raw Frame ArUco Detection**: Successfully resolved ArUco marker detection failures by detecting slot markers on the RAW camera frame (before warpPerspective transformation), eliminating interpolation artifacts that were corrupting marker bit patterns.
   - **Root Cause Identified**: cv2.warpPerspective with ANY interpolation mode (bilinear, bicubic, or INTER_NEAREST) corrupts 3cm ArUco markers at 31.8 px/cm density, breaking bit decoding (0 markers found, 20-1433 rejected candidates).
   - **Solution**: Integrated slot marker validation directly into calibration step using inverse homography to map slot positions (cm) → raw pixel coordinates, then extract ROIs from raw frame.
   - **Architecture**: Single calibration process now: (1) Captures 4K raw frame, (2) Detects 4 corner markers, (3) Calculates homography, (4) Validates ALL slot markers on same raw frame, (5) Generates rectified preview for UI.
   - **Result**: 100% detection success (7/7 slot markers) with zero false positives/negatives on first deployment test.
-  - **Performance**: No additional camera captures required - uses the same high-quality 4K frame from calibration (40s warmup + 50-frame sharpness selection).
-  - **Eliminated Dependencies**: Removed separate validation endpoint and warpPerspective-based ROI extraction pipeline (validate_slot_qrs.py now legacy).
+  - **Performance Optimizations**: Reduced warmup times (40s→20s for calibration, 10s→5s for preview). Uses single camera capture for both calibration and validation.
+  - **Code Cleanup**: Removed 679-line legacy validation script (validate_slot_qrs.py), simplified frontend calibration flow from 4 steps to 2 steps.
 
 ### Nov 5, 2025
 - **Worker Tracking System with ArUco Markers**: Implemented comprehensive worker identification system using ArUco markers for tool usage tracking.
