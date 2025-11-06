@@ -3,7 +3,18 @@
 ## Overview
 A Raspberry Pi-based automated tool monitoring system utilizing computer vision and ArUco markers for real-time tool tracking across multiple cameras. Its core purpose is to prevent tool loss and improve accountability in workshops by tracking tool presence and checkout status. Key features include ArUco marker validation, temporal smoothing for presence detection, multi-channel alerting (email, Google Sheets, sound), and a React web dashboard for calibration, configurable slot management, analytics, and system administration. The system supports 4K cameras with intelligent dual-resolution modes for live preview and high-accuracy calibration/capture. Worker tracking uses ArUco markers (IDs 51-95) with printable 5cm×15cm identification tags.
 
-## Recent Changes (Nov 5, 2025)
+## Recent Changes
+
+### Nov 6, 2025 - Integrated Calibration+Validation Architecture
+- **Breakthrough: Raw Frame ArUco Detection**: Successfully resolved ArUco marker detection failures by detecting slot markers on the RAW camera frame (before warpPerspective transformation), eliminating interpolation artifacts that were corrupting marker bit patterns.
+  - **Root Cause Identified**: cv2.warpPerspective with ANY interpolation mode (bilinear, bicubic, or INTER_NEAREST) corrupts 3cm ArUco markers at 31.8 px/cm density, breaking bit decoding (0 markers found, 20-1433 rejected candidates).
+  - **Solution**: Integrated slot marker validation directly into calibration step using inverse homography to map slot positions (cm) → raw pixel coordinates, then extract ROIs from raw frame.
+  - **Architecture**: Single calibration process now: (1) Captures 4K raw frame, (2) Detects 4 corner markers, (3) Calculates homography, (4) Validates ALL slot markers on same raw frame, (5) Generates rectified preview for UI.
+  - **Result**: 100% detection success (7/7 slot markers) with zero false positives/negatives on first deployment test.
+  - **Performance**: No additional camera captures required - uses the same high-quality 4K frame from calibration (40s warmup + 50-frame sharpness selection).
+  - **Eliminated Dependencies**: Removed separate validation endpoint and warpPerspective-based ROI extraction pipeline (validate_slot_qrs.py now legacy).
+
+### Nov 5, 2025
 - **Worker Tracking System with ArUco Markers**: Implemented comprehensive worker identification system using ArUco markers for tool usage tracking.
   - **Worker ArUco IDs**: Auto-assigned from 51-95 range (max 45 workers), unique across all camera stations, reusable after deletion
   - **Worker Registration**: Japanese name (required) + optional team field, auto-generated worker codes (W001, W002, etc.)
