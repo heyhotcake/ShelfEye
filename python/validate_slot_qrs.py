@@ -252,7 +252,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     # VALIDATION ALWAYS USES SAVED RECTIFIED IMAGE FROM CALIBRATION
     # No camera capture allowed in validation - calibration creates the high-res rectified image
     print(f"[VALIDATION] Loading saved calibration rectified image (NO CAMERA CAPTURE)", file=sys.stderr)
-    saved_rectified_path = os.path.join(data_dir, 'latest_calibration_rectified.png')
+    saved_rectified_path = os.path.join(data_dir, f'latest_calibration_rectified_{camera_id}.png')
     
     if not os.path.exists(saved_rectified_path):
         print(f"[VALIDATION] ERROR: Saved rectified image not found at {saved_rectified_path}", file=sys.stderr)
@@ -295,7 +295,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     
     
     # Save debug rectified image (if enabled) - PNG for lossless quality
-    rectified_path = os.path.join(debug_dir, 'validation_rectified_debug.png')
+    rectified_path = os.path.join(debug_dir, f'validation_rectified_debug_{camera_id}.png')
     if enable_debug_images and rectified is not None:
         cv2.imwrite(rectified_path, rectified, [cv2.IMWRITE_PNG_COMPRESSION, 3])
         print(f"[VALIDATION] Saved rectified view to: {rectified_path}", file=sys.stderr)
@@ -388,7 +388,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"  ROI size: {roi.shape[1]}x{roi.shape[0]}px at ({roi_x1},{roi_y1})", file=sys.stderr)
         
         # DEBUG: Save ROI image to inspect what we're actually scanning
-        debug_roi_path = os.path.join(data_dir, f'validation_roi_{slot_id}.jpg')
+        debug_roi_path = os.path.join(data_dir, f'validation_roi_{camera_id}_{slot_id}.jpg')
         cv2.imwrite(debug_roi_path, roi)
         print(f"  DEBUG: Saved ROI to {debug_roi_path}", file=sys.stderr)
         print(f"  DEBUG: ROI shape={roi.shape}, dtype={roi.dtype}, min={roi.min()}, max={roi.max()}", file=sys.stderr)
@@ -407,7 +407,7 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
             cv2.normalize(roi, roi_normalized, 0, 255, cv2.NORM_MINMAX)
             
             # Save normalized version for debugging
-            boosted_path = os.path.join(data_dir, f'validation_roi_{slot_id}_normalized.jpg')
+            boosted_path = os.path.join(data_dir, f'validation_roi_{camera_id}_{slot_id}_normalized.jpg')
             cv2.imwrite(boosted_path, roi_normalized)
             
             roi_marker_results = decode_aruco_markers(roi_normalized, expected_count=1, include_workers=True)
@@ -634,6 +634,7 @@ if __name__ == "__main__":
     else:
         # New style with named arguments (from backend)
         parser = argparse.ArgumentParser(description='Validate slot QR codes in calibrated camera view')
+        parser.add_argument('--camera-id', type=str, required=True, help='Camera ID for file namespacing (multi-camera support)')
         parser.add_argument('--resolution', help='Camera resolution (e.g., 1920x1080)')
         parser.add_argument('--homography', help='Homography matrix as JSON string')
         parser.add_argument('--slots', help='Expected slots configuration as JSON string')
@@ -651,10 +652,8 @@ if __name__ == "__main__":
         # Determine mode based on should-detect flag
         mode = 'visible' if args.should_detect == 'true' else 'covered'
         
-        # Extract camera ID from device path or use default
-        camera_id = 'default'
-        if args.device_path:
-            camera_id = args.device_path
+        # Use camera ID from arguments
+        camera_id = args.camera_id
         
         # Parse JSON parameters
         homography_matrix = json.loads(args.homography) if args.homography else None

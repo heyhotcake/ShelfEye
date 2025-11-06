@@ -5,6 +5,7 @@ Captures a single frame from camera and saves as base64 for web display
 Uses October 31st proven pipeline for bright, natural images
 """
 
+import argparse
 import cv2
 import sys
 import json
@@ -84,19 +85,17 @@ def capture_preview(device_source, width: int = 2560, height: int = 1440):
             picam2.close()
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({'ok': False, 'error': 'Missing device argument'}))
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description='Camera Preview Capture')
+    parser.add_argument('--camera', type=int, default=0, help='Camera device index (fallback if --device-path not provided)')
+    parser.add_argument('--device-path', type=str, help='Camera device path for Raspberry Pi (e.g., /dev/video0)')
+    parser.add_argument('--camera-id', type=str, required=True, help='Camera ID for file namespacing (multi-camera support)')
+    parser.add_argument('--width', type=int, default=2560, help='Frame width')
+    parser.add_argument('--height', type=int, default=1440, help='Frame height')
     
-    # Check if argument is a device path (starts with /) or device index (integer)
-    device_arg = sys.argv[1]
-    if device_arg.startswith('/'):
-        device_source = device_arg  # Device path like /dev/video0
-    else:
-        device_source = int(device_arg)  # Device index like 0, 1, 2
+    args = parser.parse_args()
     
-    width = int(sys.argv[2]) if len(sys.argv) > 2 else 2560
-    height = int(sys.argv[3]) if len(sys.argv) > 3 else 1440
+    # Use device_path if provided, otherwise use camera index
+    device_source = args.device_path if args.device_path else args.camera
     
-    result = capture_preview(device_source, width, height)
+    result = capture_preview(device_source, args.width, args.height)
     print(json.dumps(result))

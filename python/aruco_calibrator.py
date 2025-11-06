@@ -305,6 +305,7 @@ class ArucoCornerCalibrator:
     
     def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int], 
                              paper_size_cm: Tuple[float, float] = (29.7, 21.0),
+                             camera_id: str = 'default',
                              device_path: Optional[str] = None,
                              generate_preview: bool = False,
                              preview_output_size: Optional[Tuple[int, int]] = None,
@@ -316,6 +317,7 @@ class ArucoCornerCalibrator:
             camera_index: Camera device index (0, 1, 2, etc.) - used if device_path not provided
             resolution: (width, height) tuple
             paper_size_cm: (width_cm, height_cm) of the paper template
+            camera_id: Camera ID for file namespacing (multi-camera support)
             device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
             generate_preview: Whether to generate rectified preview from calibration frame
             preview_output_size: (width, height) for rectified preview output
@@ -411,7 +413,7 @@ class ArucoCornerCalibrator:
                         )
                         
                         # Save clean high-res version to disk for validation (PNG for lossless quality)
-                        highres_path = os.path.join(data_dir, 'latest_calibration_rectified.png')
+                        highres_path = os.path.join(data_dir, f'latest_calibration_rectified_{camera_id}.png')
                         cv2.imwrite(highres_path, rectified_highres_clean, [cv2.IMWRITE_PNG_COMPRESSION, 3])
                         
                         saved_height, saved_width = rectified_highres_clean.shape[:2]
@@ -428,7 +430,7 @@ class ArucoCornerCalibrator:
                                 frame, homography, highres_size, paper_size_cm, templates,  # WITH templates - labeled image
                                 camera_matrix, dist_coeffs
                             )
-                            highres_labeled_path = os.path.join(data_dir, 'latest_calibration_rectified_labeled.png')
+                            highres_labeled_path = os.path.join(data_dir, f'latest_calibration_rectified_labeled_{camera_id}.png')
                             cv2.imwrite(highres_labeled_path, highres_labeled, [cv2.IMWRITE_PNG_COMPRESSION, 3])
                             logger.info(f"✓ Saved LABELED high-resolution rectified image for download")
                             
@@ -479,6 +481,7 @@ def main():
     parser = argparse.ArgumentParser(description='ArUco 4-Corner Calibration')
     parser.add_argument('--camera', type=int, default=0, help='Camera device index (fallback if --device-path not provided)')
     parser.add_argument('--device-path', type=str, help='Camera device path for Raspberry Pi (e.g., /dev/video0)')
+    parser.add_argument('--camera-id', type=str, required=True, help='Camera ID for file namespacing (multi-camera support)')
     parser.add_argument('--resolution', type=str, default='3840x2160', help='Camera resolution (WxH) - 4K for best quality')
     parser.add_argument('--paper-size', type=str, default='29.7x21.0', help='Paper size in cm (WidthxHeight)')
     parser.add_argument('--generate-preview', action='store_true', help='Generate rectified preview from calibration frame')
@@ -514,7 +517,9 @@ def main():
         
         # Run calibration
         result = calibrator.calibrate_from_camera(
-            args.camera, resolution, paper_size_cm, device_path=args.device_path,
+            args.camera, resolution, paper_size_cm, 
+            camera_id=args.camera_id,
+            device_path=args.device_path,
             generate_preview=args.generate_preview,
             preview_output_size=preview_output_size,
             templates=templates

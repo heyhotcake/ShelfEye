@@ -459,6 +459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deviceSource = getCameraDeviceSource(camera);
       const calibrationArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
+        '--camera-id', cameraId,
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
         '--generate-preview',
@@ -833,11 +834,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get adjusted template rectangles  
       const camera = await storage.getCamera(cameraId);
-      if (!camera || !camera.paperSizeFormat) {
-        return res.status(400).json({ message: "Camera not calibrated" });
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
       }
       
-      const templates = await storage.getTemplateRectanglesByPaperSize(camera.paperSizeFormat);
+      // Get paper size format from config
+      const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
+      const paperSizeFormat = (paperSizeConfig?.value as string) || 'A4-landscape';
+      
+      const templates = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
       console.log(`[SlotSync] Found ${templates.length} adjusted templates and ${slots.length} slots`);
       
       let updated = 0;
@@ -916,7 +921,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Prepare expected slots data with full geometry for spatial validation and overlay
       // IMPORTANT: These coordinates come from the DATABASE which contains ADJUSTED coordinates after save
       const expectedSlots = slots.map(slot => ({
-        id: slot.autoQrId || slot.slotNumber?.toString() || slot.expectedQrId, // Use autoQrId (ArUco marker ID) for validation
+        id: slot.slotNumber?.toString() || slot.expectedQrId, // Use slotNumber (ArUco marker ID) for validation
         slotId: slot.slotId,
         toolName: slot.toolName,
         x: slot.xCm, // Center position in cm (FROM DATABASE - ADJUSTED if saved)
@@ -959,6 +964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Call Python validation script with saved rectified image from calibration
       const validationArgs = [
         path.join(process.cwd(), 'python/validate_slot_qrs.py'),
+        '--camera-id', cameraId,
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--homography', JSON.stringify(camera.homographyMatrix),
         '--slots', JSON.stringify(expectedSlots),
@@ -1138,9 +1144,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Call Python preview script
-      // Use device path if available, otherwise use device index
-      const deviceSource = camera.devicePath || camera.deviceIndex?.toString() || '0';
-      
       // Use 1920x1080 for preview to avoid RAM overload on 2GB Raspberry Pi
       // Calibration uses full resolution (3840x2160) but same camera settings
       const previewWidth = 1920;
@@ -1148,12 +1151,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[Preview] Using lower resolution for RAM efficiency: ${previewWidth}x${previewHeight}`);
       
-      const pythonProcess = spawn('python3', [
+      const previewArgs = [
         path.join(process.cwd(), 'python/camera_preview.py'),
-        deviceSource,
-        previewWidth.toString(),
-        previewHeight.toString()
-      ]);
+        '--camera-id', cameraId,
+        '--width', previewWidth.toString(),
+        '--height', previewHeight.toString()
+      ];
+      
+      // Use device path if available (for Raspberry Pi), otherwise use index
+      if (camera.devicePath) {
+        previewArgs.push('--device-path', camera.devicePath);
+      } else {
+        previewArgs.push('--camera', camera.deviceIndex?.toString() || '0');
+      }
+      
+      const pythonProcess = spawn('python3', previewArgs);
 
       let result = '';
       let error = '';

@@ -83,6 +83,7 @@ export class StartupCalibrationService {
 
       const args = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
+        '--camera-id', camera.id,
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
       ];
