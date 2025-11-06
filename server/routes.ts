@@ -650,6 +650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Verify adjusted template positions by regenerating rectified preview
   app.post("/api/calibrate/:cameraId/verify-positions", async (req, res) => {
     const { cameraId } = req.params;
+    let lockAcquired = false;
     
     try {
       const { adjustedTemplates, paperSize } = req.body;
@@ -717,6 +718,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[VerifyPositions] Adjusted templates:', JSON.stringify(adjustedTemplates, null, 2));
       
+      // CRITICAL: Acquire camera lock to prevent race condition with preview polling
+      console.log('[VerifyPositions] Acquiring exclusive camera lock...');
+      await cameraSessionManager.acquireExclusiveLock(cameraId);
+      lockAcquired = true;
+      
+      // Wait for in-flight preview requests to complete (they can take 20-30 seconds)
+      console.log('[VerifyPositions] Waiting 25 seconds for in-flight previews to complete...');
+      await new Promise(resolve => setTimeout(resolve, 25000));
+      console.log('[VerifyPositions] Wait complete. Lock acquired.');
+      
       // Let Python calculate output size from measured pixel density (~100 px/cm for 4K)
       // Python aruco_calibrator measured the actual pixel density from marker spacing
       console.log(`[VerifyPositions] Using measured pixel density from ArUco calibration (no output-size override)`);
@@ -770,6 +781,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       pythonProcess.on('close', (code) => {
         console.log(`[VerifyPositions] Python process exited with code ${code}`);
         
+        // Release camera lock when Python process completes
+        if (lockAcquired) {
+          cameraSessionManager.releaseLock(cameraId);
+          lockAcquired = false;
+          console.log('[VerifyPositions] Released camera lock');
+        }
+        
         if (code === 0) {
           try {
             const previewData = JSON.parse(result);
@@ -796,6 +814,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
     } catch (error) {
       console.error('[VerifyPositions] Error:', error);
+      // Release lock on error
+      if (lockAcquired) {
+        cameraSessionManager.releaseLock(cameraId);
+        lockAcquired = false;
+      }
       res.status(500).json({ message: "Verification error", error });
     }
   });
