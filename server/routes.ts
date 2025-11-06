@@ -540,7 +540,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           if (code === 0) {
             try {
+              console.log(`[Calibration] Received ${result.length} bytes of JSON from Python`);
+              console.log(`[Calibration] First 200 chars: ${result.substring(0, 200)}`);
+              console.log(`[Calibration] Last 200 chars: ${result.substring(result.length - 200)}`);
+              
               const calibrationData = JSON.parse(result);
+              console.log(`[Calibration] JSON parsed successfully`);
+              console.log(`[Calibration] Has rectified_preview field: ${!!calibrationData.rectified_preview}`);
+              if (calibrationData.rectified_preview) {
+                console.log(`[Calibration] Preview field length: ${calibrationData.rectified_preview.length} chars`);
+              }
+              
               const homographyMatrix = calibrationData.homography_matrix;
               const cameraMatrix = calibrationData.camera_matrix || null;
               const distCoeffs = calibrationData.dist_coeffs || null;

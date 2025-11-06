@@ -947,7 +947,9 @@ export default function Calibration() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      window.open('/api/calibrate/download-rectified', '_blank');
+                      if (selectedCamera?.id) {
+                        window.open(`/api/calibrate/download-rectified/${selectedCamera.id}`, '_blank');
+                      }
                     }}
                     data-testid="button-download-rectified"
                   >
