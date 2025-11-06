@@ -434,10 +434,11 @@ class ArucoCornerCalibrator:
                             cv2.imwrite(highres_labeled_path, highres_labeled, [cv2.IMWRITE_PNG_COMPRESSION, 3])
                             logger.info(f"✓ Saved LABELED high-resolution rectified image for download")
                             
-                            # Generate downscaled version for UI preview
-                            logger.info(f"Generating UI preview: {preview_output_size[0]}x{preview_output_size[1]}px")
+                            # Generate downscaled version for UI preview WITHOUT templates
+                            # The frontend RectifiedPreviewCanvas will draw adjustable overlays interactively
+                            logger.info(f"Generating UI preview: {preview_output_size[0]}x{preview_output_size[1]}px (no template overlays)")
                             rectified_preview = generate_rectified_image_from_frame(
-                                frame, homography, preview_output_size, paper_size_cm, templates,
+                                frame, homography, preview_output_size, paper_size_cm, None,  # NO templates - clean base image
                                 camera_matrix, dist_coeffs
                             )
                             

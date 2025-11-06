@@ -764,6 +764,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Python aruco_calibrator measured the actual pixel density from marker spacing
       console.log(`[VerifyPositions] Using measured pixel density from ArUco calibration (no output-size override)`);
       
+      // Generate clean preview WITHOUT templates - frontend RectifiedPreviewCanvas will draw adjustable overlays
+      // This prevents dual overlays (Python-drawn + canvas-drawn) that make fine adjustments difficult
+      console.log(`[VerifyPositions] Generating clean preview without template overlays for precise adjustments`);
+      
       // IMPORTANT: Homography string may start with negative numbers (e.g., "-18.706...")
       // which argparse would interpret as a flag. Use --key=value syntax to avoid this.
       const previewArgs = [
@@ -771,7 +775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
         `--homography=${homographyString}`,  // Use --key=value syntax for negative numbers
         // NO --output-size parameter - let Python use measured pixel density
-        `--templates=${JSON.stringify(templatesForPython)}`,
+        // NO --templates parameter - frontend canvas will draw adjustable overlays
         `--paper-size=${paperDims.widthCm}x${paperDims.heightCm}`,
       ];
       
