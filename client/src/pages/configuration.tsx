@@ -152,6 +152,36 @@ export default function Configuration() {
     },
   });
 
+  const checkCapabilitiesMutation = useMutation({
+    mutationFn: async (cameraId: string) => {
+      const result = await apiCall('GET', `/api/cameras/${cameraId}/capabilities`);
+      if (!result.ok || !result.data) {
+        throw new Error(result.error || 'Failed to check camera capabilities');
+      }
+      return result.data;
+    },
+    onSuccess: (data: any) => {
+      // Create formatted message from output
+      const output = data.output || 'No capability information available';
+      toast({
+        title: `${data.cameraName} - Supported Resolutions`,
+        description: (
+          <pre className="text-xs whitespace-pre-wrap max-h-96 overflow-y-auto font-mono">
+            {output}
+          </pre>
+        ),
+        duration: 15000,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Check Capabilities",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateConfigMutation = useMutation({
     mutationFn: ({ key, value, description }: { key: string; value: any; description?: string }) =>
       apiRequest('POST', '/api/config', { key, value, description }),
@@ -406,6 +436,16 @@ export default function Configuration() {
                           >
                             {camera.isActive ? "Active" : "Inactive"}
                           </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => checkCapabilitiesMutation.mutate(camera.id)}
+                            disabled={checkCapabilitiesMutation.isPending}
+                            title="Check supported resolutions"
+                            data-testid={`button-check-capabilities-${camera.id}`}
+                          >
+                            <Search className="w-3 h-3" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"

@@ -281,6 +281,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check camera capabilities (supported resolutions)
+  app.get("/api/cameras/:cameraId/capabilities", async (req, res) => {
+    try {
+      const { cameraId } = req.params;
+      const camera = await storage.getCamera(cameraId);
+      
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      
+      const cameraIndex = camera.deviceIndex || 0;
+      const pythonProcess = spawn('python3', [
+        path.join(process.cwd(), 'python/check_camera_capabilities.py'),
+        '--camera', cameraIndex.toString()
+      ]);
+      
+      let output = '';
+      let error = '';
+      
+      pythonProcess.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+      
+      pythonProcess.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          res.json({ ok: true, output, cameraName: camera.name });
+        } else {
+          res.status(500).json({ 
+            ok: false, 
+            message: "Failed to check camera capabilities", 
+            error: error || output 
+          });
+        }
+      });
+      
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check camera capabilities", error });
+    }
+  });
+
   // Download high-resolution rectified image
   app.get("/api/calibrate/download-rectified/:cameraId", async (req, res) => {
     try {
