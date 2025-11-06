@@ -587,8 +587,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     rotation: template.rotation,
                   }, homographyMatrix);
 
+                  // Create camera-specific slotId to prevent conflicts between cameras
+                  // Format: "cam1_slot1", "cam2_slot1", etc.
+                  const cameraShortId = camera.name.replace(/\s+/g, '').toLowerCase().slice(0, 4);
+                  const cameraSpecificSlotId = `${cameraShortId}_${template.autoQrId || template.id.slice(0, 4)}`;
+                  
                   const slot = await storage.createSlot({
-                    slotId: template.autoQrId || `${category.name}_${template.id.slice(0, 4)}`,
+                    slotId: cameraSpecificSlotId,
                     cameraId: cameraId,
                     toolName: category.name,
                     expectedQrId: template.autoQrId || `${category.name}_${template.id.slice(0, 4)}`,
