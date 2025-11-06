@@ -545,11 +545,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const cameraMatrix = calibrationData.camera_matrix || null;
               const distCoeffs = calibrationData.dist_coeffs || null;
               
+              // Update camera with calibration data AND paperSize
+              // This ensures camera remembers its template choice across reboots
               await storage.updateCamera(cameraId, {
                 homographyMatrix: homographyMatrix,
                 cameraMatrix: cameraMatrix,
                 distCoeffs: distCoeffs,
                 calibrationTimestamp: new Date(),
+                paperSize: paperSizeFormat, // Persist template choice to camera record
               });
 
               // Delete existing slots for this camera to avoid duplicates

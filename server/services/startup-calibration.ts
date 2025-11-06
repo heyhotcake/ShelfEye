@@ -56,7 +56,9 @@ export class StartupCalibrationService {
         return;
       }
 
-      const paperSizeFormat = (lastPaperSizeFormat?.value as string) || 'A4-landscape';
+      // Use camera's paperSize if available (multi-camera support), fallback to global config (backward compatibility)
+      const paperSizeFormat = camera.paperSize || (lastPaperSizeFormat?.value as string) || 'A4-landscape';
+      console.log(`[StartupCalibration] Using paperSize: ${paperSizeFormat} (source: ${camera.paperSize ? 'camera record' : 'global config'})`);
 
       const deviceInfo = camera.devicePath || `Index ${camera.deviceIndex}`;
       console.log(`[StartupCalibration] Running calibration for camera ${camera.name} (${deviceInfo})`);
