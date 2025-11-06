@@ -5,7 +5,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
 
 ## Recent Changes
 
-### Nov 6, 2025 - Multi-Camera Support: Phases 0-2 Complete
+### Nov 6, 2025 - Multi-Camera Support: Phases 0-3 Complete
 
 - **Phase 0 (Database Schema)**: Added `paperSize` field to cameras table to store per-camera template format preferences
 - **Phase 1 (File Isolation & Namespacing)**: Complete file isolation with camera ID namespacing
@@ -21,6 +21,15 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
   - Concurrent calibration attempts rejected with HTTP 409 Conflict
   - Startup calibration service respects global lock
   - Successfully tested with two cameras (Camera 1: 4K at /dev/video0, Camera 2: 2K at /dev/video1)
+
+- **Phase 3 (Frontend Camera Selector)**: Complete camera switching UI with per-camera state isolation
+  - Created reusable CameraSelector component with dropdown for all pages
+  - Camera selection persists across page reloads via localStorage (`selectedCameraId`)
+  - Calibration page: Camera-specific data loading and template format preferences
+  - Dashboard page: Camera-specific slot filtering and analytics
+  - Slot Drawing page: Per-camera template storage with namespaced localStorage keys (`templateConfigVersions_${cameraId}`)
+  - Each camera maintains independent template designs across reboots
+  - Fixed all `activeCamera` references to use new `selectedCamera` state management
   
 - **Data Retention Update**: ROI image retention reduced from 3 months (90 days) to 2 months (60 days) to account for doubled storage usage with two cameras
 
