@@ -557,7 +557,11 @@ export default function Calibration() {
                 <div className="space-y-6">
                   <div>
                     <label className="text-sm text-muted-foreground mb-2 block">Active Camera</label>
-                    <Select value={selectedCamera?.id || ""} onValueChange={handleCameraChange}>
+                    <Select 
+                      value={selectedCamera?.id || ""} 
+                      onValueChange={handleCameraChange}
+                      disabled={calibrationMutation.isPending || isCameraLocked}
+                    >
                       <SelectTrigger data-testid="select-active-camera">
                         <SelectValue placeholder="No active camera" />
                       </SelectTrigger>
@@ -569,6 +573,9 @@ export default function Calibration() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {(calibrationMutation.isPending || isCameraLocked) && (
+                      <p className="text-xs text-amber-500 mt-1">Camera locked during calibration</p>
+                    )}
                   </div>
 
                   <div>
@@ -948,6 +955,14 @@ export default function Calibration() {
                     Download High-Res
                   </Button>
                 </div>
+                {templatesWithCategories.length === 0 && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-3">
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      <strong>Warning:</strong> No template rectangles found for this camera and paper size. 
+                      Go to Template Designer to create a template first.
+                    </p>
+                  </div>
+                )}
                 <div className="canvas-container w-full">
                   <div className="bg-muted rounded overflow-hidden" style={{ aspectRatio: `${aspectRatio.toFixed(3)} / 1` }}>
                     {calibrationResult?.rectifiedPreview && templatesWithCategories.length > 0 ? (
