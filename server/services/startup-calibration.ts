@@ -165,9 +165,8 @@ export class StartupCalibrationService {
               await storage.deleteSlot(slot.id);
             }
 
-            // Recreate slots from templates (use the paper size from the camera's last calibration)
-            const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
-            const paperSizeFormat = paperSizeConfig?.value as string || '6-page-3x2';
+            // Recreate slots from templates (use the camera-specific paperSize passed to this function)
+            // paperSizeFormat parameter already contains camera.paperSize with fallback to global config
             const templateRectangles = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
             const { transformTemplateToPixels } = await import('../utils/coordinate-transform.js');
 

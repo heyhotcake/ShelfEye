@@ -139,8 +139,29 @@ export default function Calibration() {
         setSavedTemplateDesigns([]);
       }
     } else {
-      console.log(`[Calibration] No saved templates found for camera ${selectedCameraId}`);
-      setSavedTemplateDesigns([]);
+      // MIGRATION: Check for legacy global key and migrate to camera-specific key
+      const legacyKey = 'templateConfigVersions';
+      const legacySaved = localStorage.getItem(legacyKey);
+      
+      if (legacySaved) {
+        try {
+          const legacyData = JSON.parse(legacySaved);
+          console.log(`[Calibration] Migrating ${legacyData.length} legacy template designs to camera ${selectedCameraId}`);
+          
+          // Migrate to camera-scoped key
+          localStorage.setItem(storageKey, legacySaved);
+          setSavedTemplateDesigns(legacyData);
+          
+          // Keep legacy key as backup (don't delete) in case user needs to rollback
+          console.log(`[Calibration] Migration complete. Legacy key preserved as backup.`);
+        } catch (e) {
+          console.error('Failed to migrate legacy template designs:', e);
+          setSavedTemplateDesigns([]);
+        }
+      } else {
+        console.log(`[Calibration] No saved templates found for camera ${selectedCameraId}`);
+        setSavedTemplateDesigns([]);
+      }
     }
   }, [selectedCameraId]); // Re-load when camera changes
 
