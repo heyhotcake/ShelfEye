@@ -236,7 +236,7 @@ export default function Workers() {
                         <Checkbox
                           checked={selectedWorkers.has(worker.id)}
                           onCheckedChange={(checked) => {
-                            if (checked) {
+                            if (checked === true) {
                               setSelectedWorkers(prev => new Set(prev).add(worker.id));
                             } else {
                               setSelectedWorkers(prev => {
