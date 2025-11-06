@@ -5,7 +5,7 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
 
 ## Recent Changes
 
-### Nov 6, 2025 - Integrated Calibration+Validation Architecture & System Cleanup
+### Nov 6, 2025 - Integrated Calibration+Validation Architecture & Smart Recalibration Flow
 - **Breakthrough: Raw Frame ArUco Detection**: Successfully resolved ArUco marker detection failures by detecting slot markers on the RAW camera frame (before warpPerspective transformation), eliminating interpolation artifacts that were corrupting marker bit patterns.
   - **Root Cause Identified**: cv2.warpPerspective with ANY interpolation mode (bilinear, bicubic, or INTER_NEAREST) corrupts 3cm ArUco markers at 31.8 px/cm density, breaking bit decoding (0 markers found, 20-1433 rejected candidates).
   - **Solution**: Integrated slot marker validation directly into calibration step using inverse homography to map slot positions (cm) → raw pixel coordinates, then extract ROIs from raw frame.
@@ -14,13 +14,19 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
   
 - **Performance Optimizations**: Reduced warmup times (40s→20s for calibration, 10s→5s for preview). Uses single camera capture for both calibration and validation. Maintains 140+ frames at 4K for auto-exposure convergence.
 
-- **UI/API Cleanup**: Simplified calibration flow from 4 steps to 2 steps:
-  - **Step 0**: Calibrate (automatically validates empty slots)
-  - **Step 2**: Verify tools cover markers
+- **Smart Calibration Flow with Recalibration**: Adaptive 2-step flow that handles detection failures gracefully:
+  - **Step 0**: Run ArUco Calibration → auto validates slot markers
+  - **Success Path** (all slots detected): Auto-advance to Step 2 (verify tools cover markers)
+  - **Failure Path** (missing slots): Show Step 1 (Rectified Preview with Template Overlay for manual adjustment)
+  - **Step 1 Recalibration**: User adjusts slot positions on rectified preview → clicks "Recalibrate" → saves adjustments to DB + re-runs full corner+slot validation → loops back to success/failure path
+  - **Step 2**: Verify tools cover markers (final validation step)
+  
+- **UI/UX Improvements**: 
   - Removed legacy /validate-markers-visible endpoint (215 lines)
-  - Removed redundant Step 1 (empty marker validation) and Step 3 (duplicate verify button) from UI
-  - Cleaned up dead state variables (step1Result) and unused mutations
-  - Camera preview polling properly paused during calibration via isCameraLocked flag
+  - Fixed worker checkbox selection bug (onCheckedChange now properly receives checked parameter)
+  - Camera preview polling automatically pauses during calibration via isCameraLocked flag
+  - Error state banner with clear instructions for recalibration
+  - Dynamic button text: "Recalibrate" (no adjustments) or "Save Adjustments & Recalibrate" (with adjustments)
   
 - **Remaining Legacy Code**: validate_slot_qrs.py (679 lines) still used by /validate-markers-covered endpoint. Will be removed when covered validation is reworked to use raw-frame detection.
 
