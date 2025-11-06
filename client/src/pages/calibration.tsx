@@ -205,20 +205,46 @@ export default function Calibration() {
     },
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
-      console.log('[Calibration] ArUco calibration SUCCESS, setting step to 1');
+      console.log('[Calibration] ArUco calibration SUCCESS');
       console.log('[Calibration] Rectified preview included:', !!data.rectifiedPreview);
+      console.log('[Calibration] Slot validation included:', !!(data as any).slot_validation);
       setCalibrationResult(data);
-      setCalibrationStep(1); // Move to step 1: show rectified preview
       setIsCameraLocked(false); // Clear lock state
       
       const errorText = data.reprojectionError < 0.01 
         ? "~0.00 px (perfect fit with 4 points)" 
         : `${data.reprojectionError.toFixed(2)} px`;
       
-      toast({
-        title: "ArUco Calibration Complete",
-        description: `Markers detected: ${data.markersDetected}, Error: ${errorText}. Verify template alignment below.`,
-      });
+      // Check if slot validation was included in calibration response (new integrated flow)
+      const slotValidation = (data as any).slot_validation;
+      if (slotValidation) {
+        const { valid_count, total_count } = slotValidation;
+        
+        if (valid_count === total_count) {
+          // All slot markers detected - skip old validation and move to tool placement prompt
+          setCalibrationStep(2); // Jump to step 2: prompt user to place tools
+          toast({
+            title: "Calibration Complete - Empty Slots Verified ✓",
+            description: `All ${valid_count}/${total_count} slot ArUco markers detected successfully. Now place ALL tools in their slots to verify they cover the markers.`,
+            duration: 8000,
+          });
+        } else {
+          // Some markers missing
+          setCalibrationStep(1); // Show error state
+          toast({
+            title: "Slot Marker Validation Failed",
+            description: `Only ${valid_count}/${total_count} markers detected. Check marker visibility and recalibrate.`,
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Legacy flow - no slot_validation in response
+        setCalibrationStep(1);
+        toast({
+          title: "ArUco Calibration Complete",
+          description: `Markers detected: ${data.markersDetected}, Error: ${errorText}. Verify template alignment below.`,
+        });
+      }
       
       // Invalidate cameras query to update calibration badge
       queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
@@ -801,23 +827,23 @@ export default function Calibration() {
 
                     {calibrationStep === 2 && (
                       <div className="space-y-2">
-                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
+                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 3:</strong> Ensure all tool slots are EMPTY (ArUco markers should be visible). Click to validate.
+                            <strong>Step 2:</strong> Place ALL tools in their designated slots. Tools should completely cover the ArUco markers. Click below to verify markers are hidden.
                           </p>
                         </div>
                         <Button 
                           className="w-full"
                           onClick={() => {
                             if (activeCamera) {
-                              validateMarkersVisibleMutation.mutate(activeCamera.id);
+                              validateMarkersCoveredMutation.mutate(activeCamera.id);
                             }
                           }}
-                          disabled={!activeCamera || validateMarkersVisibleMutation.isPending}
-                          data-testid="button-validate-markers-visible"
+                          disabled={!activeCamera || validateMarkersCoveredMutation.isPending}
+                          data-testid="button-validate-markers-covered"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          {validateMarkersVisibleMutation.isPending ? 'Validating...' : 'Validate ArUco Markers Visible'}
+                          {validateMarkersCoveredMutation.isPending ? 'Validating...' : 'Verify Tools Cover ArUco Markers'}
                         </Button>
                         {step1Result && !step1Result.success && step1Result.missing_slots && (
                           <>
