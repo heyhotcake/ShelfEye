@@ -209,8 +209,10 @@ export default function Calibration() {
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
       console.log('[Calibration] ArUco calibration SUCCESS');
+      console.log('[Calibration] Full response data:', JSON.stringify(data, null, 2));
       console.log('[Calibration] Rectified preview included:', !!data.rectifiedPreview);
       console.log('[Calibration] Slot validation included:', !!(data as any).slot_validation);
+      console.log('[Calibration] Slot validation data:', (data as any).slot_validation);
       setCalibrationResult(data);
       setIsCameraLocked(false); // Clear lock state
       
@@ -220,8 +222,13 @@ export default function Calibration() {
       
       // Check if slot validation was included in calibration response (new integrated flow)
       const slotValidation = (data as any).slot_validation;
+      console.log('[Calibration] Checking slot validation:', { 
+        hasSlotValidation: !!slotValidation, 
+        slotValidation 
+      });
       if (slotValidation) {
         const { valid_count, total_count } = slotValidation;
+        console.log('[Calibration] Slot counts:', { valid_count, total_count, allDetected: valid_count === total_count });
         
         if (valid_count === total_count) {
           // All slot markers detected - skip old validation and move to tool placement prompt
