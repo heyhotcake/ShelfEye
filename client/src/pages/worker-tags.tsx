@@ -21,8 +21,11 @@ export default function WorkerTags() {
   const [arucoImages, setArucoImages] = useState<Record<number, string>>({});
   
   // Get worker IDs from URL query params
-  const params = new URLSearchParams(location.split('?')[1] || '');
+  const params = new URLSearchParams(window.location.search);
   const workerIds = params.get('workers')?.split(',') || [];
+  
+  console.log('[WorkerTags] URL search:', window.location.search);
+  console.log('[WorkerTags] Worker IDs from URL:', workerIds);
   
   const { data: allWorkers, isLoading } = useQuery<Worker[]>({
     queryKey: ['/api/workers'],
