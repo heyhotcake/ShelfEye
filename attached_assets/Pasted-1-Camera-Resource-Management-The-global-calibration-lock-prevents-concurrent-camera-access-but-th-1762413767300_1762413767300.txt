@@ -1,0 +1,81 @@
+1. Camera Resource Management
+The global calibration lock prevents concurrent camera access, but there's a race condition window:
+
+warmup_camera_picam2() takes 20 seconds
+Preview requests poll every few seconds
+The 25-second wait in calibration may not catch all preview processes
+Issue: If a preview starts at second 24 of the wait, it won't be killed and will conflict with calibration.
+
+2. Memory Exhaustion Risk
+At 4K resolution (3840x2160):
+
+Raw frame: ~24MB
+Rectified image: ~26MB (89cm × 42cm at 31.8 px/cm)
+With 50 slot ROIs in memory: potential 100MB+ spike
+Raspberry Pi has only 2GB RAM total
+Current behavior: All slot ROIs are loaded into memory during validation (validate_slot_qrs.py lines 392-482).
+
+3. Slot Number Collision
+// shared/schema.ts
+uniqueSlotNumberPerCamera: unique().on(table.cameraId, table.slotNumber)
+This allows slot numbers 1-50 to be reused across cameras, BUT:
+
+ArUco marker IDs are global (1-50)
+If Camera 1 has slot #5 and Camera 2 has slot #5, they use the same physical marker
+This works for separate boards but breaks if cameras share any view
+4. File Overwrites in Multi-Camera
+# python/validate_slot_qrs.py line 337
+highres_path = os.path.join(data_dir, f'latest_calibration_rectified_{camera_id}.png')
+Uses camera_id correctly, but:
+
+# python/aruco_calibrator.py line 217
+highres_labeled_path = os.path.join(data_dir, f'latest_calibration_rectified_labeled_{camera_id}.png')
+These files are never cleaned up. With 2 cameras calibrating daily = 730 files/year (52MB each at 4K).
+
+5. Validation Timeout Too Long
+// server/routes.ts line 1362
+const validationTimeout = setTimeout(() => {
+  // ...timeout logic
+}, 600000); // 10 minutes
+For 50 slots with per-slot ROI processing, worst case:
+
+50 slots × 3 preprocessing passes × 2 seconds = 5 minutes minimum
+Timeout at 10 minutes is reasonable, but no progress indicator
+6. LED Controller Race Condition
+// server/utils/led-control.ts
+export async function setWhiteLight(killExisting = true): Promise<boolean> {
+  if (killExisting) {
+    // Kill any existing LED processes
+    await new Promise(resolve => {
+      exec('pkill -9 -f "unified_led_controller.py" || true', () => resolve(null));
+    });
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+The 500ms delay may not be enough if the Python process is handling a large file write.
+
+7. Worker ArUco ID Reuse Logic
+// server/routes.ts line 1913
+for (let id = 51; id <= 95; id++) {
+  if (!usedArucoIds.has(id)) {
+    nextArucoId = id;
+    break;
+  }
+}
+Problem: Deleted workers don't free their IDs immediately. If you delete worker #51 and create a new one in the same request cycle, the query might not see the deletion yet.
+
+8. No Backpressure on Scheduler
+// server/scheduler.ts
+export async function triggerCaptureNow(): Promise<CaptureResult> {
+  // No check if another capture is running
+  return this.runScheduledCapture('manual');
+}
+If user clicks "Capture Now" while scheduled capture is running, both will execute concurrently.
+
+9. Calibration Step Auto-Advance Logic
+// client/src/pages/calibration.tsx lines referenced in rag_source_12
+{hasTemplateAdjustments && adjustedTemplates.length > 0 && selectedCamera && (
+  <Button onClick={() => {
+    verifyAdjustedPositionsMutation.mutate({
+      cameraId: selectedCamera.id,
+      adjustedTemplates: adjustedTemplate // TYPO: should be adjustedTemplates
+Typo will cause verification to fail silently.
