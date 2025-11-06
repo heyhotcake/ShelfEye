@@ -9,7 +9,7 @@ import { cameraSessionManager } from "./camera-session-manager";
 import { maintenanceService } from "./services/maintenance-service";
 import { piSimulationService } from "./services/pi-simulation-service";
 import multer from "multer";
-import { spawn } from "child_process";
+import { spawn, exec } from "child_process";
 import path from "path";
 import fs from "fs/promises";
 import fsSync from "fs";
@@ -359,8 +359,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Now kill any existing Python processes that might be holding the camera
       // The lock prevents new ones from spawning during cleanup
+      // INCREASED WAIT: Preview requests can take 20-30 seconds, so we wait longer
+      console.log('[Calibration] Waiting 25 seconds for any in-flight preview requests to complete...');
+      await new Promise(resolve => setTimeout(resolve, 25000));
+      console.log('[Calibration] Wait complete. Now killing any stuck camera processes...');
+      
       try {
-        const { exec } = require('child_process');
         const killPromises = [
           new Promise((resolve) => {
             exec('pkill -9 -f "aruco_calibrator.py" || true', () => resolve(null));
