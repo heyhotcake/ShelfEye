@@ -9,6 +9,7 @@ export const cameras = pgTable("cameras", {
   deviceIndex: integer("device_index"), // Optional - used when devicePath not provided
   devicePath: text("device_path"), // For Raspberry Pi: /dev/video0, /dev/video1, etc.
   resolution: json("resolution").$type<[number, number]>().notNull().default([3840, 2160]),
+  paperSize: text("paper_size"), // Template paper size (A4/Letter) - persists calibration template choice
   homographyMatrix: json("homography_matrix").$type<number[]>(),
   cameraMatrix: json("camera_matrix").$type<number[]>(), // 3x3 intrinsic matrix for lens distortion correction
   distCoeffs: json("dist_coeffs").$type<number[]>(), // Distortion coefficients (k1, k2, p1, p2, k3)
