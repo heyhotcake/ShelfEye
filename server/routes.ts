@@ -352,12 +352,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Camera not found" });
       }
       
-      // CRITICAL FIX: Acquire lock FIRST before any cleanup
+      // Check global calibration lock - ensures only ONE camera calibrates at a time (2GB RAM constraint)
+      const globalLockStatus = cameraSessionManager.isAnyCalibrationInProgress();
+      if (globalLockStatus.inProgress && globalLockStatus.cameraId !== cameraId) {
+        console.log(`[Calibration] Another camera (${globalLockStatus.cameraId}) is already calibrating - rejecting request for camera ${cameraId}`);
+        return res.status(409).json({ 
+          message: `Another camera (${globalLockStatus.cameraId}) is currently calibrating. Please wait for it to complete.`,
+          conflictingCamera: globalLockStatus.cameraId 
+        });
+      }
+      
+      // Acquire global calibration lock FIRST
+      if (!cameraSessionManager.acquireGlobalCalibrationLock(cameraId)) {
+        console.log(`[Calibration] Failed to acquire global calibration lock for camera ${cameraId}`);
+        return res.status(409).json({ 
+          message: "Another camera is calibrating. Please try again.",
+          error: "Global calibration lock unavailable"
+        });
+      }
+      
+      // CRITICAL FIX: Acquire camera-specific lock AFTER global lock
       // This blocks frontend from spawning new preview processes during calibration
       console.log('[Calibration] Acquiring exclusive camera lock to prevent preview race condition...');
       await cameraSessionManager.acquireExclusiveLock(cameraId);
       lockAcquired = true;
-      console.log('[Calibration] Lock acquired. No new previews can start.');
+      console.log('[Calibration] Both global and camera-specific locks acquired. No new operations can interfere.');
       
       // Now kill any existing Python processes that might be holding the camera
       // The lock prevents new ones from spawning during cleanup
@@ -488,6 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!responseSent) {
           responseSent = true;
           if (lockAcquired) cameraSessionManager.releaseLock(cameraId);
+          cameraSessionManager.releaseGlobalCalibrationLock(cameraId); // Release global lock
           lockAcquired = false;
           // Python failed to spawn - turn off LED since 'close' won't fire
           await turnOffLED();
@@ -628,11 +648,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             res.status(500).json({ message: "Calibration failed", error });
           }
         } finally {
-          // Always release lock when calibration completes (if it was acquired)
+          // Always release locks when calibration completes
           if (lockAcquired) {
             cameraSessionManager.releaseLock(cameraId);
             lockAcquired = false;
           }
+          cameraSessionManager.releaseGlobalCalibrationLock(cameraId); // Release global lock
           
           // Turn off LED light after calibration
           turnOffLED().catch(err => console.error('[Calibration] LED turnoff error:', err));
@@ -640,10 +661,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
     } catch (error) {
-      // Release lock on error (if it was acquired)
+      // Release locks on error
       if (lockAcquired) {
         cameraSessionManager.releaseLock(cameraId);
       }
+      cameraSessionManager.releaseGlobalCalibrationLock(cameraId); // Release global lock
       // Turn off LED on unexpected errors
       await turnOffLED();
       res.status(500).json({ message: "Calibration error", error });
