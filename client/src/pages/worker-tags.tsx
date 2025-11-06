@@ -36,10 +36,12 @@ export default function WorkerTags() {
   // Generate ArUco markers for all selected workers
   useEffect(() => {
     const generateMarkers = async () => {
+      console.log('[WorkerTags] Generating ArUco markers for', selectedWorkers.length, 'workers');
       const images: Record<number, string> = {};
       
       for (const worker of selectedWorkers) {
         try {
+          console.log(`[WorkerTags] Generating ArUco ID ${worker.arucoId} for ${worker.name}`);
           const response = await fetch('/api/aruco-generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -47,6 +49,7 @@ export default function WorkerTags() {
           });
           
           const data = await response.json();
+          console.log(`[WorkerTags] Response for ArUco ${worker.arucoId}:`, { ok: data.ok, hasImage: !!data.image });
           if (data.ok && data.image) {
             images[worker.arucoId] = data.image;
           }
@@ -55,6 +58,7 @@ export default function WorkerTags() {
         }
       }
       
+      console.log('[WorkerTags] Setting ArUco images:', Object.keys(images));
       setArucoImages(images);
     };
     
@@ -259,13 +263,17 @@ export default function WorkerTags() {
                   }}
                 >
                   {/* ArUco Marker */}
-                  {arucoImages[worker.arucoId] && (
+                  {arucoImages[worker.arucoId] ? (
                     <div className="mt-2">
                       <img
                         src={`data:image/png;base64,${arucoImages[worker.arucoId]}`}
                         alt={`ArUco ${worker.arucoId}`}
-                        style={{ width: '40mm', height: '40mm' }}
+                        style={{ width: '30mm', height: '30mm' }}
                       />
+                    </div>
+                  ) : (
+                    <div className="mt-2 flex items-center justify-center" style={{ width: '30mm', height: '30mm', border: '1px dashed #ccc' }}>
+                      <p className="text-xs text-gray-400">Loading...</p>
                     </div>
                   )}
 
