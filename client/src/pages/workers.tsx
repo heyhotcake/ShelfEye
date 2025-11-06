@@ -226,7 +226,16 @@ export default function Workers() {
                       data-testid={`card-worker-${worker.id}`}
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                     >
-                      <div className="flex items-center gap-4">
+                      <div 
+                        className="flex items-center gap-4 flex-1 cursor-pointer"
+                        onClick={() => {
+                          if (selectedWorkers.includes(worker.id)) {
+                            setSelectedWorkers(prev => prev.filter(id => id !== worker.id));
+                          } else {
+                            setSelectedWorkers(prev => [...prev, worker.id]);
+                          }
+                        }}
+                      >
                         <Checkbox
                           checked={selectedWorkers.includes(worker.id)}
                           onCheckedChange={(checked) => {
