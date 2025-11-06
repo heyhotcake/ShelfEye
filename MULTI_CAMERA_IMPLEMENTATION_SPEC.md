@@ -276,9 +276,11 @@ data/rois/slot_1_20250106_120000.jpg
 **New (Multi-Camera):**
 ```
 data/latest_calibration_rectified_{cameraId}.png
-data/latest_preview_{cameraId}.jpg
+data/latest_calibration_rectified_labeled_{cameraId}.png
+data/validation_rectified_debug_{cameraId}.png
 data/rois/{cameraId}/slot_1_20250106_120000.jpg
 ```
+Note: camera_preview.py returns base64 JSON (no files written)
 
 **Files Requiring Namespacing:**
 - Calibration rectified previews (high-res and UI preview)
@@ -552,14 +554,13 @@ cv2.imwrite(rectified_path, rectified_image)
 
 **`python/camera_preview.py`** (Currently NO --camera-id parameter):
 ```python
-# Line ~360: Add camera_id parameter
+# Line ~360: Add camera_id parameter for API consistency
 parser.add_argument('--camera-id', required=True, help='Camera UUID for file namespacing')
 
-# Line ~380: Update output path
-output_path = f"data/latest_preview_{args.camera_id}.jpg"
-
-# Line ~420: Update write call
-cv2.imwrite(output_path, processed_frame)
+# NOTE: camera_preview.py does NOT write files - it returns base64-encoded JSON
+# The --camera-id parameter is accepted for API consistency with other Python scripts
+# but is not used for file operations since no files are written
+# Backend expects JSON output with base64 image data (see server/routes.ts:1210-1211)
 ```
 
 **`python/validate_slot_qrs.py`** (Has camera_id but doesn't namespace all outputs):
@@ -1106,10 +1107,10 @@ Complete validation:
 ### Phase 1 Checkpoint - File Isolation
 - [ ] Python scripts accept `--camera-id` parameter without error
 - [ ] Calibration creates file: `data/latest_calibration_rectified_{cameraId}.png`
-- [ ] Preview creates file: `data/latest_preview_{cameraId}.jpg`
+- [ ] Preview returns base64 JSON (no file written - API consistency only)
 - [ ] ROI archives saved to: `data/rois/{cameraId}/slot_*.jpg`
 - [ ] Routes successfully read namespaced files
-- [ ] Cleanup script updated to 60 days retention
+- [ ] Retention service handles per-camera subdirectories via recursive cleanup
 
 ### Phase 2 Checkpoint - Backend Sequencing
 - [ ] Attempting concurrent calibrations returns HTTP 409 Conflict

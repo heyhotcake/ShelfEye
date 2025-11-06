@@ -94,6 +94,9 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
+    # NOTE: camera_id is accepted for API consistency across all Python scripts but not used here
+    # because camera_preview.py does not write any files to disk - it only returns base64 JSON
+    
     # Use device_path if provided, otherwise use camera index
     device_source = args.device_path if args.device_path else args.camera
     

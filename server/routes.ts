@@ -282,10 +282,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Download high-resolution rectified image
-  app.get("/api/calibrate/download-rectified", async (_req, res) => {
+  app.get("/api/calibrate/download-rectified/:cameraId", async (req, res) => {
     try {
+      const { cameraId } = req.params;
       // Use the labeled version for download (clean version is only for ArUco marker validation)
-      const rectifiedPath = path.join(process.cwd(), 'data', 'latest_calibration_rectified_labeled.jpg');
+      const rectifiedPath = path.join(process.cwd(), 'data', `latest_calibration_rectified_labeled_${cameraId}.png`);
       
       // Check if file exists
       try {
@@ -295,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Send file for download
-      res.download(rectifiedPath, 'calibration_rectified.jpg', (err) => {
+      res.download(rectifiedPath, `calibration_rectified_${cameraId}.png`, (err) => {
         if (err) {
           console.error('[Calibration] Error downloading rectified image:', err);
           if (!res.headersSent) {
@@ -310,9 +311,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Download validation debug image
-  app.get("/api/calibrate/download-debug", async (_req, res) => {
+  app.get("/api/calibrate/download-debug/:cameraId", async (req, res) => {
     try {
-      const debugPath = path.join(process.cwd(), 'data', 'validation_rectified_debug.jpg');
+      const { cameraId } = req.params;
+      const debugPath = path.join(process.cwd(), 'data', `validation_rectified_debug_${cameraId}.png`);
       
       // Check if file exists
       try {
@@ -322,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Send file for download
-      res.download(debugPath, 'validation_debug.jpg', (err) => {
+      res.download(debugPath, `validation_debug_${cameraId}.png`, (err) => {
         if (err) {
           console.error('[Validation] Error downloading debug image:', err);
           if (!res.headersSent) {
@@ -2797,8 +2799,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Debug endpoint to view validation rectified image
-  app.get("/api/debug/validation-image", (_req, res) => {
-    const debugImagePath = '/tmp/validation_rectified_debug.jpg';
+  app.get("/api/debug/validation-image/:cameraId", (req, res) => {
+    const { cameraId } = req.params;
+    const debugImagePath = path.join(process.cwd(), 'data', `validation_rectified_debug_${cameraId}.png`);
     res.sendFile(debugImagePath, (err) => {
       if (err) {
         res.status(404).json({ error: 'Debug image not found. Run ArUco marker validation first.' });
