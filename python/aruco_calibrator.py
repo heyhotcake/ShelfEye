@@ -349,6 +349,15 @@ class ArucoCornerCalibrator:
             # Use multi-frame sharpness selection for best focus
             # Takes 50 frames and keeps the sharpest one - maximum reliability
             frame = capture_optimal_frame_picam2(picam2, num_frames=50)
+            
+            # CRITICAL: Verify actual captured resolution matches requested resolution
+            if frame is not None:
+                actual_height, actual_width = frame.shape[:2]
+                logger.info(f"✓ Captured frame resolution: {actual_width}x{actual_height} (requested: {width}x{height})")
+                if actual_width != width or actual_height != height:
+                    logger.warning(f"⚠ RESOLUTION MISMATCH! Requested {width}x{height} but got {actual_width}x{actual_height}")
+                    logger.warning(f"⚠ This may cause ArUco detection issues. Check camera capabilities.")
+            
             if frame is None:
                 raise Exception("Failed to capture frame from camera")
             

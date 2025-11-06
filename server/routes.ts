@@ -2853,6 +2853,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Debug endpoint to show detailed camera configuration
+  app.get("/api/debug/camera-config/:cameraId", async (req, res) => {
+    try {
+      const { cameraId } = req.params;
+      const camera = await storage.getCamera(cameraId);
+      
+      if (!camera) {
+        return res.status(404).json({ error: 'Camera not found' });
+      }
+      
+      // Get paper size configuration
+      const paperSizeFromCamera = camera.paperSize;
+      const globalPaperSize = await storage.getConfigByKey('last_calibration_paper_size_format');
+      
+      res.json({
+        cameraId: camera.id,
+        name: camera.name,
+        devicePath: camera.devicePath,
+        deviceIndex: camera.deviceIndex,
+        resolution: {
+          configured: camera.resolution,
+          width: camera.resolution?.[0] || 'not set',
+          height: camera.resolution?.[1] || 'not set',
+        },
+        paperSize: {
+          cameraSpecific: paperSizeFromCamera || 'not set',
+          globalFallback: globalPaperSize?.value || 'not set',
+          activeValue: paperSizeFromCamera || globalPaperSize?.value || 'not set',
+        },
+        calibration: {
+          lastCalibrated: camera.calibrationTimestamp,
+          hasHomography: !!camera.homographyMatrix,
+        },
+        notes: [
+          'The configured resolution should match your camera hardware capabilities',
+          '4K cameras: 3840x2160, 2K cameras: typically 2560x1440 or 1920x1080',
+          'If ArUco detection is poor, verify resolution matches camera specs',
+        ]
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get camera config' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
