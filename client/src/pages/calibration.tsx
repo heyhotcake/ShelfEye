@@ -237,6 +237,11 @@ export default function Calibration() {
       setCalibrationResult(data);
       setIsCameraLocked(false); // Clear lock state
       
+      // CRITICAL: Refetch template rectangles to get updated coordinates after recalibration
+      // This ensures the canvas shows the saved adjusted positions
+      queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
+      console.log('[Calibration] Invalidated template rectangles cache to refetch updated coordinates');
+      
       const errorText = data.reprojectionError < 0.01 
         ? "~0.00 px (perfect fit with 4 points)" 
         : `${data.reprojectionError.toFixed(2)} px`;
