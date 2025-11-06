@@ -2,13 +2,14 @@
 """
 Camera Diagnostic Script
 Performs health checks on all cameras before scheduled captures.
-Returns status for each camera: accessible, calibrated, can capture.
+Returns status for each camera: accessible, calibrated, can capture, corner markers visible.
 """
 
 import cv2
 import sys
 import json
 import logging
+import numpy as np
 from typing import Dict, List, Any
 from pathlib import Path
 
@@ -18,6 +19,10 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# ArUco dictionary for corner markers (DICT_4X4_100)
+ARUCO_DICT = cv2.aruco.DICT_4X4_100
+CORNER_MARKER_IDS = [96, 97, 98, 99]  # Corner markers A, B, C, D
 
 
 class CameraDiagnostic:
@@ -102,7 +107,43 @@ class CameraDiagnostic:
             result['details']['frameSize'] = list(frame.shape)
             result['details']['canCapture'] = True
             
-            # Check 4: Homography matrix (calibration)
+            # Check 4: Detect 4 corner ArUco markers (96-99)
+            # This ensures the camera hasn't moved and calibration is still valid
+            try:
+                aruco_dict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT)
+                parameters = cv2.aruco.DetectorParameters()
+                detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
+                
+                # Convert to grayscale for better detection
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                
+                # Detect markers
+                corners, ids, rejected = detector.detectMarkers(gray)
+                
+                detected_corner_ids = []
+                if ids is not None:
+                    detected_corner_ids = [int(id[0]) for id in ids if int(id[0]) in CORNER_MARKER_IDS]
+                
+                result['details']['cornerMarkersDetected'] = len(detected_corner_ids)
+                result['details']['detectedCornerIds'] = detected_corner_ids
+                
+                if len(detected_corner_ids) < 4:
+                    missing_ids = [id for id in CORNER_MARKER_IDS if id not in detected_corner_ids]
+                    result['status'] = 'failed'
+                    result['errors'].append(
+                        f'Only {len(detected_corner_ids)}/4 corner markers detected. Missing: {missing_ids}. Camera may have moved or corners are obscured.'
+                    )
+                    logger.error(f"Camera {camera_id}: Only {len(detected_corner_ids)}/4 corner markers visible")
+                else:
+                    logger.info(f"Camera {camera_id}: All 4 corner markers detected ✓")
+                    result['details']['cornersVisible'] = True
+                    
+            except Exception as e:
+                result['status'] = 'warning'
+                result['warnings'].append(f'Corner marker detection failed: {str(e)}')
+                logger.warning(f"Camera {camera_id}: ArUco detection error: {e}")
+            
+            # Check 5: Homography matrix (calibration)
             if homography_matrix is None or len(homography_matrix) == 0:
                 result['status'] = 'warning'
                 result['warnings'].append('Camera not calibrated (missing homography matrix)')
