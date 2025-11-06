@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Camera, CheckCircle, Ruler, X, Download } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 import { RectifiedPreviewCanvas } from "@/components/canvas/rectified-preview-canvas";
+import { CameraSelector } from "@/components/ui/camera-selector";
 
 const TIMEZONE = "Asia/Tokyo";
 
@@ -54,6 +55,7 @@ interface TemplateDesign {
 
 export default function Calibration() {
   const { toast } = useToast();
+  const [selectedCameraId, setSelectedCameraId] = useState<string | undefined>(undefined);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [calibrationResult, setCalibrationResult] = useState<CalibrationResult | null>(null);
   const [calibrationStep, setCalibrationStep] = useState<number>(0); // 0: Calibrate, 1: Error state, 2: Verify covered
@@ -74,6 +76,25 @@ export default function Calibration() {
     queryKey: ['/api/cameras'],
   });
 
+  // Initialize selected camera to first camera or saved preference
+  useEffect(() => {
+    if (cameras && cameras.length > 0 && !selectedCameraId) {
+      const savedCameraId = localStorage.getItem('selectedCameraId');
+      const initialCameraId = savedCameraId && cameras.find(c => c.id === savedCameraId)
+        ? savedCameraId
+        : cameras[0].id;
+      setSelectedCameraId(initialCameraId);
+    }
+  }, [cameras, selectedCameraId]);
+
+  // Handle camera change
+  const handleCameraChange = (cameraId: string) => {
+    setSelectedCameraId(cameraId);
+    localStorage.setItem('selectedCameraId', cameraId);
+  };
+
+  const selectedCamera = cameras?.find((c: any) => c.id === selectedCameraId);
+
   const { data: templateRectangles } = useQuery<any[]>({
     queryKey: ['/api/template-rectangles'],
     queryFn: async () => {
@@ -81,8 +102,6 @@ export default function Calibration() {
       return response.json();
     },
   });
-
-  const activeCamera = cameras?.find((c: any) => c.isActive);
 
   // Fetch template rectangles from DATABASE for the selected paper size (for calibration overlay)
   const selectedDesignForQuery = savedTemplateDesigns.find(d => d.timestamp === selectedTemplate);
@@ -100,25 +119,29 @@ export default function Calibration() {
     },
   });
 
-  // Load saved template designs from localStorage on mount
+  // Load saved template designs from localStorage (scoped by camera ID)
   useEffect(() => {
-    const saved = localStorage.getItem('templateConfigVersions');
+    if (!selectedCameraId) return;
+    
+    const storageKey = `templateConfigVersions_${selectedCameraId}`;
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         setSavedTemplateDesigns(JSON.parse(saved));
       } catch (e) {
         console.error('Failed to load saved template designs:', e);
       }
+    } else {
+      setSavedTemplateDesigns([]);
     }
-  }, []);
+  }, [selectedCameraId]);
 
-  // Show all saved template designs (camera-independent)
-  // Templates are now standalone designs that can be used with any camera
+  // Show all saved template designs for this camera
   const relevantDesigns = savedTemplateDesigns;
 
   // Reset calibration when camera ACTUALLY changes (not just refetches)
   useEffect(() => {
-    const currentCameraId = activeCamera?.id;
+    const currentCameraId = selectedCamera?.id;
     const previousCameraId = previousCameraIdRef.current;
     
     console.log('[Calibration] Effect running - current:', currentCameraId, 'previous:', previousCameraId);
@@ -137,16 +160,16 @@ export default function Calibration() {
     } else {
       console.log('[Calibration] Camera same, no reset');
     }
-  }, [activeCamera?.id]);
+  }, [selectedCamera?.id]);
 
   // Camera preview - poll every 3 seconds, but pause when camera is locked
   // For 4K cameras, backend automatically uses 1920x1080 for preview to prevent memory issues
   // Calibration/capture still uses full 4K resolution
   const { data: preview } = useQuery<CameraPreview>({
-    queryKey: ['/api/camera-preview', activeCamera?.id],
+    queryKey: ['/api/camera-preview', selectedCamera?.id],
     queryFn: async () => {
-      if (!activeCamera?.id) throw new Error('No active camera');
-      const response = await fetch(`/api/camera-preview/${activeCamera.id}`);
+      if (!selectedCamera?.id) throw new Error('No active camera');
+      const response = await fetch(`/api/camera-preview/${selectedCamera.id}`);
       
       // Handle camera locked during calibration
       if (response.status === 423) {
@@ -165,22 +188,22 @@ export default function Calibration() {
       
       return response.json();
     },
-    enabled: !!activeCamera && !isCameraLocked, // Enable low-res preview when camera not in use
+    enabled: !!selectedCamera && !isCameraLocked, // Enable low-res preview when camera not in use
     refetchInterval: 5000, // Low framerate: 1 frame every 5 seconds (0.2 fps) to avoid Pi overload
   });
 
   // Rectified preview - fetch after successful calibration
   const { data: rectifiedPreview, refetch: refetchRectified, isLoading: isLoadingRectified, error: rectifiedError } = useQuery<CameraPreview>({
-    queryKey: ['/api/rectified-preview', activeCamera?.id, selectedTemplate],
+    queryKey: ['/api/rectified-preview', selectedCamera?.id, selectedTemplate],
     queryFn: async () => {
-      if (!activeCamera?.id) throw new Error('No active camera');
-      console.log('[Rectified Preview] Fetching for camera:', activeCamera.id);
+      if (!selectedCamera?.id) throw new Error('No active camera');
+      console.log('[Rectified Preview] Fetching for camera:', selectedCamera.id);
       console.log('[Rectified Preview] Selected template:', selectedTemplate);
       
       // Add template timestamp to query if selected
       const url = selectedTemplate 
-        ? `/api/rectified-preview/${activeCamera.id}?templateTimestamp=${encodeURIComponent(selectedTemplate)}`
-        : `/api/rectified-preview/${activeCamera.id}`;
+        ? `/api/rectified-preview/${selectedCamera.id}?templateTimestamp=${encodeURIComponent(selectedTemplate)}`
+        : `/api/rectified-preview/${selectedCamera.id}`;
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -259,7 +282,7 @@ export default function Calibration() {
       // Invalidate cameras query to update calibration badge
       queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
       // Resume preview polling
-      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', selectedCamera?.id] });
       // Note: Rectified preview is now included in calibration response, no separate fetch needed
     },
     onError: async (error: any) => {
@@ -283,7 +306,7 @@ export default function Calibration() {
         variant: "destructive",
       });
       // Resume preview polling even on error
-      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', selectedCamera?.id] });
     },
   });
 
@@ -344,7 +367,7 @@ export default function Calibration() {
           });
         }
       }
-      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', selectedCamera?.id] });
     },
     onError: async (error: any) => {
       setIsCameraLocked(false);
@@ -362,7 +385,7 @@ export default function Calibration() {
         description: errorMessage,
         variant: "destructive",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', selectedCamera?.id] });
     },
   });
 
@@ -380,13 +403,20 @@ export default function Calibration() {
               </h2>
               <p className="text-sm text-muted-foreground mt-1">Position camera to see all 4 corner markers (A/B/C/D)</p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              data-testid="button-close-calibration"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-4">
+              <CameraSelector
+                cameras={cameras || []}
+                selectedCameraId={selectedCameraId}
+                onCameraChange={handleCameraChange}
+              />
+              <Button 
+                variant="outline" 
+                size="sm"
+                data-testid="button-close-calibration"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </header>
         
@@ -498,7 +528,7 @@ export default function Calibration() {
                 <div className="space-y-6">
                   <div>
                     <label className="text-sm text-muted-foreground mb-2 block">Active Camera</label>
-                    <Select value={activeCamera?.id || ""} disabled>
+                    <Select value={selectedCamera?.id || ""} disabled>
                       <SelectTrigger data-testid="select-active-camera">
                         <SelectValue placeholder="No active camera" />
                       </SelectTrigger>
@@ -544,15 +574,15 @@ export default function Calibration() {
                   <div className="space-y-3">
                     <h4 className="text-sm font-semibold text-foreground">Calibration Status</h4>
                     
-                    {activeCamera?.homographyMatrix ? (
+                    {selectedCamera?.homographyMatrix ? (
                       <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <CheckCircle className="w-4 h-4 text-green-500" />
                           <span className="text-sm font-medium text-green-500">Calibrated</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Last calibrated: {activeCamera.calibrationTimestamp 
-                            ? formatJSTTimestamp(activeCamera.calibrationTimestamp)
+                          Last calibrated: {selectedCamera.calibrationTimestamp 
+                            ? formatJSTTimestamp(selectedCamera.calibrationTimestamp)
                             : 'Unknown'}
                         </p>
                       </div>
@@ -588,7 +618,7 @@ export default function Calibration() {
                           <Button 
                             className="w-full"
                             onClick={() => {
-                              if (activeCamera) {
+                              if (selectedCamera) {
                                 // Determine paper size from selected template design
                                 let paperSize = 'A4-landscape'; // default fallback
                                 
@@ -623,11 +653,11 @@ export default function Calibration() {
                                   return;
                                 }
                                 
-                                calibrationMutation.mutate({ cameraId: activeCamera.id, paperSize, templateTimestamp: selectedTemplate });
+                                calibrationMutation.mutate({ cameraId: selectedCamera.id, paperSize, templateTimestamp: selectedTemplate });
                               }
                             }}
                             disabled={
-                              !activeCamera || 
+                              !selectedCamera || 
                               calibrationMutation.isPending ||
                               (relevantDesigns.length > 0 && !selectedTemplate)
                             }
@@ -649,15 +679,15 @@ export default function Calibration() {
                         </div>
                         
                         {/* Verify button - appears when adjustments are made */}
-                        {hasTemplateAdjustments && adjustedTemplates.length > 0 && activeCamera && (
+                        {hasTemplateAdjustments && adjustedTemplates.length > 0 && selectedCamera && (
                           <Button 
                             variant="outline"
                             className="w-full border-amber-500/50 hover:bg-amber-500/10"
                             onClick={() => {
                               const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
-                              if (selectedDesign && activeCamera) {
+                              if (selectedDesign && selectedCamera) {
                                 verifyAdjustedPositionsMutation.mutate({
-                                  cameraId: activeCamera.id,
+                                  cameraId: selectedCamera.id,
                                   adjustedTemplates: adjustedTemplates,
                                   paperSize: selectedDesign.paperSize
                                 });
@@ -717,7 +747,10 @@ export default function Calibration() {
                                     const updatedDesigns = savedTemplateDesigns.map(d => 
                                       d.timestamp === selectedTemplate ? updatedDesign : d
                                     );
-                                    localStorage.setItem('templateConfigVersions', JSON.stringify(updatedDesigns));
+                                    if (selectedCameraId) {
+                                      const storageKey = `templateConfigVersions_${selectedCameraId}`;
+                                      localStorage.setItem(storageKey, JSON.stringify(updatedDesigns));
+                                    }
                                     setSavedTemplateDesigns(updatedDesigns);
                                     
                                     console.log('[RecalibrateButton] Successfully saved to DB and localStorage');
@@ -744,14 +777,14 @@ export default function Calibration() {
                             }
                             
                             // Re-run full calibration with updated positions
-                            if (activeCamera) {
+                            if (selectedCamera) {
                               const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
                               if (selectedDesign) {
                                 setCalibrationStep(0); // Reset to step 0 temporarily
                                 setAdjustedTemplates([]); // Clear adjustments
                                 setHasTemplateAdjustments(false);
                                 calibrationMutation.mutate({ 
-                                  cameraId: activeCamera.id, 
+                                  cameraId: selectedCamera.id, 
                                   paperSize: selectedDesign.paperSize, 
                                   templateTimestamp: selectedTemplate 
                                 });
@@ -777,11 +810,11 @@ export default function Calibration() {
                         <Button 
                           className="w-full"
                           onClick={() => {
-                            if (activeCamera) {
-                              validateMarkersCoveredMutation.mutate(activeCamera.id);
+                            if (selectedCamera) {
+                              validateMarkersCoveredMutation.mutate(selectedCamera.id);
                             }
                           }}
-                          disabled={!activeCamera || validateMarkersCoveredMutation.isPending}
+                          disabled={!selectedCamera || validateMarkersCoveredMutation.isPending}
                           data-testid="button-validate-markers-covered"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
@@ -820,7 +853,7 @@ export default function Calibration() {
                           setStep2Result(null);
                           setCalibrationResult(null);
                           setIsCameraLocked(false); // Clear camera lock
-                          queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', activeCamera?.id] }); // Resume preview
+                          queryClient.invalidateQueries({ queryKey: ['/api/camera-preview', selectedCamera?.id] }); // Resume preview
                         }}
                         data-testid="button-reset-calibration"
                       >
