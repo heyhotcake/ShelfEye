@@ -8,6 +8,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { storage } from '../storage.js';
 import { setWhiteLight, turnOffLED, startRedFlash, stopRedFlash } from '../utils/led-control.js';
+import { cameraSessionManager } from '../camera-session-manager.js';
 
 export class StartupCalibrationService {
   private isRunning = false;
@@ -42,6 +43,19 @@ export class StartupCalibrationService {
         return;
       }
 
+      // Check if any camera is currently calibrating (respect global lock)
+      const globalLockStatus = cameraSessionManager.isAnyCalibrationInProgress();
+      if (globalLockStatus.inProgress) {
+        console.log(`[StartupCalibration] Camera ${globalLockStatus.cameraId} is already calibrating - skipping startup calibration`);
+        return;
+      }
+
+      // Try to acquire global calibration lock
+      if (!cameraSessionManager.acquireGlobalCalibrationLock(cameraId)) {
+        console.log(`[StartupCalibration] Could not acquire global calibration lock - another calibration started - skipping`);
+        return;
+      }
+
       const paperSizeFormat = (lastPaperSizeFormat?.value as string) || 'A4-landscape';
 
       const deviceInfo = camera.devicePath || `Index ${camera.deviceIndex}`;
@@ -65,6 +79,11 @@ export class StartupCalibrationService {
       console.error('[StartupCalibration] Error during startup calibration:', error);
       await this.flashRedLED('Startup calibration error');
     } finally {
+      // Release global calibration lock if we acquired it
+      const lastCameraId = await storage.getConfigByKey('last_calibration_camera_id');
+      if (lastCameraId?.value) {
+        cameraSessionManager.releaseGlobalCalibrationLock(lastCameraId.value as string);
+      }
       this.isRunning = false;
     }
   }

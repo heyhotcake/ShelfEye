@@ -249,10 +249,10 @@ export class MaintenanceService {
       // 3. Clean up old sent alerts (30 days retention)
       const deletedAlerts = await this.cleanupOldAlerts(30);
 
-      // 4. Clean up old ROI images (3 months retention, unless emergency already ran)
+      // 4. Clean up old ROI images (2 months retention, unless emergency already ran)
       let imageCleanup = { deletedFiles: 0, freedMB: 0 };
       if (diskCheck.status === 'ok') {
-        imageCleanup = await this.cleanupOldImages(90); // 3 months = 90 days
+        imageCleanup = await this.cleanupOldImages(60); // 2 months = 60 days
       }
 
       const duration = Date.now() - startTime;

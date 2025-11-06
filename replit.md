@@ -5,6 +5,30 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
 
 ## Recent Changes
 
+### Nov 6, 2025 - Multi-Camera Support: Phases 0-2 Complete
+
+- **Phase 0 (Database Schema)**: Added `paperSize` field to cameras table to store per-camera template format preferences
+- **Phase 1 (File Isolation & Namespacing)**: Complete file isolation with camera ID namespacing
+  - All Python scripts accept `--camera-id` parameter
+  - File paths namespaced: `latest_calibration_rectified_{cameraId}.png`, `validation_roi_{cameraId}_{slotId}.jpg`
+  - Backend routes pass `--camera-id` to all Python scripts
+  - ROI archives organized in per-camera subdirectories: `data/rois/{cameraId}/`
+  - Retention service handles per-camera cleanup via recursive directory scanning
+  
+- **Phase 2 (Backend Sequencing)**: Global calibration lock enforces 2GB RAM constraint
+  - Added global calibration lock to CameraSessionManager (5-minute timeout)
+  - Only ONE camera can calibrate at a time across entire system
+  - Concurrent calibration attempts rejected with HTTP 409 Conflict
+  - Startup calibration service respects global lock
+  - Successfully tested with two cameras (Camera 1: 4K at /dev/video0, Camera 2: 2K at /dev/video1)
+  
+- **Data Retention Update**: ROI image retention reduced from 3 months (90 days) to 2 months (60 days) to account for doubled storage usage with two cameras
+
+- **Camera Configuration**: 
+  - Camera 1 (Wide Shelf): 4K resolution (3840×2160) at /dev/video0
+  - Camera 2 (Shelf 2): 2K resolution (1920×1080) at /dev/video1
+  - Both cameras physically connected and configured in database
+
 ### Nov 6, 2025 - Integrated Calibration+Validation Architecture & Smart Recalibration Flow
 - **Breakthrough: Raw Frame ArUco Detection**: Successfully resolved ArUco marker detection failures by detecting slot markers on the RAW camera frame (before warpPerspective transformation), eliminating interpolation artifacts that were corrupting marker bit patterns.
   - **Root Cause Identified**: cv2.warpPerspective with ANY interpolation mode (bilinear, bicubic, or INTER_NEAREST) corrupts 3cm ArUco markers at 31.8 px/cm density, breaking bit decoding (0 markers found, 20-1433 rejected candidates).
@@ -72,8 +96,8 @@ A Raspberry Pi-based automated tool monitoring system utilizing computer vision 
 
 ### Data Storage
 - **Database**: PostgreSQL (Neon serverless) using Drizzle ORM for persistent storage of cameras, slots, detection logs, alert rules, system config, and workers.
-- **File Storage Strategy**: Live previews, ROI archives, and rectified calibration images are stored on the file system.
-- **Data Retention & Cleanup**: Detection logs (3 years), ROI images (3 months), sent alerts (30 days). Daily maintenance runs at 3:00 AM JST. Emergency/accelerated cleanup triggered by disk usage thresholds.
+- **File Storage Strategy**: Live previews, ROI archives (per-camera subdirectories), and rectified calibration images are stored on the file system with camera ID namespacing.
+- **Data Retention & Cleanup**: Detection logs (3 years), ROI images (2 months), sent alerts (30 days). Daily maintenance runs at 3:00 AM JST. Emergency/accelerated cleanup triggered by disk usage thresholds.
 
 ### System Design Choices
 - **UI/UX**: Calibration system uses paper size formats (e.g., "A4-landscape"). Rectified preview with grid and template overlays. 6-Page multi-sheet template system for large areas with automated slot creation. Dual-image calibration output: clean version for marker validation (no overlays) and labeled version for user download (with grid/labels).
