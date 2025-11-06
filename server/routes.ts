@@ -561,13 +561,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               console.log(`[Calibration] Deleted ${existingSlots.length} existing slots`);
 
-              // Get template rectangles filtered by paper size only
-              // Templates are camera-independent and selected explicitly by user in UI
-              // No timestamp filtering needed - user chooses template by name
-              const templateRectangles = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
+              // Get CAMERA-SPECIFIC template rectangles (with fallback to shared templates)
+              // This ensures each camera uses its own adjusted coordinates
+              const templateRectangles = await storage.getTemplateRectanglesByPaperSizeAndCamera(paperSizeFormat, cameraId);
               const createdSlots: any[] = [];
               
-              console.log(`[Calibration] Creating slots for ${templateRectangles.length} templates (paper size: ${paperSizeFormat})`);
+              console.log(`[Calibration] Creating slots for ${templateRectangles.length} camera-specific templates (paper size: ${paperSizeFormat}, camera: ${cameraId})`);
 
               const { transformTemplateToPixels } = await import('./utils/coordinate-transform.js');
 
@@ -1348,12 +1347,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paperSizeFormat = paperSizeConfig.value as string;
       }
 
-      // Get template rectangles for this camera to overlay on rectified view
-      // Templates are camera-independent and filtered by paper size only
-      // User explicitly selects template in UI, no timestamp filtering needed
-      const templates = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
+      // Get CAMERA-SPECIFIC template rectangles (with fallback to shared templates)
+      // This ensures preview shows camera-specific adjusted coordinates
+      const templates = await storage.getTemplateRectanglesByPaperSizeAndCamera(paperSizeFormat, cameraId);
       
-      console.log(`[Rectified Preview] Found ${templates.length} templates matching paper size: ${paperSizeFormat}`);
+      console.log(`[Rectified Preview] Found ${templates.length} camera-specific templates (paper size: ${paperSizeFormat}, camera: ${cameraId})`);
       
       // Get categories for dimensions and names
       const categories = await storage.getToolCategories();
