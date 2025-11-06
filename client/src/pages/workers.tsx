@@ -31,7 +31,7 @@ export default function Workers() {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const [isAddWorkerOpen, setIsAddWorkerOpen] = useState(false);
-  const [selectedWorkers, setSelectedWorkers] = useState<Set<string>>(new Set());
+  const [selectedWorkers, setSelectedWorkers] = useState<string[]>([]);
 
   const form = useForm<InsertWorker>({
     resolver: zodResolver(insertWorkerSchema),
@@ -75,11 +75,7 @@ export default function Workers() {
         description: "Worker removed and ArUco ID freed for reuse",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/workers'] });
-      setSelectedWorkers(prev => {
-        const next = new Set(prev);
-        next.delete(deletedId);
-        return next;
-      });
+      setSelectedWorkers(prev => prev.filter(id => id !== deletedId));
     },
     onError: (error) => {
       toast({
@@ -96,28 +92,26 @@ export default function Workers() {
 
   const handleToggleWorker = (workerId: string) => {
     setSelectedWorkers(prev => {
-      const next = new Set(prev);
-      if (next.has(workerId)) {
-        next.delete(workerId);
+      if (prev.includes(workerId)) {
+        return prev.filter(id => id !== workerId);
       } else {
-        next.add(workerId);
+        return [...prev, workerId];
       }
-      return next;
     });
   };
 
   const handleSelectAll = () => {
     if (workers) {
-      setSelectedWorkers(new Set(workers.map(w => w.id)));
+      setSelectedWorkers(workers.map(w => w.id));
     }
   };
 
   const handleDeselectAll = () => {
-    setSelectedWorkers(new Set());
+    setSelectedWorkers([]);
   };
 
   const handlePrintTags = () => {
-    if (selectedWorkers.size === 0) {
+    if (selectedWorkers.length === 0) {
       toast({
         title: "No Workers Selected",
         description: "Please select workers to print tags",
@@ -126,7 +120,7 @@ export default function Workers() {
       return;
     }
 
-    const workerIds = Array.from(selectedWorkers).join(',');
+    const workerIds = selectedWorkers.join(',');
     navigate(`/worker-tags?workers=${workerIds}`);
   };
 
@@ -144,11 +138,11 @@ export default function Workers() {
               <Button
                 variant="outline"
                 onClick={handlePrintTags}
-                disabled={selectedWorkers.size === 0}
+                disabled={selectedWorkers.length === 0}
                 data-testid="button-print-tags"
               >
                 <Printer className="mr-2 h-4 w-4" />
-                Print Tags ({selectedWorkers.size})
+                Print Tags ({selectedWorkers.length})
               </Button>
               <Dialog open={isAddWorkerOpen} onOpenChange={setIsAddWorkerOpen}>
                 <DialogTrigger asChild>
@@ -234,19 +228,12 @@ export default function Workers() {
                     >
                       <div className="flex items-center gap-4">
                         <Checkbox
-                          checked={selectedWorkers.has(worker.id)}
+                          checked={selectedWorkers.includes(worker.id)}
                           onCheckedChange={(checked) => {
-                            console.log('[Checkbox] onCheckedChange called:', { workerId: worker.id, checked, currentSize: selectedWorkers.size });
                             if (checked === true) {
-                              const newSet = new Set(selectedWorkers);
-                              newSet.add(worker.id);
-                              console.log('[Checkbox] Adding worker, new size:', newSet.size);
-                              setSelectedWorkers(newSet);
+                              setSelectedWorkers(prev => [...prev, worker.id]);
                             } else {
-                              const newSet = new Set(selectedWorkers);
-                              newSet.delete(worker.id);
-                              console.log('[Checkbox] Removing worker, new size:', newSet.size);
-                              setSelectedWorkers(newSet);
+                              setSelectedWorkers(prev => prev.filter(id => id !== worker.id));
                             }
                           }}
                           data-testid={`checkbox-worker-${worker.id}`}
