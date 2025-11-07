@@ -99,38 +99,53 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160), max_retries=3):
     else:
         raise Exception(f"Failed to initialize camera after {max_retries} attempts")
     
-    # Create configuration with minimal settings to avoid unsupported controls
-    # Use video configuration to get exact resolution without cropping
-    # RGB888 format - will convert to BGR after capture for OpenCV compatibility
+    # Try to configure camera with validation and retry logic
+    max_config_attempts = 3
+    config_success = False
     
-    # FORCE RESET: Try low-res first to clear any stuck firmware settings
-    # This fixes cameras that get "stuck" at previous resolution (like Wide Shelf camera issue)
-    if width > 1920 or height > 1080:
-        logger.info(f"Force-resetting camera firmware by configuring 640x480 first...")
-        reset_config = picam2.create_video_configuration(
-            main={"size": (640, 480), "format": "RGB888"},
-            buffer_count=1
+    for attempt in range(max_config_attempts):
+        if attempt > 0:
+            logger.warning(f"Configuration mismatch detected, attempt {attempt + 1}/{max_config_attempts}")
+            # Full reset: close and recreate Picamera2 instance
+            try:
+                picam2.close()
+                logger.info("Closed camera for hard reset")
+                time.sleep(1)  # Let hardware settle
+                picam2 = Picamera2(camera_index)
+                logger.info("Reopened camera after hard reset")
+            except Exception as e:
+                logger.error(f"Failed to reopen camera: {e}")
+                raise
+        
+        # Create configuration with minimal settings
+        # RGB888 format - will convert to BGR after capture for OpenCV compatibility
+        config = picam2.create_video_configuration(
+            main={"size": (width, height), "format": "RGB888"},
+            buffer_count=1  # Minimize memory usage
         )
-        picam2.configure(reset_config)
-        time.sleep(0.5)  # Let firmware accept the change
-        logger.info("Reset complete, now configuring target resolution...")
+        
+        picam2.configure(config)
+        
+        # CRITICAL: Verify what Picamera2 ACTUALLY configured
+        actual_config = picam2.camera_configuration()
+        actual_main = actual_config.get("main", {})
+        actual_size = actual_main.get("size", (0, 0))
+        actual_format = actual_main.get("format", "unknown")
+        
+        logger.info(f"Config attempt {attempt + 1}: REQUESTED {width}x{height} RGB888, ACTUAL {actual_size[0]}x{actual_size[1]} {actual_format}")
+        
+        # Check if configuration matches request
+        if actual_size[0] == width and actual_size[1] == height:
+            config_success = True
+            logger.info(f"✓ Camera configured successfully at {width}x{height}")
+            break
+        else:
+            logger.error(f"✗ Resolution mismatch! Camera stuck at {actual_size[0]}x{actual_size[1]}")
     
-    config = picam2.create_video_configuration(
-        main={"size": (width, height), "format": "RGB888"},
-        buffer_count=1  # Minimize memory usage
-    )
-    
-    # DON'T align - it auto-crops to sensor aspect ratio
-    # We need exact resolution to match calibration
-    picam2.configure(config)
-    
-    # Log what Picamera2 ACTUALLY configured (may differ from request!)
-    actual_config = picam2.camera_configuration()
-    actual_main = actual_config.get("main", {})
-    actual_size = actual_main.get("size", (0, 0))
-    actual_format = actual_main.get("format", "unknown")
-    logger.info(f"Picamera2 REQUESTED: {width}x{height} RGB888")
-    logger.info(f"Picamera2 ACTUAL: {actual_size[0]}x{actual_size[1]} {actual_format}")
+    if not config_success:
+        error_msg = f"Failed to configure camera at {width}x{height} after {max_config_attempts} attempts. Camera stuck at {actual_size[0]}x{actual_size[1]}. Hardware may not support requested resolution."
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
     
     # Set automatic controls for optimal image quality (only if supported)
     try:
