@@ -77,8 +77,11 @@ def generate_rectified_image_from_frame(
     # Default INTER_LINEAR blurs edges and breaks ArUco bit decoding
     rectified = cv2.warpPerspective(frame, M, output_size, flags=cv2.INTER_NEAREST)
     
-    # NOTE: Grid overlay removed - was permanently burning into downloaded images
-    # and could corrupt ArUco markers. Frontend canvas can draw non-destructive overlays.
+    # Draw grid overlay for visual reference
+    for x in range(0, output_size[0], 50):
+        cv2.line(rectified, (x, 0), (x, output_size[1]), (0, 255, 0), 1)
+    for y in range(0, output_size[1], 50):
+        cv2.line(rectified, (0, y), (output_size[0], y), (0, 255, 0), 1)
     
     # Draw template slot overlays if provided
     if templates:
