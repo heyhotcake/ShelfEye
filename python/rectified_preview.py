@@ -55,12 +55,6 @@ def generate_rectified_image_from_frame(
     
     H = homography_matrix
     paper_width_cm, paper_height_cm = paper_size_cm
-    
-    # Validate output_size before using it
-    if not output_size or not isinstance(output_size, (tuple, list)) or len(output_size) < 2:
-        logger.error(f"Invalid output_size: {output_size} (type: {type(output_size)})")
-        raise ValueError(f"output_size must be a tuple/list with 2 elements, got: {output_size}")
-    
     scale_x = output_size[0] / paper_width_cm
     scale_y = output_size[1] / paper_height_cm
     
