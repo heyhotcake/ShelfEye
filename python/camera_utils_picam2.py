@@ -127,17 +127,23 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160), max_retries=3):
         picam2.configure(config)
         
         # CRITICAL: Verify what Picamera2 ACTUALLY configured
-        actual_config = picam2.camera_configuration()
-        actual_main = actual_config.get("main", {})
-        actual_size = actual_main.get("size", (0, 0))
-        
-        # Safety check: ensure actual_size is a valid tuple with 2 elements
-        if not actual_size or not isinstance(actual_size, (tuple, list)) or len(actual_size) < 2:
+        try:
+            actual_config = picam2.camera_configuration()
+            actual_main = actual_config.get("main", {})
+            actual_size = actual_main.get("size", (0, 0))
+            
+            # Safety check: ensure actual_size is a valid tuple with 2 elements
+            if not actual_size or not isinstance(actual_size, (tuple, list)) or len(actual_size) < 2:
+                logger.error(f"Invalid actual_size: {actual_size} (type: {type(actual_size)})")
+                actual_size = (0, 0)
+            
+            actual_format = actual_main.get("format", "unknown")
+            
+            logger.info(f"Config attempt {attempt + 1}: REQUESTED {width}x{height} RGB888, ACTUAL {actual_size[0]}x{actual_size[1]} {actual_format}")
+        except Exception as e:
+            logger.error(f"Error accessing camera config: {e}", exc_info=True)
             actual_size = (0, 0)
-        
-        actual_format = actual_main.get("format", "unknown")
-        
-        logger.info(f"Config attempt {attempt + 1}: REQUESTED {width}x{height} RGB888, ACTUAL {actual_size[0]}x{actual_size[1]} {actual_format}")
+            actual_format = "unknown"
         
         # Check if configuration matches request
         if actual_size[0] == width and actual_size[1] == height:
