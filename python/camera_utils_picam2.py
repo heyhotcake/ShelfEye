@@ -102,6 +102,19 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160), max_retries=3):
     # Create configuration with minimal settings to avoid unsupported controls
     # Use video configuration to get exact resolution without cropping
     # RGB888 format - will convert to BGR after capture for OpenCV compatibility
+    
+    # FORCE RESET: Try low-res first to clear any stuck firmware settings
+    # This fixes cameras that get "stuck" at previous resolution (like Wide Shelf camera issue)
+    if width > 1920 or height > 1080:
+        logger.info(f"Force-resetting camera firmware by configuring 640x480 first...")
+        reset_config = picam2.create_video_configuration(
+            main={"size": (640, 480), "format": "RGB888"},
+            buffer_count=1
+        )
+        picam2.configure(reset_config)
+        time.sleep(0.5)  # Let firmware accept the change
+        logger.info("Reset complete, now configuring target resolution...")
+    
     config = picam2.create_video_configuration(
         main={"size": (width, height), "format": "RGB888"},
         buffer_count=1  # Minimize memory usage
