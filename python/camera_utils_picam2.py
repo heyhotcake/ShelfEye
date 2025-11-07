@@ -111,6 +111,14 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160), max_retries=3):
     # We need exact resolution to match calibration
     picam2.configure(config)
     
+    # Log what Picamera2 ACTUALLY configured (may differ from request!)
+    actual_config = picam2.camera_configuration()
+    actual_main = actual_config.get("main", {})
+    actual_size = actual_main.get("size", (0, 0))
+    actual_format = actual_main.get("format", "unknown")
+    logger.info(f"Picamera2 REQUESTED: {width}x{height} RGB888")
+    logger.info(f"Picamera2 ACTUAL: {actual_size[0]}x{actual_size[1]} {actual_format}")
+    
     # Set automatic controls for optimal image quality (only if supported)
     try:
         picam2.set_controls({
