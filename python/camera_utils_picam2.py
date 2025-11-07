@@ -130,6 +130,11 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160), max_retries=3):
         actual_config = picam2.camera_configuration()
         actual_main = actual_config.get("main", {})
         actual_size = actual_main.get("size", (0, 0))
+        
+        # Safety check: ensure actual_size is a valid tuple with 2 elements
+        if not actual_size or not isinstance(actual_size, (tuple, list)) or len(actual_size) < 2:
+            actual_size = (0, 0)
+        
         actual_format = actual_main.get("format", "unknown")
         
         logger.info(f"Config attempt {attempt + 1}: REQUESTED {width}x{height} RGB888, ACTUAL {actual_size[0]}x{actual_size[1]} {actual_format}")
