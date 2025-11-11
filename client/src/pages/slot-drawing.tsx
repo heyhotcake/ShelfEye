@@ -62,6 +62,8 @@ export default function SlotDrawing() {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [snapEnabled, setSnapEnabled] = useState(true); // Toggle snapping on/off
+  const [gridSize, setGridSize] = useState(0.5); // Adjustable grid size (0.5cm default)
   
   // Slot version management
   const [showVersions, setShowVersions] = useState(false);
@@ -465,8 +467,8 @@ export default function SlotDrawing() {
     return pixels / pxPerMm / 10; // pixels to mm, then to cm
   };
 
-  const snapToGrid = (cm: number): number => {
-    const gridSize = 0.5; // 0.5cm grid
+  const snapToGrid = (cm: number, enableSnap: boolean = snapEnabled): number => {
+    if (!enableSnap) return cm; // Skip snapping if disabled
     return Math.round(cm / gridSize) * gridSize;
   };
 
@@ -1016,8 +1018,10 @@ export default function SlotDrawing() {
       const newXPixels = canvasMargin + cmToPixels(rect.xCm, true) + deltaX;
       const newYPixels = canvasMargin + cmToPixels(rect.yCm, false) + deltaY;
 
-      let newXCm = snapToGrid(pixelsToCm(newXPixels - canvasMargin, true));
-      let newYCm = snapToGrid(pixelsToCm(newYPixels - canvasMargin, false));
+      // Hold Ctrl or Alt to disable snapping for precise positioning
+      const shouldSnap = snapEnabled && !event.ctrlKey && !event.altKey;
+      let newXCm = snapToGrid(pixelsToCm(newXPixels - canvasMargin, true), shouldSnap);
+      let newYCm = snapToGrid(pixelsToCm(newYPixels - canvasMargin, false), shouldSnap);
 
       // Apply boundary clamping to keep rectangle within printable area
       const clamped = clampToBounds(
@@ -1766,7 +1770,7 @@ export default function SlotDrawing() {
                       Match your ArUco grid paper size (templates can be used with any camera)
                     </p>
                     <p className="text-xs text-muted-foreground/70">
-                      💡 Drag empty areas to pan • Scroll to zoom • Drag rectangles to reposition
+                      💡 Drag to pan • Scroll to zoom • Drag rectangles to move • Hold Ctrl/Alt for precise positioning
                     </p>
                   </div>
                 </div>
@@ -1831,6 +1835,32 @@ export default function SlotDrawing() {
                   <div className="px-3 py-1 bg-muted rounded text-sm font-mono">
                     {Math.round(zoom * 100)}%
                   </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="snap-enabled" 
+                      checked={snapEnabled}
+                      onCheckedChange={(checked) => setSnapEnabled(checked === true)}
+                      data-testid="checkbox-snap-enabled"
+                    />
+                    <Label htmlFor="snap-enabled" className="text-sm cursor-pointer">
+                      Snap to Grid ({gridSize}cm)
+                    </Label>
+                  </div>
+                  
+                  <Select value={gridSize.toString()} onValueChange={(v) => setGridSize(parseFloat(v))}>
+                    <SelectTrigger className="w-28" data-testid="select-grid-size">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.25">0.25cm</SelectItem>
+                      <SelectItem value="0.5">0.5cm</SelectItem>
+                      <SelectItem value="1">1cm</SelectItem>
+                      <SelectItem value="2">2cm</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -1975,7 +2005,7 @@ export default function SlotDrawing() {
                           </div>
                           
                           <p className="text-xs text-muted-foreground mt-2 italic">
-                            Drag to reposition (snaps to 0.5cm grid)
+                            Drag to reposition{snapEnabled ? ` (snaps to ${gridSize}cm grid, hold Ctrl/Alt to disable)` : ' (snapping disabled)'}
                           </p>
                         </div>
                       </div>
