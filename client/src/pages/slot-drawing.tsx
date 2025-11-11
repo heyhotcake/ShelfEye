@@ -92,6 +92,26 @@ export default function SlotDrawing() {
   // Paper size configuration
   const [paperSize, setPaperSize] = useState('A4-landscape');
   
+  // Paper size dimensions (width x height in pixels, landscape orientation)
+  // Calculated to maintain EXACT aspect ratios after 40px margins on each side
+  // Formula: paperWidth = width - 80, paperHeight = paperWidth * (realHeightMm/realWidthMm), height = paperHeight + 80
+  const paperDimensions: Record<string, { 
+    width: number; 
+    height: number;
+    realWidthMm: number;
+    realHeightMm: number;
+  }> = {
+    'A5-landscape': { width: 600, height: 447, realWidthMm: 210, realHeightMm: 148 },      // 520 * (148/210) + 80 = 447
+    'A4-landscape': { width: 800, height: 589, realWidthMm: 297, realHeightMm: 210 },      // 720 * (210/297) + 80 = 589
+    'A3-landscape': { width: 1131, height: 823, realWidthMm: 420, realHeightMm: 297 },     // 1051 * (297/420) + 80 = 823
+    '2xA5-landscape': { width: 1200, height: 475, realWidthMm: 420, realHeightMm: 148 },   // 1120 * (148/420) + 80 = 475
+    '3xA5-landscape': { width: 1800, height: 484, realWidthMm: 630, realHeightMm: 148 },   // 1720 * (148/630) + 80 = 484
+    '6-page-3x2': { width: 2400, height: 1173, realWidthMm: 891, realHeightMm: 420 },      // 2320 * (420/891) + 80 = 1173
+    '8-page-4x2': { width: 3200, height: 1183, realWidthMm: 1188, realHeightMm: 420 },     // 3120 * (420/1188) + 80 = 1183
+  };
+  
+  const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
+  
   // Track container size with ResizeObserver
   useEffect(() => {
     const container = containerRef.current;
@@ -150,26 +170,6 @@ export default function SlotDrawing() {
   const [draggingRectId, setDraggingRectId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null);
   const [selectedTemplateRect, setSelectedTemplateRect] = useState<TemplateRectangle | null>(null);
-  
-  // Paper size dimensions (width x height in pixels, landscape orientation)
-  // Calculated to maintain EXACT aspect ratios after 40px margins on each side
-  // Formula: paperWidth = width - 80, paperHeight = paperWidth * (realHeightMm/realWidthMm), height = paperHeight + 80
-  const paperDimensions: Record<string, { 
-    width: number; 
-    height: number;
-    realWidthMm: number;
-    realHeightMm: number;
-  }> = {
-    'A5-landscape': { width: 600, height: 447, realWidthMm: 210, realHeightMm: 148 },      // 520 * (148/210) + 80 = 447
-    'A4-landscape': { width: 800, height: 589, realWidthMm: 297, realHeightMm: 210 },      // 720 * (210/297) + 80 = 589
-    'A3-landscape': { width: 1131, height: 823, realWidthMm: 420, realHeightMm: 297 },     // 1051 * (297/420) + 80 = 823
-    '2xA5-landscape': { width: 1200, height: 475, realWidthMm: 420, realHeightMm: 148 },   // 1120 * (148/420) + 80 = 475
-    '3xA5-landscape': { width: 1800, height: 484, realWidthMm: 630, realHeightMm: 148 },   // 1720 * (148/630) + 80 = 484
-    '6-page-3x2': { width: 2400, height: 1173, realWidthMm: 891, realHeightMm: 420 },      // 2320 * (420/891) + 80 = 1173
-    '8-page-4x2': { width: 3200, height: 1183, realWidthMm: 1188, realHeightMm: 420 },     // 3120 * (420/1188) + 80 = 1183
-  };
-  
-  const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
 
   const { data: cameras } = useQuery<any[]>({
     queryKey: ['/api/cameras'],
