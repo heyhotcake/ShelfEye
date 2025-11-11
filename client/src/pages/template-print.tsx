@@ -303,8 +303,9 @@ export default function TemplatePrint() {
       const a4HeightMm = 210;
       const gutterMm = 0;  // No gutters - sheets touch edge-to-edge
       const markerSizeMm = 50;
-      const markerInsetMm = 10;  // Inside safe zone
-      const safeMarginMm = 10; // 1cm safe zone
+      const safeMarginMm = 10; // 1cm safe zone from sheet edge
+      // Markers should be at the INNER corners of the safe zone
+      const markerInsetMm = safeMarginMm; // Start at safe zone boundary
 
       const gridCols = is8Page ? 4 : 3;
       const gridRows = 2;
