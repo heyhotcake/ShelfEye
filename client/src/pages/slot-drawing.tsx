@@ -940,8 +940,11 @@ export default function SlotDrawing() {
         }
       }
       
-      // If clicked outside any rectangle, deselect
+      // If clicked outside any rectangle, start panning instead of just deselecting
       setSelectedTemplateRect(null);
+      setIsPanning(true);
+      setPanStart({ x: event.clientX - panOffset.x, y: event.clientY - panOffset.y });
+      event.preventDefault();
     }
   };
 
@@ -1713,9 +1716,14 @@ export default function SlotDrawing() {
                       <SelectItem value="8-page-4x2">8-Page (4×2 A4)</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Match your ArUco grid paper size (templates can be used with any camera)
-                  </p>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-xs text-muted-foreground">
+                      Match your ArUco grid paper size (templates can be used with any camera)
+                    </p>
+                    <p className="text-xs text-muted-foreground/70">
+                      💡 Drag empty areas to pan • Scroll to zoom • Drag rectangles to reposition
+                    </p>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -1745,7 +1753,7 @@ export default function SlotDrawing() {
                   height={canvasDimensions.height}
                   className="drawing-canvas rounded bg-muted"
                   style={{ 
-                    cursor: isPanning ? 'grabbing' : 'grab',
+                    cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab'),
                     maxWidth: '100%',
                     height: 'auto'
                   }}
