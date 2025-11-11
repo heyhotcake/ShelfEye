@@ -1,4 +1,4 @@
-import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type Worker, type CaptureRun, type GoogleOAuthCredential, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle, type InsertWorker, type InsertCaptureRun, type InsertGoogleOAuthCredential } from "@shared/schema";
+import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type TemplateDesign, type Worker, type CaptureRun, type GoogleOAuthCredential, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle, type InsertTemplateDesign, type InsertWorker, type InsertCaptureRun, type InsertGoogleOAuthCredential } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -68,6 +68,15 @@ export interface IStorage {
   createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle>;
   updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined>;
   deleteTemplateRectangle(id: string): Promise<boolean>;
+  getTemplateRectanglesByDesignId(designId: string): Promise<TemplateRectangle[]>;
+  deleteTemplateRectanglesByDesignId(designId: string): Promise<number>;
+
+  // Template design methods (saved templates)
+  getTemplateDesigns(): Promise<TemplateDesign[]>;
+  getTemplateDesign(id: string): Promise<TemplateDesign | undefined>;
+  createTemplateDesign(design: InsertTemplateDesign): Promise<TemplateDesign>;
+  updateTemplateDesign(id: string, updates: Partial<InsertTemplateDesign>): Promise<TemplateDesign | undefined>;
+  deleteTemplateDesign(id: string): Promise<boolean>;
 
   // Worker methods
   getWorkers(): Promise<Worker[]>;
@@ -94,6 +103,7 @@ export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private toolCategories: Map<string, ToolCategory> = new Map();
   private templateRectangles: Map<string, TemplateRectangle> = new Map();
+  private templateDesigns: Map<string, TemplateDesign> = new Map();
   private workers: Map<string, Worker> = new Map();
   private captureRuns: Map<string, CaptureRun> = new Map();
 
@@ -496,6 +506,56 @@ export class MemStorage implements IStorage {
 
   async deleteTemplateRectangle(id: string): Promise<boolean> {
     return this.templateRectangles.delete(id);
+  }
+
+  async getTemplateRectanglesByDesignId(designId: string): Promise<TemplateRectangle[]> {
+    return Array.from(this.templateRectangles.values()).filter(r => r.designId === designId);
+  }
+
+  async deleteTemplateRectanglesByDesignId(designId: string): Promise<number> {
+    const rectangles = await this.getTemplateRectanglesByDesignId(designId);
+    rectangles.forEach(r => this.templateRectangles.delete(r.id));
+    return rectangles.length;
+  }
+
+  // Template design methods
+  async getTemplateDesigns(): Promise<TemplateDesign[]> {
+    return Array.from(this.templateDesigns.values());
+  }
+
+  async getTemplateDesign(id: string): Promise<TemplateDesign | undefined> {
+    return this.templateDesigns.get(id);
+  }
+
+  async createTemplateDesign(design: InsertTemplateDesign): Promise<TemplateDesign> {
+    const id = randomUUID();
+    const newDesign: TemplateDesign = {
+      ...design,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.templateDesigns.set(id, newDesign);
+    return newDesign;
+  }
+
+  async updateTemplateDesign(id: string, updates: Partial<InsertTemplateDesign>): Promise<TemplateDesign | undefined> {
+    const design = this.templateDesigns.get(id);
+    if (!design) return undefined;
+
+    const updated = { 
+      ...design, 
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.templateDesigns.set(id, updated);
+    return updated;
+  }
+
+  async deleteTemplateDesign(id: string): Promise<boolean> {
+    // Also delete associated rectangles
+    await this.deleteTemplateRectanglesByDesignId(id);
+    return this.templateDesigns.delete(id);
   }
 
   // Worker methods
@@ -934,6 +994,54 @@ export class DbStorage implements IStorage {
 
   async deleteTemplateRectangle(id: string): Promise<boolean> {
     const result = await db.delete(schema.templateRectangles).where(eq(schema.templateRectangles.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getTemplateRectanglesByDesignId(designId: string): Promise<TemplateRectangle[]> {
+    return await db.select().from(schema.templateRectangles)
+      .where(eq(schema.templateRectangles.designId, designId))
+      .orderBy(schema.templateRectangles.createdAt);
+  }
+
+  async deleteTemplateRectanglesByDesignId(designId: string): Promise<number> {
+    const result = await db.delete(schema.templateRectangles)
+      .where(eq(schema.templateRectangles.designId, designId));
+    return result.rowCount || 0;
+  }
+
+  // Template design methods
+  async getTemplateDesigns(): Promise<TemplateDesign[]> {
+    return await db.select().from(schema.templateDesigns)
+      .orderBy(desc(schema.templateDesigns.createdAt));
+  }
+
+  async getTemplateDesign(id: string): Promise<TemplateDesign | undefined> {
+    const result = await db.select().from(schema.templateDesigns)
+      .where(eq(schema.templateDesigns.id, id));
+    return result[0];
+  }
+
+  async createTemplateDesign(design: InsertTemplateDesign): Promise<TemplateDesign> {
+    const result = await db.insert(schema.templateDesigns)
+      .values(design)
+      .returning();
+    return result[0];
+  }
+
+  async updateTemplateDesign(id: string, updates: Partial<InsertTemplateDesign>): Promise<TemplateDesign | undefined> {
+    const result = await db.update(schema.templateDesigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(schema.templateDesigns.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteTemplateDesign(id: string): Promise<boolean> {
+    // Delete associated rectangles first (cascade)
+    await this.deleteTemplateRectanglesByDesignId(id);
+    
+    const result = await db.delete(schema.templateDesigns)
+      .where(eq(schema.templateDesigns.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
