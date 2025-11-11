@@ -1800,7 +1800,7 @@ export default function SlotDrawing() {
                 </div>
               </div>
 
-              <div className="canvas-container mb-4 flex justify-center">
+              <div className="canvas-container mb-4 flex justify-center items-center" style={{ minHeight: '500px' }}>
                 <canvas 
                   ref={canvasRef}
                   width={canvasDimensions.width}
@@ -1808,8 +1808,9 @@ export default function SlotDrawing() {
                   className="drawing-canvas rounded bg-muted"
                   style={{ 
                     cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab'),
-                    maxWidth: '100%',
-                    height: 'auto'
+                    width: '95%',
+                    height: 'auto',
+                    minHeight: '450px'
                   }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
