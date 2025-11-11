@@ -50,6 +50,7 @@ export default function SlotDrawing() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [selectedCameraId, setSelectedCameraId] = useState<string | undefined>(undefined);
   // Legacy slot drawing state (kept for backwards compatibility, but UI removed)
   const [isDrawing, setIsDrawing] = useState(false);
@@ -110,11 +111,65 @@ export default function SlotDrawing() {
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
   
-  // Reset zoom and pan when paper size changes
+  // Calculate auto-fit zoom based on container size
   useEffect(() => {
-    setZoom(1);
-    setPanOffset({ x: 0, y: 0 });
-  }, [paperSize]);
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    // Get container dimensions
+    const containerRect = container.getBoundingClientRect();
+    const containerWidth = containerRect.width;
+    const containerHeight = containerRect.height;
+    
+    if (containerWidth === 0 || containerHeight === 0) return;
+
+    // Calculate zoom to fit entire canvas in container with 5% padding
+    const paddingFactor = 0.90; // Use 90% of container space
+    const scaleX = (containerWidth * paddingFactor) / canvasDimensions.width;
+    const scaleY = (containerHeight * paddingFactor) / canvasDimensions.height;
+    const autoZoom = Math.min(scaleX, scaleY);
+    
+    // Center the canvas
+    const scaledWidth = canvasDimensions.width * autoZoom;
+    const scaledHeight = canvasDimensions.height * autoZoom;
+    const centerX = (containerWidth - scaledWidth) / 2;
+    const centerY = (containerHeight - scaledHeight) / 2;
+    
+    setZoom(autoZoom);
+    setPanOffset({ x: centerX, y: centerY });
+  }, [paperSize, canvasDimensions.width, canvasDimensions.height]);
+  
+  // Recalculate on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const container = containerRef.current;
+      const canvas = canvasRef.current;
+      if (!container || !canvas) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const containerHeight = containerRect.height;
+      
+      if (containerWidth === 0 || containerHeight === 0) return;
+
+      const paddingFactor = 0.90;
+      const scaleX = (containerWidth * paddingFactor) / canvasDimensions.width;
+      const scaleY = (containerHeight * paddingFactor) / canvasDimensions.height;
+      const autoZoom = Math.min(scaleX, scaleY);
+      
+      const scaledWidth = canvasDimensions.width * autoZoom;
+      const scaledHeight = canvasDimensions.height * autoZoom;
+      const centerX = (containerWidth - scaledWidth) / 2;
+      const centerY = (containerHeight - scaledHeight) / 2;
+      
+      setZoom(autoZoom);
+      setPanOffset({ x: centerX, y: centerY });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [canvasDimensions.width, canvasDimensions.height]);
   
   // Dialog states for confirmations and warnings
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -1806,7 +1861,7 @@ export default function SlotDrawing() {
                 </div>
               </div>
 
-              <div className="w-full flex items-center justify-center bg-muted rounded" style={{ height: '70vh' }}>
+              <div ref={containerRef} className="w-full bg-muted rounded" style={{ height: '70vh' }}>
                 <canvas 
                   ref={canvasRef}
                   width={canvasDimensions.width}
@@ -1814,9 +1869,7 @@ export default function SlotDrawing() {
                   className="drawing-canvas"
                   style={{ 
                     cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab'),
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain'
+                    display: 'block'
                   }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
