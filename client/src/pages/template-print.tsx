@@ -15,8 +15,9 @@ interface TemplateRectangleWithCategory extends TemplateRectangle {
 }
 
 interface TemplateDesign {
+  id: string; // Database UUID primary key
   name: string;
-  timestamp: string;
+  timestamp: string; // For display only
   paperSize: string;
   cameraId?: string;
   templateRectangles: any[];
@@ -27,36 +28,50 @@ export default function TemplatePrint() {
   const [, setLocation] = useLocation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [savedTemplateDesigns, setSavedTemplateDesigns] = useState<TemplateDesign[]>([]);
-  const [selectedDesignTimestamp, setSelectedDesignTimestamp] = useState<string>('');
+  const [selectedDesignId, setSelectedDesignId] = useState<string>('');
   const [paperSize, setPaperSize] = useState('A4-landscape');
 
-  // Load saved template designs from global localStorage (camera-independent)
+  // Fetch template designs from database
+  const { data: templateDesignsData = [] } = useQuery<any[]>({
+    queryKey: ['/api/template-designs'],
+  });
+
+  // Map database results to savedTemplateDesigns state and auto-select first design
   useEffect(() => {
-    const saved = localStorage.getItem('templateConfigVersions');
-    if (saved) {
-      try {
-        const designs = JSON.parse(saved);
-        setSavedTemplateDesigns(designs);
-        // Auto-select first design if available
-        if (designs.length > 0) {
-          setSelectedDesignTimestamp(designs[0].timestamp);
-          setPaperSize(designs[0].paperSize);
-        }
-      } catch (error) {
-        console.error('Failed to load template designs from localStorage:', error);
+    if (templateDesignsData.length > 0) {
+      const mapped = templateDesignsData.map((design: any) => ({
+        id: design.id,
+        name: design.name,
+        timestamp: design.createdAt,
+        paperSize: design.paperSize,
+        templateRectangles: design.templateRectangles || [], // Correct field name from API
+        categories: design.categories || [],
+      }));
+      setSavedTemplateDesigns(mapped);
+      
+      // Auto-select first design if no selection OR if current selection was deleted
+      const selectedStillExists = mapped.some(d => d.id === selectedDesignId);
+      if (!selectedDesignId || !selectedStillExists) {
+        setSelectedDesignId(mapped[0].id);
+        setPaperSize(mapped[0].paperSize);
       }
+    } else {
+      // Clear state when no designs exist
+      setSavedTemplateDesigns([]);
+      setSelectedDesignId('');
+      setPaperSize('A4-landscape'); // Reset to default when no designs
     }
-  }, []);
+  }, [templateDesignsData, selectedDesignId]);
 
   // Update paper size when design selection changes
   useEffect(() => {
-    if (selectedDesignTimestamp) {
-      const design = savedTemplateDesigns.find(d => d.timestamp === selectedDesignTimestamp);
+    if (selectedDesignId) {
+      const design = savedTemplateDesigns.find(d => d.id === selectedDesignId);
       if (design) {
         setPaperSize(design.paperSize);
       }
     }
-  }, [selectedDesignTimestamp, savedTemplateDesigns]);
+  }, [selectedDesignId, savedTemplateDesigns]);
 
   // Canvas dimensions at 300 DPI for accurate printing (1mm = 11.811 pixels at 300 DPI)
   const paperDimensions: Record<string, { 
@@ -76,7 +91,7 @@ export default function TemplatePrint() {
 
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
 
-  // Load ALL template rectangles from database (not just from saved localStorage designs)
+  // Load ALL template rectangles from database as fallback when no design is selected
   const { data: allTemplateRectangles = [] } = useQuery<TemplateRectangle[]>({
     queryKey: ['/api/template-rectangles'],
     queryFn: async () => {
@@ -87,8 +102,8 @@ export default function TemplatePrint() {
   });
   
   // Use database templates if no saved design is selected
-  const templateRectangles = selectedDesignTimestamp && savedTemplateDesigns.length > 0
-    ? (savedTemplateDesigns.find(d => d.timestamp === selectedDesignTimestamp)?.templateRectangles || [])
+  const templateRectangles = selectedDesignId && savedTemplateDesigns.length > 0
+    ? (savedTemplateDesigns.find(d => d.id === selectedDesignId)?.templateRectangles || [])
     : allTemplateRectangles;
 
   const { data: categories = [] } = useQuery<ToolCategory[]>({
@@ -629,29 +644,18 @@ export default function TemplatePrint() {
                   {savedTemplateDesigns.length > 0 ? (
                     <div className="flex items-center gap-3">
                       <Label htmlFor="template-design" className="text-sm font-medium">Template Design:</Label>
-                      <Select value={selectedDesignTimestamp} onValueChange={setSelectedDesignTimestamp}>
+                      <Select value={selectedDesignId} onValueChange={setSelectedDesignId}>
                         <SelectTrigger className="w-64" id="template-design" data-testid="select-template-design">
                           <SelectValue placeholder="Select a template design" />
                         </SelectTrigger>
                         <SelectContent>
                           {savedTemplateDesigns.map((design) => (
-                            <SelectItem key={design.timestamp} value={design.timestamp}>
+                            <SelectItem key={design.id} value={design.id}>
                               {design.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <Button
-                        onClick={() => {
-                          localStorage.removeItem('templateConfigVersions');
-                          window.location.reload();
-                        }}
-                        variant="destructive"
-                        size="sm"
-                        data-testid="button-clear-cache"
-                      >
-                        Clear Cache
-                      </Button>
                     </div>
                   ) : (
                     <div className="text-sm text-muted-foreground">
@@ -659,7 +663,7 @@ export default function TemplatePrint() {
                       <p>Showing {allTemplateRectangles.length} template{allTemplateRectangles.length !== 1 ? 's' : ''} with fresh QR codes (numbers 1-7)</p>
                     </div>
                   )}
-                  {selectedDesignTimestamp && (
+                  {selectedDesignId && (
                     <div className="text-sm text-muted-foreground pl-32">
                       <p>Paper Size: <span className="font-medium text-foreground">{paperSize}</span></p>
                       <p>{templatesWithCategories.length} template{templatesWithCategories.length !== 1 ? 's' : ''}</p>
