@@ -581,10 +581,14 @@ export default function SlotDrawing() {
       const gutterPx = 0;
       const a4WidthMm = 297;  // A4 landscape
       const a4HeightMm = 210;
-      const sheetWidth = a4WidthMm * pxPerMm;
-      const sheetHeight = a4HeightMm * pxPerMm;
+      // Use separate px-per-mm for each axis to match cmToPixels behavior
+      const pxPerMmX = paperWidth / paperInfo.realWidthMm;
+      const pxPerMmY = paperHeight / paperInfo.realHeightMm;
+      const sheetWidth = a4WidthMm * pxPerMmX;
+      const sheetHeight = a4HeightMm * pxPerMmY;
       const safeMarginMm = 10; // 1cm safe zone
-      const safeMarginPx = safeMarginMm * pxPerMm;
+      const safeMarginPxX = safeMarginMm * pxPerMmX;
+      const safeMarginPxY = safeMarginMm * pxPerMmY;
       const gridCols = is8Page ? 4 : 3;
       const gridRows = 2;
       
@@ -604,10 +608,10 @@ export default function SlotDrawing() {
           ctx.strokeStyle = 'rgba(156, 163, 175, 0.3)'; // gray-400
           ctx.lineWidth = 1 / zoom;
           ctx.strokeRect(
-            x + safeMarginPx, 
-            y + safeMarginPx, 
-            sheetWidth - 2 * safeMarginPx, 
-            sheetHeight - 2 * safeMarginPx
+            x + safeMarginPxX, 
+            y + safeMarginPxY, 
+            sheetWidth - 2 * safeMarginPxX, 
+            sheetHeight - 2 * safeMarginPxY
           );
           
           // Draw sheet number
@@ -649,12 +653,16 @@ export default function SlotDrawing() {
       ctx.setLineDash([]); // Reset line dash
     }
     
-    // ArUco marker size (5cm = 50mm)
+    // ArUco marker size (5cm = 50mm) - use average px-per-mm for square markers
     const markerSizeMm = 50;
-    const markerSize = markerSizeMm * pxPerMm;
+    const pxPerMmForMarkers = isMultiPage 
+      ? (paperWidth / paperInfo.realWidthMm + paperHeight / paperInfo.realHeightMm) / 2
+      : pxPerMm;
+    const markerSize = markerSizeMm * pxPerMmForMarkers;
     const safeMarginMm = 10; // 1cm safe zone from sheet edge
     const markerInsetMm = safeMarginMm; // Markers at inner corners of safe zone
-    const markerInset = markerInsetMm * pxPerMm;
+    const markerInsetX = isMultiPage ? markerInsetMm * (paperWidth / paperInfo.realWidthMm) : markerInsetMm * pxPerMm;
+    const markerInsetY = isMultiPage ? markerInsetMm * (paperHeight / paperInfo.realHeightMm) : markerInsetMm * pxPerMm;
     
     // Position markers based on format
     let markers: Array<{ x: number; y: number; id: string; arucoId: number; }> = [];
@@ -667,8 +675,10 @@ export default function SlotDrawing() {
       const gutterPx = 0;
       const a4WidthMm = 297;  // A4 landscape
       const a4HeightMm = 210;
-      const sheetWidth = a4WidthMm * pxPerMm;
-      const sheetHeight = a4HeightMm * pxPerMm;
+      const pxPerMmX = paperWidth / paperInfo.realWidthMm;
+      const pxPerMmY = paperHeight / paperInfo.realHeightMm;
+      const sheetWidth = a4WidthMm * pxPerMmX;
+      const sheetHeight = a4HeightMm * pxPerMmY;
       const gridCols = is8Page ? 4 : 3;
       
       const topLeft = 1;
@@ -680,8 +690,8 @@ export default function SlotDrawing() {
       const sheet1X = canvasMargin;
       const sheet1Y = canvasMargin;
       markers.push({ 
-        x: sheet1X + markerInset, 
-        y: sheet1Y + markerInset, 
+        x: sheet1X + markerInsetX, 
+        y: sheet1Y + markerInsetY, 
         id: `${topLeft}-A`, 
         arucoId: 17 
       });
@@ -690,8 +700,8 @@ export default function SlotDrawing() {
       const sheetTRX = canvasMargin + (gridCols - 1) * (sheetWidth + gutterPx);
       const sheetTRY = canvasMargin;
       markers.push({ 
-        x: sheetTRX + sheetWidth - markerSize - markerInset, 
-        y: sheetTRY + markerInset, 
+        x: sheetTRX + sheetWidth - markerSize - markerInsetX, 
+        y: sheetTRY + markerInsetY, 
         id: `${topRight}-B`, 
         arucoId: 18 
       });
@@ -700,8 +710,8 @@ export default function SlotDrawing() {
       const sheetBLX = canvasMargin;
       const sheetBLY = canvasMargin + sheetHeight + gutterPx;
       markers.push({ 
-        x: sheetBLX + markerInset, 
-        y: sheetBLY + sheetHeight - markerSize - markerInset, 
+        x: sheetBLX + markerInsetX, 
+        y: sheetBLY + sheetHeight - markerSize - markerInsetY, 
         id: `${bottomLeft}-D`, 
         arucoId: 20 
       });
@@ -710,8 +720,8 @@ export default function SlotDrawing() {
       const sheetBRX = canvasMargin + (gridCols - 1) * (sheetWidth + gutterPx);
       const sheetBRY = canvasMargin + sheetHeight + gutterPx;
       markers.push({ 
-        x: sheetBRX + sheetWidth - markerSize - markerInset, 
-        y: sheetBRY + sheetHeight - markerSize - markerInset, 
+        x: sheetBRX + sheetWidth - markerSize - markerInsetX, 
+        y: sheetBRY + sheetHeight - markerSize - markerInsetY, 
         id: `${bottomRight}-C`, 
         arucoId: 19 
       });
