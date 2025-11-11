@@ -326,7 +326,9 @@ export class CaptureScheduler {
 
       // If there were failures, trigger alert
       if (result.status === 'failure' || result.status === 'partial_failure') {
-        await this.sendAlert('capture_failure', `Capture ${result.status}: ${result.failureCount} failures`);
+        // Extract first failed camera for alert identification
+        const failedCameraId = result.results?.find((r: any) => r.status === 'failed')?.cameraId;
+        await this.sendAlert('capture_failure', `Capture ${result.status}: ${result.failureCount} failures`, failedCameraId);
       }
 
       console.log(`[Scheduler] Capture complete: ${result.status} (${executionTime}ms)`);
@@ -422,7 +424,9 @@ export class CaptureScheduler {
           });
         }
 
-        await this.sendAlert('diagnostic_failure', message);
+        // Pass first failed camera for alert identification (if multi-camera, at least shows one camera)
+        const firstFailedCameraId = failedCameras.length > 0 ? failedCameras[0].cameraId : warningCameras[0]?.cameraId;
+        await this.sendAlert('diagnostic_failure', message, firstFailedCameraId);
       }
 
       console.log(`[Scheduler] Diagnostic complete: ${result.status} (${executionTime}ms)`);
@@ -502,6 +506,20 @@ export class CaptureScheduler {
       const now = toZonedTime(new Date(), TIMEZONE);
       const timestamp = format(now, 'yyyy-MM-dd HH:mm:ss', { timeZone: TIMEZONE });
       
+      // Fetch camera name if cameraId is provided (critical for multi-camera identification)
+      let cameraName: string | undefined;
+      if (cameraId) {
+        try {
+          const camera = await this.storage.getCamera(cameraId);
+          cameraName = camera?.name;
+          if (cameraName) {
+            console.log(`[Scheduler] Alert for camera: ${cameraName} (${cameraId})`);
+          }
+        } catch (error) {
+          console.warn(`[Scheduler] Failed to fetch camera name for ${cameraId}:`, error);
+        }
+      }
+      
       // Normalize alert type (support both legacy uppercase and new lowercase)
       let emailType: 'diagnostic_failure' | 'capture_failure' | 'camera_offline' | 'test_alert';
       
@@ -535,6 +553,7 @@ export class CaptureScheduler {
         '{timestamp}': timestamp,
         '{errorMessage}': message,
         '{cameraId}': cameraId || 'N/A',
+        '{cameraName}': cameraName || 'Unknown Camera',
         '{slotId}': slotId || 'N/A'
       };
       
@@ -550,17 +569,19 @@ export class CaptureScheduler {
       const emailBody = substituteTemplate(template.emailBody);
       const sheetsMessage = substituteTemplate(template.sheetsMessage);
       
-      // Send email
+      // Send email with camera identification
       await sendAlertEmail({
         type: emailType,
         subject,
         details: {
           timestamp,
-          errorMessage: emailBody
+          errorMessage: emailBody,
+          cameraId,
+          cameraName
         }
       });
       
-      // Log to Google Sheets
+      // Log to Google Sheets with camera identification
       try {
         await this.sheetsLogger.logAlert({
           timestamp,
@@ -568,6 +589,7 @@ export class CaptureScheduler {
           status: 'sent',
           errorMessage: sheetsMessage,
           cameraId,
+          cameraName,
           slotId
         });
       } catch (sheetsError) {
