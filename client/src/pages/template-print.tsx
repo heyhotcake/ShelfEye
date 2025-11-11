@@ -294,12 +294,12 @@ export default function TemplatePrint() {
         // Draw label above QR code (supports Japanese text)
         if (rect.category.label) {
           const padding = cmToPixels(0.3, true); // 0.3cm padding
-          const maxFontPx = 48;
-          const minFontPx = 14;
-          let fontPx = Math.min(maxFontPx, Math.max(minFontPx, widthPx * 0.18));
+          const maxFontPx = 96;
+          const minFontPx = 18;
+          let fontPx = Math.min(maxFontPx, Math.max(minFontPx, widthPx * 0.35));
           
-          // Set font with Japanese support
-          ctx.font = `600 ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+          // Set font with Japanese support (bold)
+          ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
           
@@ -307,8 +307,8 @@ export default function TemplatePrint() {
           let textWidth = ctx.measureText(rect.category.label).width;
           const maxTextWidth = widthPx - 2 * padding;
           while (textWidth > maxTextWidth && fontPx > minFontPx) {
-            fontPx -= 1;
-            ctx.font = `600 ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+            fontPx -= 2;
+            ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
             textWidth = ctx.measureText(rect.category.label).width;
           }
           
@@ -515,15 +515,16 @@ export default function TemplatePrint() {
             // Add label above QR code
             if (rect.category.label) {
               const paddingMm = 3;
-              const maxFontPt = 16;
-              const minFontPt = 6;
-              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.6));
+              const maxFontPt = 28;
+              const minFontPt = 10;
+              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
+              pdf.setFont('helvetica', 'bold');
               pdf.setFontSize(fontPt);
               const textWidth = pdf.getTextWidth(rect.category.label);
               const maxTextWidth = widthMm - 2 * paddingMm;
               while (textWidth > maxTextWidth && fontPt > minFontPt) {
-                fontPt -= 0.5;
+                fontPt -= 1;
                 pdf.setFontSize(fontPt);
               }
               
@@ -541,15 +542,16 @@ export default function TemplatePrint() {
             // Add label above QR code
             if (rect.category.label) {
               const paddingMm = 3;
-              const maxFontPt = 16;
-              const minFontPt = 6;
-              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.6));
+              const maxFontPt = 28;
+              const minFontPt = 10;
+              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
+              pdf.setFont('helvetica', 'bold');
               pdf.setFontSize(fontPt);
               const textWidth = pdf.getTextWidth(rect.category.label);
               const maxTextWidth = widthMm - 2 * paddingMm;
               while (textWidth > maxTextWidth && fontPt > minFontPt) {
-                fontPt -= 0.5;
+                fontPt -= 1;
                 pdf.setFontSize(fontPt);
               }
               
