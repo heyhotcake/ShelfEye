@@ -41,7 +41,7 @@ interface TemplateRectangle {
   widthCm: number;
   heightCm: number;
   categoryName: string;
-  toolType: string;
+  label: string; // Display label for printing (supports Japanese)
   autoQrId?: string;
 }
 
@@ -476,7 +476,7 @@ export default function SlotDrawing() {
           widthCm: category.widthCm,
           heightCm: category.heightCm,
           categoryName: category.name,
-          toolType: category.toolType,
+          label: category.label,
           autoQrId: createdRect.autoQrId,
         };
         
@@ -1344,7 +1344,7 @@ export default function SlotDrawing() {
           console.log(`[LOAD] Creating missing category: ${category.name}`);
           await apiRequest('POST', '/api/tool-categories', {
             name: category.name,
-            toolType: category.toolType,
+            label: category.label,
             widthCm: category.widthCm,
             heightCm: category.heightCm,
           });
@@ -1441,7 +1441,7 @@ export default function SlotDrawing() {
           widthCm: dbCategory?.widthCm || 0,
           heightCm: dbCategory?.heightCm || 0,
           categoryName: dbCategory?.name || '',
-          toolType: dbCategory?.toolType || '',
+          label: dbCategory?.label || '',
           autoQrId: newRect.autoQrId,
         };
       });
@@ -1927,7 +1927,7 @@ export default function SlotDrawing() {
                             <div className="flex-1">
                               <p className="font-medium text-sm">{category.name}</p>
                               <p className="text-xs text-muted-foreground">
-                                {category.toolType} • {category.widthCm}×{category.heightCm} cm
+                                {category.label} • {category.widthCm}×{category.heightCm} cm
                               </p>
                             </div>
                             <Button

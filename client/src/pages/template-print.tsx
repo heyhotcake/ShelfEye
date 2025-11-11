@@ -285,10 +285,44 @@ export default function TemplatePrint() {
         ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
 
         // Draw QR code centered within the rectangle (3x3 cm)
+        const qrSizeCm = 3;
+        const qrSizePx = cmToPixels(qrSizeCm, true);
         if (rect.autoQrId && qrImageCache[rect.autoQrId]) {
-          const qrSizeCm = 3;
-          const qrSizePx = cmToPixels(qrSizeCm, true);
           ctx.drawImage(qrImageCache[rect.autoQrId], -qrSizePx / 2, -qrSizePx / 2, qrSizePx, qrSizePx);
+        }
+
+        // Draw label above QR code (supports Japanese text)
+        if (rect.category.label) {
+          const padding = cmToPixels(0.3, true); // 0.3cm padding
+          const maxFontPx = 48;
+          const minFontPx = 14;
+          let fontPx = Math.min(maxFontPx, Math.max(minFontPx, widthPx * 0.18));
+          
+          // Set font with Japanese support
+          ctx.font = `600 ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          
+          // Reduce font size if text is too wide
+          let textWidth = ctx.measureText(rect.category.label).width;
+          const maxTextWidth = widthPx - 2 * padding;
+          while (textWidth > maxTextWidth && fontPx > minFontPx) {
+            fontPx -= 1;
+            ctx.font = `600 ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+            textWidth = ctx.measureText(rect.category.label).width;
+          }
+          
+          // Position label above QR code
+          const labelY = -qrSizePx / 2 - padding;
+          
+          // Draw white stroke for contrast
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.strokeText(rect.category.label, 0, labelY);
+          
+          // Draw black text
+          ctx.fillStyle = '#000000';
+          ctx.fillText(rect.category.label, 0, labelY);
         }
 
         ctx.restore();
@@ -473,16 +507,54 @@ export default function TemplatePrint() {
               'S'
             );
 
+            const qrSizeMm = 30;
             if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-              const qrSizeMm = 30;
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
+            }
+            
+            // Add label above QR code
+            if (rect.category.label) {
+              const paddingMm = 3;
+              const maxFontPt = 16;
+              const minFontPt = 6;
+              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.6));
+              
+              pdf.setFontSize(fontPt);
+              const textWidth = pdf.getTextWidth(rect.category.label);
+              const maxTextWidth = widthMm - 2 * paddingMm;
+              while (textWidth > maxTextWidth && fontPt > minFontPt) {
+                fontPt -= 0.5;
+                pdf.setFontSize(fontPt);
+              }
+              
+              const labelY = localY - qrSizeMm / 2 - paddingMm;
+              pdf.text(rect.category.label, localX, labelY, { align: 'center', baseline: 'bottom' });
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
 
+            const qrSizeMm = 30;
             if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-              const qrSizeMm = 30;
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
+            }
+            
+            // Add label above QR code
+            if (rect.category.label) {
+              const paddingMm = 3;
+              const maxFontPt = 16;
+              const minFontPt = 6;
+              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.6));
+              
+              pdf.setFontSize(fontPt);
+              const textWidth = pdf.getTextWidth(rect.category.label);
+              const maxTextWidth = widthMm - 2 * paddingMm;
+              while (textWidth > maxTextWidth && fontPt > minFontPt) {
+                fontPt -= 0.5;
+                pdf.setFontSize(fontPt);
+              }
+              
+              const labelY = localY - qrSizeMm / 2 - paddingMm;
+              pdf.text(rect.category.label, localX, labelY, { align: 'center', baseline: 'bottom' });
             }
           }
 
@@ -575,16 +647,54 @@ export default function TemplatePrint() {
             'S'
           );
 
+          const qrSizeMm = 30;
           if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-            const qrSizeMm = 30;
             pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
+          }
+          
+          // Add label above QR code
+          if (rect.category.label) {
+            const paddingMm = 3;
+            const maxFontPt = 16;
+            const minFontPt = 6;
+            let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.6));
+            
+            pdf.setFontSize(fontPt);
+            const textWidth = pdf.getTextWidth(rect.category.label);
+            const maxTextWidth = widthMm - 2 * paddingMm;
+            while (textWidth > maxTextWidth && fontPt > minFontPt) {
+              fontPt -= 0.5;
+              pdf.setFontSize(fontPt);
+            }
+            
+            const labelY = yMm - qrSizeMm / 2 - paddingMm;
+            pdf.text(rect.category.label, xMm, labelY, { align: 'center', baseline: 'bottom' });
           }
         } else {
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
 
+          const qrSizeMm = 30;
           if (rect.autoQrId && qrCodes[rect.autoQrId]) {
-            const qrSizeMm = 30;
             pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
+          }
+          
+          // Add label above QR code
+          if (rect.category.label) {
+            const paddingMm = 3;
+            const maxFontPt = 16;
+            const minFontPt = 6;
+            let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.6));
+            
+            pdf.setFontSize(fontPt);
+            const textWidth = pdf.getTextWidth(rect.category.label);
+            const maxTextWidth = widthMm - 2 * paddingMm;
+            while (textWidth > maxTextWidth && fontPt > minFontPt) {
+              fontPt -= 0.5;
+              pdf.setFontSize(fontPt);
+            }
+            
+            const labelY = yMm - qrSizeMm / 2 - paddingMm;
+            pdf.text(rect.category.label, xMm, labelY, { align: 'center', baseline: 'bottom' });
           }
         }
 

@@ -19,7 +19,7 @@ interface QRGeneratorModalProps {
 interface QRGenerationRequest {
   type: 'tool' | 'worker';
   id: string;
-  toolType?: string;
+  label?: string; // Display label for tools (supports Japanese)
   workerName?: string;
   errorCorrection: 'L' | 'M' | 'Q' | 'H';
   moduleSize: number;
@@ -38,7 +38,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
   const [formData, setFormData] = useState<QRGenerationRequest>({
     type: 'tool',
     id: '',
-    toolType: '',
+    label: '',
     workerName: '',
     errorCorrection: 'L',
     moduleSize: 25,
@@ -75,10 +75,10 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
       return;
     }
 
-    if (formData.type === 'tool' && !formData.toolType) {
+    if (formData.type === 'tool' && !formData.label) {
       toast({
         title: "Missing Information",
-        description: "Please provide a tool type",
+        description: "Please provide a tool label",
         variant: "destructive",
       });
       return;
@@ -190,13 +190,13 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
               
               {formData.type === 'tool' ? (
                 <div>
-                  <Label htmlFor="toolType">Tool Type</Label>
+                  <Label htmlFor="label">Label</Label>
                   <Input 
-                    id="toolType"
-                    placeholder="e.g., Scissors"
-                    value={formData.toolType}
-                    onChange={(e) => setFormData({ ...formData, toolType: e.target.value })}
-                    data-testid="input-tool-type"
+                    id="label"
+                    placeholder="e.g., ドライバー, はさみ"
+                    value={formData.label}
+                    onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                    data-testid="input-label"
                   />
                 </div>
               ) : (

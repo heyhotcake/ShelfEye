@@ -43,7 +43,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      toolType: "",
+      label: "",
       widthCm: 0,
       heightCm: 0,
     },
@@ -53,7 +53,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      toolType: "",
+      label: "",
       widthCm: 0,
       heightCm: 0,
     },
@@ -131,7 +131,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     setEditingId(category.id);
     editForm.reset({
       name: category.name,
-      toolType: category.toolType,
+      label: category.label,
       widthCm: category.widthCm,
       heightCm: category.heightCm,
     });
@@ -184,15 +184,15 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                     />
                     <FormField
                       control={form.control}
-                      name="toolType"
+                      name="label"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tool Type</FormLabel>
+                          <FormLabel>Label</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
-                              data-testid="input-tool-type"
-                              placeholder="e.g., Writing, Cutting, Hand Tool"
+                              data-testid="input-label"
+                              placeholder="e.g., ドライバー, はさみ, カッター"
                             />
                           </FormControl>
                           <FormMessage />
@@ -287,10 +287,10 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                 />
                                 <FormField
                                   control={editForm.control}
-                                  name="toolType"
+                                  name="label"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Tool Type</FormLabel>
+                                      <FormLabel>Label</FormLabel>
                                       <FormControl>
                                         <Input {...field} />
                                       </FormControl>
@@ -362,7 +362,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                             <div>
                               <h4 className="font-medium">{category.name}</h4>
                               <p className="text-sm text-muted-foreground">
-                                Type: {category.toolType} | Dimensions: {category.widthCm} × {category.heightCm} cm
+                                Label: {category.label} | Dimensions: {category.widthCm} × {category.heightCm} cm
                               </p>
                             </div>
                             <div className="flex gap-2">

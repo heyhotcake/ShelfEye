@@ -100,7 +100,7 @@ export const users = pgTable("users", {
 export const toolCategories = pgTable("tool_categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  toolType: text("tool_type").notNull(),
+  label: text("label").notNull(), // Display label for printing (supports Japanese)
   widthCm: real("width_cm").notNull(),
   heightCm: real("height_cm").notNull(),
   createdAt: timestamp("created_at").default(sql`now()`),
