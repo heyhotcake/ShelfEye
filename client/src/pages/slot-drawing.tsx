@@ -1861,7 +1861,7 @@ export default function SlotDrawing() {
                 </div>
               </div>
 
-              <div ref={containerRef} className="w-full bg-muted rounded" style={{ height: '70vh' }}>
+              <div ref={containerRef} className="w-full bg-muted rounded overflow-hidden" style={{ height: '70vh' }}>
                 <canvas 
                   ref={canvasRef}
                   width={canvasDimensions.width}
