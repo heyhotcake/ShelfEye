@@ -240,6 +240,10 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     data_dir = debug_dir  # Use same directory for both debug and data files
     os.makedirs(debug_dir, exist_ok=True)
     
+    # Create camera-specific ROI subdirectory for multi-camera support
+    roi_dir = os.path.join(data_dir, 'rois', camera_id)
+    os.makedirs(roi_dir, exist_ok=True)
+    
     # Validate and print received parameters
     print(f"[VALIDATION] Received parameters:", file=sys.stderr)
     print(f"  - Homography matrix: {'Yes' if homography_matrix else 'No'}", file=sys.stderr)
@@ -388,7 +392,8 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"  ROI size: {roi.shape[1]}x{roi.shape[0]}px at ({roi_x1},{roi_y1})", file=sys.stderr)
         
         # DEBUG: Save ROI image to inspect what we're actually scanning
-        debug_roi_path = os.path.join(data_dir, f'validation_roi_{camera_id}_{slot_id}.jpg')
+        # Use camera-specific subdirectory for multi-camera support
+        debug_roi_path = os.path.join(roi_dir, f'validation_roi_{slot_id}.jpg')
         cv2.imwrite(debug_roi_path, roi)
         print(f"  DEBUG: Saved ROI to {debug_roi_path}", file=sys.stderr)
         print(f"  DEBUG: ROI shape={roi.shape}, dtype={roi.dtype}, min={roi.min()}, max={roi.max()}", file=sys.stderr)
@@ -407,7 +412,8 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
             cv2.normalize(roi, roi_normalized, 0, 255, cv2.NORM_MINMAX)
             
             # Save normalized version for debugging
-            boosted_path = os.path.join(data_dir, f'validation_roi_{camera_id}_{slot_id}_normalized.jpg')
+            # Use camera-specific subdirectory for multi-camera support
+            boosted_path = os.path.join(roi_dir, f'validation_roi_{slot_id}_normalized.jpg')
             cv2.imwrite(boosted_path, roi_normalized)
             
             roi_marker_results = decode_aruco_markers(roi_normalized, expected_count=1, include_workers=True)
