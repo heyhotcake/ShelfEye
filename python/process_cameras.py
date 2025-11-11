@@ -360,22 +360,48 @@ class CameraProcessor:
         total_cameras_failed = 0
         
         try:
-            for camera in cameras:
+            for i, camera in enumerate(cameras):
                 camera_id = camera.get('id')
                 if not camera_id:
                     logger.warning("Camera missing 'id' field, skipping")
                     continue
+                    
+                camera_name = camera.get('name', camera_id)
+                logger.info(f"[SEQUENTIAL] Processing camera {i+1}/{len(cameras)}: {camera_name}")
+                
                 camera_slots = slots_by_camera.get(camera_id, [])
                 
-                result = self.process_camera(camera, camera_slots)
-                results.append(result)
-                
-                total_slots += result['slotsProcessed']
-                
-                if result['status'] == 'success':
-                    total_cameras_success += 1
-                else:
+                try:
+                    result = self.process_camera(camera, camera_slots)
+                    results.append(result)
+                    
+                    total_slots += result['slotsProcessed']
+                    
+                    if result['status'] == 'success':
+                        total_cameras_success += 1
+                    else:
+                        total_cameras_failed += 1
+                        
+                except Exception as e:
+                    logger.error(f"[SEQUENTIAL] Error processing camera {camera_name}: {e}")
                     total_cameras_failed += 1
+                    results.append({
+                        'cameraId': camera_id,
+                        'status': 'failed',
+                        'errors': [f'Processing exception: {str(e)}']
+                    })
+                
+                finally:
+                    # CRITICAL: Resource cleanup after each camera to prevent memory leaks
+                    import gc
+                    gc.collect()  # Force garbage collection to free camera resources
+                    logger.info(f"[SEQUENTIAL] Completed camera {camera_name}, resources cleaned")
+                    
+                    # CRITICAL: 30-second delay before next camera to prevent resource conflicts
+                    if i < len(cameras) - 1:
+                        logger.info(f"[SEQUENTIAL] Waiting 30 seconds before processing next camera...")
+                        time.sleep(30)
+                        logger.info(f"[SEQUENTIAL] Resource cleanup complete, ready for next camera")
         finally:
             # Always turn off light strip after captures
             if light_strip_pin:
