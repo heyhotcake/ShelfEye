@@ -2182,6 +2182,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Template design routes (camera-independent saved templates)
+  app.get("/api/template-designs", async (req, res) => {
+    try {
+      const designs = await storage.getTemplateDesigns();
+      res.json(designs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch template designs", error });
+    }
+  });
+
+  app.get("/api/template-designs/:id", async (req, res) => {
+    try {
+      const design = await storage.getTemplateDesign(req.params.id);
+      if (!design) {
+        return res.status(404).json({ message: "Template design not found" });
+      }
+      
+      // Also fetch the rectangles for this design
+      const rectangles = await storage.getTemplateRectanglesByDesignId(design.id);
+      res.json({ ...design, rectangles });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch template design", error });
+    }
+  });
+
+  app.post("/api/template-designs", async (req, res) => {
+    try {
+      const { name, paperSize, rectangles } = req.body;
+      
+      if (!name || !paperSize || !rectangles || !Array.isArray(rectangles)) {
+        return res.status(400).json({ message: "Missing required fields: name, paperSize, rectangles" });
+      }
+      
+      // Create the design
+      const design = await storage.createTemplateDesign({ name, paperSize });
+      
+      // Create all rectangles linked to this design
+      for (const rect of rectangles) {
+        await storage.createTemplateRectangle({
+          ...rect,
+          designId: design.id,
+          paperSize: paperSize,
+        });
+      }
+      
+      res.json(design);
+    } catch (error) {
+      console.error('Error creating template design:', error);
+      res.status(500).json({ message: "Failed to create template design", error });
+    }
+  });
+
+  app.put("/api/template-designs/:id", async (req, res) => {
+    try {
+      const { name, paperSize, rectangles } = req.body;
+      
+      // Update the design
+      const design = await storage.updateTemplateDesign(req.params.id, { name, paperSize });
+      
+      if (!design) {
+        return res.status(404).json({ message: "Template design not found" });
+      }
+      
+      // If rectangles are provided, update them too
+      if (rectangles && Array.isArray(rectangles)) {
+        // Delete old rectangles for this design
+        await storage.deleteTemplateRectanglesByDesignId(design.id);
+        
+        // Create new ones
+        for (const rect of rectangles) {
+          await storage.createTemplateRectangle({
+            ...rect,
+            designId: design.id,
+            paperSize: paperSize || design.paperSize,
+          });
+        }
+      }
+      
+      res.json(design);
+    } catch (error) {
+      console.error('Error updating template design:', error);
+      res.status(500).json({ message: "Failed to update template design", error });
+    }
+  });
+
+  app.delete("/api/template-designs/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteTemplateDesign(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Template design not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete template design", error });
+    }
+  });
+
   // Template rectangle routes
   app.get("/api/template-rectangles", async (req, res) => {
     try {

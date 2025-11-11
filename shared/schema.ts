@@ -106,8 +106,17 @@ export const toolCategories = pgTable("tool_categories", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+export const templateDesigns = pgTable("template_designs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  paperSize: text("paper_size").notNull(), // A3, A4, A5, 6-page-3x2, 8-page-4x2, etc.
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+});
+
 export const templateRectangles = pgTable("template_rectangles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  designId: varchar("design_id").references(() => templateDesigns.id, { onDelete: "cascade" }), // Links rectangle to a saved template design
   cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }), // Camera-specific templates for adjusted coordinates
   categoryId: varchar("category_id").references(() => toolCategories.id, { onDelete: "cascade" }).notNull(),
   paperSize: text("paper_size").notNull(), // A3, A4, A5, etc.
@@ -117,8 +126,10 @@ export const templateRectangles = pgTable("template_rectangles", {
   autoQrId: text("auto_qr_id"), // Legacy column name - stores ArUco marker ID (1-50)
   slotId: varchar("slot_id").references(() => slots.id, { onDelete: "set null" }), // Auto-generated slot
   createdAt: timestamp("created_at").default(sql`now()`),
-  // Templates can be camera-specific (when cameraId is set) or shared (when cameraId is null)
-  // Camera-specific templates are created during calibration with adjusted coordinates
+  // Templates can be: 
+  // 1. Part of a saved design (designId set)
+  // 2. Camera-specific adjusted (cameraId set) - created during calibration
+  // 3. Shared/standalone (both null) - for testing or single-use
 });
 
 export const workers = pgTable("workers", {
@@ -167,6 +178,7 @@ export const insertAlertQueueSchema = createInsertSchema(alertQueue).omit({ id: 
 export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({ id: true, updatedAt: true });
 export const insertUserSchema = createInsertSchema(users).pick({ username: true, password: true, email: true, role: true });
 export const insertToolCategorySchema = createInsertSchema(toolCategories).omit({ id: true, createdAt: true });
+export const insertTemplateDesignSchema = createInsertSchema(templateDesigns).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTemplateRectangleSchema = createInsertSchema(templateRectangles).omit({ id: true, createdAt: true });
 export const insertWorkerSchema = createInsertSchema(workers).omit({ id: true, createdAt: true, qrPayload: true, workerCode: true, arucoId: true, department: true });
 export const insertCaptureRunSchema = createInsertSchema(captureRuns).omit({ id: true, timestamp: true });
@@ -181,6 +193,7 @@ export type InsertAlertQueue = z.infer<typeof insertAlertQueueSchema>;
 export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertToolCategory = z.infer<typeof insertToolCategorySchema>;
+export type InsertTemplateDesign = z.infer<typeof insertTemplateDesignSchema>;
 export type InsertTemplateRectangle = z.infer<typeof insertTemplateRectangleSchema>;
 export type InsertWorker = z.infer<typeof insertWorkerSchema>;
 export type InsertCaptureRun = z.infer<typeof insertCaptureRunSchema>;
@@ -194,6 +207,7 @@ export type AlertQueue = typeof alertQueue.$inferSelect;
 export type SystemConfig = typeof systemConfig.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type ToolCategory = typeof toolCategories.$inferSelect;
+export type TemplateDesign = typeof templateDesigns.$inferSelect;
 export type TemplateRectangle = typeof templateRectangles.$inferSelect;
 export type Worker = typeof workers.$inferSelect;
 export type CaptureRun = typeof captureRuns.$inferSelect;
