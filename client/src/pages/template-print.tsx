@@ -10,6 +10,7 @@ import { Printer, ArrowLeft, Download } from "lucide-react";
 import type { TemplateRectangle, ToolCategory } from "@shared/schema";
 import { jsPDF } from "jspdf";
 import NotoSansJP from "@/assets/fonts/NotoSansJP-base64";
+import { NotoSansJPBold } from "@/assets/fonts/NotoSansJP-Bold-base64";
 
 interface TemplateRectangleWithCategory extends TemplateRectangle {
   category: ToolCategory;
@@ -357,7 +358,8 @@ export default function TemplatePrint() {
     const setupJapaneseFont = (pdf: jsPDF) => {
       pdf.addFileToVFS("NotoSansJP.ttf", NotoSansJP);
       pdf.addFont("NotoSansJP.ttf", "NotoSansJP", "normal");
-      pdf.addFont("NotoSansJP.ttf", "NotoSansJP", "bold");
+      pdf.addFileToVFS("NotoSansJP-Bold.otf", NotoSansJPBold);
+      pdf.addFont("NotoSansJP-Bold.otf", "NotoSansJP", "bold");
     };
 
     const isMultiPage = paperSize === '6-page-3x2' || paperSize === '8-page-4x2';
@@ -541,6 +543,7 @@ export default function TemplatePrint() {
               let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
               pdf.setFont('NotoSansJP', 'bold');
+              pdf.setTextColor(0, 0, 0); // Black text
               pdf.setFontSize(fontPt);
               
               // Increase font size if text is narrower than 3cm
@@ -582,6 +585,7 @@ export default function TemplatePrint() {
               let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
               pdf.setFont('NotoSansJP', 'bold');
+              pdf.setTextColor(0, 0, 0); // Black text
               pdf.setFontSize(fontPt);
               
               // Increase font size if text is narrower than 3cm
@@ -711,6 +715,8 @@ export default function TemplatePrint() {
             const minFontPt = 6;
             let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.6));
             
+            pdf.setFont('NotoSansJP', 'bold');
+            pdf.setTextColor(0, 0, 0); // Black text
             pdf.setFontSize(fontPt);
             const textWidth = pdf.getTextWidth(rect.category.label);
             const maxTextWidth = widthMm - 2 * paddingMm;
@@ -737,6 +743,8 @@ export default function TemplatePrint() {
             const minFontPt = 6;
             let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.6));
             
+            pdf.setFont('NotoSansJP', 'bold');
+            pdf.setTextColor(0, 0, 0); // Black text
             pdf.setFontSize(fontPt);
             const textWidth = pdf.getTextWidth(rect.category.label);
             const maxTextWidth = widthMm - 2 * paddingMm;

@@ -44,6 +44,7 @@ Cameras must be forced to MJPEG format for optimal performance (7-10fps at 4K, 1
 - **Recharts**: Charting library for analytics.
 - **cmdk**: Command palette.
 - **embla-carousel-react**: Carousel component.
+- **jsPDF**: PDF generation for template printing with embedded Noto Sans JP fonts (13MB variable + 22MB bold OTF) for proper Japanese character rendering.
 
 ### Utility Libraries
 - **date-fns**: Date manipulation.
