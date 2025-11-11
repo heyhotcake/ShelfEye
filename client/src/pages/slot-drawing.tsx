@@ -587,8 +587,9 @@ export default function SlotDrawing() {
       const sheetWidth = a4WidthMm * pxPerMmX;
       const sheetHeight = a4HeightMm * pxPerMmY;
       const safeMarginMm = 10; // 1cm safe zone
-      const safeMarginPxX = safeMarginMm * pxPerMmX;
-      const safeMarginPxY = safeMarginMm * pxPerMmY;
+      // Use uniform safe margin (average scale) for symmetric borders at intersections
+      const pxPerMmAvg = (pxPerMmX + pxPerMmY) / 2;
+      const safeMarginPx = safeMarginMm * pxPerMmAvg;
       const gridCols = is8Page ? 4 : 3;
       const gridRows = 2;
       
@@ -604,14 +605,14 @@ export default function SlotDrawing() {
           ctx.lineWidth = 2 / zoom;
           ctx.strokeRect(x, y, sheetWidth, sheetHeight);
           
-          // Draw safe zone (grey margin 1cm inset)
+          // Draw safe zone (grey margin 1cm inset) - uniform margin for symmetric borders
           ctx.strokeStyle = 'rgba(156, 163, 175, 0.3)'; // gray-400
           ctx.lineWidth = 1 / zoom;
           ctx.strokeRect(
-            x + safeMarginPxX, 
-            y + safeMarginPxY, 
-            sheetWidth - 2 * safeMarginPxX, 
-            sheetHeight - 2 * safeMarginPxY
+            x + safeMarginPx, 
+            y + safeMarginPx, 
+            sheetWidth - 2 * safeMarginPx, 
+            sheetHeight - 2 * safeMarginPx
           );
           
           // Draw sheet number
