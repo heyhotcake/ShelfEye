@@ -296,7 +296,10 @@ export default function TemplatePrint() {
           const padding = cmToPixels(0.3, true); // 0.3cm padding
           const maxFontPx = 96;
           const minFontPx = 18;
-          let fontPx = Math.min(maxFontPx, Math.max(minFontPx, widthPx * 0.35));
+          // Use minimum 5cm width for font sizing to ensure readability on narrow slots
+          const minWidthForSizingPx = cmToPixels(5, true);
+          const effectiveWidthPx = Math.max(widthPx, minWidthForSizingPx);
+          let fontPx = Math.min(maxFontPx, Math.max(minFontPx, effectiveWidthPx * 0.35));
           
           // Set font with Japanese support (bold)
           ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
@@ -517,7 +520,10 @@ export default function TemplatePrint() {
               const paddingMm = 3;
               const maxFontPt = 28;
               const minFontPt = 10;
-              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
+              // Use minimum 50mm (5cm) width for font sizing to ensure readability
+              const minWidthForSizingMm = 50;
+              const effectiveWidthMm = Math.max(widthMm, minWidthForSizingMm);
+              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, effectiveWidthMm * 1.2));
               
               pdf.setFont('helvetica', 'bold');
               pdf.setFontSize(fontPt);
@@ -544,7 +550,10 @@ export default function TemplatePrint() {
               const paddingMm = 3;
               const maxFontPt = 28;
               const minFontPt = 10;
-              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
+              // Use minimum 50mm (5cm) width for font sizing to ensure readability
+              const minWidthForSizingMm = 50;
+              const effectiveWidthMm = Math.max(widthMm, minWidthForSizingMm);
+              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, effectiveWidthMm * 1.2));
               
               pdf.setFont('helvetica', 'bold');
               pdf.setFontSize(fontPt);
