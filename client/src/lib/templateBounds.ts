@@ -16,6 +16,7 @@ export const PAPER_BOUNDS: Record<string, PaperBounds> = {
   '2xA5-landscape': { widthCm: 42.0, heightCm: 14.8, safeMarginCm: 1.0 },
   '3xA5-landscape': { widthCm: 63.0, heightCm: 14.8, safeMarginCm: 1.0 },
   '6-page-3x2': { widthCm: 89.1, heightCm: 42.0, safeMarginCm: 1.0 },
+  '8-page-4x2': { widthCm: 118.8, heightCm: 42.0, safeMarginCm: 1.0 },
 };
 
 export interface Rectangle {
@@ -31,19 +32,19 @@ export interface BoundaryViolation {
 }
 
 /**
- * Get safe zone bounds for 6-page format, accounting for per-sheet margins
+ * Get safe zone bounds for multi-page formats, accounting for per-sheet margins
  * For 6-page: 3 columns x 2 rows of A4 sheets, each with 1cm safe margin
+ * For 8-page: 4 columns x 2 rows of A4 sheets, each with 1cm safe margin
  */
-function get6PageSafeBounds(): { minX: number; maxX: number; minY: number; maxY: number }[] {
+function getMultiPageSafeBounds(cols: number, rows: number): { minX: number; maxX: number; minY: number; maxY: number }[] {
   const a4WidthCm = 29.7;
   const a4HeightCm = 21.0;
   const safeMarginCm = 1.0;
   
   const sheetBounds = [];
   
-  // 6 sheets in 3x2 grid (sheets 1-6)
-  for (let row = 0; row < 2; row++) {
-    for (let col = 0; col < 3; col++) {
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
       const sheetOffsetX = col * a4WidthCm;
       const sheetOffsetY = row * a4HeightCm;
       
@@ -57,6 +58,13 @@ function get6PageSafeBounds(): { minX: number; maxX: number; minY: number; maxY:
   }
   
   return sheetBounds;
+}
+
+/**
+ * Legacy wrapper for 6-page format
+ */
+function get6PageSafeBounds(): { minX: number; maxX: number; minY: number; maxY: number }[] {
+  return getMultiPageSafeBounds(3, 2);
 }
 
 /**
@@ -80,10 +88,12 @@ export function checkBoundaryViolations(
   const topEdge = rect.yCm - halfHeight;
   const bottomEdge = rect.yCm + halfHeight;
   
-  if (paperSize === '6-page-3x2') {
-    // For 6-page format, check against all sheet safe zones
+  if (paperSize === '6-page-3x2' || paperSize === '8-page-4x2') {
+    // For multi-page format, check against all sheet safe zones
     // Rectangle must fit entirely within at least one sheet's safe zone
-    const sheetSafeBounds = get6PageSafeBounds();
+    const sheetSafeBounds = paperSize === '8-page-4x2' 
+      ? getMultiPageSafeBounds(4, 2)
+      : get6PageSafeBounds();
     
     let fitsInAnySheet = false;
     for (const sheet of sheetSafeBounds) {
@@ -102,7 +112,9 @@ export function checkBoundaryViolations(
       // Determine which sheet the center is in
       const col = Math.floor(centerX / 29.7);
       const row = Math.floor(centerY / 21.0);
-      const sheetIndex = Math.min(Math.max(row * 3 + col, 0), 5);
+      const totalCols = paperSize === '8-page-4x2' ? 4 : 3;
+      const maxIndex = paperSize === '8-page-4x2' ? 7 : 5;
+      const sheetIndex = Math.min(Math.max(row * totalCols + col, 0), maxIndex);
       const sheet = sheetSafeBounds[sheetIndex];
       
       if (leftEdge < sheet.minX) violations.push({ edge: 'left', amount: sheet.minX - leftEdge });
@@ -141,14 +153,18 @@ export function clampToBounds(
   const halfWidth = rect.widthCm / 2;
   const halfHeight = rect.heightCm / 2;
   
-  if (paperSize === '6-page-3x2') {
-    // For 6-page format, clamp to the appropriate sheet's safe zone
-    const sheetSafeBounds = get6PageSafeBounds();
+  if (paperSize === '6-page-3x2' || paperSize === '8-page-4x2') {
+    // For multi-page format, clamp to the appropriate sheet's safe zone
+    const sheetSafeBounds = paperSize === '8-page-4x2'
+      ? getMultiPageSafeBounds(4, 2)
+      : get6PageSafeBounds();
     
     // Determine which sheet the rectangle center is in
     const col = Math.floor(rect.xCm / 29.7);
     const row = Math.floor(rect.yCm / 21.0);
-    const sheetIndex = Math.min(Math.max(row * 3 + col, 0), 5);
+    const totalCols = paperSize === '8-page-4x2' ? 4 : 3;
+    const maxIndex = paperSize === '8-page-4x2' ? 7 : 5;
+    const sheetIndex = Math.min(Math.max(row * totalCols + col, 0), maxIndex);
     const sheet = sheetSafeBounds[sheetIndex];
     
     // Clamp center to keep rectangle fully within this sheet's safe zone

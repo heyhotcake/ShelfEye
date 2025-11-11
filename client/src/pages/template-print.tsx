@@ -71,6 +71,7 @@ export default function TemplatePrint() {
     '2xA5-landscape': { width: 4961, height: 1748, realWidthMm: 420, realHeightMm: 148 },
     '3xA5-landscape': { width: 7441, height: 1748, realWidthMm: 630, realHeightMm: 148 },
     '6-page-3x2': { width: 10525, height: 4961, realWidthMm: 891, realHeightMm: 420 },
+    '8-page-4x2': { width: 14032, height: 4961, realWidthMm: 1188, realHeightMm: 420 },
   };
 
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -292,16 +293,22 @@ export default function TemplatePrint() {
     // Helper to convert cm to mm
     const cmToMm = (cm: number) => cm * 10;
 
+    const isMultiPage = paperSize === '6-page-3x2' || paperSize === '8-page-4x2';
     const is6Page = paperSize === '6-page-3x2';
+    const is8Page = paperSize === '8-page-4x2';
 
-    if (is6Page) {
-      // 6-Page format: Create PDF with 6 A4 landscape pages
+    if (isMultiPage) {
+      // Multi-page format: Create PDF with multiple A4 landscape pages
       const a4WidthMm = 297;  // A4 landscape
       const a4HeightMm = 210;
       const gutterMm = 0;  // No gutters - sheets touch edge-to-edge
       const markerSizeMm = 50;
       const markerInsetMm = 10;  // Inside safe zone
       const safeMarginMm = 10; // 1cm safe zone
+
+      const gridCols = is8Page ? 4 : 3;
+      const gridRows = 2;
+      const totalSheets = gridCols * gridRows;
 
       const pdf = new jsPDF({
         orientation: 'landscape',
@@ -313,15 +320,15 @@ export default function TemplatePrint() {
       const getSheetForRect = (xMm: number, yMm: number): number => {
         const col = Math.floor(xMm / (a4WidthMm + gutterMm));
         const row = Math.floor(yMm / (a4HeightMm + gutterMm));
-        return row * 3 + col + 1; // Sheet number 1-6
+        return row * gridCols + col + 1; // Sheet number 1-N
       };
 
-      // Process each of the 6 sheets
-      for (let sheetNum = 1; sheetNum <= 6; sheetNum++) {
+      // Process each sheet
+      for (let sheetNum = 1; sheetNum <= totalSheets; sheetNum++) {
         if (sheetNum > 1) pdf.addPage();
 
-        const row = Math.floor((sheetNum - 1) / 3);
-        const col = (sheetNum - 1) % 3;
+        const row = Math.floor((sheetNum - 1) / gridCols);
+        const col = (sheetNum - 1) % gridCols;
         const sheetOffsetX = col * (a4WidthMm + gutterMm);
         const sheetOffsetY = row * (a4HeightMm + gutterMm);
 
@@ -336,23 +343,36 @@ export default function TemplatePrint() {
         pdf.text(`Sheet ${sheetNum}`, a4WidthMm / 2, 5, { align: 'center' });
 
         // Add ArUco markers for corner sheets
-        if ([1, 3, 4, 6].includes(sheetNum)) {
-          const markerIndex = { 1: 0, 3: 1, 4: 3, 6: 2 }[sheetNum] as number;
+        // For 6-page (3x2): corners are sheets 1, 3, 4, 6
+        // For 8-page (4x2): corners are sheets 1, 4, 5, 8
+        const topLeft = 1;
+        const topRight = gridCols;
+        const bottomLeft = gridCols + 1;
+        const bottomRight = gridCols * 2;
+        
+        if ([topLeft, topRight, bottomLeft, bottomRight].includes(sheetNum)) {
+          const cornerMarkers = {
+            [topLeft]: 0,      // Top-left
+            [topRight]: 1,     // Top-right
+            [bottomLeft]: 3,   // Bottom-left
+            [bottomRight]: 2,  // Bottom-right
+          };
+          const markerIndex = cornerMarkers[sheetNum] as number;
           const marker = arucoMarkers.markers[markerIndex];
           
           let markerX = 0;
           let markerY = 0;
 
-          if (sheetNum === 1) { // Top-left
+          if (sheetNum === topLeft) { // Top-left
             markerX = markerInsetMm;
             markerY = markerInsetMm;
-          } else if (sheetNum === 3) { // Top-right
+          } else if (sheetNum === topRight) { // Top-right
             markerX = a4WidthMm - markerSizeMm - markerInsetMm;
             markerY = markerInsetMm;
-          } else if (sheetNum === 4) { // Bottom-left
+          } else if (sheetNum === bottomLeft) { // Bottom-left
             markerX = markerInsetMm;
             markerY = a4HeightMm - markerSizeMm - markerInsetMm;
-          } else if (sheetNum === 6) { // Bottom-right
+          } else if (sheetNum === bottomRight) { // Bottom-right
             markerX = a4WidthMm - markerSizeMm - markerInsetMm;
             markerY = a4HeightMm - markerSizeMm - markerInsetMm;
           }
@@ -454,10 +474,16 @@ export default function TemplatePrint() {
         });
 
         // Add assembly instructions on last page
-        if (sheetNum === 6) {
+        if (sheetNum === totalSheets) {
           pdf.setFontSize(8);
           pdf.setTextColor(0, 0, 0);
-          const instructions = [
+          const instructions = is8Page ? [
+            'Assembly Instructions:',
+            '1. Print all 8 pages on A4 landscape paper',
+            '2. Align sheets edge-to-edge in 4×2 grid (no gaps)',
+            '3. Sheets 1,2,3,4 on top row; sheets 5,6,7,8 on bottom',
+            '4. Tape sheets together on back side',
+          ] : [
             'Assembly Instructions:',
             '1. Print all 6 pages on A4 landscape paper',
             '2. Align sheets edge-to-edge in 3×2 grid (no gaps)',
@@ -470,7 +496,8 @@ export default function TemplatePrint() {
         }
       }
 
-      pdf.save(`template-6page-3x2-${new Date().toISOString().slice(0, 10)}.pdf`);
+      const filename = is8Page ? '8page-4x2' : '6page-3x2';
+      pdf.save(`template-${filename}-${new Date().toISOString().slice(0, 10)}.pdf`);
     } else {
       // Single-page format (original logic)
       const { realWidthMm, realHeightMm } = canvasDimensions;

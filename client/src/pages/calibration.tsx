@@ -917,6 +917,7 @@ export default function Calibration() {
                   '2xA5-landscape': { width: 42.0, height: 14.8 },
                   '3xA5-landscape': { width: 63.0, height: 14.8 },
                   '6-page-3x2': { width: 89.1, height: 42.0 },
+                  '8-page-4x2': { width: 118.8, height: 42.0 },
                 };
                 return dimensions[paperSize] || { width: 29.7, height: 21.0 }; // Default A4
               };

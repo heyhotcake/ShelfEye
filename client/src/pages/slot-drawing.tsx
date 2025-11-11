@@ -117,6 +117,7 @@ export default function SlotDrawing() {
     '2xA5-landscape': { width: 1200, height: 424, realWidthMm: 420, realHeightMm: 148 },
     '3xA5-landscape': { width: 1800, height: 424, realWidthMm: 630, realHeightMm: 148 },
     '6-page-3x2': { width: 2400, height: 1131, realWidthMm: 891, realHeightMm: 420 },
+    '8-page-4x2': { width: 3200, height: 1131, realWidthMm: 1188, realHeightMm: 420 },
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -450,7 +451,7 @@ export default function SlotDrawing() {
 
   // Helper function to get sheet boundaries for 6-page format
   const getSheetBounds = (xCm: number, yCm: number): { minX: number; maxX: number; minY: number; maxY: number } | null => {
-    if (paperSize !== '6-page-3x2') return null;
+    if (paperSize !== '6-page-3x2' && paperSize !== '8-page-4x2') return null;
     
     const gutterMm = 0;  // No gutters - sheets touch edge-to-edge
     const a4WidthMm = 297;  // A4 landscape
@@ -547,10 +548,12 @@ export default function SlotDrawing() {
     const pxPerMm = paperWidth / paperInfo.realWidthMm;
     
     // Check if this is 6-page format
+    const isMultiPage = paperSize === '6-page-3x2' || paperSize === '8-page-4x2';
     const is6Page = paperSize === '6-page-3x2';
+    const is8Page = paperSize === '8-page-4x2';
     
-    if (is6Page) {
-      // 6-Page (3×2) layout - sheets touch edge-to-edge
+    if (isMultiPage) {
+      // Multi-page layout - sheets touch edge-to-edge
       const gutterMm = 0;  // No gutters
       const gutterPx = 0;
       const a4WidthMm = 297;  // A4 landscape
@@ -559,11 +562,13 @@ export default function SlotDrawing() {
       const sheetHeight = a4HeightMm * pxPerMm;
       const safeMarginMm = 10; // 1cm safe zone
       const safeMarginPx = safeMarginMm * pxPerMm;
+      const gridCols = is8Page ? 4 : 3;
+      const gridRows = 2;
       
-      // Draw 6 sheets (3 columns × 2 rows)
-      for (let row = 0; row < 2; row++) {
-        for (let col = 0; col < 3; col++) {
-          const sheetNum = row * 3 + col + 1;
+      // Draw sheets
+      for (let row = 0; row < gridRows; row++) {
+        for (let col = 0; col < gridCols; col++) {
+          const sheetNum = row * gridCols + col + 1;
           const x = canvasMargin + col * (sheetWidth + gutterPx);
           const y = canvasMargin + row * (sheetHeight + gutterPx);
           
@@ -594,7 +599,7 @@ export default function SlotDrawing() {
       // Draw gutters (white gaps between sheets)
       ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
       // Vertical gutters
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < gridCols - 1; i++) {
         const x = canvasMargin + (i + 1) * sheetWidth + i * gutterPx;
         ctx.fillRect(x, canvasMargin, gutterPx, paperHeight);
       }
@@ -1705,6 +1710,7 @@ export default function SlotDrawing() {
                       <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
                       <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
                       <SelectItem value="6-page-3x2">6-Page (3×2 A4)</SelectItem>
+                      <SelectItem value="8-page-4x2">8-Page (4×2 A4)</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">

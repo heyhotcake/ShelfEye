@@ -46,15 +46,15 @@ interface BoundaryViolationServer {
   amount: number;
 }
 
-function get6PageSafeBoundsServer(): { minX: number; maxX: number; minY: number; maxY: number }[] {
+function getMultiPageSafeBoundsServer(cols: number, rows: number): { minX: number; maxX: number; minY: number; maxY: number }[] {
   const a4WidthCm = 29.7;
   const a4HeightCm = 21.0;
   const safeMarginCm = 1.0;
   
   const sheetBounds = [];
   
-  for (let row = 0; row < 2; row++) {
-    for (let col = 0; col < 3; col++) {
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
       const sheetOffsetX = col * a4WidthCm;
       const sheetOffsetY = row * a4HeightCm;
       
@@ -70,6 +70,10 @@ function get6PageSafeBoundsServer(): { minX: number; maxX: number; minY: number;
   return sheetBounds;
 }
 
+function get6PageSafeBoundsServer(): { minX: number; maxX: number; minY: number; maxY: number }[] {
+  return getMultiPageSafeBoundsServer(3, 2);
+}
+
 function checkBoundaryViolationsServer(rect: RectangleServer, paperSize: string): BoundaryViolationServer[] {
   const violations: BoundaryViolationServer[] = [];
   
@@ -81,8 +85,10 @@ function checkBoundaryViolationsServer(rect: RectangleServer, paperSize: string)
   const topEdge = rect.yCm - halfHeight;
   const bottomEdge = rect.yCm + halfHeight;
   
-  if (paperSize === '6-page-3x2') {
-    const sheetSafeBounds = get6PageSafeBoundsServer();
+  if (paperSize === '6-page-3x2' || paperSize === '8-page-4x2') {
+    const sheetSafeBounds = paperSize === '8-page-4x2'
+      ? getMultiPageSafeBoundsServer(4, 2)
+      : get6PageSafeBoundsServer();
     
     let fitsInAnySheet = false;
     for (const sheet of sheetSafeBounds) {
@@ -96,7 +102,9 @@ function checkBoundaryViolationsServer(rect: RectangleServer, paperSize: string)
     if (!fitsInAnySheet) {
       const col = Math.floor(rect.xCm / 29.7);
       const row = Math.floor(rect.yCm / 21.0);
-      const sheetIndex = Math.min(Math.max(row * 3 + col, 0), 5);
+      const totalCols = paperSize === '8-page-4x2' ? 4 : 3;
+      const maxIndex = paperSize === '8-page-4x2' ? 7 : 5;
+      const sheetIndex = Math.min(Math.max(row * totalCols + col, 0), maxIndex);
       const sheet = sheetSafeBounds[sheetIndex];
       
       if (leftEdge < sheet.minX) violations.push({ edge: 'left', amount: sheet.minX - leftEdge });
@@ -112,6 +120,7 @@ function checkBoundaryViolationsServer(rect: RectangleServer, paperSize: string)
       'A3-landscape': { widthCm: 42.0, heightCm: 29.7 },
       '2xA5-landscape': { widthCm: 42.0, heightCm: 14.8 },
       '3xA5-landscape': { widthCm: 63.0, heightCm: 14.8 },
+      '8-page-4x2': { widthCm: 118.8, heightCm: 42.0 },
     };
     
     const bounds = paperBounds[paperSize];
@@ -135,12 +144,16 @@ function clampToBoundsServer(rect: RectangleServer, paperSize: string): { xCm: n
   const halfWidth = rect.widthCm / 2;
   const halfHeight = rect.heightCm / 2;
   
-  if (paperSize === '6-page-3x2') {
-    const sheetSafeBounds = get6PageSafeBoundsServer();
+  if (paperSize === '6-page-3x2' || paperSize === '8-page-4x2') {
+    const sheetSafeBounds = paperSize === '8-page-4x2'
+      ? getMultiPageSafeBoundsServer(4, 2)
+      : get6PageSafeBoundsServer();
     
     const col = Math.floor(rect.xCm / 29.7);
     const row = Math.floor(rect.yCm / 21.0);
-    const sheetIndex = Math.min(Math.max(row * 3 + col, 0), 5);
+    const totalCols = paperSize === '8-page-4x2' ? 4 : 3;
+    const maxIndex = paperSize === '8-page-4x2' ? 7 : 5;
+    const sheetIndex = Math.min(Math.max(row * totalCols + col, 0), maxIndex);
     const sheet = sheetSafeBounds[sheetIndex];
     
     const minX = sheet.minX + halfWidth;
@@ -160,6 +173,7 @@ function clampToBoundsServer(rect: RectangleServer, paperSize: string): { xCm: n
       'A3-landscape': { widthCm: 42.0, heightCm: 29.7 },
       '2xA5-landscape': { widthCm: 42.0, heightCm: 14.8 },
       '3xA5-landscape': { widthCm: 63.0, heightCm: 14.8 },
+      '8-page-4x2': { widthCm: 118.8, heightCm: 42.0 },
     };
     
     const bounds = paperBounds[paperSize];
