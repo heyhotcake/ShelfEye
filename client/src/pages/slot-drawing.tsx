@@ -1747,8 +1747,8 @@ export default function SlotDrawing() {
           </div>
         </header>
         
-        <div className="flex-1 overflow-auto p-4">
-          <div className="w-full space-y-4">
+        <div className="flex-1 overflow-auto p-2">
+          <div className="w-full max-w-[98%] mx-auto space-y-3">
             
             {/* Drawing Canvas */}
             <div>
