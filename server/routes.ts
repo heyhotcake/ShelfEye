@@ -2186,7 +2186,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/template-designs", async (req, res) => {
     try {
       const designs = await storage.getTemplateDesigns();
-      res.json(designs);
+      
+      // Fetch all categories once (optimization)
+      const allCategories = await storage.getToolCategories();
+      
+      // Include rectangles and categories for each design
+      const designsWithData = await Promise.all(
+        designs.map(async (design) => {
+          const rectangles = await storage.getTemplateRectanglesByDesignId(design.id);
+          
+          // Get unique category IDs from rectangles
+          const categoryIds = [...new Set(rectangles.map(r => r.categoryId))];
+          const relevantCategories = allCategories.filter(c => categoryIds.includes(c.id));
+          
+          return {
+            ...design,
+            templateRectangles: rectangles,
+            categories: relevantCategories,
+          };
+        })
+      );
+      
+      res.json(designsWithData);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch template designs", error });
     }

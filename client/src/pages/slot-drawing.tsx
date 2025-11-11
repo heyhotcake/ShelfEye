@@ -78,6 +78,7 @@ export default function SlotDrawing() {
   // Template version management
   const [templateVersionName, setTemplateVersionName] = useState('');
   const [savedTemplateVersions, setSavedTemplateVersions] = useState<Array<{
+    id?: string; // Database ID (optional for backward compatibility during migration)
     name: string;
     timestamp: string;
     templateRectangles: TemplateRectangle[];
@@ -226,6 +227,100 @@ export default function SlotDrawing() {
     },
   });
 
+  // Fetch saved template designs from database
+  const { data: templateDesignsFromDb = [], isLoading: isLoadingDesigns } = useQuery<any[]>({
+    queryKey: ['/api/template-designs'],
+    queryFn: async () => {
+      const response = await fetch('/api/template-designs');
+      if (!response.ok) throw new Error('Failed to fetch template designs');
+      return response.json();
+    },
+  });
+
+  // Map database designs to legacy savedTemplateVersions structure
+  useEffect(() => {
+    const mapped = templateDesignsFromDb.map((design: any) => ({
+      id: design.id, // Store database ID for future operations
+      name: design.name,
+      timestamp: design.createdAt || new Date().toISOString(),
+      paperSize: design.paperSize,
+      templateRectangles: design.templateRectangles || [],
+      categories: design.categories || [],
+    }));
+    setSavedTemplateVersions(mapped);
+    console.log(`[SlotDrawing] Loaded ${mapped.length} template designs from database`);
+  }, [templateDesignsFromDb]);
+
+  // One-time localStorage migration to database
+  const hasMigratedRef = useRef(false);
+  useEffect(() => {
+    // Only run once, and only if database is empty but localStorage has data
+    if (hasMigratedRef.current || isLoadingDesigns || templateDesignsFromDb.length > 0) return;
+    
+    const legacyData = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+    if (!legacyData) {
+      hasMigratedRef.current = true;
+      return;
+    }
+    
+    try {
+      const legacyDesigns = JSON.parse(legacyData);
+      if (!Array.isArray(legacyDesigns) || legacyDesigns.length === 0) {
+        hasMigratedRef.current = true;
+        return;
+      }
+      
+      // Set flag IMMEDIATELY to prevent double-firing
+      hasMigratedRef.current = true;
+      
+      console.log(`[Migration] Found ${legacyDesigns.length} legacy template designs in localStorage, migrating to database...`);
+      
+      // Migrate each design
+      const migrationPromises = legacyDesigns.map(async (design: any) => {
+        try {
+          const rectangles = (design.templateRectangles || []).map((r: any) => ({
+            categoryId: r.categoryId,
+            paperSize: design.paperSize, // Required field
+            xCm: r.xCm,
+            yCm: r.yCm,
+            rotation: r.rotation,
+            autoQrId: r.autoQrId,
+          }));
+          
+          await apiRequest('POST', '/api/template-designs', {
+            name: design.name,
+            paperSize: design.paperSize,
+            rectangles: rectangles,
+          });
+          
+          console.log(`[Migration] Migrated design: ${design.name}`);
+        } catch (error) {
+          console.error(`[Migration] Failed to migrate design: ${design.name}`, error);
+        }
+      });
+      
+      Promise.all(migrationPromises).then(() => {
+        console.log('[Migration] All designs migrated successfully');
+        localStorage.removeItem(TEMPLATE_STORAGE_KEY);
+        queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
+        toast({
+          title: "Migration Complete",
+          description: `Migrated ${legacyDesigns.length} template designs from localStorage to database`,
+        });
+      }).catch((error) => {
+        console.error('[Migration] Migration failed:', error);
+        toast({
+          title: "Migration Warning",
+          description: "Some template designs could not be migrated. Check console for details.",
+          variant: "destructive",
+        });
+      });
+    } catch (error) {
+      console.error('[Migration] Failed to parse legacy data:', error);
+      // Flag is already set above
+    }
+  }, [templateDesignsFromDb, isLoadingDesigns]);
+
   // Load saved slot versions from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('slotConfigVersions');
@@ -238,21 +333,8 @@ export default function SlotDrawing() {
     }
   }, []);
 
-  // Templates are camera-independent - load once on mount
-  const TEMPLATE_STORAGE_KEY = 'templateConfigVersions';
-  
-  useEffect(() => {
-    const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
-    if (saved) {
-      try {
-        setSavedTemplateVersions(JSON.parse(saved));
-        console.log(`[SlotDrawing] Loaded ${JSON.parse(saved).length} template designs`);
-      } catch (e) {
-        console.error('Failed to load saved template versions:', e);
-        setSavedTemplateVersions([]);
-      }
-    }
-  }, []); // Load once on mount
+  // Templates are loaded from database via React Query (see useQuery above)
+  const TEMPLATE_STORAGE_KEY = 'templateConfigVersions'; // Legacy key for migration only
 
   // Load existing slots as regions when slots data changes
   useEffect(() => {
@@ -439,8 +521,6 @@ export default function SlotDrawing() {
           variant: "default",
         });
         queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
-        // Reload the current template to show fixed positions
-        syncFromDatabase();
       } else {
         toast({
           title: "All Clear",
@@ -472,6 +552,44 @@ export default function SlotDrawing() {
     onError: (error) => {
       toast({
         title: "Failed to Delete Template",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Template design mutations (save/delete whole designs)
+  const saveTemplateDesignMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('POST', '/api/template-designs', data),
+    onSuccess: () => {
+      toast({
+        title: "Design Saved",
+        description: "Template design saved to database successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
+      setTemplateVersionName(''); // Clear input after save
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Save Design",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteTemplateDesignMutation = useMutation({
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/template-designs/${id}`),
+    onSuccess: () => {
+      toast({
+        title: "Design Deleted",
+        description: "Template design removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Delete Design",
         description: error.message,
         variant: "destructive",
       });
@@ -1157,7 +1275,6 @@ export default function SlotDrawing() {
       return;
     }
 
-    // templateRectangles are already filtered for current paper size by the query
     if (templateRectangles.length === 0) {
       toast({
         title: "No Templates to Save",
@@ -1167,103 +1284,52 @@ export default function SlotDrawing() {
       return;
     }
 
-    try {
-      // Get only the categories used in current templates
-      const usedCategoryIds = new Set(templateRectangles.map(t => t.categoryId));
-      const relevantCategories = toolCategories.filter((c: any) => usedCategoryIds.has(c.id));
-
-      const newVersion = {
-        name: templateVersionName,
-        timestamp: new Date().toISOString(),
-        paperSize: paperSize,
-        // cameraId removed - templates are now camera-independent
-        templateRectangles: templateRectangles,
-        categories: relevantCategories,
-      };
-
-      // Save to global localStorage (templates are camera-independent)
-      const updated = [...savedTemplateVersions, newVersion];
-      setSavedTemplateVersions(updated);
-      localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(updated));
-      console.log(`[SlotDrawing] Saved template design "${templateVersionName}"`);
-      
-      // ALSO save to database so calibration can use it immediately
-      // First, ensure categories exist in the database
-      for (const category of relevantCategories) {
-        const existingCategory = toolCategories.find((c: any) => c.name === category.name);
-        if (!existingCategory) {
-          await apiRequest('POST', '/api/tool-categories', {
-            name: category.name,
-            toolType: category.toolType,
-            widthCm: category.widthCm,
-            heightCm: category.heightCm,
-          });
-        }
-      }
-
-      // Refresh categories to get updated IDs
-      await queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
-      
-      // Wait for categories query to refresh
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Re-fetch categories to get the latest with correct IDs
-      const categoriesResponse = await fetch('/api/tool-categories');
-      const latestCategories = await categoriesResponse.json();
-
-      // Save template rectangles to database so they're available for calibration
-      // Delete any existing template rectangles for this paper size first
-      const existingRectsResponse = await fetch(`/api/template-rectangles?paperSize=${paperSize}`);
-      if (existingRectsResponse.ok) {
-        const existingRects = await existingRectsResponse.json();
-        for (const rect of existingRects) {
-          await apiRequest('DELETE', `/api/template-rectangles/${rect.id}`);
-        }
-      }
-
-      // Create new template rectangles in the database
-      for (const rect of templateRectangles) {
-        // Find the category in the latest list to ensure we have the correct ID
-        const category = latestCategories.find((c: any) => c.id === rect.categoryId);
-        if (category) {
-          await apiRequest('POST', '/api/template-rectangles', {
-            categoryId: category.id,
-            paperSize: paperSize,
-            xCm: rect.xCm,
-            yCm: rect.yCm,
-            rotation: rect.rotation,
-            autoQrId: rect.autoQrId,
-          });
-        }
-      }
-
-      // Refresh template rectangles
-      await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
-      
-      // Update snapshot to mark as saved
-      const snapshot = JSON.stringify(templateRectangles.map(r => ({
-        id: r.id,
-        categoryId: r.categoryId,
-        xCm: r.xCm,
-        yCm: r.yCm,
-        rotation: r.rotation,
-        autoQrId: r.autoQrId,
-      })).sort((a, b) => a.id.localeCompare(b.id)));
-      setLastLoadedSnapshot(snapshot);
-      
+    // Validate all categories exist (don't auto-create)
+    const usedCategoryIds = new Set(templateRectangles.map(t => t.categoryId));
+    const missingCategories = Array.from(usedCategoryIds).filter(id => 
+      !toolCategories.find((c: any) => c.id === id)
+    );
+    
+    if (missingCategories.length > 0) {
       toast({
-        title: "Template Design Saved",
-        description: `"${paperSize} - ${templateVersionName}" saved with ${templateRectangles.length} tools to database and ready for calibration`,
-      });
-      
-      setTemplateVersionName('');
-    } catch (error) {
-      toast({
-        title: "Save Failed",
-        description: "Failed to save template design to database",
+        title: "Missing Categories",
+        description: "Some tool categories are missing. Please create them first.",
         variant: "destructive",
       });
+      return;
     }
+
+    // Prepare rectangle data for atomic save
+    const rectangles = templateRectangles.map(r => ({
+      categoryId: r.categoryId,
+      paperSize: paperSize, // Required field
+      xCm: r.xCm,
+      yCm: r.yCm,
+      rotation: r.rotation,
+      autoQrId: r.autoQrId,
+    }));
+
+    // Call atomic mutation to save design with rectangles
+    saveTemplateDesignMutation.mutate({
+      name: templateVersionName,
+      paperSize: paperSize,
+      rectangles: rectangles,
+    }, {
+      onSuccess: () => {
+        // Update snapshot to mark as saved
+        const snapshot = JSON.stringify(templateRectangles.map(r => ({
+          id: r.id,
+          categoryId: r.categoryId,
+          xCm: r.xCm,
+          yCm: r.yCm,
+          rotation: r.rotation,
+          autoQrId: r.autoQrId,
+        })).sort((a, b) => a.id.localeCompare(b.id)));
+        setLastLoadedSnapshot(snapshot);
+        
+        console.log(`[SlotDrawing] Saved template design "${templateVersionName}" with ${rectangles.length} tools`);
+      },
+    });
   };
 
   const loadTemplateVersion = async (version: typeof savedTemplateVersions[0]) => {
@@ -1445,23 +1511,28 @@ export default function SlotDrawing() {
   };
 
   const confirmDeleteTemplateVersion = () => {
-    if (!templateToDelete || !selectedCameraId) return;
+    if (!templateToDelete) return;
     
     const versionToDelete = savedTemplateVersions.find(v => v.timestamp === templateToDelete);
-    const updated = savedTemplateVersions.filter(v => v.timestamp !== templateToDelete);
-    setSavedTemplateVersions(updated);
+    if (!versionToDelete || !versionToDelete.id) {
+      toast({
+        title: "Delete Failed",
+        description: "Template design ID not found",
+        variant: "destructive",
+      });
+      setDeleteConfirmOpen(false);
+      setTemplateToDelete(null);
+      return;
+    }
     
-    // Save to global localStorage (templates are camera-independent)
-    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(updated));
-    console.log(`[SlotDrawing] Deleted template design`);
-    
-    toast({
-      title: "Template Design Deleted",
-      description: versionToDelete ? `"${versionToDelete.paperSize} - ${versionToDelete.name}" removed` : "Design removed",
+    // Call delete mutation with database ID
+    deleteTemplateDesignMutation.mutate(versionToDelete.id, {
+      onSuccess: () => {
+        console.log(`[SlotDrawing] Deleted template design: ${versionToDelete.name}`);
+        setDeleteConfirmOpen(false);
+        setTemplateToDelete(null);
+      },
     });
-    
-    setDeleteConfirmOpen(false);
-    setTemplateToDelete(null);
   };
   
   const deleteTemplateVersion = (timestamp: string) => {
@@ -1536,21 +1607,36 @@ export default function SlotDrawing() {
           return;
         }
         
-        // Add to saved versions with new timestamp
-        const newVersion = {
-          ...importedVersion,
-          timestamp: new Date().toISOString(),
-        };
+        // Prepare rectangles for database save
+        const rectangles = (importedVersion.templateRectangles || []).map((r: any) => ({
+          categoryId: r.categoryId,
+          paperSize: importedVersion.paperSize, // Required field
+          xCm: r.xCm,
+          yCm: r.yCm,
+          rotation: r.rotation,
+          autoQrId: r.autoQrId,
+        }));
         
-        const updated = [...savedTemplateVersions, newVersion];
-        setSavedTemplateVersions(updated);
-        // Save to global localStorage (templates are camera-independent)
-        localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(updated));
-        console.log(`[SlotDrawing] Imported template design`);
-        
-        toast({
-          title: "Template Imported",
-          description: `"${newVersion.paperSize} - ${newVersion.name}" has been imported. Click load to use it.`,
+        // Save imported design to database using atomic mutation
+        saveTemplateDesignMutation.mutate({
+          name: importedVersion.name,
+          paperSize: importedVersion.paperSize,
+          rectangles: rectangles,
+        }, {
+          onSuccess: () => {
+            console.log(`[SlotDrawing] Imported template design: ${importedVersion.name}`);
+            toast({
+              title: "Template Imported",
+              description: `"${importedVersion.paperSize} - ${importedVersion.name}" has been imported and saved to database`,
+            });
+          },
+          onError: (error) => {
+            toast({
+              title: "Import Failed",
+              description: `Failed to save imported design: ${error.message}`,
+              variant: "destructive",
+            });
+          },
         });
       } catch (error) {
         toast({
@@ -1561,79 +1647,6 @@ export default function SlotDrawing() {
       }
     };
     input.click();
-  };
-
-  const syncFromDatabase = async () => {
-    try {
-      // Fetch all template rectangles from database
-      const rectsResponse = await fetch('/api/template-rectangles');
-      const allRects = await rectsResponse.json();
-      
-      // Group by paper size
-      const rectsByPaperSize = allRects.reduce((acc: any, rect: any) => {
-        if (!acc[rect.paperSize]) {
-          acc[rect.paperSize] = [];
-        }
-        acc[rect.paperSize].push(rect);
-        return acc;
-      }, {});
-      
-      // Fetch categories
-      const categoriesResponse = await fetch('/api/tool-categories');
-      const allCategories = await categoriesResponse.json();
-      
-      // Create a version for each paper size that has templates
-      const newVersions: any[] = [];
-      for (const [size, rects] of Object.entries(rectsByPaperSize)) {
-        const rectArray = rects as any[];
-        if (rectArray.length === 0) continue;
-        
-        // Get categories used in these templates
-        const usedCategoryIds = new Set(rectArray.map(r => r.categoryId));
-        const relevantCategories = allCategories.filter((c: any) => usedCategoryIds.has(c.id));
-        
-        const version = {
-          name: 'From Database',
-          timestamp: new Date().toISOString(),
-          paperSize: size,
-          templateRectangles: rectArray.map(r => ({
-            id: r.id,
-            categoryId: r.categoryId,
-            xCm: r.xCm,
-            yCm: r.yCm,
-            rotation: r.rotation,
-            autoQrId: r.autoQrId,
-          })),
-          categories: relevantCategories,
-        };
-        newVersions.push(version);
-      }
-      
-      if (newVersions.length === 0) {
-        toast({
-          title: "No Templates in Database",
-          description: "No template rectangles found in the database",
-        });
-        return;
-      }
-      
-      // Add to saved versions (templates are camera-independent)
-      const updated = [...savedTemplateVersions, ...newVersions];
-      setSavedTemplateVersions(updated);
-      localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(updated));
-      console.log(`[SlotDrawing] Synced ${newVersions.length} template designs from database`);
-      
-      toast({
-        title: "Synced from Database",
-        description: `Found ${newVersions.length} template design(s) in the database`,
-      });
-    } catch (error) {
-      toast({
-        title: "Sync Failed",
-        description: error instanceof Error ? error.message : "Failed to sync from database",
-        variant: "destructive",
-      });
-    }
   };
 
   const addTemplateRectangle = async (categoryId: string) => {
@@ -2082,29 +2095,17 @@ export default function SlotDrawing() {
                         </Button>
                       </div>
                       
-                      {/* Import/Sync Options */}
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={syncFromDatabase} 
-                          variant="outline"
-                          className="flex-1"
-                          data-testid="button-sync-from-database"
-                          title="Load templates from database"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Sync from Database
-                        </Button>
-                        <Button 
-                          onClick={importTemplateVersion} 
-                          variant="outline"
-                          className="flex-1"
-                          data-testid="button-import-template"
-                          title="Import template from file"
-                        >
-                          <Upload className="w-4 h-4 mr-2" />
-                          Import File
-                        </Button>
-                      </div>
+                      {/* Import Option */}
+                      <Button 
+                        onClick={importTemplateVersion} 
+                        variant="outline"
+                        className="w-full"
+                        data-testid="button-import-template"
+                        title="Import template from file"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Import File
+                      </Button>
                       
                       {/* Validate & Fix Button */}
                       <Button 
