@@ -113,13 +113,13 @@ export default function SlotDrawing() {
     realWidthMm: number;
     realHeightMm: number;
   }> = {
-    'A5-landscape': { width: 1200, height: 848, realWidthMm: 210, realHeightMm: 148 },
-    'A4-landscape': { width: 1600, height: 1132, realWidthMm: 297, realHeightMm: 210 },
-    'A3-landscape': { width: 2262, height: 1600, realWidthMm: 420, realHeightMm: 297 },
-    '2xA5-landscape': { width: 2400, height: 848, realWidthMm: 420, realHeightMm: 148 },
-    '3xA5-landscape': { width: 3600, height: 848, realWidthMm: 630, realHeightMm: 148 },
-    '6-page-3x2': { width: 4800, height: 2262, realWidthMm: 891, realHeightMm: 420 },
-    '8-page-4x2': { width: 6400, height: 2262, realWidthMm: 1188, realHeightMm: 420 },
+    'A5-landscape': { width: 600, height: 424, realWidthMm: 210, realHeightMm: 148 },
+    'A4-landscape': { width: 800, height: 566, realWidthMm: 297, realHeightMm: 210 },
+    'A3-landscape': { width: 1131, height: 800, realWidthMm: 420, realHeightMm: 297 },
+    '2xA5-landscape': { width: 1200, height: 424, realWidthMm: 420, realHeightMm: 148 },
+    '3xA5-landscape': { width: 1800, height: 424, realWidthMm: 630, realHeightMm: 148 },
+    '6-page-3x2': { width: 2400, height: 1131, realWidthMm: 891, realHeightMm: 420 },
+    '8-page-4x2': { width: 3200, height: 1131, realWidthMm: 1188, realHeightMm: 420 },
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
