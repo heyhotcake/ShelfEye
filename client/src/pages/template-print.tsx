@@ -296,7 +296,7 @@ export default function TemplatePrint() {
           const padding = cmToPixels(0.3, true); // 0.3cm padding
           const maxFontPx = 96;
           const minFontPx = 18;
-          const minTextWidthPx = cmToPixels(3, true); // Minimum 3cm text width
+          const minTextWidthPx = cmToPixels(4, true); // Minimum 4cm text width
           let fontPx = Math.min(maxFontPx, Math.max(minFontPx, widthPx * 0.35));
           
           // Set font with Japanese support (bold)
@@ -527,7 +527,7 @@ export default function TemplatePrint() {
               const paddingMm = 3;
               const maxFontPt = 28;
               const minFontPt = 10;
-              const minTextWidthMm = 30; // Minimum 3cm text width
+              const minTextWidthMm = 40; // Minimum 4cm text width
               let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
               pdf.setFont('helvetica', 'bold');
@@ -568,7 +568,7 @@ export default function TemplatePrint() {
               const paddingMm = 3;
               const maxFontPt = 28;
               const minFontPt = 10;
-              const minTextWidthMm = 30; // Minimum 3cm text width
+              const minTextWidthMm = 40; // Minimum 4cm text width
               let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
               pdf.setFont('helvetica', 'bold');
