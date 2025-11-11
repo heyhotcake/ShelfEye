@@ -1818,7 +1818,7 @@ export default function SlotDrawing() {
                   className="drawing-canvas rounded bg-muted"
                   style={{ 
                     cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab'),
-                    width: '95%',
+                    width: '100%',
                     height: 'auto',
                     minHeight: '450px'
                   }}
