@@ -77,6 +77,7 @@ export interface IStorage {
   createTemplateDesign(design: InsertTemplateDesign): Promise<TemplateDesign>;
   updateTemplateDesign(id: string, updates: Partial<InsertTemplateDesign>): Promise<TemplateDesign | undefined>;
   deleteTemplateDesign(id: string): Promise<boolean>;
+  saveTemplateDesignWithRectangles(design: InsertTemplateDesign, rectangles: InsertTemplateRectangle[], existingId?: string): Promise<TemplateDesign>;
 
   // Worker methods
   getWorkers(): Promise<Worker[]>;
@@ -556,6 +557,42 @@ export class MemStorage implements IStorage {
     // Also delete associated rectangles
     await this.deleteTemplateRectanglesByDesignId(id);
     return this.templateDesigns.delete(id);
+  }
+
+  async saveTemplateDesignWithRectangles(design: InsertTemplateDesign, rectangles: InsertTemplateRectangle[], existingId?: string): Promise<TemplateDesign> {
+    // Atomic operation for MemStorage (synchronous)
+    try {
+      let savedDesign: TemplateDesign;
+      
+      if (existingId) {
+        // Update existing design
+        const updated = await this.updateTemplateDesign(existingId, design);
+        if (!updated) {
+          throw new Error(`Template design ${existingId} not found`);
+        }
+        savedDesign = updated;
+        
+        // Delete old rectangles
+        await this.deleteTemplateRectanglesByDesignId(existingId);
+      } else {
+        // Create new design
+        savedDesign = await this.createTemplateDesign(design);
+      }
+      
+      // Create all rectangles linked to this design
+      for (const rect of rectangles) {
+        await this.createTemplateRectangle({
+          ...rect,
+          designId: savedDesign.id,
+          paperSize: savedDesign.paperSize,
+        });
+      }
+      
+      return savedDesign;
+    } catch (error) {
+      // Rollback on error (for MemStorage, state is already consistent)
+      throw error;
+    }
   }
 
   // Worker methods
@@ -1043,6 +1080,49 @@ export class DbStorage implements IStorage {
     const result = await db.delete(schema.templateDesigns)
       .where(eq(schema.templateDesigns.id, id));
     return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async saveTemplateDesignWithRectangles(design: InsertTemplateDesign, rectangles: InsertTemplateRectangle[], existingId?: string): Promise<TemplateDesign> {
+    // Atomic transaction - all or nothing
+    return await db.transaction(async (tx) => {
+      let savedDesign: TemplateDesign;
+      
+      if (existingId) {
+        // Update existing design
+        const updated = await tx.update(schema.templateDesigns)
+          .set({ ...design, updatedAt: new Date() })
+          .where(eq(schema.templateDesigns.id, existingId))
+          .returning();
+        
+        if (!updated || updated.length === 0) {
+          throw new Error(`Template design ${existingId} not found`);
+        }
+        savedDesign = updated[0];
+        
+        // Delete old rectangles
+        await tx.delete(schema.templateRectangles)
+          .where(eq(schema.templateRectangles.designId, existingId));
+      } else {
+        // Create new design
+        const created = await tx.insert(schema.templateDesigns)
+          .values(design)
+          .returning();
+        savedDesign = created[0];
+      }
+      
+      // Bulk insert all rectangles linked to this design
+      if (rectangles.length > 0) {
+        const rectanglesToInsert = rectangles.map(rect => ({
+          ...rect,
+          designId: savedDesign.id,
+          paperSize: savedDesign.paperSize,
+        }));
+        
+        await tx.insert(schema.templateRectangles).values(rectanglesToInsert);
+      }
+      
+      return savedDesign;
+    });
   }
 
   // Worker methods
