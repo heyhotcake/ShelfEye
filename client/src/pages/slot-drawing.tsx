@@ -50,6 +50,8 @@ export default function SlotDrawing() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [selectedCameraId, setSelectedCameraId] = useState<string | undefined>(undefined);
   // Legacy slot drawing state (kept for backwards compatibility, but UI removed)
   const [isDrawing, setIsDrawing] = useState(false);
@@ -89,6 +91,50 @@ export default function SlotDrawing() {
   
   // Paper size configuration
   const [paperSize, setPaperSize] = useState('A4-landscape');
+  
+  // Track container size with ResizeObserver
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setContainerSize({ width, height });
+      }
+    });
+
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  // Auto-fit: calculate zoom and pan to center and fit canvas in container
+  useEffect(() => {
+    if (containerSize.width === 0 || containerSize.height === 0) return;
+
+    const canvasWidth = canvasDimensions.width;
+    const canvasHeight = canvasDimensions.height;
+    
+    // Add padding (10% of container size)
+    const paddingX = containerSize.width * 0.05;
+    const paddingY = containerSize.height * 0.05;
+    const availableWidth = containerSize.width - 2 * paddingX;
+    const availableHeight = containerSize.height - 2 * paddingY;
+    
+    // Calculate scale to fit canvas in container
+    const scaleX = availableWidth / canvasWidth;
+    const scaleY = availableHeight / canvasHeight;
+    const fitZoom = Math.min(scaleX, scaleY, 2); // Cap at 2x zoom
+    
+    // Calculate pan to center the canvas
+    const scaledWidth = canvasWidth * fitZoom;
+    const scaledHeight = canvasHeight * fitZoom;
+    const panX = (containerSize.width - scaledWidth) / 2;
+    const panY = (containerSize.height - scaledHeight) / 2;
+    
+    setZoom(fitZoom);
+    setPanOffset({ x: panX, y: panY });
+  }, [paperSize, containerSize, canvasDimensions.width, canvasDimensions.height]);
   
   // Dialog states for confirmations and warnings
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -1800,7 +1846,7 @@ export default function SlotDrawing() {
                 </div>
               </div>
 
-              <div className="w-full flex items-center justify-center bg-muted rounded" style={{ height: '70vh' }}>
+              <div ref={containerRef} className="w-full flex items-center justify-center bg-muted rounded" style={{ height: '70vh' }}>
                 <canvas 
                   ref={canvasRef}
                   width={canvasDimensions.width}
