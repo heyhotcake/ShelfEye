@@ -107,20 +107,20 @@ export default function SlotDrawing() {
   
   // Paper size dimensions (width x height in pixels, landscape orientation)
   // Calculated to maintain EXACT aspect ratios after 40px margins on each side
-  // Formula: paperWidth = width - 80, paperHeight = paperWidth / (realWidthMm/realHeightMm), height = paperHeight + 80
+  // Formula: paperWidth = width - 80, paperHeight = paperWidth * (realHeightMm/realWidthMm), height = paperHeight + 80
   const paperDimensions: Record<string, { 
     width: number; 
     height: number;
     realWidthMm: number;
     realHeightMm: number;
   }> = {
-    'A5-landscape': { width: 600, height: 447, realWidthMm: 210, realHeightMm: 148 },      // 520/1.4189 = 366.5 + 80 = 446.5
-    'A4-landscape': { width: 800, height: 589, realWidthMm: 297, realHeightMm: 210 },      // 720/1.4142 = 509.1 + 80 = 589.1
-    'A3-landscape': { width: 1131, height: 880, realWidthMm: 420, realHeightMm: 297 },     // 1051/1.4141 = 743.4 + 80 = 823.4
-    '2xA5-landscape': { width: 1200, height: 503, realWidthMm: 420, realHeightMm: 148 },   // 1120/2.8378 = 394.7 + 80 = 474.7
-    '3xA5-landscape': { width: 1800, height: 503, realWidthMm: 630, realHeightMm: 148 },   // 1720/4.2567 = 404.0 + 80 = 484.0
-    '6-page-3x2': { width: 2400, height: 1551, realWidthMm: 891, realHeightMm: 420 },      // 2320/2.1214 = 1093.7 + 80 = 1173.7
-    '8-page-4x2': { width: 3200, height: 1183, realWidthMm: 1188, realHeightMm: 420 },     // 3120/2.8285 = 1103.1 + 80 = 1183.1
+    'A5-landscape': { width: 600, height: 447, realWidthMm: 210, realHeightMm: 148 },      // 520 * (148/210) + 80 = 447
+    'A4-landscape': { width: 800, height: 589, realWidthMm: 297, realHeightMm: 210 },      // 720 * (210/297) + 80 = 589
+    'A3-landscape': { width: 1131, height: 823, realWidthMm: 420, realHeightMm: 297 },     // 1051 * (297/420) + 80 = 823
+    '2xA5-landscape': { width: 1200, height: 475, realWidthMm: 420, realHeightMm: 148 },   // 1120 * (148/420) + 80 = 475
+    '3xA5-landscape': { width: 1800, height: 484, realWidthMm: 630, realHeightMm: 148 },   // 1720 * (148/630) + 80 = 484
+    '6-page-3x2': { width: 2400, height: 1173, realWidthMm: 891, realHeightMm: 420 },      // 2320 * (420/891) + 80 = 1173
+    '8-page-4x2': { width: 3200, height: 1183, realWidthMm: 1188, realHeightMm: 420 },     // 3120 * (420/1188) + 80 = 1183
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -1800,7 +1800,7 @@ export default function SlotDrawing() {
                 </div>
               </div>
 
-              <div className="canvas-container mb-3 flex justify-center items-center" style={{ minHeight: '650px' }}>
+              <div className="canvas-container mb-3 flex justify-center items-center">
                 <canvas 
                   ref={canvasRef}
                   width={canvasDimensions.width}
@@ -1809,8 +1809,7 @@ export default function SlotDrawing() {
                   style={{ 
                     cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab'),
                     width: '100%',
-                    height: 'auto',
-                    minHeight: '600px'
+                    height: 'auto'
                   }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
