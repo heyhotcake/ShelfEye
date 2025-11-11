@@ -1747,11 +1747,11 @@ export default function SlotDrawing() {
           </div>
         </header>
         
-        <div className="flex-1 overflow-hidden p-2">
-          <div className="h-full flex gap-3">
+        <div className="flex-1 overflow-auto p-2">
+          <div className="w-full space-y-2">
             
-            {/* Drawing Canvas - Left Side */}
-            <div className="flex-1 flex flex-col min-w-0">
+            {/* Drawing Canvas */}
+            <div className="w-full">
               {/* Paper Size Selector */}
               <div className="mb-4 flex items-center gap-3 justify-between">
                 <div className="flex items-center gap-3">
@@ -1800,14 +1800,18 @@ export default function SlotDrawing() {
                 </div>
               </div>
 
-              <div className="flex-1 flex items-center justify-center overflow-hidden">
+              <div className="w-full flex items-center justify-center" style={{ height: '75vh' }}>
                 <canvas 
                   ref={canvasRef}
                   width={canvasDimensions.width}
                   height={canvasDimensions.height}
-                  className="drawing-canvas rounded bg-muted max-w-full max-h-full object-contain"
+                  className="drawing-canvas rounded bg-muted"
                   style={{ 
-                    cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab')
+                    cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab'),
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    width: 'auto',
+                    height: 'auto'
                   }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -1866,10 +1870,7 @@ export default function SlotDrawing() {
                   </Select>
                 </div>
               </div>
-            </div>
 
-            {/* Right Sidebar - Controls */}
-            <div className="w-80 flex-shrink-0 overflow-y-auto space-y-3">
                 {/* Template Rectangles */}
                 <Card>
                   <CardHeader>
