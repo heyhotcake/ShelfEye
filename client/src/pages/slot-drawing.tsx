@@ -266,6 +266,27 @@ export default function SlotDrawing() {
     setSelectedTemplateRect(null);
   }, [paperSize]);
 
+  // Prevent page scroll when zooming on canvas (must use native event listener with { passive: false })
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      setZoom(prev => Math.min(Math.max(prev * delta, 0.5), 5));
+    };
+
+    // Attach with { passive: false } to allow preventDefault
+    canvas.addEventListener('wheel', handleNativeWheel, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, []);
+
   const createSlotMutation = useMutation({
     mutationFn: (slotData: any) => apiRequest('POST', '/api/slots', slotData),
     onSuccess: () => {
@@ -936,6 +957,7 @@ export default function SlotDrawing() {
 
   const handleWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
     event.preventDefault();
+    event.stopPropagation(); // Prevent scroll from bubbling to parent
     const delta = event.deltaY > 0 ? 0.9 : 1.1;
     setZoom(prev => Math.min(Math.max(prev * delta, 0.5), 5));
   };
@@ -1784,7 +1806,6 @@ export default function SlotDrawing() {
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
-                  onWheel={handleWheel}
                   data-testid="slot-canvas"
                 />
               </div>
