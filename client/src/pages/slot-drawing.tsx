@@ -238,51 +238,21 @@ export default function SlotDrawing() {
     }
   }, []);
 
-  // Load saved template versions from localStorage (camera-specific for multi-camera support)
+  // Templates are camera-independent - load once on mount
+  const TEMPLATE_STORAGE_KEY = 'templateConfigVersions';
+  
   useEffect(() => {
-    if (!selectedCameraId) {
-      setSavedTemplateVersions([]);
-      return;
-    }
-    
-    // Camera-scoped storage key to prevent template conflicts between cameras
-    const storageKey = `templateConfigVersions_${selectedCameraId}`;
-    const saved = localStorage.getItem(storageKey);
-    
+    const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
     if (saved) {
       try {
         setSavedTemplateVersions(JSON.parse(saved));
-        console.log(`[SlotDrawing] Loaded ${JSON.parse(saved).length} template designs for camera ${selectedCameraId}`);
+        console.log(`[SlotDrawing] Loaded ${JSON.parse(saved).length} template designs`);
       } catch (e) {
         console.error('Failed to load saved template versions:', e);
         setSavedTemplateVersions([]);
       }
-    } else {
-      // MIGRATION: Check for legacy global key and migrate to camera-specific key
-      const legacyKey = 'templateConfigVersions';
-      const legacySaved = localStorage.getItem(legacyKey);
-      
-      if (legacySaved) {
-        try {
-          const legacyData = JSON.parse(legacySaved);
-          console.log(`[SlotDrawing] Migrating ${legacyData.length} legacy template designs to camera ${selectedCameraId}`);
-          
-          // Migrate to camera-scoped key
-          localStorage.setItem(storageKey, legacySaved);
-          setSavedTemplateVersions(legacyData);
-          
-          // Keep legacy key as backup (don't delete) in case user needs to rollback
-          console.log(`[SlotDrawing] Migration complete. Legacy key preserved as backup.`);
-        } catch (e) {
-          console.error('Failed to migrate legacy template versions:', e);
-          setSavedTemplateVersions([]);
-        }
-      } else {
-        console.log(`[SlotDrawing] No saved templates found for camera ${selectedCameraId}`);
-        setSavedTemplateVersions([]);
-      }
     }
-  }, [selectedCameraId]); // Re-load when camera changes
+  }, []); // Load once on mount
 
   // Load existing slots as regions when slots data changes
   useEffect(() => {
@@ -1211,12 +1181,11 @@ export default function SlotDrawing() {
         categories: relevantCategories,
       };
 
-      // Save to localStorage (camera-specific to prevent multi-camera conflicts)
+      // Save to global localStorage (templates are camera-independent)
       const updated = [...savedTemplateVersions, newVersion];
       setSavedTemplateVersions(updated);
-      const storageKey = `templateConfigVersions_${selectedCameraId}`;
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      console.log(`[SlotDrawing] Saved template design "${templateVersionName}" for camera ${selectedCameraId}`);
+      localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(updated));
+      console.log(`[SlotDrawing] Saved template design "${templateVersionName}"`);
       
       // ALSO save to database so calibration can use it immediately
       // First, ensure categories exist in the database
@@ -1482,10 +1451,9 @@ export default function SlotDrawing() {
     const updated = savedTemplateVersions.filter(v => v.timestamp !== templateToDelete);
     setSavedTemplateVersions(updated);
     
-    // Camera-scoped storage key to prevent multi-camera conflicts
-    const storageKey = `templateConfigVersions_${selectedCameraId}`;
-    localStorage.setItem(storageKey, JSON.stringify(updated));
-    console.log(`[SlotDrawing] Deleted template design for camera ${selectedCameraId}`);
+    // Save to global localStorage (templates are camera-independent)
+    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(updated));
+    console.log(`[SlotDrawing] Deleted template design`);
     
     toast({
       title: "Template Design Deleted",
@@ -1576,10 +1544,9 @@ export default function SlotDrawing() {
         
         const updated = [...savedTemplateVersions, newVersion];
         setSavedTemplateVersions(updated);
-        // Camera-scoped storage key to prevent multi-camera conflicts
-        const storageKey = `templateConfigVersions_${selectedCameraId}`;
-        localStorage.setItem(storageKey, JSON.stringify(updated));
-        console.log(`[SlotDrawing] Imported template design for camera ${selectedCameraId}`);
+        // Save to global localStorage (templates are camera-independent)
+        localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(updated));
+        console.log(`[SlotDrawing] Imported template design`);
         
         toast({
           title: "Template Imported",
@@ -1650,12 +1617,11 @@ export default function SlotDrawing() {
         return;
       }
       
-      // Add to saved versions (camera-scoped to prevent multi-camera conflicts)
+      // Add to saved versions (templates are camera-independent)
       const updated = [...savedTemplateVersions, ...newVersions];
       setSavedTemplateVersions(updated);
-      const storageKey = `templateConfigVersions_${selectedCameraId}`;
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      console.log(`[SlotDrawing] Synced ${newVersions.length} template designs from database for camera ${selectedCameraId}`);
+      localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(updated));
+      console.log(`[SlotDrawing] Synced ${newVersions.length} template designs from database`);
       
       toast({
         title: "Synced from Database",

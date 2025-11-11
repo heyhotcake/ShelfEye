@@ -29,30 +29,10 @@ export default function TemplatePrint() {
   const [savedTemplateDesigns, setSavedTemplateDesigns] = useState<TemplateDesign[]>([]);
   const [selectedDesignTimestamp, setSelectedDesignTimestamp] = useState<string>('');
   const [paperSize, setPaperSize] = useState('A4-landscape');
-  const [selectedCameraId, setSelectedCameraId] = useState<string | undefined>(undefined);
 
-  // Load cameras
-  const { data: cameras } = useQuery<any[]>({
-    queryKey: ['/api/cameras'],
-  });
-
-  // Initialize selected camera
+  // Load saved template designs from global localStorage (camera-independent)
   useEffect(() => {
-    if (cameras && cameras.length > 0 && !selectedCameraId) {
-      const savedCameraId = localStorage.getItem('selectedCameraId');
-      const initialCameraId = savedCameraId && cameras.find(c => c.id === savedCameraId)
-        ? savedCameraId
-        : cameras[0].id;
-      setSelectedCameraId(initialCameraId);
-    }
-  }, [cameras, selectedCameraId]);
-
-  // Load saved template designs from camera-specific localStorage
-  useEffect(() => {
-    if (!selectedCameraId) return;
-    
-    const storageKey = `templateConfigVersions_${selectedCameraId}`;
-    const saved = localStorage.getItem(storageKey);
+    const saved = localStorage.getItem('templateConfigVersions');
     if (saved) {
       try {
         const designs = JSON.parse(saved);
@@ -65,24 +45,8 @@ export default function TemplatePrint() {
       } catch (error) {
         console.error('Failed to load template designs from localStorage:', error);
       }
-    } else {
-      // Try legacy global key
-      const legacyKey = 'templateConfigVersions';
-      const legacySaved = localStorage.getItem(legacyKey);
-      if (legacySaved) {
-        try {
-          const designs = JSON.parse(legacySaved);
-          setSavedTemplateDesigns(designs);
-          if (designs.length > 0) {
-            setSelectedDesignTimestamp(designs[0].timestamp);
-            setPaperSize(designs[0].paperSize);
-          }
-        } catch (error) {
-          console.error('Failed to load legacy template designs:', error);
-        }
-      }
     }
-  }, [selectedCameraId]);
+  }, []);
 
   // Update paper size when design selection changes
   useEffect(() => {
@@ -679,10 +643,7 @@ export default function TemplatePrint() {
                       </Select>
                       <Button
                         onClick={() => {
-                          if (selectedCameraId) {
-                            localStorage.removeItem(`templateConfigVersions_${selectedCameraId}`);
-                          }
-                          localStorage.removeItem('templateConfigVersions'); // Also clear legacy key
+                          localStorage.removeItem('templateConfigVersions');
                           window.location.reload();
                         }}
                         variant="destructive"
