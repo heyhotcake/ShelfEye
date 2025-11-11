@@ -1751,9 +1751,9 @@ export default function SlotDrawing() {
           <div className="w-full space-y-2">
             
             {/* Drawing Canvas */}
-            <div className="w-full flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
+            <div className="w-full">
               {/* Paper Size Selector */}
-              <div className="mb-2 flex items-center gap-3 justify-between flex-shrink-0">
+              <div className="mb-3 flex items-center gap-3 justify-between">
                 <div className="flex items-center gap-3">
                   <Label htmlFor="paper-size" className="text-sm font-medium">Paper Size:</Label>
                   <Select value={paperSize} onValueChange={setPaperSize}>
@@ -1800,12 +1800,12 @@ export default function SlotDrawing() {
                 </div>
               </div>
 
-              <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
+              <div className="w-full flex items-center justify-center bg-muted rounded" style={{ height: '70vh' }}>
                 <canvas 
                   ref={canvasRef}
                   width={canvasDimensions.width}
                   height={canvasDimensions.height}
-                  className="drawing-canvas rounded bg-muted"
+                  className="drawing-canvas"
                   style={{ 
                     cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab'),
                     maxWidth: '100%',
@@ -1821,7 +1821,7 @@ export default function SlotDrawing() {
                 />
               </div>
               
-              <div className="flex items-center justify-between gap-3 flex-shrink-0 mt-2">
+              <div className="flex items-center justify-between gap-3 mt-3">
                 <div className="flex items-center gap-2">
                   <Button 
                     variant="outline"
