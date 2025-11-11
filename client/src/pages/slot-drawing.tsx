@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { clampToBounds, checkBoundaryViolations } from "@/lib/templateBounds";
+import { clampToBounds, checkBoundaryViolations, PAPER_BOUNDS } from "@/lib/templateBounds";
 import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye, CheckCircle } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
 
@@ -1023,14 +1023,19 @@ export default function SlotDrawing() {
       let newXCm = snapToGrid(pixelsToCm(newXPixels - canvasMargin, true), shouldSnap);
       let newYCm = snapToGrid(pixelsToCm(newYPixels - canvasMargin, false), shouldSnap);
 
-      // Apply boundary clamping to keep rectangle within printable area
-      const clamped = clampToBounds(
-        { xCm: newXCm, yCm: newYCm, widthCm: rect.widthCm, heightCm: rect.heightCm },
-        paperSize
-      );
-      
-      newXCm = clamped.xCm;
-      newYCm = clamped.yCm;
+      // Simple bounds: just keep within overall canvas (no per-sheet locking)
+      const bounds = PAPER_BOUNDS[paperSize];
+      if (bounds) {
+        const halfWidth = rect.widthCm / 2;
+        const halfHeight = rect.heightCm / 2;
+        const minX = bounds.safeMarginCm + halfWidth;
+        const maxX = bounds.widthCm - bounds.safeMarginCm - halfWidth;
+        const minY = bounds.safeMarginCm + halfHeight;
+        const maxY = bounds.heightCm - bounds.safeMarginCm - halfHeight;
+        
+        newXCm = Math.max(minX, Math.min(maxX, newXCm));
+        newYCm = Math.max(minY, Math.min(maxY, newYCm));
+      }
 
       // Update local state immediately for smooth dragging
       setTemplateRectangles(prev => prev.map(r => 
