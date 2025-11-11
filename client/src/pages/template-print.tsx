@@ -10,7 +10,6 @@ import { Printer, ArrowLeft, Download } from "lucide-react";
 import type { TemplateRectangle, ToolCategory } from "@shared/schema";
 import { jsPDF } from "jspdf";
 import NotoSansJP from "@/assets/fonts/NotoSansJP-base64";
-import { NotoSansJPBold } from "@/assets/fonts/NotoSansJP-Bold-base64";
 
 interface TemplateRectangleWithCategory extends TemplateRectangle {
   category: ToolCategory;
@@ -357,12 +356,12 @@ export default function TemplatePrint() {
     // Helper to convert cm to mm
     const cmToMm = (cm: number) => cm * 10;
     
-    // Helper to setup Japanese font in PDF
+    // Helper to setup Japanese font in PDF  
     const setupJapaneseFont = (pdf: jsPDF) => {
+      // Use variable font for all weights (it contains normal and bold)
       pdf.addFileToVFS("NotoSansJP.ttf", NotoSansJP);
       pdf.addFont("NotoSansJP.ttf", "NotoSansJP", "normal");
-      pdf.addFileToVFS("NotoSansJP-Bold.otf", NotoSansJPBold);
-      pdf.addFont("NotoSansJP-Bold.otf", "NotoSansJP", "bold");
+      pdf.addFont("NotoSansJP.ttf", "NotoSansJP", "bold");
     };
 
     const isMultiPage = paperSize === '6-page-3x2' || paperSize === '8-page-4x2';
