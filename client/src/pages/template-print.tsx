@@ -52,18 +52,21 @@ export default function TemplatePrint() {
       setSavedTemplateDesigns(mapped);
       
       // Auto-select first design if no selection OR if current selection was deleted
-      const selectedStillExists = mapped.some(d => d.id === selectedDesignId);
-      if (!selectedDesignId || !selectedStillExists) {
-        setSelectedDesignId(mapped[0].id);
-        setPaperSize(mapped[0].paperSize);
-      }
+      setSelectedDesignId(prevId => {
+        const selectedStillExists = mapped.some(d => d.id === prevId);
+        if (!prevId || !selectedStillExists) {
+          setPaperSize(mapped[0].paperSize);
+          return mapped[0].id;
+        }
+        return prevId;
+      });
     } else {
       // Clear state when no designs exist
       setSavedTemplateDesigns([]);
       setSelectedDesignId('');
       setPaperSize('A4-landscape'); // Reset to default when no designs
     }
-  }, [templateDesignsData, selectedDesignId]);
+  }, [templateDesignsData]);
 
   // Update paper size when design selection changes
   useEffect(() => {
