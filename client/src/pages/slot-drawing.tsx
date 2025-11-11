@@ -1747,11 +1747,11 @@ export default function SlotDrawing() {
           </div>
         </header>
         
-        <div className="flex-1 overflow-auto p-2">
-          <div className="w-full max-w-[98%] mx-auto space-y-3">
+        <div className="flex-1 overflow-hidden p-2">
+          <div className="h-full flex gap-3">
             
-            {/* Drawing Canvas */}
-            <div>
+            {/* Drawing Canvas - Left Side */}
+            <div className="flex-1 flex flex-col min-w-0">
               {/* Paper Size Selector */}
               <div className="mb-4 flex items-center gap-3 justify-between">
                 <div className="flex items-center gap-3">
@@ -1800,16 +1800,14 @@ export default function SlotDrawing() {
                 </div>
               </div>
 
-              <div className="canvas-container mb-3 flex justify-center items-center">
+              <div className="flex-1 flex items-center justify-center overflow-hidden">
                 <canvas 
                   ref={canvasRef}
                   width={canvasDimensions.width}
                   height={canvasDimensions.height}
-                  className="drawing-canvas rounded bg-muted"
+                  className="drawing-canvas rounded bg-muted max-w-full max-h-full object-contain"
                   style={{ 
-                    cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab'),
-                    width: '100%',
-                    height: 'auto'
+                    cursor: isPanning ? 'grabbing' : (draggingRectId ? 'move' : 'grab')
                   }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -1868,9 +1866,12 @@ export default function SlotDrawing() {
                   </Select>
                 </div>
               </div>
+            </div>
 
+            {/* Right Sidebar - Controls */}
+            <div className="w-80 flex-shrink-0 overflow-y-auto space-y-3">
                 {/* Template Rectangles */}
-                <Card className="mt-4">
+                <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Layers className="w-4 h-4" />
