@@ -5,15 +5,26 @@ Test ArUco detection on the newest rectified image
 import cv2
 import os
 import time
+import argparse
 
-# Get file modification time
-rectified_path = '/home/naniwa/ShelfEye/data/latest_calibration_rectified.png'
+# Parse arguments
+parser = argparse.ArgumentParser(description='Test ArUco detection on newest rectified image')
+parser.add_argument('--camera-id', required=True, help='Camera ID for multi-camera support')
+args = parser.parse_args()
+
+# Get camera-specific rectified image path
+data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+rectified_path = os.path.join(data_dir, f'latest_calibration_rectified_{args.camera_id}.png')
+
 if os.path.exists(rectified_path):
     mod_time = os.path.getmtime(rectified_path)
     mod_time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(mod_time))
+    print(f"Camera ID: {args.camera_id}")
+    print(f"Rectified image: {rectified_path}")
     print(f"Rectified image last modified: {mod_time_str}")
 else:
-    print("ERROR: Rectified image not found!")
+    print(f"ERROR: Rectified image not found: {rectified_path}")
+    print(f"Usage: python3 {__file__} --camera-id CAMERA_ID")
     exit(1)
 
 # Load and test

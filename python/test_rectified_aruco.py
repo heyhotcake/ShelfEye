@@ -4,9 +4,25 @@ Test if ArUco detection works on the full rectified image vs ROI
 """
 import cv2
 import numpy as np
+import argparse
+import os
 
-# Load full rectified image
-rectified = cv2.imread('/home/naniwa/ShelfEye/data/latest_calibration_rectified.png', cv2.IMREAD_GRAYSCALE)
+# Parse arguments
+parser = argparse.ArgumentParser(description='Test ArUco detection on rectified image')
+parser.add_argument('--camera-id', required=True, help='Camera ID for multi-camera support')
+args = parser.parse_args()
+
+# Load camera-specific rectified image
+data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+rectified_path = os.path.join(data_dir, f'latest_calibration_rectified_{args.camera_id}.png')
+
+if not os.path.exists(rectified_path):
+    print(f"ERROR: Rectified image not found: {rectified_path}")
+    print(f"Usage: python3 {__file__} --camera-id CAMERA_ID")
+    exit(1)
+
+rectified = cv2.imread(rectified_path, cv2.IMREAD_GRAYSCALE)
+print(f"Rectified image: {rectified_path}")
 print(f"Rectified image shape: {rectified.shape}")
 
 # Setup ArUco detector

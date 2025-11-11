@@ -13,6 +13,9 @@ import { RectifiedPreviewCanvas } from "@/components/canvas/rectified-preview-ca
 
 const TIMEZONE = "Asia/Tokyo";
 
+// Helper function to get camera-scoped storage keys (prevents template collisions in multi-camera setups)
+const getStorageKey = (key: string, cameraId: string) => `${key}_${cameraId}`;
+
 interface CalibrationResult {
   ok: boolean;
   homographyMatrix: number[];
@@ -127,7 +130,7 @@ export default function Calibration() {
     }
     
     // Camera-scoped storage key to prevent template conflicts between cameras
-    const storageKey = `templateConfigVersions_${selectedCameraId}`;
+    const storageKey = getStorageKey('templateConfigVersions', selectedCameraId);
     const saved = localStorage.getItem(storageKey);
     
     if (saved) {
@@ -784,7 +787,7 @@ export default function Calibration() {
                                     const updatedDesigns = savedTemplateDesigns.map(d => 
                                       d.timestamp === selectedTemplate ? updatedDesign : d
                                     );
-                                    const storageKey = 'templateConfigVersions';
+                                    const storageKey = getStorageKey('templateConfigVersions', selectedCameraId!);
                                     localStorage.setItem(storageKey, JSON.stringify(updatedDesigns));
                                     setSavedTemplateDesigns(updatedDesigns);
                                     

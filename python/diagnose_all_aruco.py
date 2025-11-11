@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import sys
 import os
+import argparse
 
 # Suppress OpenCV warnings
 os.environ['OPENCV_LOG_LEVEL'] = 'FATAL'
@@ -93,16 +94,22 @@ def find_all_aruco_markers(image_path):
     return list(all_markers.values())
 
 if __name__ == "__main__":
-    # Default to latest calibration rectified image
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
-    image_path = os.path.join(data_dir, 'latest_calibration_rectified.jpg')
+    parser = argparse.ArgumentParser(description='Diagnose ArUco markers in calibration image')
+    parser.add_argument('--camera-id', required=True, help='Camera ID for multi-camera support')
+    parser.add_argument('--image-path', help='Optional: Path to specific image file')
+    args = parser.parse_args()
     
-    if len(sys.argv) > 1:
-        image_path = sys.argv[1]
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+    
+    if args.image_path:
+        image_path = args.image_path
+    else:
+        # Use camera-specific rectified image
+        image_path = os.path.join(data_dir, f'latest_calibration_rectified_{args.camera_id}.png')
     
     if not os.path.exists(image_path):
         print(f"ERROR: Image not found: {image_path}")
-        print(f"Usage: python3 {sys.argv[0]} [path/to/image.jpg]")
+        print(f"Usage: python3 {sys.argv[0]} --camera-id CAMERA_ID [--image-path path/to/image.jpg]")
         sys.exit(1)
     
     print("=" * 60)
