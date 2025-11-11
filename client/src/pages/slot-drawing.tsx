@@ -106,20 +106,21 @@ export default function SlotDrawing() {
   const [selectedTemplateRect, setSelectedTemplateRect] = useState<TemplateRectangle | null>(null);
   
   // Paper size dimensions (width x height in pixels, landscape orientation)
-  // ISO A-series aspect ratio is √2:1 (1.414:1)
+  // Calculated to maintain EXACT aspect ratios after 40px margins on each side
+  // Formula: paperWidth = width - 80, paperHeight = paperWidth / (realWidthMm/realHeightMm), height = paperHeight + 80
   const paperDimensions: Record<string, { 
     width: number; 
     height: number;
     realWidthMm: number;
     realHeightMm: number;
   }> = {
-    'A5-landscape': { width: 600, height: 424, realWidthMm: 210, realHeightMm: 148 },
-    'A4-landscape': { width: 800, height: 566, realWidthMm: 297, realHeightMm: 210 },
-    'A3-landscape': { width: 1131, height: 800, realWidthMm: 420, realHeightMm: 297 },
-    '2xA5-landscape': { width: 1200, height: 424, realWidthMm: 420, realHeightMm: 148 },
-    '3xA5-landscape': { width: 1800, height: 424, realWidthMm: 630, realHeightMm: 148 },
-    '6-page-3x2': { width: 2400, height: 1131, realWidthMm: 891, realHeightMm: 420 },
-    '8-page-4x2': { width: 3200, height: 1131, realWidthMm: 1188, realHeightMm: 420 },
+    'A5-landscape': { width: 600, height: 447, realWidthMm: 210, realHeightMm: 148 },      // 520/1.4189 = 366.5 + 80 = 446.5
+    'A4-landscape': { width: 800, height: 589, realWidthMm: 297, realHeightMm: 210 },      // 720/1.4142 = 509.1 + 80 = 589.1
+    'A3-landscape': { width: 1131, height: 880, realWidthMm: 420, realHeightMm: 297 },     // 1051/1.4141 = 743.4 + 80 = 823.4
+    '2xA5-landscape': { width: 1200, height: 503, realWidthMm: 420, realHeightMm: 148 },   // 1120/2.8378 = 394.7 + 80 = 474.7
+    '3xA5-landscape': { width: 1800, height: 503, realWidthMm: 630, realHeightMm: 148 },   // 1720/4.2567 = 404.0 + 80 = 484.0
+    '6-page-3x2': { width: 2400, height: 1551, realWidthMm: 891, realHeightMm: 420 },      // 2320/2.1214 = 1093.7 + 80 = 1173.7
+    '8-page-4x2': { width: 3200, height: 1183, realWidthMm: 1188, realHeightMm: 420 },     // 3120/2.8285 = 1103.1 + 80 = 1183.1
   };
   
   const canvasDimensions = paperDimensions[paperSize] || paperDimensions['A4-landscape'];
@@ -447,23 +448,20 @@ export default function SlotDrawing() {
   });
 
   // Helper functions for cm to pixels conversion
+  // CRITICAL: Use UNIFORM scale for both axes to maintain aspect ratio
   const cmToPixels = (cm: number, isWidth = true): number => {
     const canvasMargin = 40;
     const paperWidth = canvasDimensions.width - (canvasMargin * 2);
-    const paperHeight = canvasDimensions.height - (canvasMargin * 2);
-    const pxPerMm = isWidth 
-      ? paperWidth / canvasDimensions.realWidthMm 
-      : paperHeight / canvasDimensions.realHeightMm;
+    // Always use width-based scale to ensure uniform conversion
+    const pxPerMm = paperWidth / canvasDimensions.realWidthMm;
     return cm * 10 * pxPerMm; // cm to mm, then to pixels
   };
 
   const pixelsToCm = (pixels: number, isWidth = true): number => {
     const canvasMargin = 40;
     const paperWidth = canvasDimensions.width - (canvasMargin * 2);
-    const paperHeight = canvasDimensions.height - (canvasMargin * 2);
-    const pxPerMm = isWidth 
-      ? paperWidth / canvasDimensions.realWidthMm 
-      : paperHeight / canvasDimensions.realHeightMm;
+    // Always use width-based scale to ensure uniform conversion
+    const pxPerMm = paperWidth / canvasDimensions.realWidthMm;
     return pixels / pxPerMm / 10; // pixels to mm, then to cm
   };
 
@@ -581,15 +579,11 @@ export default function SlotDrawing() {
       const gutterPx = 0;
       const a4WidthMm = 297;  // A4 landscape
       const a4HeightMm = 210;
-      // Use separate px-per-mm for each axis to match cmToPixels behavior
-      const pxPerMmX = paperWidth / paperInfo.realWidthMm;
-      const pxPerMmY = paperHeight / paperInfo.realHeightMm;
-      const sheetWidth = a4WidthMm * pxPerMmX;
-      const sheetHeight = a4HeightMm * pxPerMmY;
+      // CRITICAL: Use UNIFORM px-per-mm scale (width-based) for both axes
+      const sheetWidth = a4WidthMm * pxPerMm;
+      const sheetHeight = a4HeightMm * pxPerMm;
       const safeMarginMm = 10; // 1cm safe zone
-      // Use uniform safe margin (average scale) for symmetric borders at intersections
-      const pxPerMmAvg = (pxPerMmX + pxPerMmY) / 2;
-      const safeMarginPx = safeMarginMm * pxPerMmAvg;
+      const safeMarginPx = safeMarginMm * pxPerMm;
       const gridCols = is8Page ? 4 : 3;
       const gridRows = 2;
       
@@ -654,16 +648,12 @@ export default function SlotDrawing() {
       ctx.setLineDash([]); // Reset line dash
     }
     
-    // ArUco marker size (5cm = 50mm) - use average px-per-mm for square markers
+    // ArUco marker size (5cm = 50mm) - use uniform scale
     const markerSizeMm = 50;
-    const pxPerMmForMarkers = isMultiPage 
-      ? (paperWidth / paperInfo.realWidthMm + paperHeight / paperInfo.realHeightMm) / 2
-      : pxPerMm;
-    const markerSize = markerSizeMm * pxPerMmForMarkers;
+    const markerSize = markerSizeMm * pxPerMm;
     const safeMarginMm = 10; // 1cm safe zone from sheet edge
     const markerInsetMm = safeMarginMm; // Markers at inner corners of safe zone
-    const markerInsetX = isMultiPage ? markerInsetMm * (paperWidth / paperInfo.realWidthMm) : markerInsetMm * pxPerMm;
-    const markerInsetY = isMultiPage ? markerInsetMm * (paperHeight / paperInfo.realHeightMm) : markerInsetMm * pxPerMm;
+    const markerInset = markerInsetMm * pxPerMm;
     
     // Position markers based on format
     let markers: Array<{ x: number; y: number; id: string; arucoId: number; }> = [];
@@ -676,10 +666,9 @@ export default function SlotDrawing() {
       const gutterPx = 0;
       const a4WidthMm = 297;  // A4 landscape
       const a4HeightMm = 210;
-      const pxPerMmX = paperWidth / paperInfo.realWidthMm;
-      const pxPerMmY = paperHeight / paperInfo.realHeightMm;
-      const sheetWidth = a4WidthMm * pxPerMmX;
-      const sheetHeight = a4HeightMm * pxPerMmY;
+      // Use uniform scale (same as sheet rendering)
+      const sheetWidth = a4WidthMm * pxPerMm;
+      const sheetHeight = a4HeightMm * pxPerMm;
       const gridCols = is8Page ? 4 : 3;
       
       const topLeft = 1;
@@ -691,8 +680,8 @@ export default function SlotDrawing() {
       const sheet1X = canvasMargin;
       const sheet1Y = canvasMargin;
       markers.push({ 
-        x: sheet1X + markerInsetX, 
-        y: sheet1Y + markerInsetY, 
+        x: sheet1X + markerInset, 
+        y: sheet1Y + markerInset, 
         id: `${topLeft}-A`, 
         arucoId: 17 
       });
@@ -701,8 +690,8 @@ export default function SlotDrawing() {
       const sheetTRX = canvasMargin + (gridCols - 1) * (sheetWidth + gutterPx);
       const sheetTRY = canvasMargin;
       markers.push({ 
-        x: sheetTRX + sheetWidth - markerSize - markerInsetX, 
-        y: sheetTRY + markerInsetY, 
+        x: sheetTRX + sheetWidth - markerSize - markerInset, 
+        y: sheetTRY + markerInset, 
         id: `${topRight}-B`, 
         arucoId: 18 
       });
@@ -711,8 +700,8 @@ export default function SlotDrawing() {
       const sheetBLX = canvasMargin;
       const sheetBLY = canvasMargin + sheetHeight + gutterPx;
       markers.push({ 
-        x: sheetBLX + markerInsetX, 
-        y: sheetBLY + sheetHeight - markerSize - markerInsetY, 
+        x: sheetBLX + markerInset, 
+        y: sheetBLY + sheetHeight - markerSize - markerInset, 
         id: `${bottomLeft}-D`, 
         arucoId: 20 
       });
@@ -721,8 +710,8 @@ export default function SlotDrawing() {
       const sheetBRX = canvasMargin + (gridCols - 1) * (sheetWidth + gutterPx);
       const sheetBRY = canvasMargin + sheetHeight + gutterPx;
       markers.push({ 
-        x: sheetBRX + sheetWidth - markerSize - markerInsetX, 
-        y: sheetBRY + sheetHeight - markerSize - markerInsetY, 
+        x: sheetBRX + sheetWidth - markerSize - markerInset, 
+        y: sheetBRY + sheetHeight - markerSize - markerInset, 
         id: `${bottomRight}-C`, 
         arucoId: 19 
       });
