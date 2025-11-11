@@ -296,18 +296,23 @@ export default function TemplatePrint() {
           const padding = cmToPixels(0.3, true); // 0.3cm padding
           const maxFontPx = 96;
           const minFontPx = 18;
-          // Use minimum 5cm width for font sizing to ensure readability on narrow slots
-          const minWidthForSizingPx = cmToPixels(5, true);
-          const effectiveWidthPx = Math.max(widthPx, minWidthForSizingPx);
-          let fontPx = Math.min(maxFontPx, Math.max(minFontPx, effectiveWidthPx * 0.35));
+          const minTextWidthPx = cmToPixels(3, true); // Minimum 3cm text width
+          let fontPx = Math.min(maxFontPx, Math.max(minFontPx, widthPx * 0.35));
           
           // Set font with Japanese support (bold)
           ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
           ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
+          ctx.textBaseline = 'middle';
           
-          // Reduce font size if text is too wide
+          // Increase font size if text is narrower than 3cm
           let textWidth = ctx.measureText(rect.category.label).width;
+          while (textWidth < minTextWidthPx && fontPx < maxFontPx) {
+            fontPx += 2;
+            ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+            textWidth = ctx.measureText(rect.category.label).width;
+          }
+          
+          // Reduce font size if text is too wide for the slot
           const maxTextWidth = widthPx - 2 * padding;
           while (textWidth > maxTextWidth && fontPx > minFontPx) {
             fontPx -= 2;
@@ -315,8 +320,10 @@ export default function TemplatePrint() {
             textWidth = ctx.measureText(rect.category.label).width;
           }
           
-          // Position label above QR code
-          const labelY = -qrSizePx / 2 - padding;
+          // Position label halfway between top of slot and top of QR code
+          const slotTop = -heightPx / 2;
+          const qrTop = -qrSizePx / 2;
+          const labelY = (slotTop + qrTop) / 2;
           
           // Draw white stroke for contrast
           ctx.strokeStyle = '#ffffff';
@@ -520,22 +527,33 @@ export default function TemplatePrint() {
               const paddingMm = 3;
               const maxFontPt = 28;
               const minFontPt = 10;
-              // Use minimum 50mm (5cm) width for font sizing to ensure readability
-              const minWidthForSizingMm = 50;
-              const effectiveWidthMm = Math.max(widthMm, minWidthForSizingMm);
-              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, effectiveWidthMm * 1.2));
+              const minTextWidthMm = 30; // Minimum 3cm text width
+              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
               pdf.setFont('helvetica', 'bold');
               pdf.setFontSize(fontPt);
-              const textWidth = pdf.getTextWidth(rect.category.label);
+              
+              // Increase font size if text is narrower than 3cm
+              let textWidth = pdf.getTextWidth(rect.category.label);
+              while (textWidth < minTextWidthMm && fontPt < maxFontPt) {
+                fontPt += 1;
+                pdf.setFontSize(fontPt);
+                textWidth = pdf.getTextWidth(rect.category.label);
+              }
+              
+              // Reduce font size if text is too wide for the slot
               const maxTextWidth = widthMm - 2 * paddingMm;
               while (textWidth > maxTextWidth && fontPt > minFontPt) {
                 fontPt -= 1;
                 pdf.setFontSize(fontPt);
+                textWidth = pdf.getTextWidth(rect.category.label);
               }
               
-              const labelY = localY - qrSizeMm / 2 - paddingMm;
-              pdf.text(rect.category.label, localX, labelY, { align: 'center', baseline: 'bottom' });
+              // Position label halfway between top of slot and top of QR code
+              const slotTop = localY - heightMm / 2;
+              const qrTop = localY - qrSizeMm / 2;
+              const labelY = (slotTop + qrTop) / 2;
+              pdf.text(rect.category.label, localX, labelY, { align: 'center', baseline: 'middle' });
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -550,22 +568,33 @@ export default function TemplatePrint() {
               const paddingMm = 3;
               const maxFontPt = 28;
               const minFontPt = 10;
-              // Use minimum 50mm (5cm) width for font sizing to ensure readability
-              const minWidthForSizingMm = 50;
-              const effectiveWidthMm = Math.max(widthMm, minWidthForSizingMm);
-              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, effectiveWidthMm * 1.2));
+              const minTextWidthMm = 30; // Minimum 3cm text width
+              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
               pdf.setFont('helvetica', 'bold');
               pdf.setFontSize(fontPt);
-              const textWidth = pdf.getTextWidth(rect.category.label);
+              
+              // Increase font size if text is narrower than 3cm
+              let textWidth = pdf.getTextWidth(rect.category.label);
+              while (textWidth < minTextWidthMm && fontPt < maxFontPt) {
+                fontPt += 1;
+                pdf.setFontSize(fontPt);
+                textWidth = pdf.getTextWidth(rect.category.label);
+              }
+              
+              // Reduce font size if text is too wide for the slot
               const maxTextWidth = widthMm - 2 * paddingMm;
               while (textWidth > maxTextWidth && fontPt > minFontPt) {
                 fontPt -= 1;
                 pdf.setFontSize(fontPt);
+                textWidth = pdf.getTextWidth(rect.category.label);
               }
               
-              const labelY = localY - qrSizeMm / 2 - paddingMm;
-              pdf.text(rect.category.label, localX, labelY, { align: 'center', baseline: 'bottom' });
+              // Position label halfway between top of slot and top of QR code
+              const slotTop = localY - heightMm / 2;
+              const qrTop = localY - qrSizeMm / 2;
+              const labelY = (slotTop + qrTop) / 2;
+              pdf.text(rect.category.label, localX, labelY, { align: 'center', baseline: 'middle' });
             }
           }
 
