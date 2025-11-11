@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Printer, ArrowLeft, Download } from "lucide-react";
 import type { TemplateRectangle, ToolCategory } from "@shared/schema";
 import { jsPDF } from "jspdf";
+import NotoSansJP from "@/assets/fonts/NotoSansJP-base64";
 
 interface TemplateRectangleWithCategory extends TemplateRectangle {
   category: ToolCategory;
@@ -351,6 +352,13 @@ export default function TemplatePrint() {
 
     // Helper to convert cm to mm
     const cmToMm = (cm: number) => cm * 10;
+    
+    // Helper to setup Japanese font in PDF
+    const setupJapaneseFont = (pdf: jsPDF) => {
+      pdf.addFileToVFS("NotoSansJP.ttf", NotoSansJP);
+      pdf.addFont("NotoSansJP.ttf", "NotoSansJP", "normal");
+      pdf.addFont("NotoSansJP.ttf", "NotoSansJP", "bold");
+    };
 
     const isMultiPage = paperSize === '6-page-3x2' || paperSize === '8-page-4x2';
     const is6Page = paperSize === '6-page-3x2';
@@ -375,6 +383,8 @@ export default function TemplatePrint() {
         unit: 'mm',
         format: 'a4',
       });
+      
+      setupJapaneseFont(pdf);
 
       // Helper to determine which sheet a rectangle belongs to
       const getSheetForRect = (xMm: number, yMm: number): number => {
@@ -530,7 +540,7 @@ export default function TemplatePrint() {
               const minTextWidthMm = 40; // Minimum 4cm text width
               let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
-              pdf.setFont('helvetica', 'bold');
+              pdf.setFont('NotoSansJP', 'bold');
               pdf.setFontSize(fontPt);
               
               // Increase font size if text is narrower than 3cm
@@ -571,7 +581,7 @@ export default function TemplatePrint() {
               const minTextWidthMm = 40; // Minimum 4cm text width
               let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 1.2));
               
-              pdf.setFont('helvetica', 'bold');
+              pdf.setFont('NotoSansJP', 'bold');
               pdf.setFontSize(fontPt);
               
               // Increase font size if text is narrower than 3cm
@@ -634,6 +644,8 @@ export default function TemplatePrint() {
         unit: 'mm',
         format: [realWidthMm, realHeightMm],
       });
+      
+      setupJapaneseFont(pdf);
 
       const markerSizeMm = 50;
       const cornerPositions = [
