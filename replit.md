@@ -28,6 +28,61 @@ ArUco marker IDs are allocated as: 1-50 for tool slots, 51-95 for worker identif
 ### Camera Configuration (CRITICAL)
 Cameras must be forced to MJPEG format for optimal performance (7-10fps at 4K, 15-60fps at 1080p), preventing YUYV throttling. A dual-resolution strategy is employed: 1920x1080 for previews and 3840x2160 for high-accuracy calibration/validation (single frame). Default camera settings are configured for bright, natural images with auto-exposure and auto-focus. A 10-second warmup period is implemented for auto-exposure convergence. The post-processing pipeline includes multi-frame sharpness selection, auto brightness/contrast, gamma correction, and sharpening. Memory is optimized with a buffer size of 1 and immediate grayscale conversion. All Python scripts must explicitly force MJPEG.
 
+### LED Control Architecture (CRITICAL)
+
+**Hardware**: WS2812B LED strip (99 LEDs default) on GPIO 18, DMA channel 10, controlled via rpi_ws281x library.
+
+**Architecture**: Daemon-based client-server model that eliminates DMA channel conflicts:
+- **LED Manager Daemon** (`python/led_manager_service.py`): Long-running systemd service with exclusive DMA hardware access. Runs as root, starts automatically on boot.
+- **LED Control Client** (`python/led_control_client.py`): CLI tool called by Node.js backend via sudo. Communicates with daemon via named pipes (IPC).
+- **TypeScript Interface** (`server/utils/led-control.ts`): High-level API for LED operations. Reads LED count and brightness from database config.
+
+**IPC Protocol**: JSON commands sent via named pipe (`/home/naniwa/ShelfEye/state/led_command_pipe`) with temporary response pipes for replies. 5-second timeout for daemon communication.
+
+**Priority System**:
+1. **RED_FLASH** (Priority 2): Alert state, flashes red continuously. Cannot be overridden.
+2. **WHITE** (Priority 1): Calibration/validation lighting. Blocked during alerts.
+3. **OFF** (Priority 0): Default state. Always succeeds.
+
+**State Management**: Daemon maintains persistent state in `/home/naniwa/ShelfEye/state/led_state.json` (survives reboots). Flash thread uses lock-release-join pattern to prevent deadlocks during state transitions.
+
+**Configuration**: Database-driven LED count (default 99) and brightness (default 100, 0-255 range). Values dynamically propagated from UI → Database → TypeScript → Client → Daemon. Brightness updates apply immediately; LED count changes require daemon restart.
+
+**Thread Safety**: All LED state changes protected by `state_lock` mutex. Flash thread stops gracefully by checking `flash_active` flag every 500ms. Join operations always happen with lock released to prevent deadlock.
+
+**Installation**:
+```bash
+# Install GPIO permissions
+./install-gpio-permissions.sh
+
+# Install daemon (manual)
+./install-led-daemon.sh
+
+# Automatic install (via startup script)
+./pi-startup.sh  # Installs daemon and starts service
+```
+
+**Daemon Management**:
+```bash
+# Control service
+sudo systemctl {start|stop|restart|status} led-manager
+
+# View logs
+sudo journalctl -u led-manager -f
+
+# Test client
+sudo python3 python/led_control_client.py status
+sudo python3 python/led_control_client.py white --brightness 100
+```
+
+**Migration from Legacy**: Old scripts (`alert_led.py`, `gpio_controller.py`) removed. `unified_led_controller.py` kept for backward compatibility but deprecated. All LED control now flows through daemon architecture.
+
+**Troubleshooting**:
+- **LED commands timeout (5s)**: Daemon not running or named pipe missing. Check `systemctl status led-manager`.
+- **Daemon fails to start**: Check `journalctl -u led-manager` for errors. Verify rpi_ws281x library installed.
+- **Flash won't stop**: Deadlock bug fixed in Phase 2 refactor. Ensure latest daemon code deployed.
+- **Config not applied**: Ensure database values populated. Check `/home/naniwa/ShelfEye/state/led_daemon_config.json`.
+
 ## External Dependencies
 
 ### Third-Party Services

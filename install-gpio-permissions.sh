@@ -36,10 +36,22 @@ echo "✅ Sudoers configuration installed"
 
 echo ""
 echo "📋 Verifying configuration..."
-if sudo -n python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --help >/dev/null 2>&1; then
-    echo "✅ Passwordless sudo verified"
+if sudo -n python3 /home/naniwa/ShelfEye/python/led_control_client.py --help >/dev/null 2>&1; then
+    echo "✅ Passwordless sudo verified for LED client"
 else
     echo "⚠️  Verification failed - you may need to logout and login again"
+fi
+
+echo ""
+echo "📋 Checking LED Manager Daemon..."
+if systemctl is-active --quiet led-manager.service 2>/dev/null; then
+    echo "✅ LED Manager Daemon is running"
+elif [ -f "/etc/systemd/system/led-manager.service" ]; then
+    echo "⚠️  LED Manager Daemon service installed but not running"
+    echo "   Start it with: sudo systemctl start led-manager"
+else
+    echo "ℹ️  LED Manager Daemon not installed yet"
+    echo "   It will be installed automatically by pi-startup.sh"
 fi
 
 echo ""
