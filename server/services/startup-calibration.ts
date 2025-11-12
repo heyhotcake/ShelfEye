@@ -20,28 +20,24 @@ export class StartupCalibrationService {
     }
 
     this.isRunning = true;
-    console.log('[StartupCalibration] Starting startup calibration check...');
+    console.log('[StartupCalibration] Starting startup calibration check for ALL cameras...');
 
     try {
-      // Get last successful calibration configuration
-      const lastCameraId = await storage.getConfigByKey('last_calibration_camera_id');
-      const lastTimestamp = await storage.getConfigByKey('last_calibration_timestamp');
-      const lastPaperSizeFormat = await storage.getConfigByKey('last_calibration_paper_size_format');
+      // Get all cameras
+      const allCameras = await storage.getCameras();
+      
+      // Filter for cameras that have been calibrated (have homography and paperSize)
+      const calibratedCameras = allCameras.filter(cam => 
+        cam.homographyMatrix && cam.homographyMatrix.length > 0 && cam.paperSize
+      );
 
-      if (!lastCameraId || !lastCameraId.value) {
-        console.warn('[StartupCalibration] No previous calibration found - flashing red LED');
-        await this.flashRedLED('No calibration configured');
+      if (calibratedCameras.length === 0) {
+        console.warn('[StartupCalibration] No calibrated cameras found - flashing red LED');
+        await this.flashRedLED('No cameras calibrated');
         return;
       }
 
-      const cameraId = lastCameraId.value as string;
-      const camera = await storage.getCamera(cameraId);
-
-      if (!camera) {
-        console.warn(`[StartupCalibration] Last calibrated camera ${cameraId} not found - flashing red LED`);
-        await this.flashRedLED('Calibrated camera not found');
-        return;
-      }
+      console.log(`[StartupCalibration] Found ${calibratedCameras.length} calibrated camera(s) to validate`);
 
       // Check if any camera is currently calibrating (respect global lock)
       const globalLockStatus = cameraSessionManager.isAnyCalibrationInProgress();
@@ -50,29 +46,48 @@ export class StartupCalibrationService {
         return;
       }
 
-      // Try to acquire global calibration lock
-      if (!cameraSessionManager.acquireGlobalCalibrationLock(cameraId)) {
-        console.log(`[StartupCalibration] Could not acquire global calibration lock - another calibration started - skipping`);
-        return;
+      // Validate each camera sequentially
+      const results: { camera: any; success: boolean }[] = [];
+      
+      for (const camera of calibratedCameras) {
+        // Try to acquire global calibration lock for this camera
+        if (!cameraSessionManager.acquireGlobalCalibrationLock(camera.id)) {
+          console.log(`[StartupCalibration] Could not acquire lock for camera ${camera.name} - skipping`);
+          results.push({ camera, success: false });
+          continue;
+        }
+
+        try {
+          const paperSizeFormat = camera.paperSize || 'A4-landscape';
+          const deviceInfo = camera.devicePath || `Index ${camera.deviceIndex}`;
+          
+          console.log(`[StartupCalibration] Validating camera: ${camera.name} (${deviceInfo})`);
+          console.log(`[StartupCalibration] Paper size: ${paperSizeFormat}`);
+
+          // Run calibration (validation mode - checks corner markers only)
+          const success = await this.runCalibration(camera, paperSizeFormat);
+          results.push({ camera, success });
+
+          if (success) {
+            console.log(`[StartupCalibration] ✓ Camera ${camera.name} validated successfully`);
+          } else {
+            console.error(`[StartupCalibration] ✗ Camera ${camera.name} validation failed`);
+          }
+        } finally {
+          // Release lock for this camera
+          cameraSessionManager.releaseGlobalCalibrationLock(camera.id);
+        }
       }
 
-      // Use camera's paperSize if available (multi-camera support), fallback to global config (backward compatibility)
-      const paperSizeFormat = camera.paperSize || (lastPaperSizeFormat?.value as string) || 'A4-landscape';
-      console.log(`[StartupCalibration] Using paperSize: ${paperSizeFormat} (source: ${camera.paperSize ? 'camera record' : 'global config'})`);
-
-      const deviceInfo = camera.devicePath || `Index ${camera.deviceIndex}`;
-      console.log(`[StartupCalibration] Running calibration for camera ${camera.name} (${deviceInfo})`);
-      console.log(`[StartupCalibration] Paper size format: ${paperSizeFormat}`);
-      console.log(`[StartupCalibration] Last calibration: ${lastTimestamp?.value || 'unknown'}`);
-
-      // Run calibration
-      const success = await this.runCalibration(camera, paperSizeFormat);
-
-      if (!success) {
-        console.error('[StartupCalibration] Calibration failed - flashing red LED');
-        await this.flashRedLED('Calibration failed on startup');
+      // Determine overall result
+      const failedCameras = results.filter(r => !r.success);
+      
+      if (failedCameras.length > 0) {
+        const failedNames = failedCameras.map(r => r.camera.name).join(', ');
+        console.error(`[StartupCalibration] ${failedCameras.length}/${results.length} camera(s) failed validation: ${failedNames}`);
+        await this.flashRedLED(`Camera validation failed: ${failedNames}`);
       } else {
-        console.log('[StartupCalibration] Calibration successful!');
+        console.log(`[StartupCalibration] ✓ All ${results.length} camera(s) validated successfully!`);
         // Stop any existing alert LED
         await stopRedFlash();
       }
@@ -81,11 +96,6 @@ export class StartupCalibrationService {
       console.error('[StartupCalibration] Error during startup calibration:', error);
       await this.flashRedLED('Startup calibration error');
     } finally {
-      // Release global calibration lock if we acquired it
-      const lastCameraId = await storage.getConfigByKey('last_calibration_camera_id');
-      if (lastCameraId?.value) {
-        cameraSessionManager.releaseGlobalCalibrationLock(lastCameraId.value as string);
-      }
       this.isRunning = false;
     }
   }
