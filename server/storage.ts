@@ -728,29 +728,30 @@ export class DbStorage implements IStorage {
         priority: "high",
         conditions: { maxReprojectionError: 2.5 },
       });
-
-      // Only set config values if they don't exist (avoid overwriting user settings)
-      const configDefaults = [
-        { key: "smtp_host", value: "smtp.gmail.com", desc: "SMTP server host" },
-        { key: "smtp_port", value: 587, desc: "SMTP server port" },
-        { key: "smtp_user", value: "", desc: "SMTP username" },
-        { key: "smtp_pass", value: "", desc: "SMTP password" },
-        { key: "smtp_from", value: "alerts@example.com", desc: "Alert email sender" },
-        { key: "alert_email", value: "", desc: "Alert recipient email" },
-        { key: "google_sheets_url", value: "", desc: "Google Sheets logging URL" },
-        { key: "buzzer_gpio_pin", value: 17, desc: "Buzzer GPIO pin" },
-        { key: "led_gpio_pin", value: 27, desc: "LED GPIO pin" },
-        { key: "light_strip_gpio_pin", value: 18, desc: "LED light strip GPIO pin for consistent capture lighting" },
-        { key: "led_strip_num_leds", value: 99, desc: "Number of LEDs in the WS2812B light strip" },
-        { key: "led_strip_brightness", value: 100, desc: "LED strip brightness level (0-255)" },
-        { key: "alert_led_gpio_pin", value: 17, desc: "Red alert LED GPIO pin for flashing error indicators" },
-      ];
-      
-      for (const config of configDefaults) {
-        const existing = await this.getConfigByKey(config.key);
-        if (!existing) {
-          await this.setConfig(config.key, config.value, config.desc);
-        }
+    }
+    
+    // Always ensure config values exist (even on existing installations)
+    // This allows adding new config keys without breaking existing deployments
+    const configDefaults = [
+      { key: "smtp_host", value: "smtp.gmail.com", desc: "SMTP server host" },
+      { key: "smtp_port", value: 587, desc: "SMTP server port" },
+      { key: "smtp_user", value: "", desc: "SMTP username" },
+      { key: "smtp_pass", value: "", desc: "SMTP password" },
+      { key: "smtp_from", value: "alerts@example.com", desc: "Alert email sender" },
+      { key: "alert_email", value: "", desc: "Alert recipient email" },
+      { key: "google_sheets_url", value: "", desc: "Google Sheets logging URL" },
+      { key: "buzzer_gpio_pin", value: 17, desc: "Buzzer GPIO pin" },
+      { key: "led_gpio_pin", value: 27, desc: "LED GPIO pin" },
+      { key: "light_strip_gpio_pin", value: 18, desc: "LED light strip GPIO pin for consistent capture lighting" },
+      { key: "led_strip_num_leds", value: 99, desc: "Number of LEDs in the WS2812B light strip" },
+      { key: "led_strip_brightness", value: 100, desc: "LED strip brightness level (0-255)" },
+      { key: "alert_led_gpio_pin", value: 17, desc: "Red alert LED GPIO pin for flashing error indicators" },
+    ];
+    
+    for (const config of configDefaults) {
+      const existing = await this.getConfigByKey(config.key);
+      if (!existing) {
+        await this.setConfig(config.key, config.value, config.desc);
       }
     }
   }

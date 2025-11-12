@@ -36,7 +36,7 @@ echo "✅ Sudoers configuration installed"
 
 echo ""
 echo "📋 Verifying configuration..."
-if sudo -n python3 /home/naniwa/ShelfEye/python/gpio_controller.py --help >/dev/null 2>&1; then
+if sudo -n python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --help >/dev/null 2>&1; then
     echo "✅ Passwordless sudo verified"
 else
     echo "⚠️  Verification failed - you may need to logout and login again"
