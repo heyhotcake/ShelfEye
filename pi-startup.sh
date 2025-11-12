@@ -89,6 +89,39 @@ else
     log "✓ WS2812B LED library already installed"
 fi
 
+# Generate LED daemon configuration
+log "Configuring LED Manager Daemon..."
+mkdir -p "$APP_DIR/state"
+cat > "$APP_DIR/state/led_daemon_config.json" << EOF
+{
+  "num_leds": 99,
+  "brightness": 100,
+  "gpio_pin": 18,
+  "dma_channel": 10,
+  "freq_hz": 800000,
+  "invert": false
+}
+EOF
+log "✓ LED daemon config generated"
+
+# Ensure LED Manager Daemon is installed and running
+if [ -f "$APP_DIR/led-manager.service" ]; then
+    log "Installing LED Manager Daemon service..."
+    sudo cp "$APP_DIR/led-manager.service" /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable led-manager.service 2>&1 | tee -a "$LOG_FILE"
+    sudo systemctl restart led-manager.service 2>&1 | tee -a "$LOG_FILE"
+    
+    # Check daemon status
+    if sudo systemctl is-active --quiet led-manager.service; then
+        log "✅ LED Manager Daemon is running"
+    else
+        log "⚠️  LED Manager Daemon failed to start - check: sudo journalctl -u led-manager"
+    fi
+else
+    log "⚠️  LED Manager Daemon service file not found"
+fi
+
 # Database schema sync (if needed)
 log "Syncing database schema..."
 npm run db:push 2>&1 | tee -a "$LOG_FILE" || {

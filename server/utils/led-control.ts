@@ -6,59 +6,41 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 
 /**
- * Unified LED Control Utility
+ * LED Control Utility
  * 
- * Uses python/unified_led_controller.py to manage WS2812B LED strip
- * with proper priority management (RED FLASH > WHITE > OFF)
- * and DMA channel resource cleanup
+ * Uses python/led_control_client.py to communicate with LED Manager Daemon
+ * via named pipe IPC. This eliminates DMA channel conflicts by ensuring
+ * only one process (the daemon) controls the LED hardware.
+ * 
+ * Priority management: RED FLASH > WHITE > OFF
  */
 
 /**
- * Kill any stuck LED controller processes to ensure clean state
- * Used before calibration to prevent stuck processes from blocking white light
+ * No longer needed with daemon architecture - daemon manages all LED state
+ * Keeping function for backward compatibility but it's a no-op
  */
 async function killStuckLEDProcesses(): Promise<void> {
-  try {
-    // Kill any stuck unified_led_controller.py processes
-    await execAsync('sudo pkill -9 -f unified_led_controller.py || true');
-    console.log('[LED] Killed any stuck LED processes');
-    // Small delay to ensure processes are fully terminated
-    await new Promise(resolve => setTimeout(resolve, 200));
-  } catch (err) {
-    console.error('[LED] Error killing stuck processes:', err);
-  }
+  // No-op: daemon architecture eliminates stuck processes
+  console.log('[LED] Using daemon architecture - no stuck processes to kill');
 }
 
 /**
  * Turn LED strip to WHITE (for validation/calibration lighting)
- * Will be denied if RED FLASH alert is active (priority system)
- * Kills stuck processes first to ensure clean state
+ * Communicates with LED daemon via client
  */
 export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
-  // Kill stuck LED processes if requested (for calibration)
-  if (killStuckFirst) {
-    await killStuckLEDProcesses();
-  }
   try {
-    const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
     const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
     const brightnessConfig = await storage.getConfigByKey('led_strip_brightness');
     
-    if (!lightConfig) {
-      console.log('[LED] Light strip GPIO pin not configured');
-      return false;
-    }
-
-    const pin = parseInt(lightConfig.value as string);
     const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
     const brightness = brightnessConfig ? parseInt(brightnessConfig.value as string) : 100;
 
     return new Promise<boolean>((resolve) => {
       const ledProcess = spawn('sudo', [
         'python3',
-        path.join(process.cwd(), 'python/unified_led_controller.py'),
-        '--pin', pin.toString(),
-        '--action', 'white',
+        path.join(process.cwd(), 'python/led_control_client.py'),
+        'white',
         '--num-leds', numLeds.toString(),
         '--brightness', brightness.toString()
       ]);
@@ -72,39 +54,43 @@ export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
 
       ledProcess.stderr.on('data', (data) => {
         error += data.toString();
-        console.error('[LED] Unified controller stderr:', data.toString());
+        console.error('[LED] Client stderr:', data.toString());
       });
 
       ledProcess.on('close', (code) => {
         if (code === 0) {
           try {
             const response = JSON.parse(result);
-            if (response.priority_denied) {
-              console.log('[LED] White light request denied - RED FLASH has priority');
-            } else {
+            if (response.status === 'blocked') {
+              console.log('[LED] White light request blocked:', response.message);
+              resolve(false);
+            } else if (response.status === 'success') {
               console.log('[LED] White light turned ON');
+              resolve(true);
+            } else {
+              console.error('[LED] Unexpected response:', response);
+              resolve(false);
             }
-            resolve(response.success);
           } catch (e) {
             console.error('[LED] Failed to parse response:', result);
             resolve(false);
           }
         } else {
-          console.error('[LED] Unified controller failed:', error);
+          console.error('[LED] Client failed:', error);
           resolve(false);
         }
       });
 
       ledProcess.on('error', (err) => {
-        console.error('[LED] Failed to spawn unified controller:', err);
+        console.error('[LED] Failed to spawn client:', err);
         resolve(false);
       });
 
-      // Timeout after 2 seconds
+      // Timeout after 5 seconds (daemon communication)
       setTimeout(() => {
         ledProcess.kill('SIGTERM');
         resolve(false);
-      }, 2000);
+      }, 5000);
     });
   } catch (err) {
     console.error('[LED] setWhiteLight error:', err);
@@ -114,27 +100,18 @@ export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
 
 /**
  * Turn OFF LED strip
- * Will be denied if RED FLASH alert is active (priority system)
+ * Communicates with LED daemon via client
  */
 export async function turnOffLED(): Promise<void> {
   try {
-    const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
     const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
-    
-    if (!lightConfig) {
-      return;
-    }
-
-    const pin = parseInt(lightConfig.value as string);
     const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
 
-    // Wait for LED to turn off and release hardware resources
     await new Promise<void>((resolve) => {
       const ledProcess = spawn('sudo', [
         'python3',
-        path.join(process.cwd(), 'python/unified_led_controller.py'),
-        '--pin', pin.toString(),
-        '--action', 'off',
+        path.join(process.cwd(), 'python/led_control_client.py'),
+        'off',
         '--num-leds', numLeds.toString()
       ]);
 
@@ -145,17 +122,17 @@ export async function turnOffLED(): Promise<void> {
       });
 
       ledProcess.stderr.on('data', (data) => {
-        console.error('[LED] Unified controller stderr:', data.toString());
+        console.error('[LED] Client stderr:', data.toString());
       });
 
       ledProcess.on('close', (code) => {
         if (code === 0) {
           try {
             const response = JSON.parse(result);
-            if (response.priority_denied) {
-              console.log('[LED] OFF request denied - RED FLASH has priority');
-            } else {
+            if (response.status === 'success') {
               console.log('[LED] LED light turned OFF');
+            } else {
+              console.log('[LED] LED off response:', response);
             }
           } catch (e) {
             console.error('[LED] Failed to parse response:', result);
@@ -166,18 +143,15 @@ export async function turnOffLED(): Promise<void> {
 
       ledProcess.on('error', (err) => {
         console.error('[LED] LED off error:', err);
-        resolve(); // Continue even if error
+        resolve();
       });
 
-      // Timeout after 2 seconds
+      // Timeout after 5 seconds
       setTimeout(() => {
         ledProcess.kill('SIGTERM');
         resolve();
-      }, 2000);
+      }, 5000);
     });
-
-    // Small delay to ensure DMA channel is released
-    await new Promise(resolve => setTimeout(resolve, 200));
   } catch (err) {
     console.error('[LED] Failed to turn off LED light:', err);
   }
@@ -185,108 +159,18 @@ export async function turnOffLED(): Promise<void> {
 
 /**
  * Start RED FLASH alert (highest priority)
- * Cannot be overridden by white light or off commands
+ * Communicates with LED daemon via client
  */
 export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow'): Promise<boolean> {
   try {
-    const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
     const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
-    
-    if (!lightConfig) {
-      console.log('[LED] Light strip GPIO pin not configured');
-      return false;
-    }
-
-    const pin = parseInt(lightConfig.value as string);
     const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
 
     return new Promise<boolean>((resolve) => {
       const ledProcess = spawn('sudo', [
         'python3',
-        path.join(process.cwd(), 'python/unified_led_controller.py'),
-        '--pin', pin.toString(),
-        '--action', 'red_flash_start',
-        '--pattern', pattern,
-        '--num-leds', numLeds.toString()
-      ], {
-        detached: true, // Keep running in background
-        stdio: ['ignore', 'pipe', 'pipe']
-      });
-
-      let resolved = false;
-
-      // Read the first line to confirm startup
-      ledProcess.stdout.once('data', (data: Buffer) => {
-        if (resolved) return;
-        try {
-          const result = JSON.parse(data.toString());
-          if (result.success) {
-            console.log(`[LED] RED FLASH started (${pattern} pattern)`);
-            ledProcess.unref(); // Let it run independently
-            resolved = true;
-            resolve(true);
-          } else {
-            console.error('[LED] Python script reported failure:', result.error);
-            resolved = true;
-            resolve(false);
-          }
-        } catch (err) {
-          console.error('[LED] Failed to parse startup response');
-          resolved = true;
-          resolve(false);
-        }
-      });
-
-      ledProcess.on('error', (err) => {
-        if (resolved) return;
-        console.error('[LED] Failed to start RED FLASH:', err);
-        resolved = true;
-        resolve(false);
-      });
-
-      ledProcess.on('close', (code) => {
-        if (resolved) return;
-        console.error('[LED] RED FLASH process exited early with code:', code);
-        resolved = true;
-        resolve(false);
-      });
-
-      // Timeout after 2 seconds
-      setTimeout(() => {
-        if (resolved) return;
-        console.error('[LED] RED FLASH startup timeout');
-        ledProcess.kill('SIGTERM');
-        resolved = true;
-        resolve(false);
-      }, 2000);
-    });
-  } catch (err) {
-    console.error('[LED] startRedFlash error:', err);
-    return false;
-  }
-}
-
-/**
- * Stop RED FLASH alert and turn off LEDs
- */
-export async function stopRedFlash(): Promise<boolean> {
-  try {
-    const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
-    const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
-    
-    if (!lightConfig) {
-      return false;
-    }
-
-    const pin = parseInt(lightConfig.value as string);
-    const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
-
-    return new Promise<boolean>((resolve) => {
-      const ledProcess = spawn('sudo', [
-        'python3',
-        path.join(process.cwd(), 'python/unified_led_controller.py'),
-        '--pin', pin.toString(),
-        '--action', 'red_flash_stop',
+        path.join(process.cwd(), 'python/led_control_client.py'),
+        'start-red-flash',
         '--num-leds', numLeds.toString()
       ]);
 
@@ -297,15 +181,85 @@ export async function stopRedFlash(): Promise<boolean> {
       });
 
       ledProcess.stderr.on('data', (data) => {
-        console.error('[LED] Unified controller stderr:', data.toString());
+        console.error('[LED] Client stderr:', data.toString());
       });
 
       ledProcess.on('close', (code) => {
         if (code === 0) {
           try {
             const response = JSON.parse(result);
-            console.log('[LED] RED FLASH stopped');
-            resolve(response.success);
+            if (response.status === 'success') {
+              console.log('[LED] RED FLASH started');
+              resolve(true);
+            } else {
+              console.error('[LED] Failed to start flash:', response.message);
+              resolve(false);
+            }
+          } catch (e) {
+            console.error('[LED] Failed to parse response:', result);
+            resolve(false);
+          }
+        } else {
+          console.error('[LED] Client failed with code:', code);
+          resolve(false);
+        }
+      });
+
+      ledProcess.on('error', (err) => {
+        console.error('[LED] Failed to start RED FLASH:', err);
+        resolve(false);
+      });
+
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        ledProcess.kill('SIGTERM');
+        resolve(false);
+      }, 5000);
+    });
+  } catch (err) {
+    console.error('[LED] startRedFlash error:', err);
+    return false;
+  }
+}
+
+/**
+ * Stop RED FLASH alert and turn off LEDs
+ * Communicates with LED daemon via client
+ */
+export async function stopRedFlash(): Promise<boolean> {
+  try {
+    const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
+    const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
+
+    return new Promise<boolean>((resolve) => {
+      const ledProcess = spawn('sudo', [
+        'python3',
+        path.join(process.cwd(), 'python/led_control_client.py'),
+        'stop-red-flash',
+        '--num-leds', numLeds.toString()
+      ]);
+
+      let result = '';
+
+      ledProcess.stdout.on('data', (data) => {
+        result += data.toString();
+      });
+
+      ledProcess.stderr.on('data', (data) => {
+        console.error('[LED] Client stderr:', data.toString());
+      });
+
+      ledProcess.on('close', (code) => {
+        if (code === 0) {
+          try {
+            const response = JSON.parse(result);
+            if (response.status === 'success') {
+              console.log('[LED] RED FLASH stopped');
+              resolve(true);
+            } else {
+              console.error('[LED] Failed to stop flash:', response.message);
+              resolve(false);
+            }
           } catch (e) {
             console.error('[LED] Failed to parse response:', result);
             resolve(false);
@@ -320,11 +274,11 @@ export async function stopRedFlash(): Promise<boolean> {
         resolve(false);
       });
 
-      // Timeout after 2 seconds
+      // Timeout after 5 seconds
       setTimeout(() => {
         ledProcess.kill('SIGTERM');
         resolve(false);
-      }, 2000);
+      }, 5000);
     });
   } catch (err) {
     console.error('[LED] stopRedFlash error:', err);
