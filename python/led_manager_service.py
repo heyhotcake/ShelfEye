@@ -119,6 +119,7 @@ class LEDManagerDaemon:
             invert=self.config.get('invert', False),
             brightness=self.config['brightness'],
             channel=0,
+            strip_type=0x00081000,  # WS2812 (critical for hardware compatibility)
         )
         self.strip.begin()
         

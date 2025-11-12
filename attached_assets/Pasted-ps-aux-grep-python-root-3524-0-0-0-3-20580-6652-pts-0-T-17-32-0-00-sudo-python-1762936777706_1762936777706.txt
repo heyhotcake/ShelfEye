@@ -1,0 +1,30 @@
+ps aux | grep python
+root        3524  0.0  0.3  20580  6652 pts/0    T    17:32   0:00 sudo python3 python/led_control_client.py status
+root        3528  0.0  0.3  20580  6652 pts/0    T    17:32   0:00 sudo python3 python/led_control_client.py status
+root        3537  0.0  0.3  20580  6644 pts/0    T    17:33   0:00 sudo python3 python/led_control_client.py off
+root        3542  0.0  0.3  20580  6652 pts/0    T    17:34   0:00 sudo python3 python/led_control_client.py off
+naniwa      3591  0.0  0.1   6252  2016 pts/0    S+   17:39   0:00 grep --color=auto python
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo systemctl status led-manager
+× led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller
+     Loaded: loaded (/etc/systemd/system/led-manager.service; enabled; preset: enabled)
+     Active: failed (Result: signal) since Wed 2025-11-12 17:35:21 JST; 4min 6s ago
+   Duration: 53min 44.733s
+ Invocation: abd2caddcc7149eeb0b638668e06888d
+       Docs: file:///home/naniwa/ShelfEye/replit.md
+    Process: 3273 ExecStartPre=/bin/mkdir -p /home/naniwa/ShelfEye/state (code=exited, status=0/SUCCESS)
+    Process: 3274 ExecStartPre=/bin/chown naniwa:naniwa /home/naniwa/ShelfEye/state (code=exited, status=0/SUCCESS)
+    Process: 3277 ExecStart=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_manager_service.py (code=killed, signal=KILL)
+   Main PID: 3277 (code=killed, signal=KILL)
+        CPU: 6min 12.898s
+
+Nov 12 16:41:33 NaniwaTanaCheck led-manager[3277]: ✅ LED hardware initialized: 99 LEDs, brightness 100
+Nov 12 16:41:33 NaniwaTanaCheck led-manager[3277]: ✅ Command pipe created: /home/naniwa/ShelfEye/state/led_command_pipe
+Nov 12 16:41:33 NaniwaTanaCheck led-manager[3277]: 🚀 LED Manager Daemon started, listening for commands...
+Nov 12 16:42:05 NaniwaTanaCheck led-manager[3277]: 📨 Received command: white
+Nov 12 16:43:00 NaniwaTanaCheck led-manager[3277]: 📨 Received command: start_flash
+Nov 12 17:35:17 NaniwaTanaCheck systemd[1]: Stopping led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller...
+Nov 12 17:35:21 NaniwaTanaCheck systemd[1]: led-manager.service: Main process exited, code=killed, status=9/KILL
+Nov 12 17:35:21 NaniwaTanaCheck systemd[1]: led-manager.service: Failed with result 'signal'.
+Nov 12 17:35:21 NaniwaTanaCheck systemd[1]: Stopped led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller.
+Nov 12 17:35:21 NaniwaTanaCheck systemd[1]: led-manager.service: Consumed 6min 12.898s CPU time.
+naniwa@NaniwaTanaCheck:~/ShelfEye $
