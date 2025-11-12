@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""
+LED Control Client - Sends commands to LED Manager Service
+"""
+
+import sys
+import json
+import time
+import os
+import subprocess
+
+PIPE_PATH = "/tmp/led_control_pipe"
+SERVICE_SCRIPT = "/home/naniwa/ShelfEye/python/led_manager_service.py"
+
+def ensure_service_running():
+    """Start the LED manager service if not running"""
+    lock_file = "/tmp/led_manager.lock"
+    
+    # Check if service is running
+    if os.path.exists(lock_file):
+        try:
+            with open(lock_file, "r") as f:
+                pid = int(f.read().strip())
+            # Check if process exists
+            os.kill(pid, 0)
+            return True  # Service is running
+        except (ValueError, OSError, ProcessLookupError):
+            pass  # Service not running or stale lock
+    
+    # Start service
+    print("Starting LED Manager Service...", file=sys.stderr)
+    subprocess.Popen(
+        ["sudo", "python3", SERVICE_SCRIPT],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True
+    )
+    
+    # Wait for service to start
+    for _ in range(10):
+        if os.path.exists(PIPE_PATH):
+            return True
+        time.sleep(0.5)
+    
+    return False
+
+def send_command(command):
+    """Send command to LED manager service"""
+    ensure_service_running()
+    
+    if not os.path.exists(PIPE_PATH):
+        return {"success": False, "error": "Service not running"}
+    
+    try:
+        # Send command
+        with open(PIPE_PATH, "w") as pipe:
+            json.dump(command, pipe)
+        
+        # Wait for response
+        time.sleep(0.1)
+        
+        # Try to read response (this is a simplified approach)
+        # In production, use a proper IPC mechanism
+        return {"success": True}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--action", required=True, 
+                       choices=["white", "off", "red_flash", "stop_flash", "status"])
+    parser.add_argument("--priority", type=int, default=0)
+    parser.add_argument("--pattern", default="slow")
+    
+    args = parser.parse_args()
+    
+    command = {
+        "action": args.action,
+        "priority": args.priority,
+        "pattern": args.pattern
+    }
+    
+    result = send_command(command)
+    print(json.dumps(result))
