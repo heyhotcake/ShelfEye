@@ -741,6 +741,8 @@ export class DbStorage implements IStorage {
         { key: "buzzer_gpio_pin", value: 17, desc: "Buzzer GPIO pin" },
         { key: "led_gpio_pin", value: 27, desc: "LED GPIO pin" },
         { key: "light_strip_gpio_pin", value: 18, desc: "LED light strip GPIO pin for consistent capture lighting" },
+        { key: "led_strip_num_leds", value: 99, desc: "Number of LEDs in the WS2812B light strip" },
+        { key: "led_strip_brightness", value: 100, desc: "LED strip brightness level (0-255)" },
         { key: "alert_led_gpio_pin", value: 17, desc: "Red alert LED GPIO pin for flashing error indicators" },
       ];
       
