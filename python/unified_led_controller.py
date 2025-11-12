@@ -21,8 +21,19 @@ except ImportError:
     print("WARNING: rpi_ws281x not available (not on Raspberry Pi)", file=sys.stderr)
 
 # Global state file for cross-process communication
-STATE_FILE = '/tmp/led_state.json'
-LOCK_FILE = '/tmp/led_controller.lock'
+# Use persistent location that survives reboot
+STATE_DIR = '/home/naniwa/ShelfEye/state'
+STATE_FILE = f'{STATE_DIR}/led_state.json'
+LOCK_FILE = f'{STATE_DIR}/led_controller.lock'
+
+# Ensure state directory exists
+try:
+    os.makedirs(STATE_DIR, exist_ok=True)
+except (OSError, PermissionError):
+    # Fallback to /tmp if we can't create persistent directory
+    STATE_DIR = '/tmp'
+    STATE_FILE = f'{STATE_DIR}/led_state.json'
+    LOCK_FILE = f'{STATE_DIR}/led_controller.lock'
 
 class UnifiedLEDController:
     """Single controller for WS2812B strip with priority management"""
