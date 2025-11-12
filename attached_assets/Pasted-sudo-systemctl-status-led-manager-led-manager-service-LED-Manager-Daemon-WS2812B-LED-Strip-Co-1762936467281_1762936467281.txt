@@ -1,0 +1,73 @@
+sudo systemctl status led-manager
+● led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller
+     Loaded: loaded (/etc/systemd/system/led-manager.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2025-11-12 16:41:32 JST; 50min ago
+ Invocation: abd2caddcc7149eeb0b638668e06888d
+       Docs: file:///home/naniwa/ShelfEye/replit.md
+    Process: 3273 ExecStartPre=/bin/mkdir -p /home/naniwa/ShelfEye/state (code=exited, status=0/SUCCESS)
+    Process: 3274 ExecStartPre=/bin/chown naniwa:naniwa /home/naniwa/ShelfEye/state (code=exited, status=0/SUCCESS)
+   Main PID: 3277 (python3)
+      Tasks: 2 (limit: 1579)
+        CPU: 5min 38.481s
+     CGroup: /system.slice/led-manager.service
+             └─3277 /usr/bin/python3 /home/naniwa/ShelfEye/python/led_manager_service.py
+
+Nov 12 16:41:32 NaniwaTanaCheck systemd[1]: Starting led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller...
+Nov 12 16:41:32 NaniwaTanaCheck systemd[1]: Started led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller.
+Nov 12 16:41:33 NaniwaTanaCheck led-manager[3277]: ✅ LED hardware initialized: 99 LEDs, brightness 100
+Nov 12 16:41:33 NaniwaTanaCheck led-manager[3277]: ✅ Command pipe created: /home/naniwa/ShelfEye/state/led_command_pipe
+Nov 12 16:41:33 NaniwaTanaCheck led-manager[3277]: 🚀 LED Manager Daemon started, listening for commands...
+Nov 12 16:42:05 NaniwaTanaCheck led-manager[3277]: 📨 Received command: white
+Nov 12 16:43:00 NaniwaTanaCheck led-manager[3277]: 📨 Received command: start_flash
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo python3 python/led_control_client.py status
+sudo python3 python/led_control_client.py off^Z
+[1]+  Stopped                 sudo python3 python/led_control_client.py status
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo python3 python/led_control_client.py status
+^Z
+[2]+  Stopped                 sudo python3 python/led_control_client.py status
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo python3 python/led_control_client.py off
+^CTraceback (most recent call last):
+  File "/home/naniwa/ShelfEye/python/led_control_client.py", line 227, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/naniwa/ShelfEye/python/led_control_client.py", line 220, in main
+    return args.func(args)
+           ~~~~~~~~~^^^^^^
+  File "/home/naniwa/ShelfEye/python/led_control_client.py", line 127, in cmd_off
+    response = send_command('off', num_leds=args.num_leds)
+  File "/home/naniwa/ShelfEye/python/led_control_client.py", line 84, in send_command
+    with open(response_pipe, 'r') as resp:
+         ~~~~^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo python3 python/led_control_client.py off
+sudo python3 python/led_control_client.py off^Z
+[3]+  Stopped                 sudo python3 python/led_control_client.py off
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo python3 python/led_control_client.py off
+^Z
+[4]+  Stopped                 sudo python3 python/led_control_client.py off
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo journalctl -u led-manager -n 50
+Nov 12 16:36:04 NaniwaTanaCheck systemd[1]: /etc/systemd/system/led-manager.service:27: Unknown key 'StartLimitIntervalSec' in section [Service], ignoring.
+Nov 12 16:36:05 NaniwaTanaCheck systemd[1]: Starting led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller...
+Nov 12 16:36:05 NaniwaTanaCheck systemd[1]: Started led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller.
+Nov 12 16:36:05 NaniwaTanaCheck led-manager[2958]: ✅ LED hardware initialized: 99 LEDs, brightness 100
+Nov 12 16:36:05 NaniwaTanaCheck led-manager[2958]: ✅ Command pipe created: /home/naniwa/ShelfEye/state/led_command_pipe
+Nov 12 16:36:05 NaniwaTanaCheck led-manager[2958]: 🚀 LED Manager Daemon started, listening for commands...
+Nov 12 16:36:07 NaniwaTanaCheck led-manager[2958]: 📨 Received command: status
+Nov 12 16:41:21 NaniwaTanaCheck systemd[1]: /etc/systemd/system/led-manager.service:27: Unknown key 'StartLimitIntervalSec' in section [Service], ignoring.
+Nov 12 16:41:22 NaniwaTanaCheck systemd[1]: /etc/systemd/system/led-manager.service:27: Unknown key 'StartLimitIntervalSec' in section [Service], ignoring.
+Nov 12 16:41:22 NaniwaTanaCheck led-manager[2958]: 🛑 Received signal 15, shutting down...
+Nov 12 16:41:22 NaniwaTanaCheck systemd[1]: Stopping led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller...
+Nov 12 16:41:32 NaniwaTanaCheck systemd[1]: led-manager.service: State 'stop-sigterm' timed out. Killing.
+Nov 12 16:41:32 NaniwaTanaCheck systemd[1]: led-manager.service: Killing process 2958 (python3) with signal SIGKILL.
+Nov 12 16:41:32 NaniwaTanaCheck systemd[1]: led-manager.service: Main process exited, code=killed, status=9/KILL
+Nov 12 16:41:32 NaniwaTanaCheck systemd[1]: led-manager.service: Failed with result 'timeout'.
+Nov 12 16:41:32 NaniwaTanaCheck systemd[1]: Stopped led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller.
+Nov 12 16:41:32 NaniwaTanaCheck systemd[1]: Starting led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller...
+Nov 12 16:41:32 NaniwaTanaCheck systemd[1]: Started led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller.
+Nov 12 16:41:33 NaniwaTanaCheck led-manager[3277]: ✅ LED hardware initialized: 99 LEDs, brightness 100
+Nov 12 16:41:33 NaniwaTanaCheck led-manager[3277]: ✅ Command pipe created: /home/naniwa/ShelfEye/state/led_command_pipe
+Nov 12 16:41:33 NaniwaTanaCheck led-manager[3277]: 🚀 LED Manager Daemon started, listening for commands...
+Nov 12 16:42:05 NaniwaTanaCheck led-manager[3277]: 📨 Received command: white
+Nov 12 16:43:00 NaniwaTanaCheck led-manager[3277]: 📨 Received command: start_flash
+naniwa@NaniwaTanaCheck:~/ShelfEye $

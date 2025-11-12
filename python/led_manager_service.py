@@ -130,19 +130,25 @@ class LEDManagerDaemon:
         if not self.strip:
             return
         
-        for i in range(self.strip.numPixels()):
-            self.strip.setPixelColor(i, Color(0, 0, 0))
-        self.strip.show()
+        try:
+            for i in range(self.strip.numPixels()):
+                self.strip.setPixelColor(i, Color(0, 0, 0))
+            self.strip.show()
+        except Exception as e:
+            print(f"⚠️  Hardware error in _clear_strip: {e}", file=sys.stderr)
     
     def _set_all_leds(self, color: tuple):
         """Set all LEDs to a specific RGB color"""
         if not self.strip:
             return
         
-        r, g, b = color
-        for i in range(self.strip.numPixels()):
-            self.strip.setPixelColor(i, Color(r, g, b))
-        self.strip.show()
+        try:
+            r, g, b = color
+            for i in range(self.strip.numPixels()):
+                self.strip.setPixelColor(i, Color(r, g, b))
+            self.strip.show()
+        except Exception as e:
+            print(f"⚠️  Hardware error in _set_all_leds: {e}", file=sys.stderr)
     
     def _flash_red_thread(self):
         """Background thread for red flashing (runs until stopped)"""
