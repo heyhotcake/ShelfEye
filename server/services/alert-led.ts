@@ -46,12 +46,11 @@ export class AlertLEDController {
    */
   async flashFor(duration: number, pattern: 'fast' | 'slow' | 'pulse' = 'fast'): Promise<boolean> {
     try {
-      await startRedFlash();
+      await startRedFlash(pattern);
       
-      // Stop after duration
-      setTimeout(async () => {
-        await stopRedFlash();
-      }, duration * 1000);
+      // Wait for duration, then stop
+      await new Promise(resolve => setTimeout(resolve, duration * 1000));
+      await stopRedFlash();
       
       console.log(`[Alert LED] Flashed for ${duration}s`);
       return true;
