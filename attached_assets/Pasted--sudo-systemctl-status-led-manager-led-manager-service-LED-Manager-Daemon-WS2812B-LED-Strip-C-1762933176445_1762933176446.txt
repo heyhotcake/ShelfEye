@@ -1,0 +1,29 @@
+ sudo systemctl status led-manager
+● led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller
+     Loaded: loaded (/etc/systemd/system/led-manager.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2025-11-12 16:36:05 JST; 11s ago
+ Invocation: 7e5871bf28194f7e8f7d467ba94dc96e
+       Docs: file:///home/naniwa/ShelfEye/replit.md
+    Process: 2954 ExecStartPre=/bin/mkdir -p /home/naniwa/ShelfEye/state (code=exited, status=0/SUCCESS)
+    Process: 2955 ExecStartPre=/bin/chown naniwa:naniwa /home/naniwa/ShelfEye/state (code=exited, status=0/SUCCESS)
+   Main PID: 2958 (python3)
+      Tasks: 1 (limit: 1579)
+        CPU: 200ms
+     CGroup: /system.slice/led-manager.service
+             └─2958 /usr/bin/python3 /home/naniwa/ShelfEye/python/led_manager_service.py
+
+Nov 12 16:36:05 NaniwaTanaCheck systemd[1]: Starting led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller...
+Nov 12 16:36:05 NaniwaTanaCheck systemd[1]: Started led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller.
+Nov 12 16:36:05 NaniwaTanaCheck led-manager[2958]: ✅ LED hardware initialized: 99 LEDs, brightness 100
+Nov 12 16:36:05 NaniwaTanaCheck led-manager[2958]: ✅ Command pipe created: /home/naniwa/ShelfEye/state/led_command_pipe
+Nov 12 16:36:05 NaniwaTanaCheck led-manager[2958]: 🚀 LED Manager Daemon started, listening for commands...
+Nov 12 16:36:07 NaniwaTanaCheck led-manager[2958]: 📨 Received command: status
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo journalctl -u led-manager -f
+Nov 12 16:36:04 NaniwaTanaCheck systemd[1]: /etc/systemd/system/led-manager.service:27: Unknown key 'StartLimitIntervalSec' in section [Service], ignoring.
+Nov 12 16:36:05 NaniwaTanaCheck systemd[1]: Starting led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller...
+Nov 12 16:36:05 NaniwaTanaCheck systemd[1]: Started led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller.
+Nov 12 16:36:05 NaniwaTanaCheck led-manager[2958]: ✅ LED hardware initialized: 99 LEDs, brightness 100
+Nov 12 16:36:05 NaniwaTanaCheck led-manager[2958]: ✅ Command pipe created: /home/naniwa/ShelfEye/state/led_command_pipe
+Nov 12 16:36:05 NaniwaTanaCheck led-manager[2958]: 🚀 LED Manager Daemon started, listening for commands...
+Nov 12 16:36:07 NaniwaTanaCheck led-manager[2958]: 📨 Received command: status
+^C
