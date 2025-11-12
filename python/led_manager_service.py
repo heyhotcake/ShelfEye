@@ -384,12 +384,7 @@ class LEDManagerDaemon:
                 try:
                     # Open pipe for reading (blocks until writer opens)
                     with open(COMMAND_PIPE, 'r') as pipe:
-                        # Set non-blocking mode
-                        fd = pipe.fileno()
-                        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-                        fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-                        
-                        # Read command
+                        # Read command in blocking mode (completes when writer closes)
                         command_str = pipe.read()
                         if not command_str:
                             continue
@@ -414,11 +409,8 @@ class LEDManagerDaemon:
                             print(f"⚠️  Invalid JSON command: {e}", file=sys.stderr)
                 
                 except OSError as e:
-                    if e.errno == 11:  # EAGAIN - no data available
-                        time.sleep(0.1)
-                    else:
-                        print(f"⚠️  Pipe error: {e}", file=sys.stderr)
-                        time.sleep(1)
+                    print(f"⚠️  Pipe error: {e}", file=sys.stderr)
+                    time.sleep(0.1)
         
         except Exception as e:
             print(f"❌ Fatal error: {e}", file=sys.stderr)
