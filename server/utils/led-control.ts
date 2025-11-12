@@ -41,12 +41,17 @@ export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
   }
   try {
     const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+    const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
+    const brightnessConfig = await storage.getConfigByKey('led_strip_brightness');
+    
     if (!lightConfig) {
       console.log('[LED] Light strip GPIO pin not configured');
       return false;
     }
 
     const pin = parseInt(lightConfig.value as string);
+    const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
+    const brightness = brightnessConfig ? parseInt(brightnessConfig.value as string) : 100;
 
     return new Promise<boolean>((resolve) => {
       const ledProcess = spawn('sudo', [
@@ -54,8 +59,8 @@ export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
         path.join(process.cwd(), 'python/unified_led_controller.py'),
         '--pin', pin.toString(),
         '--action', 'white',
-        '--num-leds', '27',
-        '--brightness', '100'  // Reduced brightness for new 4K camera
+        '--num-leds', numLeds.toString(),
+        '--brightness', brightness.toString()
       ]);
 
       let result = '';
@@ -114,11 +119,14 @@ export async function setWhiteLight(killStuckFirst = false): Promise<boolean> {
 export async function turnOffLED(): Promise<void> {
   try {
     const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+    const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
+    
     if (!lightConfig) {
       return;
     }
 
     const pin = parseInt(lightConfig.value as string);
+    const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
 
     // Wait for LED to turn off and release hardware resources
     await new Promise<void>((resolve) => {
@@ -127,7 +135,7 @@ export async function turnOffLED(): Promise<void> {
         path.join(process.cwd(), 'python/unified_led_controller.py'),
         '--pin', pin.toString(),
         '--action', 'off',
-        '--num-leds', '99'
+        '--num-leds', numLeds.toString()
       ]);
 
       let result = '';
@@ -182,12 +190,15 @@ export async function turnOffLED(): Promise<void> {
 export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow'): Promise<boolean> {
   try {
     const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+    const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
+    
     if (!lightConfig) {
       console.log('[LED] Light strip GPIO pin not configured');
       return false;
     }
 
     const pin = parseInt(lightConfig.value as string);
+    const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
 
     return new Promise<boolean>((resolve) => {
       const ledProcess = spawn('sudo', [
@@ -196,7 +207,7 @@ export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow')
         '--pin', pin.toString(),
         '--action', 'red_flash_start',
         '--pattern', pattern,
-        '--num-leds', '99'
+        '--num-leds', numLeds.toString()
       ], {
         detached: true, // Keep running in background
         stdio: ['ignore', 'pipe', 'pipe']
@@ -261,11 +272,14 @@ export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow')
 export async function stopRedFlash(): Promise<boolean> {
   try {
     const lightConfig = await storage.getConfigByKey('light_strip_gpio_pin');
+    const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
+    
     if (!lightConfig) {
       return false;
     }
 
     const pin = parseInt(lightConfig.value as string);
+    const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
 
     return new Promise<boolean>((resolve) => {
       const ledProcess = spawn('sudo', [
@@ -273,7 +287,7 @@ export async function stopRedFlash(): Promise<boolean> {
         path.join(process.cwd(), 'python/unified_led_controller.py'),
         '--pin', pin.toString(),
         '--action', 'red_flash_stop',
-        '--num-leds', '99'
+        '--num-leds', numLeds.toString()
       ]);
 
       let result = '';
