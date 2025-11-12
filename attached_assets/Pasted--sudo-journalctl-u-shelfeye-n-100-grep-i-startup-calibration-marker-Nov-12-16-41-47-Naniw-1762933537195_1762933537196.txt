@@ -1,0 +1,93 @@
+$ sudo journalctl -u shelfeye -n 100 | grep -i "startup\|calibration\|marker"
+Nov 12 16:41:47 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:47 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:47 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:47 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:47 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:48 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:48 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:48 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:48 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:48 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:48 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:48 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:49 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:49 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:49 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:49 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:49 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:49 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:49 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:49 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:50 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:50 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:50 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:50 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:50 NaniwaTanaCheck pi-startup.sh[3288]: [45B blob data]
+Nov 12 16:41:50 NaniwaTanaCheck pi-startup.sh[3288]: [i] No changes detected
+Nov 12 16:41:50 NaniwaTanaCheck pi-startup.sh[3320]: [2025-11-12 16:41:50] 🚀 Starting ShelfEye application...
+Nov 12 16:41:50 NaniwaTanaCheck pi-startup.sh[3323]: [2025-11-12 16:41:50] Access at: http://naniwatanacheck.local:5000
+Nov 12 16:41:50 NaniwaTanaCheck pi-startup.sh[3326]: [2025-11-12 16:41:50] =========================================
+Nov 12 16:41:51 NaniwaTanaCheck pi-startup.sh[3329]: > rest-express@1.0.0 dev
+Nov 12 16:41:51 NaniwaTanaCheck pi-startup.sh[3329]: > NODE_ENV=development tsx server/index.ts
+Nov 12 16:42:02 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Initializing...
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Reloading configuration...
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled daily maintenance at 3:00 AM JST
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Scheduled 4 capture times + daily maintenance
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [Scheduler] Initialized successfully
+Nov 12 16:42:04 NaniwaTanaCheck pi-startup.sh[3329]: [StartupCalibration] Starting startup calibration check...
+Nov 12 16:42:05 NaniwaTanaCheck pi-startup.sh[3329]: [CameraSessionManager] Global calibration lock acquired for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81Nov 12 16:42:05 NaniwaTanaCheck pi-startup.sh[3329]: [StartupCalibration] Using paperSize: 6-page-3x2 (source: camera record)
+Nov 12 16:42:05 NaniwaTanaCheck pi-startup.sh[3329]: [StartupCalibration] Running calibration for camera Wide Shelf (/dev/video0)
+Nov 12 16:42:05 NaniwaTanaCheck pi-startup.sh[3329]: [StartupCalibration] Paper size format: 6-page-3x2
+Nov 12 16:42:05 NaniwaTanaCheck pi-startup.sh[3329]: [StartupCalibration] Last calibration: 2025-11-11T01:01:46.294Z
+Nov 12 16:42:05 NaniwaTanaCheck pi-startup.sh[3329]: [LED] White light turned ON
+Nov 12 16:42:05 NaniwaTanaCheck pi-startup.sh[3329]: [StartupCalibration] Using device path: /dev/video0
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: [StartupCalibration] Calibration process failed with code 1 : INFO:__main__:Opening camera: 0
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: [30:42:34.851496970] [3367]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: [30:42:34.886972486] [3370]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.1:1.0-1bcf:284c' for pipeline handler uvcvideo
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: [30:42:34.891950075] [3370]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.2:1.0-1bcf:284c' for pipeline handler uvcvideo
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:picamera2.picamera2:Initialization successful.
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:picamera2.picamera2:Camera now open.
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: [30:42:34.997269703] [3367]  INFO Camera camera.cpp:1215 configuring streams: (0) 3840x2160-MJPEG/Rec709/Rec709/Rec601/Limited
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:picamera2.picamera2:Configuration successful!
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 3840x2160 RGB888, ACTUAL 3840x2160 MJPEG
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:✓ Camera configured successfully at 3840x2160
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Camera configured: 3840x2160, format: RGB888 (no auto-controls)
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:picamera2.picamera2:Camera started
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Camera warmup: 20 seconds (metadata polling)...
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Warmup complete: 150 metadata polls over 20s
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 12.2
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 12.2
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 12.3
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Frame 5/50: New best sharpness = 12.4
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Frame 26/50: New best sharpness = 12.5
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Frame 42/50: New best sharpness = 12.5
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Frame 50/50: New best sharpness = 12.5
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:camera_utils_picam2:Selected frame with sharpness = 12.5
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:__main__:✓ Captured frame resolution: 3840x2160 (requested: 3840x2160)
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:__main__:Detected 3/4 corner markers: [np.int32(98), np.int32(97), np.int32(96)]
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:picamera2.picamera2:Camera stopped
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: INFO:picamera2.picamera2:Camera closed successfully.
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: [StartupCalibration] Calibration failed - flashing red LED
+Nov 12 16:42:59 NaniwaTanaCheck pi-startup.sh[3329]: [StartupCalibration] Flashing red LED - Calibration failed on startup
+Nov 12 16:43:00 NaniwaTanaCheck pi-startup.sh[3329]: [LED] RED FLASH started
+Nov 12 16:43:00 NaniwaTanaCheck pi-startup.sh[3329]: [CameraSessionManager] Global calibration lock released for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81Nov 12 16:43:00 NaniwaTanaCheck pi-startup.sh[3329]: 4:43:00 PM [express] serving on port 5000
+Nov 12 16:43:15 NaniwaTanaCheck pi-startup.sh[3329]: Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+Nov 12 16:43:15 NaniwaTanaCheck pi-startup.sh[3329]:   npx update-browserslist-db@latest
+Nov 12 16:43:15 NaniwaTanaCheck pi-startup.sh[3329]:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Nov 12 16:43:47 NaniwaTanaCheck pi-startup.sh[3329]: 4:43:47 PM [express] GET /api/slots 304 in 773ms :: [{"id":"67dde23f-631d-4f0e-b378-bd839a02b5ad","s…
+Nov 12 16:43:48 NaniwaTanaCheck pi-startup.sh[3329]: 4:43:48 PM [express] GET /api/cameras 304 in 845ms :: [{"id":"5e164d3c-1809-49ba-b284-a734843b32f1",…
+Nov 12 16:43:48 NaniwaTanaCheck pi-startup.sh[3329]: 4:43:48 PM [express] GET /api/config 304 in 1016ms :: [{"id":"04e164ea-7cb9-4941-a4f1-77dfb9f53265",…
