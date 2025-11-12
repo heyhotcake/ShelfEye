@@ -34,6 +34,20 @@ if [ ! -f "led-manager.service" ]; then
     exit 1
 fi
 
+# Check for stuck LED processes first
+echo "0️⃣  Checking for stuck LED processes..."
+STUCK_PROCESSES=$(ps aux | grep -E "(alert_led|gpio_controller|unified_led_controller)" | grep -v grep || true)
+if [ -n "$STUCK_PROCESSES" ]; then
+    echo "⚠️  WARNING: Found stuck LED processes!"
+    echo "$STUCK_PROCESSES"
+    echo ""
+    echo "Please run ./kill-stuck-led-processes.sh first to clean up"
+    echo "Then run this installer again."
+    exit 1
+fi
+echo "✅ No stuck processes found"
+echo ""
+
 echo "1️⃣  Creating state directory..."
 mkdir -p "$STATE_DIR"
 echo "✅ State directory created: $STATE_DIR"

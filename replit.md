@@ -52,10 +52,13 @@ Cameras must be forced to MJPEG format for optimal performance (7-10fps at 4K, 1
 
 **Installation**:
 ```bash
-# Install GPIO permissions
+# Step 1: Kill any stuck LED processes (if LEDs are stuck on)
+./kill-stuck-led-processes.sh
+
+# Step 2: Install GPIO permissions
 ./install-gpio-permissions.sh
 
-# Install daemon (manual)
+# Step 3: Install daemon (manual)
 ./install-led-daemon.sh
 
 # Automatic install (via startup script)
