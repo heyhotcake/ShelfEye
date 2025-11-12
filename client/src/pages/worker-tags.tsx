@@ -32,6 +32,13 @@ export default function WorkerTags() {
   });
   
   const selectedWorkers = allWorkers?.filter(w => workerIds.includes(w.id)) || [];
+  
+  // Duplicate each worker 3 times for printing 3 tags per worker
+  const workersWithDuplicates = selectedWorkers.flatMap(worker => [
+    { ...worker, copyNumber: 1 },
+    { ...worker, copyNumber: 2 },
+    { ...worker, copyNumber: 3 }
+  ]);
 
   // Generate ArUco markers for all selected workers
   useEffect(() => {
@@ -100,7 +107,7 @@ export default function WorkerTags() {
     const tagsPerRow = Math.floor((pageWidth - 2 * margin) / tagWidth);
     const tagsPerPage = tagsPerRow * Math.floor((pageHeight - 2 * margin) / tagHeight);
     
-    selectedWorkers.forEach((worker, index) => {
+    workersWithDuplicates.forEach((worker, index) => {
       if (index > 0 && index % tagsPerPage === 0) {
         pdf.addPage();
       }
@@ -202,10 +209,10 @@ export default function WorkerTags() {
   const tagsPerRow = Math.floor(usableWidth / tagWidth); // 3 tags
   const tagsPerPage = tagsPerRow * Math.floor(usableHeight / tagHeight); // 3 tags per page
   
-  const totalPages = Math.ceil(selectedWorkers.length / tagsPerPage);
-  const pages: Worker[][] = [];
+  const totalPages = Math.ceil(workersWithDuplicates.length / tagsPerPage);
+  const pages: (Worker & { copyNumber: number })[][] = [];
   for (let i = 0; i < totalPages; i++) {
-    pages.push(selectedWorkers.slice(i * tagsPerPage, (i + 1) * tagsPerPage));
+    pages.push(workersWithDuplicates.slice(i * tagsPerPage, (i + 1) * tagsPerPage));
   }
 
   return (
@@ -221,7 +228,7 @@ export default function WorkerTags() {
             <div>
               <h1 className="text-xl font-bold">Worker Tags</h1>
               <p className="text-sm text-muted-foreground">
-                {selectedWorkers.length} worker{selectedWorkers.length !== 1 ? 's' : ''} • {totalPages} page{totalPages !== 1 ? 's' : ''}
+                {selectedWorkers.length} worker{selectedWorkers.length !== 1 ? 's' : ''} × 3 tags = {workersWithDuplicates.length} total • {totalPages} page{totalPages !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
@@ -266,7 +273,7 @@ export default function WorkerTags() {
 
               return (
                 <div
-                  key={worker.id}
+                  key={`${worker.id}-${worker.copyNumber}`}
                   className="absolute border border-gray-300 flex flex-col items-center justify-start p-2 bg-white"
                   style={{
                     left: `${x}mm`,
