@@ -274,9 +274,17 @@ export class MemStorage implements IStorage {
 
   async createSlot(slot: InsertSlot): Promise<Slot> {
     const id = randomUUID();
+    
+    const cameraSlots = Array.from(this.slots.values()).filter(s => s.cameraId === slot.cameraId);
+    const maxNumber = cameraSlots.reduce((max, s) => {
+      return s.slotNumber > max ? s.slotNumber : max;
+    }, 0);
+    const nextSlotNumber = maxNumber + 1;
+    
     const newSlot: Slot = {
       ...slot,
       id,
+      slotNumber: nextSlotNumber,
       createdAt: new Date(),
     };
     this.slots.set(id, newSlot);
