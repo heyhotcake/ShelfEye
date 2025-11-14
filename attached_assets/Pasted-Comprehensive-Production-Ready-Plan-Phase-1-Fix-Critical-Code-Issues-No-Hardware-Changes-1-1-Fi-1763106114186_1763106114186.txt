@@ -1,0 +1,315 @@
+Comprehensive Production-Ready Plan
+Phase 1: Fix Critical Code Issues (No Hardware Changes)
+1.1 Fix TypeScript Compilation Error
+File: server/routes.ts line 2218
+Issue: Cannot iterate Set directly
+Fix: Convert Set to Array before iteration
+Impact: Prevents potential runtime issues
+
+1.2 Fix Service Startup Race Condition
+File: led-manager.service
+Issue: LED daemon starts after main app
+Fix: Add service dependency ordering
+Add to led-manager.service:
+
+[Unit]
+Before=shelfeye.service
+
+Add to shelfeye.service:
+
+[Unit]
+After=led-manager.service
+
+1.3 Add Startup Retry Logic for LED Client
+Files: server/services/alert-led.ts, server/services/startup-calibration.ts
+Issue: LED commands fail if pipe not ready
+Fix: Add retry logic with exponential backoff (3 retries, 2s delay)
+
+Phase 2: Database & Configuration Setup
+2.1 Initialize Core Configuration
+Missing Keys:
+
+calibration-info
+Alert recipient emails
+Maintenance thresholds
+Grace periods
+Action: Create configuration initialization script
+
+2.2 Populate Slot Definitions
+Current State: Empty slots array
+Required Data:
+
+Slot numbers (1-N)
+ArUco marker IDs
+Tool names
+Camera assignments
+Physical positions (x, y, width, height in cm)
+Business rules (strict/lenient)
+SSIM thresholds
+Edge Cases:
+
+Overlapping slot regions
+Out-of-bounds coordinates
+Duplicate ArUco IDs
+Invalid camera references
+Phase 3: Camera Calibration Deep Dive
+3.1 Investigate Startup Calibration Failures
+Symptoms:
+
+Error: "Picamera2 is not available" during startup validation
+But Picamera2 works fine in camera preview
+Possible Causes:
+
+Python interpreter mismatch (systemd vs interactive)
+Environment variable issues
+Import path problems
+Permissions on camera devices
+Diagnostic Steps:
+
+# Test calibration script directly
+python3 python/aruco_calibrator.py --camera-index 0 --camera-id <camera-id>
+# Check which Python interpreter is used
+which python3
+/usr/bin/python3 -c "from picamera2 import Picamera2; print('OK')"
+# Check camera permissions
+groups | grep video
+ls -la /dev/video*
+
+3.2 Calibration Validation Checklist
+ All 4 corner markers (96-99) physically placed
+ Markers visible to both cameras
+ Lighting adequate for detection
+ Paper size matches configuration (6-page-3x2)
+ Homography matrices saved to database
+ Rectified images generated successfully
+ Slot markers (1-50) detectable in rectified view
+Phase 4: End-to-End Automation Flow Testing
+4.1 Manual Capture Test Sequence
+# Trigger via API
+curl -X POST http://localhost:5000/api/capture-now
+
+Expected Flow:
+
+LED turns white (processing indicator)
+Camera 1 capture (with 30s delay)
+Camera 2 capture
+ArUco marker detection
+SSIM presence analysis
+Business rule evaluation
+Alert generation (if rules violated)
+Data logging
+LED returns to off/previous state
+Validation Points:
+
+ Both cameras capture successfully
+ Images saved to correct paths
+ ArUco markers detected
+ SSIM calculated for each slot
+ Detection logs created
+ Alerts queued if needed
+ No memory leaks
+ Process completes < 2 minutes
+4.2 Scheduled Automation Test
+Schedule:
+
+07:30 JST - Pre-flight diagnostic
+08:00 JST - Scheduled capture
+10:30 JST - Pre-flight diagnostic
+11:00 JST - Scheduled capture
+13:30 JST - Pre-flight diagnostic
+14:00 JST - Scheduled capture
+16:30 JST - Pre-flight diagnostic
+17:00 JST - Scheduled capture
+03:00 JST - Daily maintenance
+Monitor:
+
+Scheduler logs
+Capture success rate
+Diagnostic results
+Resource usage (CPU, memory, temperature)
+Disk space consumption
+Phase 5: Alert System Validation
+5.1 LED Alert Testing
+Scenarios:
+
+Tool missing (red flash)
+Camera offline (red flash)
+Diagnostic failure (red flash)
+Processing indicator (white solid)
+Normal operation (off)
+Test:
+
+# Manual LED tests
+python3 python/led_control_client.py red_flash
+python3 python/led_control_client.py white
+python3 python/led_control_client.py off
+
+5.2 Email Alert Configuration
+Prerequisites:
+
+Gmail OAuth2 credentials configured
+Authorized sender email
+Recipient list defined
+Test Cases:
+
+Missing tool alert
+Camera offline alert
+Diagnostic failure alert
+Test alert (verification)
+Validation:
+
+ Email delivered successfully
+ HTML formatting correct
+ Timestamps accurate
+ Camera info included
+ Error details present
+5.3 Google Sheets Integration
+Setup:
+
+Spreadsheet ID configured
+Service account permissions
+Column mappings defined
+Tab creation rules set
+Test:
+
+Automatic tab creation (monthly/single)
+Header row formatting
+Data row population
+Timestamp accuracy
+Alert type categorization
+Phase 6: Performance Optimization
+6.1 Identify Slow API Endpoints
+Current Issues:
+
+Some requests taking 2-3 seconds
+Occasional timeouts
+Analysis Required:
+
+Database query performance
+Python subprocess overhead
+File I/O bottlenecks
+Lock contention
+Optimizations:
+
+Add database indexes
+Cache frequently accessed data
+Pre-warm Python interpreters
+Implement request queuing
+Add response streaming for long operations
+6.2 Resource Monitoring
+# During capture operation:
+htop          # CPU/memory usage
+iotop         # Disk I/O
+vcgencmd measure_temp  # Pi temperature
+df -h         # Disk space
+
+Thresholds:
+
+CPU < 80% sustained
+Memory < 70% used
+Temperature < 70°C
+Disk > 2GB free
+Phase 7: Edge Case Testing
+7.1 Hardware Failure Scenarios
+ Camera disconnection during capture
+ LED strip disconnection
+ USB bandwidth saturation
+ Power brownout recovery
+ SD card write errors
+7.2 Software Failure Scenarios
+ Database lock timeout
+ Concurrent calibration attempts
+ Scheduler conflicts (manual + scheduled)
+ Alert queue overflow
+ Disk full condition
+ Network interruption during email send
+7.3 Data Integrity Scenarios
+ Corrupted image files
+ Invalid ArUco marker IDs
+ Missing homography matrix
+ Stale baseline images
+ Timezone conversion errors
+7.4 Race Conditions
+ LED daemon not ready at startup ✓ (identified)
+ Multiple cameras accessing USB simultaneously
+ Concurrent database writes
+ Session lock conflicts
+Phase 8: System Resilience
+8.1 Auto-Recovery Mechanisms
+Already Implemented:
+
+Service auto-restart (systemd)
+Sequential camera processing (prevents USB conflicts)
+Global calibration locks (prevents concurrent calibration)
+Alert queue retry logic
+Enhancements Needed:
+
+Startup LED client retry logic
+Camera warmup timeout handling
+Dead letter queue for failed alerts
+Automatic disk space cleanup triggers
+8.2 Monitoring & Observability
+Add Health Check Endpoint:
+
+GET /api/health
+Response: {
+  services: { led: "ok", database: "ok", cameras: "ok" },
+  disk: { free: "5.2GB", usage: "45%" },
+  temperature: "52°C",
+  uptime: "3h 45m"
+}
+
+Log Aggregation:
+
+Centralize logs from all services
+Add structured logging (JSON)
+Implement log rotation
+Set up log level filtering
+Phase 9: Production Deployment Checklist
+Pre-Deployment
+ All LSP errors resolved
+ TypeScript compiles without errors
+ All Python dependencies installed
+ Service dependencies configured correctly
+ Database schema validated
+ Configuration keys populated
+ Slots defined and calibrated
+ Alert channels tested
+ 24-hour stability test passed
+Deployment
+ Backup current database
+ Deploy code changes
+ Restart services in correct order (LED → Main)
+ Verify all services running
+ Run smoke tests
+ Monitor for 1 hour
+Post-Deployment
+ Verify scheduled captures
+ Check alert delivery
+ Monitor resource usage
+ Review logs for errors
+ Validate data accuracy
+Priority Execution Order:
+Week 1 - Critical Fixes:
+
+Fix TypeScript error (30 min)
+Add service startup dependencies (15 min)
+Add LED client retry logic (1 hour)
+Initialize core configuration (1 hour)
+Populate slot definitions (2 hours)
+Week 1-2 - Calibration & Testing:
+6. Debug startup calibration (2-4 hours)
+
+Run end-to-end capture tests (1 day)
+Configure and test alerts (1 day)
+Week 2 - Optimization & Hardening:
+9. Performance optimization (2-3 days)
+
+Edge case testing (2 days)
+24-hour stability test (1 day)
+Week 3 - Production Ready:
+12. Final validation
+
+Documentation
+Go-live
+This plan addresses all real issues found, maintains existing functionality, and ensures production-ready reliability.
