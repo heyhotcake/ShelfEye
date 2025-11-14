@@ -1725,7 +1725,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/slots/:id", async (req, res) => {
     try {
-      const updates = insertSlotSchema.partial().parse(req.body);
+      const { updateSlotSchema } = await import("@shared/schema");
+      const updates = updateSlotSchema.parse(req.body);
+      
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: "No update fields provided" });
+      }
+      
       const slot = await storage.updateSlot(req.params.id, updates);
       if (!slot) {
         return res.status(404).json({ message: "Slot not found" });

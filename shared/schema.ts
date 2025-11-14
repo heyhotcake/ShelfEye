@@ -182,6 +182,31 @@ export const insertSlotSchema = createInsertSchema(slots).omit({ id: true, slotN
     message: "expectedQrId must be a valid ArUco marker ID (1-50 for tools, 96-99 for corners)",
     path: ["expectedQrId"]
   }); // slotNumber is auto-assigned
+
+export const updateSlotSchema = createInsertSchema(slots).omit({ id: true, slotNumber: true, createdAt: true }).partial()
+  .superRefine((data, ctx) => {
+    if (data.expectedQrId !== undefined) {
+      if (data.expectedQrId === null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "expectedQrId must be a valid ArUco marker ID (1-50 for tools, 96-99 for corners)",
+          path: ["expectedQrId"]
+        });
+        return;
+      }
+      const markerId = parseInt(data.expectedQrId);
+      const isToolMarker = markerId >= 1 && markerId <= 50;
+      const isCornerMarker = markerId >= 96 && markerId <= 99;
+      if (isNaN(markerId) || (!isToolMarker && !isCornerMarker)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "expectedQrId must be a valid ArUco marker ID (1-50 for tools, 96-99 for corners)",
+          path: ["expectedQrId"]
+        });
+      }
+    }
+  });
+
 export const insertDetectionLogSchema = createInsertSchema(detectionLogs).omit({ id: true });
 export const insertAlertRuleSchema = createInsertSchema(alertRules).omit({ id: true, createdAt: true });
 export const insertAlertQueueSchema = createInsertSchema(alertQueue).omit({ id: true, createdAt: true });
@@ -197,6 +222,7 @@ export const insertGoogleOAuthCredentialSchema = createInsertSchema(googleOAuthC
 // Types
 export type InsertCamera = z.infer<typeof insertCameraSchema>;
 export type InsertSlot = z.infer<typeof insertSlotSchema>;
+export type UpdateSlot = z.infer<typeof updateSlotSchema>;
 export type InsertDetectionLog = z.infer<typeof insertDetectionLogSchema>;
 export type InsertAlertRule = z.infer<typeof insertAlertRuleSchema>;
 export type InsertAlertQueue = z.infer<typeof insertAlertQueueSchema>;

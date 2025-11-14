@@ -125,6 +125,7 @@ export function validateSlot(
   if (!slot.slotId || slot.slotId.trim() === '') {
     errors.push({
       slotId: 'unknown',
+      code: 'MISSING_SLOT_ID',
       field: 'slotId',
       message: 'Slot ID is required',
       severity: 'error'
@@ -134,6 +135,7 @@ export function validateSlot(
   if (!slot.toolName || slot.toolName.trim() === '') {
     errors.push({
       slotId,
+      code: 'MISSING_TOOL_NAME',
       field: 'toolName',
       message: 'Tool name is required',
       severity: 'error'
@@ -143,6 +145,7 @@ export function validateSlot(
   if (!slot.expectedQrId || slot.expectedQrId.trim() === '') {
     errors.push({
       slotId,
+      code: 'MISSING_EXPECTED_QR_ID',
       field: 'expectedQrId',
       message: 'ArUco marker ID (expectedQrId) is required',
       severity: 'error'
@@ -155,6 +158,7 @@ export function validateSlot(
     if (isNaN(markerId) || (!isToolMarker && !isCornerMarker)) {
       errors.push({
         slotId,
+        code: 'INVALID_EXPECTED_QR_ID',
         field: 'expectedQrId',
         message: 'ArUco marker ID must be 1-50 (tool markers) or 96-99 (corner markers)',
         severity: 'error'
@@ -165,6 +169,7 @@ export function validateSlot(
   if (!slot.cameraId) {
     errors.push({
       slotId,
+      code: 'MISSING_CAMERA_ID',
       field: 'cameraId',
       message: 'Camera ID is required',
       severity: 'error'
@@ -172,6 +177,7 @@ export function validateSlot(
   } else if (camera === undefined) {
     errors.push({
       slotId,
+      code: 'INVALID_CAMERA_ID',
       field: 'cameraId',
       message: `Camera ID ${slot.cameraId} does not exist`,
       severity: 'error'
@@ -181,6 +187,7 @@ export function validateSlot(
   if (!slot.regionCoords || !Array.isArray(slot.regionCoords) || slot.regionCoords.length < 3) {
     errors.push({
       slotId,
+      code: 'INVALID_REGION_COORDS',
       field: 'regionCoords',
       message: 'Region must have at least 3 coordinate pairs',
       severity: 'error'
@@ -194,6 +201,7 @@ export function validateSlot(
     if (!validCoords) {
       errors.push({
         slotId,
+        code: 'MALFORMED_COORDS',
         field: 'regionCoords',
         message: 'Region coordinates must be [x, y] number pairs',
         severity: 'error'
@@ -211,6 +219,7 @@ export function validateSlot(
       if (outOfBounds) {
         errors.push({
           slotId,
+          code: 'COORDS_OUT_OF_BOUNDS',
           field: 'regionCoords',
           message: `Region coordinates exceed camera resolution (${width}x${height})`,
           severity: 'error'
@@ -222,6 +231,7 @@ export function validateSlot(
   if (typeof slot.xCm !== 'number' || slot.xCm < 0) {
     errors.push({
       slotId,
+      code: 'INVALID_X_POSITION',
       field: 'xCm',
       message: 'X position must be a positive number',
       severity: 'error'
@@ -231,6 +241,7 @@ export function validateSlot(
   if (typeof slot.yCm !== 'number' || slot.yCm < 0) {
     errors.push({
       slotId,
+      code: 'INVALID_Y_POSITION',
       field: 'yCm',
       message: 'Y position must be a positive number',
       severity: 'error'
@@ -240,6 +251,7 @@ export function validateSlot(
   if (typeof slot.widthCm !== 'number' || slot.widthCm <= 0) {
     errors.push({
       slotId,
+      code: 'INVALID_WIDTH',
       field: 'widthCm',
       message: 'Width must be a positive number',
       severity: 'error'
@@ -249,6 +261,7 @@ export function validateSlot(
   if (typeof slot.heightCm !== 'number' || slot.heightCm <= 0) {
     errors.push({
       slotId,
+      code: 'INVALID_HEIGHT',
       field: 'heightCm',
       message: 'Height must be a positive number',
       severity: 'error'
@@ -259,6 +272,7 @@ export function validateSlot(
     if (typeof slot.rotationDeg !== 'number' || slot.rotationDeg < 0 || slot.rotationDeg >= 360) {
       errors.push({
         slotId,
+        code: 'INVALID_ROTATION',
         field: 'rotationDeg',
         message: 'Rotation must be between 0 and 359 degrees',
         severity: 'error'
@@ -269,6 +283,7 @@ export function validateSlot(
   if (slot.priority && !['low', 'medium', 'high'].includes(slot.priority)) {
     errors.push({
       slotId,
+      code: 'INVALID_PRIORITY',
       field: 'priority',
       message: 'Priority must be low, medium, or high',
       severity: 'error'
@@ -280,6 +295,7 @@ export function validateSlot(
     if (!timeRangeRegex.test(slot.graceWindow)) {
       errors.push({
         slotId,
+        code: 'INVALID_GRACE_WINDOW',
         field: 'graceWindow',
         message: 'Grace window must be in format HH:MM-HH:MM',
         severity: 'error'
@@ -290,6 +306,7 @@ export function validateSlot(
   if (slot.xCm && slot.widthCm && slot.xCm < slot.widthCm / 2) {
     warnings.push({
       slotId,
+      code: 'EDGE_PROXIMITY_LEFT',
       field: 'xCm',
       message: 'Slot may extend beyond left edge of template',
       severity: 'warning'
@@ -299,6 +316,7 @@ export function validateSlot(
   if (slot.yCm && slot.heightCm && slot.yCm < slot.heightCm / 2) {
     warnings.push({
       slotId,
+      code: 'EDGE_PROXIMITY_TOP',
       field: 'yCm',
       message: 'Slot may extend beyond top edge of template',
       severity: 'warning'
@@ -340,6 +358,7 @@ export function validateSlotCollection(
     if (slotIdsByCamera.get(slot.cameraId)!.has(slot.slotId)) {
       allErrors.push({
         slotId: slot.slotId,
+        code: 'DUPLICATE_SLOT_ID',
         field: 'slotId',
         message: `Duplicate slot ID "${slot.slotId}" for camera ${slot.cameraId}`,
         severity: 'error'
@@ -351,6 +370,7 @@ export function validateSlotCollection(
       if (expectedQrIdsByCamera.get(slot.cameraId)!.has(slot.expectedQrId)) {
         allErrors.push({
           slotId: slot.slotId,
+          code: 'DUPLICATE_ARUCO_ID',
           field: 'expectedQrId',
           message: `Duplicate ArUco marker ID "${slot.expectedQrId}" for camera ${slot.cameraId}`,
           severity: 'error'
@@ -374,6 +394,7 @@ export function validateSlotCollection(
     overlaps.forEach(overlap => {
       allWarnings.push({
         slotId: overlap.slot1Id,
+        code: 'REGION_OVERLAP',
         field: 'regionCoords',
         message: `Region overlaps with slot ${overlap.slot2Id}`,
         severity: 'warning'

@@ -287,7 +287,10 @@ export class MemStorage implements IStorage {
     const slot = this.slots.get(id);
     if (!slot) return undefined;
 
-    const updated = { ...slot, ...updates };
+    const definedUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    );
+    const updated = { ...slot, ...definedUpdates };
     this.slots.set(id, updated);
     return updated;
   }
@@ -891,7 +894,10 @@ export class DbStorage implements IStorage {
   }
 
   async updateSlot(id: string, updates: Partial<InsertSlot>): Promise<Slot | undefined> {
-    const result = await db.update(schema.slots).set(updates).where(eq(schema.slots.id, id)).returning();
+    const definedUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined)
+    ) as Partial<InsertSlot>;
+    const result = await db.update(schema.slots).set(definedUpdates).where(eq(schema.slots.id, id)).returning();
     return result[0];
   }
 
