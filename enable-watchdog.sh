@@ -22,8 +22,8 @@ sudo tee /etc/watchdog.conf > /dev/null <<EOF
 # Hardware watchdog device
 watchdog-device = /dev/watchdog
 
-# Timeout: reboot if no heartbeat for 15 seconds
-watchdog-timeout = 15
+# Timeout: reboot if no heartbeat for 60 seconds (allows time for startup calibration)
+watchdog-timeout = 60
 
 # Test interval: ping every 1 second
 interval = 1
@@ -63,7 +63,7 @@ echo ""
 echo "Watchdog device:"
 ls -l /dev/watchdog
 echo ""
-echo "🐕 Your Pi will now automatically reboot if it freezes for more than 15 seconds!"
+echo "🐕 Your Pi will now automatically reboot if it freezes for more than 60 seconds!"
 echo ""
 echo "To test (WARNING: this will reboot your Pi):"
 echo "  sudo sh -c 'echo 1 > /proc/sys/kernel/sysrq'"

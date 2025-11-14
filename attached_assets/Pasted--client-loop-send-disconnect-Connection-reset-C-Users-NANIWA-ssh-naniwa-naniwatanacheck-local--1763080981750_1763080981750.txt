@@ -1,0 +1,71 @@
+ client_loop: send disconnect: Connection reset
+
+C:\Users\NANIWA>ssh naniwa@naniwatanacheck.local
+ssh: Could not resolve hostname naniwatanacheck.local: No such host is known.
+
+C:\Users\NANIWA>ssh naniwa@naniwatanacheck.local
+naniwa@naniwatanacheck.local's password:
+Linux NaniwaTanaCheck 6.12.47+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1 (2025-09-16) aarch64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Fri Nov 14 09:14:34 2025 from fe80::ea4:cf33:c860:5e33%wlan0
+naniwa@NaniwaTanaCheck:~ $ Connection reset by 10.2.1.111 port 22
+
+C:\Users\NANIWA>ssh naniwa@naniwatanacheck.local
+ssh: Could not resolve hostname naniwatanacheck.local: No such host is known.
+
+C:\Users\NANIWA>ssh naniwa@naniwatanacheck.local
+naniwa@naniwatanacheck.local's password:
+Linux NaniwaTanaCheck 6.12.47+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1 (2025-09-16) aarch64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Fri Nov 14 09:40:20 2025 from 10.2.1.109
+^[[200~./monitor-system-health.sh^[[201~naniwa@NaniwaTanaCheck:~ $ ./monitor-system-health.sh
+-bash: ./monitor-system-health.sh: No such file or directory
+naniwa@NaniwaTanaCheck:~ $ ./monitor-system-health.sh
+-bash: ./monitor-system-health.sh: No such file or directory
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -u shelfeye -f
+Nov 14 09:41:33 NaniwaTanaCheck pi-startup.sh[1114]: [45B blob data]
+Nov 14 09:41:33 NaniwaTanaCheck pi-startup.sh[1114]: [45B blob data]
+Nov 14 09:41:34 NaniwaTanaCheck pi-startup.sh[1114]: [45B blob data]
+Nov 14 09:41:34 NaniwaTanaCheck pi-startup.sh[1114]: [45B blob data]
+Nov 14 09:41:34 NaniwaTanaCheck pi-startup.sh[1114]: [i] No changes detected
+Nov 14 09:41:34 NaniwaTanaCheck pi-startup.sh[1218]: [2025-11-14 09:41:34] 🚀 Starting ShelfEye application...
+Nov 14 09:41:34 NaniwaTanaCheck pi-startup.sh[1221]: [2025-11-14 09:41:34] Access at: http://naniwatanacheck.local:5000
+Nov 14 09:41:34 NaniwaTanaCheck pi-startup.sh[1224]: [2025-11-14 09:41:34] =========================================
+Nov 14 09:41:34 NaniwaTanaCheck pi-startup.sh[1227]: > rest-express@1.0.0 dev
+Nov 14 09:41:34 NaniwaTanaCheck pi-startup.sh[1227]: > NODE_ENV=development tsx server/index.ts
+Nov 14 09:41:49 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Initializing...
+Nov 14 09:41:51 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Reloading configuration...
+Nov 14 09:41:51 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+Nov 14 09:41:51 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled daily maintenance at 3:00 AM JST
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Scheduled 4 capture times + daily maintenance
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [Scheduler] Initialized successfully
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [StartupCalibration] Starting startup calibration check for ALL cameras...
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [StartupCalibration] Found 2 calibrated camera(s) to validate
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [CameraSessionManager] Global calibration lock acquired for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [StartupCalibration] Validating camera: Camera 2 (Shelf 2) (/dev/video1)
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [StartupCalibration] Paper size: 6-page-3x2
+Nov 14 09:41:52 NaniwaTanaCheck sudo[1291]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py white --num-leds 99 --brightness 100
+Nov 14 09:41:52 NaniwaTanaCheck sudo[1291]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 14 09:41:52 NaniwaTanaCheck sudo[1291]: pam_unix(sudo:session): session closed for user root
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [LED] White light turned ON
+Nov 14 09:41:52 NaniwaTanaCheck pi-startup.sh[1227]: [StartupCalibration] Using device path: /dev/video1
+client_loop: send disconnect: Connection reset
