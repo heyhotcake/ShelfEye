@@ -9,6 +9,13 @@ The Tool Tracking System is a Raspberry Pi-based solution for real-time tool mon
 
 ## System Architecture
 
+### System Resilience
+ShelfEye includes 4 layers of protection for long-term reliability:
+1. **Hardware Watchdog** (`enable-watchdog.sh`): Auto-reboot on complete system freeze (15s timeout via bcm2835_wdt)
+2. **SystemD Auto-Restart** (`shelfeye.service`): Restarts on crash (10s delay, max 5 attempts in 10min), with resource limits (CPU: 380%, Memory: 1.8GB max)
+3. **Daily Maintenance** (scheduler at 3AM JST): Auto-cleanup of logs (3yr retention), alerts (30d), ROI images (60d), plus emergency disk cleanup at 80%+ usage
+4. **Health Monitoring** (`/api/health`, `monitor-system-health.sh`): Real-time metrics (uptime, memory, disk, temperature, errors)
+
 ### Frontend Architecture
 The frontend uses React with TypeScript, Vite, TanStack Query, Wouter, and Tailwind CSS with shadcn/ui. It features a component-based design, modal-driven interactions, and utilizes the Canvas API for interactive slot drawing with zoom/pan and ArUco overlays. It supports configurable canvas aspect ratios for ISO A-series paper sizes and uses Recharts for analytics. Server state is managed via TanStack Query, with local component state for UI.
 
