@@ -1,0 +1,119 @@
+ sudo journalctl -b 0 | grep -i "StartupCalibration"
+Nov 14 10:18:38 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Starting startup calibration check for ALL cameras...
+Nov 14 10:18:39 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Found 2 calibrated camera(s) to validate
+Nov 14 10:18:39 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Validating camera: Wide Shelf (/dev/video0)
+Nov 14 10:18:39 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Paper size: 6-page-3x2
+Nov 14 10:18:39 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Using device path: /dev/video0
+Nov 14 10:19:41 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Calibration completed: 4/4 markers, error: 0.00px
+Nov 14 10:19:41 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] ✓ Camera Wide Shelf validated successfully
+Nov 14 10:19:41 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Validating camera: Camera 2 (Shelf 2) (/dev/video1)
+Nov 14 10:19:41 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Paper size: 6-page-3x2
+Nov 14 10:19:42 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Using device path: /dev/video1
+Nov 14 10:20:16 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Calibration completed: 4/4 markers, error: 0.00px
+Nov 14 10:20:16 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] ✓ Camera Camera 2 (Shelf 2) validated successfully
+Nov 14 10:20:16 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] ✓ All 2 camera(s) validated successfully!
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -b 0 | grep -i "StartupCalibration"
+Nov 14 10:18:38 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Starting startup calibration check for ALL cameras...
+Nov 14 10:18:39 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Found 2 calibrated camera(s) to validate
+Nov 14 10:18:39 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Validating camera: Wide Shelf (/dev/video0)
+Nov 14 10:18:39 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Paper size: 6-page-3x2
+Nov 14 10:18:39 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Using device path: /dev/video0
+Nov 14 10:19:41 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Calibration completed: 4/4 markers, error: 0.00px
+Nov 14 10:19:41 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] ✓ Camera Wide Shelf validated successfully
+Nov 14 10:19:41 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Validating camera: Camera 2 (Shelf 2) (/dev/video1)
+Nov 14 10:19:41 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Paper size: 6-page-3x2
+Nov 14 10:19:42 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Using device path: /dev/video1
+Nov 14 10:20:16 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] Calibration completed: 4/4 markers, error: 0.00px
+Nov 14 10:20:16 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] ✓ Camera Camera 2 (Shelf 2) validated successfully
+Nov 14 10:20:16 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] ✓ All 2 camera(s) validated successfully!
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -b 0 | grep "✓.*camera.*validated"
+Nov 14 10:20:16 NaniwaTanaCheck pi-startup.sh[1224]: [StartupCalibration] ✓ All 2 camera(s) validated successfully!
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -b 0 | grep -i "watchdog"
+Nov 14 10:17:09 NaniwaTanaCheck kernel: bcm2835-wdt bcm2835-wdt: Broadcom BCM2835 watchdog timer
+Nov 14 10:17:10 NaniwaTanaCheck systemd[1]: Using hardware watchdog 'Broadcom BCM2835 Watchdog timer', version 0, device /dev/watchdog0
+Nov 14 10:17:10 NaniwaTanaCheck systemd[1]: Watchdog running with a hardware timeout of 1min.
+Nov 14 10:17:23 NaniwaTanaCheck systemd[1]: Starting watchdog.service - watchdog daemon...
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]: starting daemon (5.16):
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  int=1s realtime=yes sync=no load=0,0,0 soft=no
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  memory not checked
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  ping: no machine to check
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  file: no file to check
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  pidfile: no server process to check
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  interface: no interface to check
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  temperature: no sensors to check
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  no test binary files
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  no repair binary files
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  error retry time-out = 60 seconds
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  repair attempts = 1
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]:  alive=/dev/watchdog heartbeat=[none] to=root no_act=no force=no
+Nov 14 10:17:23 NaniwaTanaCheck watchdog[854]: cannot open /dev/watchdog (errno = 16 = 'Device or resource busy')
+Nov 14 10:17:23 NaniwaTanaCheck systemd[1]: Started watchdog.service - watchdog daemon.
+Nov 14 10:18:30 NaniwaTanaCheck sudo[1268]:   naniwa : TTY=pts/0 ; PWD=/home/naniwa ; USER=root ; COMMAND=/usr/bin/cp /etc/watchdog.conf /etc/watchdog.conf.backup
+Nov 14 10:18:30 NaniwaTanaCheck sudo[1272]:   naniwa : TTY=pts/0 ; PWD=/home/naniwa ; USER=root ; COMMAND=/usr/bin/sed -i s/^test-binary/#test-binary/ /etc/watchdog.conf
+Nov 14 10:18:30 NaniwaTanaCheck sudo[1276]:   naniwa : TTY=pts/0 ; PWD=/home/naniwa ; USER=root ; COMMAND=/usr/bin/systemctl restart watchdog
+Nov 14 10:18:30 NaniwaTanaCheck systemd[1]: Stopping watchdog.service - watchdog daemon...
+Nov 14 10:18:31 NaniwaTanaCheck watchdog[854]: stopping daemon (5.16)
+Nov 14 10:18:31 NaniwaTanaCheck systemd[1]: watchdog.service: Control process exited, code=exited, status=1/FAILURE
+Nov 14 10:18:31 NaniwaTanaCheck systemd[1]: watchdog.service: Failed with result 'exit-code'.
+Nov 14 10:18:31 NaniwaTanaCheck systemd[1]: Stopped watchdog.service - watchdog daemon.
+Nov 14 10:18:31 NaniwaTanaCheck systemd[1]: watchdog.service: Triggering OnFailure= dependencies.
+Nov 14 10:18:31 NaniwaTanaCheck systemd[1]: Starting wd_keepalive.service - watchdog keepalive daemon...
+Nov 14 10:18:31 NaniwaTanaCheck (eepalive)[1286]: wd_keepalive.service: Referenced but unset environment variable evaluates to an empty string: watchdog_options
+Nov 14 10:18:31 NaniwaTanaCheck wd_keepalive[1289]: starting watchdog keepalive daemon (5.16):
+Nov 14 10:18:31 NaniwaTanaCheck wd_keepalive[1289]:  int=1 alive=/dev/watchdog realtime=yes
+Nov 14 10:18:31 NaniwaTanaCheck wd_keepalive[1289]: cannot open /dev/watchdog (errno = 16 = 'Device or resource busy')
+Nov 14 10:18:31 NaniwaTanaCheck wd_keepalive[1289]: stopping watchdog keepalive daemon (5.16)
+Nov 14 10:18:31 NaniwaTanaCheck systemd[1]: Started wd_keepalive.service - watchdog keepalive daemon.
+Nov 14 10:18:34 NaniwaTanaCheck sudo[1297]:   naniwa : TTY=pts/0 ; PWD=/home/naniwa ; USER=root ; COMMAND=/usr/bin/cp /etc/watchdog.conf /etc/watchdog.conf.backup
+Nov 14 10:18:34 NaniwaTanaCheck sudo[1301]:   naniwa : TTY=pts/0 ; PWD=/home/naniwa ; USER=root ; COMMAND=/usr/bin/sed -i s/^test-binary/#test-binary/ /etc/watchdog.conf
+Nov 14 10:18:34 NaniwaTanaCheck sudo[1305]:   naniwa : TTY=pts/0 ; PWD=/home/naniwa ; USER=root ; COMMAND=/usr/bin/systemctl restart watchdog
+Nov 14 10:18:34 NaniwaTanaCheck systemd[1]: Starting watchdog.service - watchdog daemon...
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]: starting daemon (5.16):
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  int=1s realtime=yes sync=no load=0,0,0 soft=no
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  memory not checked
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  ping: no machine to check
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  file: no file to check
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  pidfile: no server process to check
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  interface: no interface to check
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  temperature: no sensors to check
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  no test binary files
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  no repair binary files
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  error retry time-out = 60 seconds
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  repair attempts = 1
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  alive=/dev/watchdog heartbeat=[none] to=root no_act=no force=no
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]: cannot open /dev/watchdog (errno = 16 = 'Device or resource busy')
+Nov 14 10:18:34 NaniwaTanaCheck systemd[1]: Started watchdog.service - watchdog daemon.
+Nov 14 10:18:39 NaniwaTanaCheck sudo[1319]:   naniwa : TTY=pts/0 ; PWD=/home/naniwa ; USER=root ; COMMAND=/usr/bin/systemctl status watchdog
+naniwa@NaniwaTanaCheck:~ $ sudo systemctl status watchdog
+● watchdog.service - watchdog daemon
+     Loaded: loaded (/usr/lib/systemd/system/watchdog.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-11-14 10:18:34 JST; 4min 31s ago
+ Invocation: 07f3def988314f578e8254688a08a219
+    Process: 1310 ExecStartPre=/bin/sh -c [ -z "${watchdog_module}" ] || [ "${watchdog_module}" = "none" ] || /sbin/mod>
+    Process: 1312 ExecStart=/bin/sh -c [ $run_watchdog != 1 ] || exec /usr/sbin/watchdog $watchdog_options (code=exited>
+   Main PID: 1314 (watchdog)
+      Tasks: 1 (limit: 1579)
+        CPU: 79ms
+     CGroup: /system.slice/watchdog.service
+             └─1314 /usr/sbin/watchdog
+
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  pidfile: no server process to check
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  interface: no interface to check
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  temperature: no sensors to check
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  no test binary files
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  no repair binary files
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  error retry time-out = 60 seconds
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  repair attempts = 1
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]:  alive=/dev/watchdog heartbeat=[none] to=root no_act=no force=no
+Nov 14 10:18:34 NaniwaTanaCheck watchdog[1314]: cannot open /dev/watchdog (errno = 16 = 'Device or resource busy')
+Nov 14 10:18:34 NaniwaTanaCheck systemd[1]: Started watchdog.service - watchdog daemon.
+
+naniwa@NaniwaTanaCheck:~ $ sudo systemctl --failed
+  UNIT                 LOAD   ACTIVE SUB    DESCRIPTION
+● wd_keepalive.service loaded failed failed watchdog keepalive daemon
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+1 loaded units listed.
