@@ -200,6 +200,53 @@ GET /api/slots/export/:cameraId
 
 **Response:** Downloads JSON file with all slots for the specified camera
 
+## UI-Based Import/Export Workflow
+
+### Using the Slot Management Modal
+
+The ShelfEye UI provides a slot import/export modal for managing slot configurations visually. This is the recommended method for production deployments.
+
+**Accessing the Modal:**
+1. Navigate to the Slot Drawing page
+2. Select a camera from the dropdown in the left sidebar
+3. Click the "Import/Export Slots" button in the toolbar (right side)
+4. The "Slot Import/Export" modal opens with Export and Import sections
+
+**Export Workflow:**
+1. Select the camera you want to export slots from
+2. Click "Export to JSON"
+3. Browser downloads a JSON file with all slots for that camera
+4. File format: `slots-{cameraName}-{timestamp}.json`
+
+**Import Workflow:**
+1. Select the target camera where you want to import slots
+2. Click "Select JSON File" to upload a slot definition file
+3. **Automatic Validation**: System validates the file immediately
+   - Checks camera membership (warns if file is for different camera)
+   - Validates against comprehensive error taxonomy (21 error codes)
+   - Surfaces errors and warnings in tables
+4. **Review Validation Results**:
+   - **Errors (Red)**: Must be fixed before import (blocks import)
+   - **Warnings (Yellow)**: Can proceed but review recommended
+5. **Confirm Import**: Click "Import N Slots" if validation passes
+6. **Protection Features**:
+   - Modal cannot be accidentally dismissed during confirm step
+   - Must explicitly click "Cancel" or "Confirm Import"
+   - Warnings remain visible until user makes choice
+
+**Validation Display:**
+- Errors table shows: Slot ID, Field, Error Code, Message
+- Warnings table shows: Slot ID, Field, Warning Code, Impact
+- All codes documented in error taxonomy (see below)
+
+**Safety Features:**
+- Camera-scoped validation (prevents importing wrong camera's slots)
+- Duplicate detection (slotId and ArUco IDs per camera)
+- Overlap warnings (polygons intersecting)
+- Edge proximity warnings (slots extending beyond calibration area)
+- Atomic import (all-or-nothing operation)
+- Accidental dismissal prevention (must explicitly confirm/cancel)
+
 ## Production Deployment Process
 
 ### Step 1: Camera Calibration
@@ -243,23 +290,39 @@ Compile all slot data into the JSON export format:
 }
 ```
 
-### Step 5: Validate Slot Data
+### Step 5: Import via UI (Recommended)
 
-Before importing, validate the slot definitions:
+**Using the Slot Import/Export Modal:**
+
+1. Open ShelfEye UI and navigate to Slot Drawing page
+2. Select target camera from dropdown (left sidebar)
+3. Click "Import/Export Slots" button in toolbar to open modal
+4. Click "Select JSON File" in Import section
+5. **Review Validation Results**:
+   - System automatically validates uploaded file
+   - Check Errors table (must fix all errors)
+   - Review Warnings table (decide if acceptable)
+6. If validation passes:
+   - Click "Import N Slots" button
+   - Modal shows confirmation and imports slots
+   - Cache automatically invalidated
+7. Close modal and verify slots appear in UI
+
+**Alternative: Import via API**
+
+For scripting or automation, use the API endpoints:
 
 ```bash
-curl -X POST http://localhost:5000/api/slots/validate \
+# Dry-run validation first
+curl -X POST http://localhost:5000/api/slots/import \
   -H "Content-Type: application/json" \
-  -d @slots-definition.json
-```
+  -d '{
+    "json": <paste-slot-json-here>,
+    "targetCameraId": "<actual-camera-uuid>",
+    "validateOnly": true
+  }'
 
-Review errors and warnings, fix any issues.
-
-### Step 6: Import Slots
-
-Once validation passes:
-
-```bash
+# If validation passes, import
 curl -X POST http://localhost:5000/api/slots/import \
   -H "Content-Type: application/json" \
   -d '{
@@ -269,16 +332,23 @@ curl -X POST http://localhost:5000/api/slots/import \
   }'
 ```
 
-### Step 7: Verify Import
+### Step 6: Verify Import
 
-1. Check database to confirm slots were created:
+1. **UI Verification**:
+   - Navigate to Slot Drawing page
+   - Select the camera you imported to
+   - Verify all slots appear in the slot list
+   - Check that slot count matches import count
+
+2. **Database Verification** (optional):
    ```bash
-   psql -d shelfeye -c "SELECT slot_id, tool_name, camera_id FROM slots ORDER BY slot_id;"
+   psql -d shelfeye -c "SELECT slot_id, tool_name, camera_id FROM slots WHERE camera_id = '<camera-uuid>' ORDER BY slot_id;"
    ```
 
-2. Run a test capture to verify slot detection works
-
-3. Review detection logs to confirm ArUco markers are being detected
+3. **Test Detection**:
+   - Run a test capture to verify slot detection works
+   - Review detection logs to confirm ArUco markers are being detected
+   - Verify SSIM scores are calculated correctly
 
 ## Troubleshooting
 
