@@ -22,17 +22,19 @@ sudo tee /etc/watchdog.conf > /dev/null <<EOF
 # Hardware watchdog device
 watchdog-device = /dev/watchdog
 
-# Timeout: reboot if no heartbeat for 60 seconds (allows time for startup calibration)
-watchdog-timeout = 60
+# Timeout: reboot if no heartbeat for 180 seconds
+# (allows time for git sync + npm install + db push + startup calibration)
+watchdog-timeout = 180
 
 # Test interval: ping every 1 second
 interval = 1
 
-# Maximum load average (1-min, 5-min, 15-min) before reboot
-# For 4-core Pi: 8.0 = 200% load per core
-max-load-1 = 8
-max-load-5 = 6
-max-load-15 = 4
+# Load average triggers DISABLED for computer vision workloads
+# (OpenCV calibration routinely spikes >9 on 4-core Pi during startup)
+# Watchdog only monitors for complete system freeze, not high load
+# max-load-1 = 0
+# max-load-5 = 0
+# max-load-15 = 0
 
 # Reboot if network interface goes down (optional, comment out if not needed)
 # interface = wlan0
@@ -40,9 +42,9 @@ max-load-15 = 4
 # Enable logging
 log-dir = /var/log/watchdog
 
-# Realtime priority (makes watchdog less likely to freeze)
+# Realtime priority (ensures watchdog daemon gets CPU during heavy loads)
 realtime = yes
-priority = 1
+priority = 5
 
 # Test /dev/watchdog is writable
 test-binary = /usr/bin/test
@@ -63,7 +65,13 @@ echo ""
 echo "Watchdog device:"
 ls -l /dev/watchdog
 echo ""
-echo "🐕 Your Pi will now automatically reboot if it freezes for more than 60 seconds!"
+echo "🐕 Your Pi will now automatically reboot if it freezes for more than 3 minutes!"
+echo ""
+echo "⚠️  Load average triggers are DISABLED to prevent false reboots during calibration."
+echo "    The watchdog only protects against complete system freezes, not high CPU usage."
+echo ""
+echo "📊 Startup typically takes 90-120 seconds (git + npm + calibration)."
+echo "    The 180s timeout provides comfortable safety margin."
 echo ""
 echo "To test (WARNING: this will reboot your Pi):"
 echo "  sudo sh -c 'echo 1 > /proc/sys/kernel/sysrq'"

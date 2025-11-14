@@ -11,14 +11,36 @@ set -o pipefail  # Catch errors in pipes
 APP_DIR="/home/naniwa/ShelfEye"
 LOG_DIR="/home/naniwa/ShelfEye/logs"
 LOG_FILE="$LOG_DIR/startup.log"
+TIMING_LOG="/home/naniwa/ShelfEye/state/startup-timing.json"
 REPO_URL="https://github.com/heyhotcake/ShelfEye.git"
+COMMAND_TIMEOUT=30  # 30 second timeout for network operations
 
 # Create log directory if it doesn't exist
 mkdir -p "$LOG_DIR"
+mkdir -p "/home/naniwa/ShelfEye/state"
+
+# Timing instrumentation
+START_TIME=$(date +%s)
+declare -A PHASE_TIMES
 
 # Function to log messages
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# Function to record phase timing
+record_phase() {
+    local phase_name="$1"
+    local duration=$(($(date +%s) - START_TIME))
+    PHASE_TIMES["$phase_name"]=$duration
+    log "⏱️  Phase '$phase_name' completed in ${duration}s (cumulative)"
+}
+
+# Function to run command with timeout
+run_with_timeout() {
+    local timeout=$1
+    shift
+    timeout --foreground "$timeout" "$@" 2>&1 | tee -a "$LOG_FILE"
 }
 
 log "========================================="
@@ -42,49 +64,62 @@ else
     log "   Create .env.pi with DATABASE_URL and SESSION_SECRET"
 fi
 
-# Fetch latest changes from GitHub
+# Fetch latest changes from GitHub (with timeout)
 log "Checking for updates from GitHub..."
-git fetch origin main 2>&1 | tee -a "$LOG_FILE"
-
-# Check if updates are available
-LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/main)
-
-if [ "$LOCAL" != "$REMOTE" ]; then
-    log "✨ New version found! Updating..."
+if run_with_timeout $COMMAND_TIMEOUT git fetch origin main; then
+    record_phase "git-fetch"
     
-    # Stash any local changes (if there are any)
-    if [ -n "$(git status --porcelain)" ]; then
-        log "Stashing local changes..."
-        git stash 2>&1 | tee -a "$LOG_FILE"
+    # Check if updates are available
+    LOCAL=$(git rev-parse HEAD)
+    REMOTE=$(git rev-parse origin/main)
+
+    if [ "$LOCAL" != "$REMOTE" ]; then
+        log "✨ New version found! Updating..."
+        
+        # Stash any local changes (if there are any)
+        if [ -n "$(git status --porcelain)" ]; then
+            log "Stashing local changes..."
+            run_with_timeout $COMMAND_TIMEOUT git stash
+        else
+            log "No local changes to stash"
+        fi
+        
+        # Pull latest changes
+        if run_with_timeout $COMMAND_TIMEOUT git pull origin main; then
+            record_phase "git-pull"
+            
+            # Check if package.json changed
+            if git diff --name-only HEAD@{1} HEAD | grep -q "package.json"; then
+                log "📦 Dependencies changed, running npm install..."
+                run_with_timeout 90 npm install --include=dev
+                record_phase "npm-install"
+            fi
+            
+            # Check if Python requirements changed (future-proofing)
+            if [ -f "requirements.txt" ] && git diff --name-only HEAD@{1} HEAD | grep -q "requirements.txt"; then
+                log "🐍 Python dependencies changed, running pip install..."
+                run_with_timeout 60 pip3 install -r requirements.txt
+                record_phase "pip-install"
+            fi
+            
+            log "✅ Update completed successfully!"
+        else
+            log "⚠️  Git pull timeout or failed - continuing with current version"
+        fi
     else
-        log "No local changes to stash"
+        log "✓ Already up to date (commit: ${LOCAL:0:7})"
+        record_phase "git-check"
     fi
-    
-    # Pull latest changes
-    git pull origin main 2>&1 | tee -a "$LOG_FILE"
-    
-    # Check if package.json changed
-    if git diff --name-only HEAD@{1} HEAD | grep -q "package.json"; then
-        log "📦 Dependencies changed, running npm install..."
-        npm install --include=dev 2>&1 | tee -a "$LOG_FILE"
-    fi
-    
-    # Check if Python requirements changed (future-proofing)
-    if [ -f "requirements.txt" ] && git diff --name-only HEAD@{1} HEAD | grep -q "requirements.txt"; then
-        log "🐍 Python dependencies changed, running pip install..."
-        pip3 install -r requirements.txt 2>&1 | tee -a "$LOG_FILE"
-    fi
-    
-    log "✅ Update completed successfully!"
 else
-    log "✓ Already up to date (commit: ${LOCAL:0:7})"
+    log "⚠️  Git fetch timeout or failed - skipping update check"
+    record_phase "git-fetch-skipped"
 fi
 
 # Ensure WS2812B LED library is installed (runs on every boot)
 if ! python3 -c "import rpi_ws281x" 2>/dev/null; then
     log "🔦 Installing WS2812B LED library..."
-    sudo pip3 install rpi_ws281x --break-system-packages 2>&1 | tee -a "$LOG_FILE"
+    run_with_timeout 45 sudo pip3 install rpi_ws281x --break-system-packages || log "⚠️  LED library install failed"
+    record_phase "led-library-install"
 else
     log "✓ WS2812B LED library already installed"
 fi
@@ -124,9 +159,32 @@ fi
 
 # Database schema sync (if needed)
 log "Syncing database schema..."
-npm run db:push 2>&1 | tee -a "$LOG_FILE" || {
-    log "⚠️  Database sync warning (this is normal if schema unchanged)"
+if run_with_timeout 45 npm run db:push; then
+    record_phase "db-push"
+else
+    log "⚠️  Database sync timeout or failed (continuing anyway)"
+    record_phase "db-push-failed"
+fi
+
+# Save timing data
+TOTAL_STARTUP_TIME=$(($(date +%s) - START_TIME))
+record_phase "pre-app-complete"
+
+# Write timing data to JSON
+cat > "$TIMING_LOG" << EOF
+{
+  "timestamp": "$(date -Iseconds)",
+  "total_startup_time": $TOTAL_STARTUP_TIME,
+  "phases": {
+$(for phase in "${!PHASE_TIMES[@]}"; do
+    echo "    \"$phase\": ${PHASE_TIMES[$phase]},"
+done | sed '$ s/,$//')
+  }
 }
+EOF
+
+log "📊 Total pre-app startup: ${TOTAL_STARTUP_TIME}s"
+log "   Timing details saved to: $TIMING_LOG"
 
 # Start the application
 log "🚀 Starting ShelfEye application..."
