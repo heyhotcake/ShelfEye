@@ -51,7 +51,7 @@ Cameras must be forced to MJPEG format for optimal performance (7-10fps at 4K, 1
 2. **WHITE** (Priority 1): Calibration/validation lighting. Blocked during alerts.
 3. **OFF** (Priority 0): Default state. Always succeeds.
 
-**State Management**: Daemon maintains persistent state in `/home/naniwa/ShelfEye/state/led_state.json` (survives reboots). Flash thread uses lock-release-join pattern to prevent deadlocks during state transitions.
+**State Management**: Daemon maintains persistent state in `/home/naniwa/ShelfEye/state/led_state.json` with automatic restoration on startup. LED state (white/red_flash/off) is saved on every change and restored within 24 hours after crashes/reboots, ensuring alerts and calibration lighting persist through system restarts. Flash thread uses lock-release-join pattern to prevent deadlocks during state transitions.
 
 **Configuration**: Database-driven LED count (default 99) and brightness (default 100, 0-255 range). Values dynamically propagated from UI → Database → TypeScript → Client → Daemon. Brightness updates apply immediately; LED count changes require daemon restart.
 

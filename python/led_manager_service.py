@@ -123,8 +123,11 @@ class LEDManagerDaemon:
         )
         self.strip.begin()
         
-        # Turn off all LEDs initially
+        # Turn off all LEDs initially (will be overridden by state restoration)
         self._clear_strip()
+        
+        # Restore previous state after hardware init
+        self._restore_saved_state()
     
     def _clear_strip(self):
         """Turn off all LEDs"""
@@ -344,6 +347,58 @@ class LEDManagerDaemon:
                 }, f)
         except Exception as e:
             print(f"⚠️  Failed to save state: {e}", file=sys.stderr)
+    
+    def _restore_saved_state(self):
+        """Restore LED state from file on daemon startup"""
+        try:
+            if not os.path.exists(STATE_FILE):
+                print("ℹ️  No saved state found, starting with LEDs off")
+                return
+            
+            with open(STATE_FILE, 'r') as f:
+                saved_state = json.load(f)
+            
+            mode = saved_state.get('mode', 'off')
+            timestamp = saved_state.get('timestamp', 0)
+            age = time.time() - timestamp
+            
+            # Only restore state if less than 24 hours old
+            if age > 86400:
+                print(f"ℹ️  Saved state too old ({age/3600:.1f}h), starting fresh")
+                return
+            
+            print(f"🔄 Restoring LED state: {mode} (saved {age:.0f}s ago)")
+            
+            # Restore state based on mode
+            if mode == 'white':
+                self._set_all_leds((255, 255, 255))
+                with self.state_lock:
+                    self.current_state['mode'] = 'white'
+                    self.current_state['priority'] = PRIORITY_WHITE
+                print("✅ White lighting restored")
+                
+            elif mode == 'red_flash':
+                # Restart red flash
+                with self.state_lock:
+                    self.current_state['mode'] = 'red_flash'
+                    self.current_state['priority'] = PRIORITY_RED_FLASH
+                    self.current_state['flash_active'] = True
+                    flash_thread = threading.Thread(
+                        target=self._flash_red_thread,
+                        daemon=True
+                    )
+                    flash_thread.start()
+                    self.current_state['flash_thread'] = flash_thread
+                print("✅ Red flash alert restored")
+                
+            else:
+                # Already off from hardware init
+                print("ℹ️  LEDs remain off")
+                
+        except json.JSONDecodeError:
+            print("⚠️  Corrupted state file, starting fresh", file=sys.stderr)
+        except Exception as e:
+            print(f"⚠️  Failed to restore state: {e}", file=sys.stderr)
     
     def _setup_command_pipe(self):
         """Create named pipe for command reception"""
