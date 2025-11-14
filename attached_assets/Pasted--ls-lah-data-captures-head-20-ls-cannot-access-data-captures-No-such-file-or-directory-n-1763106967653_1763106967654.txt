@@ -1,0 +1,56 @@
+ ls -lah data/captures/ | head -20
+ls: cannot access 'data/captures/': No such file or directory
+naniwa@NaniwaTanaCheck:~/ShelfEye $ python3 python/camera_diagnostic.py --camera-id a91d43f1-47bf-4d75-8a7d-d2faf0503f81 2>&1
+^CTraceback (most recent call last):
+  File "/home/naniwa/ShelfEye/python/camera_diagnostic.py", line 260, in <module>
+    main()
+    ~~~~^^
+  File "/home/naniwa/ShelfEye/python/camera_diagnostic.py", line 227, in main
+    input_data = sys.stdin.read()
+KeyboardInterrupt
+
+naniwa@NaniwaTanaCheck:~/ShelfEye $ python3 python/camera_diagnostic.py --camera-id 5e164d3c-1809-49ba-b284-a734843b32f1 2>&1
+^CTraceback (most recent call last):
+  File "/home/naniwa/ShelfEye/python/camera_diagnostic.py", line 260, in <module>
+    main()
+    ~~~~^^
+  File "/home/naniwa/ShelfEye/python/camera_diagnostic.py", line 227, in main
+    input_data = sys.stdin.read()
+KeyboardInterrupt
+
+naniwa@NaniwaTanaCheck:~/ShelfEye $ python3 python/diagnose_all_aruco.py 2>&1 | head -100
+usage: diagnose_all_aruco.py [-h] --camera-id CAMERA_ID
+                             [--image-path IMAGE_PATH]
+diagnose_all_aruco.py: error: the following arguments are required: --camera-id
+naniwa@NaniwaTanaCheck:~/ShelfEye $ journalctl -u shelfeye.service --since "24 hours ago" | grep -i "error\|fail\|picamera.*not" | tail -30
+Nov 14 14:58:29 NaniwaTanaCheck pi-startup.sh[4142]: [StartupCalibration] Calibration process failed with code 1 : INFO:__main__:Opening camera: 0
+Nov 14 14:58:29 NaniwaTanaCheck pi-startup.sh[4142]: [StartupCalibration] ✗ Camera Wide Shelf validation failed
+Nov 14 14:58:29 NaniwaTanaCheck pi-startup.sh[4142]: [StartupCalibration] 2/2 camera(s) failed validation: Camera 2 (Shelf 2), Wide Shelf
+Nov 14 14:58:29 NaniwaTanaCheck pi-startup.sh[4142]: [StartupCalibration] Flashing red LED - Camera validation failed: Camera 2 (Shelf 2), Wide Shelf
+Nov 14 15:00:09 NaniwaTanaCheck pi-startup.sh[4546]: [LED] setWhiteLight failed:
+Nov 14 15:00:41 NaniwaTanaCheck pi-startup.sh[4546]: [StartupCalibration] Calibration process failed with code 1 : INFO:__main__:Opening camera: 1
+Nov 14 15:00:41 NaniwaTanaCheck pi-startup.sh[4546]: [StartupCalibration] ✗ Camera Camera 2 (Shelf 2) validation failed
+Nov 14 15:00:42 NaniwaTanaCheck pi-startup.sh[4546]: [LED] setWhiteLight failed:
+Nov 14 15:01:23 NaniwaTanaCheck pi-startup.sh[4947]: [LED] setWhiteLight failed:
+Nov 14 15:01:57 NaniwaTanaCheck pi-startup.sh[4947]: [StartupCalibration] Calibration completed: 4/4 markers, error: 0.00px
+Nov 14 15:02:55 NaniwaTanaCheck pi-startup.sh[4947]: [StartupCalibration] Calibration completed: 4/4 markers, error: 0.00px
+Nov 14 16:30:04 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Diagnostic error: Error: Python script exited with code 1: 2025-11-14 16:30:03,323 - __main__ - INFO - Starting diagnostics for 2 cameras
+Nov 14 16:30:04 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:03,326 - __main__ - ERROR - Camera 5e164d3c-1809-49ba-b284-a734843b32f1: Cannot open source /dev/video1
+Nov 14 16:30:04 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:04,534 - __main__ - ERROR - Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81: Only 3/4 corner markers visible
+Nov 14 16:30:04 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:04,549 - __main__ - INFO - Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81: failed
+Nov 14 16:30:04 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:04,553 - __main__ - INFO - Diagnostics complete: failed (0 healthy, 0 warnings, 2 failed)
+Nov 14 16:30:04 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Sending alert: diagnostic_failure
+Nov 14 16:30:06 NaniwaTanaCheck pi-startup.sh[4947]: [Email Alert] Sent diagnostic_failure alert to t-azuma@fs-naniwa.co.jp
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: [SheetsLogger] Logged alert: diagnostic_failure at 2025-11-14 16:30:04 to tab Alerts-{YYYY-MM}
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Alert sent successfully: diagnostic_failure
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: [2025-11-14T07:30:07.696Z] [PID: 4970] [NODE-CRON] [ERROR] Python script exited with code 1: 2025-11-14 16:30:03,323 - __main__ - INFO - Starting diagnostics for 2 cameras
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:03,326 - __main__ - ERROR - Camera 5e164d3c-1809-49ba-b284-a734843b32f1: Cannot open source /dev/video1
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:04,534 - __main__ - ERROR - Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81: Only 3/4 corner markers visible
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:04,549 - __main__ - INFO - Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81: failed
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:04,553 - __main__ - INFO - Diagnostics complete: failed (0 healthy, 0 warnings, 2 failed)
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]:  Error: Python script exited with code 1: 2025-11-14 16:30:03,323 - __main__ - INFO - Starting diagnostics for 2 cameras
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:03,326 - __main__ - ERROR - Camera 5e164d3c-1809-49ba-b284-a734843b32f1: Cannot open source /dev/video1
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:04,534 - __main__ - ERROR - Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81: Only 3/4 corner markers visible
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:04,549 - __main__ - INFO - Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81: failed
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: 2025-11-14 16:30:04,553 - __main__ - INFO - Diagnostics complete: failed (0 healthy, 0 warnings, 2 failed)
+naniwa@NaniwaTanaCheck:~/ShelfEye $
