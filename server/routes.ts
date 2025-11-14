@@ -197,13 +197,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Run startup calibration
   await startupCalibrationService.initialize();
-  // Health check
-  app.get("/api/health", (_req, res) => {
+  // Health check with detailed system metrics
+  app.get("/api/health", async (_req, res) => {
     try {
+      const uptime = process.uptime();
+      const memUsage = process.memoryUsage();
+      
       res.json({
         ok: true,
         time: new Date().toISOString(),
-        version: "2.1.0"
+        version: "2.1.0",
+        uptime: {
+          seconds: Math.floor(uptime),
+          hours: Math.floor(uptime / 3600),
+          days: Math.floor(uptime / 86400)
+        },
+        memory: {
+          rss: Math.round(memUsage.rss / 1024 / 1024), // MB
+          heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024), // MB
+          heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024), // MB
+          external: Math.round(memUsage.external / 1024 / 1024) // MB
+        },
+        process: {
+          pid: process.pid,
+          platform: process.platform,
+          nodeVersion: process.version
+        }
       });
     } catch (error) {
       res.status(500).json({ message: "Health check failed", error });
