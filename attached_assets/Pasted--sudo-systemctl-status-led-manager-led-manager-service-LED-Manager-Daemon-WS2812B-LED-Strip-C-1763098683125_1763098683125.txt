@@ -1,0 +1,28 @@
+ sudo systemctl status led-manager
+● led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller
+     Loaded: loaded (/etc/systemd/system/led-manager.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-11-14 11:34:44 JST; 3h 2min ago
+ Invocation: 2cd48080ec43476cade768ae48f08e7a
+       Docs: file:///home/naniwa/ShelfEye/replit.md
+   Main PID: 2380 (python3)
+      Tasks: 1 (limit: 1579)
+        CPU: 438ms
+     CGroup: /system.slice/led-manager.service
+             └─2380 /usr/bin/python3 /home/naniwa/ShelfEye/python/led_manager_service.py
+
+Nov 14 11:34:44 NaniwaTanaCheck led-manager[2380]: 🚀 LED Manager Daemon started, listening for commands...
+Nov 14 11:35:16 NaniwaTanaCheck led-manager[2380]: 📨 Received command: white
+Nov 14 11:35:51 NaniwaTanaCheck led-manager[2380]: 📨 Received command: off
+Nov 14 11:35:51 NaniwaTanaCheck led-manager[2380]: 📨 Received command: white
+Nov 14 11:36:48 NaniwaTanaCheck led-manager[2380]: 📨 Received command: off
+Nov 14 11:36:48 NaniwaTanaCheck led-manager[2380]: 📨 Received command: stop_flash
+Nov 14 13:29:28 NaniwaTanaCheck systemd[1]: /etc/systemd/system/led-manager.service:27: Unknown key 'StartLimitIntervalSec' in section [Service], ignoring.
+Nov 14 13:30:05 NaniwaTanaCheck led-manager[2380]: 📨 Received command: start_flash
+Nov 14 13:31:38 NaniwaTanaCheck led-manager[2380]: 📨 Received command: stop_flash
+Nov 14 13:31:38 NaniwaTanaCheck led-manager[2380]: 🔴 Flash thread stopped
+naniwa@NaniwaTanaCheck:~ $ systemctl list-units --all | grep -i led
+  led-manager.service                                                                                                                        loaded    active   running   LED Manager Daemon - WS2812B LED Strip Controller
+To show all installed unit files use 'systemctl list-unit-files'.
+naniwa@NaniwaTanaCheck:~ $ ls -la /etc/systemd/system/ | grep -i led
+-rw-r--r--  1 root root  889 Nov 14 11:34 led-manager.service
+naniwa@NaniwaTanaCheck:~ $
