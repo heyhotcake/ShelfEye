@@ -133,53 +133,34 @@ export default function WorkerTags() {
       pdf.setLineWidth(0.1);
       pdf.rect(x, y, tagWidth, tagHeight);
       
-      // Draw scissor-cut guides (corner marks)
-      pdf.setDrawColor(0, 0, 0);
-      pdf.setLineWidth(0.3);
-      const guideLength = 3; // 3mm guide lines
+      // Add worker name at top with 5mm borders
+      const nameBorderMm = 5;
+      const maxNameWidth = tagWidth - (2 * nameBorderMm);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
       
-      // Top-left corner
-      pdf.line(x - 1, y, x - 1 + guideLength, y); // Horizontal
-      pdf.line(x, y - 1, x, y - 1 + guideLength); // Vertical
+      // Start with large font and decrease if text doesn't fit
+      let fontSize = 16;
+      pdf.setFontSize(fontSize);
+      let textWidth = pdf.getTextWidth(worker.name);
       
-      // Top-right corner
-      pdf.line(x + tagWidth + 1, y, x + tagWidth + 1 - guideLength, y);
-      pdf.line(x + tagWidth, y - 1, x + tagWidth, y - 1 + guideLength);
+      while (textWidth > maxNameWidth && fontSize > 8) {
+        fontSize -= 0.5;
+        pdf.setFontSize(fontSize);
+        textWidth = pdf.getTextWidth(worker.name);
+      }
       
-      // Bottom-left corner
-      pdf.line(x - 1, y + tagHeight, x - 1 + guideLength, y + tagHeight);
-      pdf.line(x, y + tagHeight + 1, x, y + tagHeight + 1 - guideLength);
+      const nameY = y + nameBorderMm + fontSize * 0.35; // Convert pt to mm
+      pdf.text(worker.name, x + tagWidth / 2, nameY, { align: 'center' });
       
-      // Bottom-right corner
-      pdf.line(x + tagWidth + 1, y + tagHeight, x + tagWidth + 1 - guideLength, y + tagHeight);
-      pdf.line(x + tagWidth, y + tagHeight + 1, x + tagWidth, y + tagHeight + 1 - guideLength);
-      
-      // Add ArUco marker (3cm x 3cm, centered)
+      // Add ArUco marker (3cm x 3cm, centered horizontally and vertically below name)
       const markerSize = 30; // 3cm
       const arucoImage = arucoImages[worker.arucoId];
       if (arucoImage) {
         const markerX = x + (tagWidth - markerSize) / 2;
-        const markerY = y + (tagHeight - markerSize) / 2;
+        const markerY = y + (tagHeight - markerSize) / 2 + 3; // Slightly below center to account for name at top
         pdf.addImage(`data:image/png;base64,${arucoImage}`, 'PNG', markerX, markerY, markerSize, markerSize);
       }
-      
-      // Add worker name (below ArUco marker)
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'bold');
-      const nameY = y + (tagHeight - markerSize) / 2 + markerSize + 5; // 5mm below marker
-      pdf.text(worker.name, x + tagWidth / 2, nameY, { align: 'center' });
-      
-      // Add team if available
-      if (worker.team) {
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(worker.team, x + tagWidth / 2, nameY + 5, { align: 'center' });
-      }
-      
-      // Add ArUco ID (for reference, at bottom)
-      pdf.setFontSize(6);
-      pdf.setTextColor(100, 100, 100);
-      pdf.text(`ID: ${worker.arucoId}`, x + tagWidth / 2, y + tagHeight - 3, { align: 'center' });
     });
     
     pdf.save('worker-tags.pdf');
@@ -289,15 +270,26 @@ export default function WorkerTags() {
               return (
                 <div
                   key={`${worker.id}-${worker.copyNumber}`}
-                  className="absolute border border-gray-300 flex flex-col items-center justify-start p-2 bg-white"
+                  className="absolute border border-gray-300 flex flex-col bg-white"
                   style={{
                     left: `${x}mm`,
                     top: `${y}mm`,
                     width: `${tagWidth}mm`,
                     height: `${tagHeight}mm`,
+                    padding: 0,
                   }}
                 >
-                  {/* ArUco Marker - centered vertically */}
+                  {/* Worker Name - at top with 5mm borders */}
+                  <div className="text-center font-bold" style={{ 
+                    fontSize: '16pt',
+                    paddingLeft: '5mm',
+                    paddingRight: '5mm',
+                    paddingTop: '5mm',
+                  }}>
+                    {worker.name}
+                  </div>
+
+                  {/* ArUco Marker - centered below name */}
                   {arucoImages[worker.arucoId] ? (
                     <div className="flex-1 flex items-center justify-center">
                       <img
@@ -313,80 +305,6 @@ export default function WorkerTags() {
                       </div>
                     </div>
                   )}
-
-                  {/* Worker Name - below marker */}
-                  <div className="text-center pb-1">
-                    <p className="font-bold" style={{ fontSize: '10pt' }}>
-                      {worker.name}
-                    </p>
-                    {worker.team && (
-                      <p className="text-gray-600" style={{ fontSize: '8pt' }}>
-                        {worker.team}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* ArUco ID (small, at bottom) */}
-                  <div className="absolute bottom-0.5 text-xs text-gray-400" style={{ fontSize: '6pt' }}>
-                    ID: {worker.arucoId}
-                  </div>
-
-                  {/* Scissor-cut guides (corner marks) - visible on screen and print */}
-                  {/* Top-left */}
-                  <div className="absolute bg-black" style={{ 
-                    width: '3mm', 
-                    height: '1px', 
-                    left: '-1mm', 
-                    top: '0' 
-                  }} />
-                  <div className="absolute bg-black" style={{ 
-                    width: '1px', 
-                    height: '3mm', 
-                    left: '0', 
-                    top: '-1mm' 
-                  }} />
-                  
-                  {/* Top-right */}
-                  <div className="absolute bg-black" style={{ 
-                    width: '3mm', 
-                    height: '1px', 
-                    right: '-1mm', 
-                    top: '0' 
-                  }} />
-                  <div className="absolute bg-black" style={{ 
-                    width: '1px', 
-                    height: '3mm', 
-                    right: '0', 
-                    top: '-1mm' 
-                  }} />
-                  
-                  {/* Bottom-left */}
-                  <div className="absolute bg-black" style={{ 
-                    width: '3mm', 
-                    height: '1px', 
-                    left: '-1mm', 
-                    bottom: '0' 
-                  }} />
-                  <div className="absolute bg-black" style={{ 
-                    width: '1px', 
-                    height: '3mm', 
-                    left: '0', 
-                    bottom: '-1mm' 
-                  }} />
-                  
-                  {/* Bottom-right */}
-                  <div className="absolute bg-black" style={{ 
-                    width: '3mm', 
-                    height: '1px', 
-                    right: '-1mm', 
-                    bottom: '0' 
-                  }} />
-                  <div className="absolute bg-black" style={{ 
-                    width: '1px', 
-                    height: '3mm', 
-                    right: '0', 
-                    bottom: '-1mm' 
-                  }} />
                 </div>
               );
             })}
