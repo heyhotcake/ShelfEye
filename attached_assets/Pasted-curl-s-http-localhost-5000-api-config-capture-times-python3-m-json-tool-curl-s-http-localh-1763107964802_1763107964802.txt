@@ -1,0 +1,204 @@
+curl -s http://localhost:5000/api/config/capture_times | python3 -m json.tool
+curl -s http://localhost:5000/api/config/scheduler_paused | python3 -m json.tool
+{
+    "id": "429157d2-e3af-40e0-b3c9-18299a571bfb",
+    "key": "capture_times",
+    "value": [
+        "08:00",
+        "11:00",
+        "14:00",
+        "17:00"
+    ],
+    "description": "Scheduled capture times",
+    "updatedAt": "2025-10-16T01:05:17.404Z"
+}
+{
+    "id": "b48c0a1f-181d-4617-94cc-32ddaa4715a4",
+    "key": "scheduler_paused",
+    "value": false,
+    "description": "Whether scheduler is paused",
+    "updatedAt": "2025-10-14T00:23:10.788Z"
+}
+naniwa@NaniwaTanaCheck:~/ShelfEye $ curl -s http://localhost:5000/api/capture-runs | python3 -m json.tool | grep -A5 "scheduled"
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 0,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 0,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 0,
+        "slotsProcessed": 0,
+        "failureCount": 1,
+        "status": "failure",
+        "errorMessages": [
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 0,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 0,
+        "slotsProcessed": 0,
+        "failureCount": 1,
+        "status": "failure",
+        "errorMessages": [
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 0,
+        "slotsProcessed": 0,
+        "failureCount": 1,
+        "status": "failure",
+        "errorMessages": [
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 0,
+        "slotsProcessed": 0,
+        "failureCount": 1,
+        "status": "failure",
+        "errorMessages": [
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 0,
+        "slotsProcessed": 0,
+        "failureCount": 1,
+        "status": "failure",
+        "errorMessages": [
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 0,
+        "slotsProcessed": 0,
+        "failureCount": 1,
+        "status": "failure",
+        "errorMessages": [
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 7,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 1,
+        "slotsProcessed": 7,
+        "failureCount": 1,
+        "status": "partial_failure",
+        "errorMessages": [
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 0,
+        "slotsProcessed": 0,
+        "failureCount": 1,
+        "status": "failure",
+        "errorMessages": [
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 14,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+--
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 14,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+naniwa@NaniwaTanaCheck:~/ShelfEye $ journalctl -u shelfeye.service --since "today" | grep -i "scheduled\|cron" | tail -20
+Nov 14 15:00:08 NaniwaTanaCheck pi-startup.sh[4546]: [Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+Nov 14 15:00:08 NaniwaTanaCheck pi-startup.sh[4546]: [Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+Nov 14 15:00:08 NaniwaTanaCheck pi-startup.sh[4546]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Nov 14 15:00:08 NaniwaTanaCheck pi-startup.sh[4546]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Nov 14 15:00:08 NaniwaTanaCheck pi-startup.sh[4546]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Nov 14 15:00:08 NaniwaTanaCheck pi-startup.sh[4546]: [Scheduler] Scheduled daily maintenance at 3:00 AM JST
+Nov 14 15:00:08 NaniwaTanaCheck pi-startup.sh[4546]: [Scheduler] Scheduled 4 capture times + daily maintenance
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled daily maintenance at 3:00 AM JST
+Nov 14 15:01:22 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Scheduled 4 capture times + daily maintenance
+Nov 14 16:30:07 NaniwaTanaCheck pi-startup.sh[4947]: [2025-11-14T07:30:07.696Z] [PID: 4970] [NODE-CRON] [ERROR] Python script exited with code 1: 2025-11-14 16:30:03,323 - __main__ - INFO - Starting diagnostics for 2 cameras
+Nov 14 17:00:00 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Running scheduled capture at 17:00 JST
+Nov 14 17:00:00 NaniwaTanaCheck pi-startup.sh[4947]: [Scheduler] Starting scheduled capture...
+naniwa@NaniwaTanaCheck:~/ShelfEye $
