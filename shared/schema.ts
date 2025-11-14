@@ -171,7 +171,17 @@ export const googleOAuthCredentials = pgTable("google_oauth_credentials", {
 
 // Insert schemas
 export const insertCameraSchema = createInsertSchema(cameras).omit({ id: true, createdAt: true });
-export const insertSlotSchema = createInsertSchema(slots).omit({ id: true, slotNumber: true, createdAt: true }); // slotNumber is auto-assigned
+export const insertSlotSchema = createInsertSchema(slots).omit({ id: true, slotNumber: true, createdAt: true })
+  .refine(data => {
+    if (!data.expectedQrId) return false;
+    const markerId = parseInt(data.expectedQrId);
+    const isToolMarker = markerId >= 1 && markerId <= 50;
+    const isCornerMarker = markerId >= 96 && markerId <= 99;
+    return !isNaN(markerId) && (isToolMarker || isCornerMarker);
+  }, {
+    message: "expectedQrId must be a valid ArUco marker ID (1-50 for tools, 96-99 for corners)",
+    path: ["expectedQrId"]
+  }); // slotNumber is auto-assigned
 export const insertDetectionLogSchema = createInsertSchema(detectionLogs).omit({ id: true });
 export const insertAlertRuleSchema = createInsertSchema(alertRules).omit({ id: true, createdAt: true });
 export const insertAlertQueueSchema = createInsertSchema(alertQueue).omit({ id: true, createdAt: true });

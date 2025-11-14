@@ -1748,6 +1748,140 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Slot validation and import/export routes
+  app.post("/api/slots/validate", async (req, res) => {
+    try {
+      const { validateSlotCollection } = await import("./utils/slot-validator");
+      const slots = req.body.slots;
+      if (!Array.isArray(slots)) {
+        return res.status(400).json({ message: "Expected 'slots' array in request body" });
+      }
+
+      const cameras = await storage.getCameras();
+      const cameraMap = new Map(cameras.map(cam => [cam.id, cam]));
+      
+      const result = validateSlotCollection(slots, cameraMap);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ message: "Validation error", error });
+    }
+  });
+
+  app.post("/api/slots/import", async (req, res) => {
+    try {
+      const { importSlotsFromJSON, validateSlotCollection, slotExportEnvelopeSchema, translateZodError } = await import("./utils/slot-validator");
+      const { json, targetCameraId, validateOnly = false } = req.body;
+
+      if (!json || !targetCameraId) {
+        return res.status(400).json({ message: "Missing required fields: json, targetCameraId" });
+      }
+
+      try {
+        slotExportEnvelopeSchema.parse(json);
+      } catch (envelopeError) {
+        if (envelopeError instanceof z.ZodError) {
+          const errors = translateZodError(envelopeError, 'envelope');
+          return res.status(400).json({ 
+            message: "Invalid slot export format", 
+            errors
+          });
+        }
+        return res.status(400).json({ 
+          message: "Invalid slot export format", 
+          error: String(envelopeError)
+        });
+      }
+
+      const slotsToImport = importSlotsFromJSON(json, targetCameraId);
+      
+      const cameras = await storage.getCameras();
+      const cameraMap = new Map(cameras.map(cam => [cam.id, cam]));
+      const validation = validateSlotCollection(slotsToImport, cameraMap);
+
+      if (!validation.valid) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validation.errors,
+          warnings: validation.warnings
+        });
+      }
+
+      if (validateOnly) {
+        return res.json({ 
+          message: "Validation passed", 
+          slotCount: slotsToImport.length,
+          warnings: validation.warnings
+        });
+      }
+
+      const validatedSlots = [];
+      const allSchemaErrors = [];
+      
+      for (const slotData of slotsToImport) {
+        try {
+          const validatedData = insertSlotSchema.parse(slotData);
+          validatedSlots.push(validatedData);
+        } catch (parseError) {
+          if (parseError instanceof z.ZodError) {
+            const errors = translateZodError(parseError, slotData.slotId || 'unknown');
+            allSchemaErrors.push(...errors);
+          } else {
+            allSchemaErrors.push({
+              slotId: slotData.slotId || 'unknown',
+              field: 'unknown',
+              message: String(parseError),
+              severity: 'error' as const
+            });
+          }
+        }
+      }
+      
+      if (allSchemaErrors.length > 0) {
+        return res.status(400).json({ 
+          message: "Schema validation failed for some slots", 
+          errors: allSchemaErrors,
+          count: allSchemaErrors.length
+        });
+      }
+      
+      const importedSlots = [];
+      for (const validatedData of validatedSlots) {
+        const slot = await storage.createSlot(validatedData);
+        importedSlots.push(slot);
+      }
+
+      res.json({ 
+        message: "Import successful", 
+        imported: importedSlots.length,
+        slots: importedSlots,
+        warnings: validation.warnings
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Import error", error });
+    }
+  });
+
+  app.get("/api/slots/export/:cameraId", async (req, res) => {
+    try {
+      const { exportSlotsToJSON } = await import("./utils/slot-validator");
+      const { cameraId } = req.params;
+
+      const camera = await storage.getCamera(cameraId);
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+
+      const slots = await storage.getSlotsByCamera(cameraId);
+      const exportData = exportSlotsToJSON(slots, camera);
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="slots-${camera.name}-${new Date().toISOString().split('T')[0]}.json"`);
+      res.json(exportData);
+    } catch (error) {
+      res.status(500).json({ message: "Export error", error });
+    }
+  });
+
   // Detection logs routes
   app.get("/api/detection-logs", async (req, res) => {
     try {
