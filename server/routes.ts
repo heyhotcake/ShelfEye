@@ -2215,7 +2215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const rectangles = await storage.getTemplateRectanglesByDesignId(design.id);
           
           // Get unique category IDs from rectangles
-          const categoryIds = [...new Set(rectangles.map(r => r.categoryId))];
+          const categoryIds = Array.from(new Set(rectangles.map(r => r.categoryId)));
           const relevantCategories = allCategories.filter(c => categoryIds.includes(c.id));
           
           return {

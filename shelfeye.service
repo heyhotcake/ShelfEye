@@ -1,7 +1,7 @@
 [Unit]
 Description=ShelfEye Tool Monitoring System
-After=network-online.target
-Wants=network-online.target
+After=network-online.target led-manager.service
+Wants=network-online.target led-manager.service
 
 [Service]
 Type=simple

@@ -166,6 +166,17 @@ export class MemStorage implements IStorage {
       auth: { user: "", pass: "" }
     }, "SMTP configuration for email alerts");
     await this.setConfig("CAPTURE_SCHEDULE", ["08:00", "11:00", "14:00", "17:00"], "Scheduled capture times");
+    
+    // LED configuration
+    await this.setConfig("led_strip_num_leds", "99", "Number of LEDs in the WS2812B strip");
+    await this.setConfig("led_strip_brightness", "100", "LED strip brightness (0-255)");
+    
+    // Calibration metadata
+    await this.setConfig("calibration-info", JSON.stringify({
+      version: "1.0",
+      lastUpdated: new Date().toISOString(),
+      notes: "Initial setup - calibration pending"
+    }), "Camera calibration metadata");
 
     // Create admin user
     await this.createUser({
@@ -746,6 +757,11 @@ export class DbStorage implements IStorage {
       { key: "led_strip_num_leds", value: 99, desc: "Number of LEDs in the WS2812B light strip" },
       { key: "led_strip_brightness", value: 100, desc: "LED strip brightness level (0-255)" },
       { key: "alert_led_gpio_pin", value: 17, desc: "Red alert LED GPIO pin for flashing error indicators" },
+      { key: "calibration-info", value: JSON.stringify({
+        version: "1.0",
+        lastUpdated: new Date().toISOString(),
+        notes: "Initial setup - calibration pending"
+      }), desc: "Camera calibration metadata" },
     ];
     
     for (const config of configDefaults) {

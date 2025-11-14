@@ -3,6 +3,7 @@ Description=LED Manager Daemon - WS2812B LED Strip Controller
 Documentation=file:///home/naniwa/ShelfEye/replit.md
 After=network.target
 Wants=network.target
+Before=shelfeye.service
 
 [Service]
 Type=simple
