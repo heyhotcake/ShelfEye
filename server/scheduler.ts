@@ -7,6 +7,7 @@ import { sendAlertEmail } from './services/email-alerts';
 import { SheetsLogger } from './services/sheets-logger';
 import { getAlertLEDController } from './services/alert-led';
 import { maintenanceService } from './services/maintenance-service';
+import { cameraSessionManager } from './camera-session-manager';
 
 const TIMEZONE = 'Asia/Tokyo';
 
