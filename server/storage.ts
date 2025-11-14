@@ -155,23 +155,56 @@ export class MemStorage implements IStorage {
       conditions: { maxReprojectionError: 2.5 },
     });
 
-    // Initialize system config
-    await this.setConfig("BUSINESS_HOURS", "08:00-20:00", "Operating hours for alerts");
-    await this.setConfig("EMAIL_RECIPIENTS", ["manager@factory.com", "supervisor@factory.com"], "Alert email recipients");
-    await this.setConfig("GOOGLE_SHEETS_ID", "", "Google Sheets ID for logging");
-    await this.setConfig("SMTP_CONFIG", {
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: { user: "", pass: "" }
-    }, "SMTP configuration for email alerts");
-    await this.setConfig("CAPTURE_SCHEDULE", ["08:00", "11:00", "14:00", "17:00"], "Scheduled capture times");
+    // SMTP Email Configuration (all stored as strings for consistency)
+    await this.setConfig("smtp_host", "smtp.gmail.com", "SMTP server host");
+    await this.setConfig("smtp_port", "587", "SMTP server port");
+    await this.setConfig("smtp_user", "", "SMTP username");
+    await this.setConfig("smtp_pass", "", "SMTP password");
+    await this.setConfig("smtp_from", "alerts@example.com", "Alert email sender");
+    await this.setConfig("alert_email", "", "Alert recipient email");
+    await this.setConfig("EMAIL_RECIPIENTS", JSON.stringify(["manager@factory.com", "supervisor@factory.com"]), "Alert email recipients (array)");
     
-    // LED configuration
+    // Scheduler configuration
+    await this.setConfig("capture_times", JSON.stringify(["08:00", "11:00", "14:00", "17:00"]), "Scheduled capture times (JSON array)");
+    await this.setConfig("timezone", "Asia/Tokyo", "System timezone (JST)");
+    await this.setConfig("scheduler_paused", "false", "Scheduler pause state (true/false)");
+    
+    // Alert templates
+    await this.setConfig("ALERT_TEMPLATES", JSON.stringify({
+      missing_tool: {
+        subject: "🔴 Tool Missing Alert - {{toolName}}",
+        body: "Tool {{toolName}} has been missing from slot {{slotNumber}} for {{duration}} minutes."
+      },
+      camera_offline: {
+        subject: "📷 Camera Offline - {{cameraName}}",
+        body: "Camera {{cameraName}} is offline or not responding."
+      }
+    }), "Email alert templates");
+    
+    // Google Sheets configuration
+    await this.setConfig("google_sheets_url", "", "Google Sheets logging URL");
+    await this.setConfig("SHEETS_SPREADSHEET_ID", "", "Google Sheets spreadsheet ID");
+    await this.setConfig("SHEETS_FORMATTING", JSON.stringify({
+      tabFormat: "monthly",
+      headerRow: true,
+      autoWidth: true,
+      dateFormat: "YYYY-MM-DD HH:mm:ss"
+    }), "Google Sheets formatting options");
+    
+    // GPIO pin configuration (all strings for consistency)
+    await this.setConfig("buzzer_gpio_pin", "17", "Buzzer GPIO pin");
+    await this.setConfig("led_gpio_pin", "27", "LED GPIO pin");
+    await this.setConfig("light_strip_gpio_pin", "18", "LED light strip GPIO pin");
+    await this.setConfig("alert_led_gpio_pin", "17", "Red alert LED GPIO pin");
+    
+    // LED strip configuration
     await this.setConfig("led_strip_num_leds", "99", "Number of LEDs in the WS2812B strip");
     await this.setConfig("led_strip_brightness", "100", "LED strip brightness (0-255)");
     
-    // Calibration metadata
+    // Calibration state tracking
+    await this.setConfig("last_calibration_camera_id", "", "ID of last calibrated camera");
+    await this.setConfig("last_calibration_timestamp", "", "Timestamp of last calibration");
+    await this.setConfig("last_calibration_paper_size_format", "6-page-3x2", "Last used paper size format");
     await this.setConfig("calibration-info", JSON.stringify({
       version: "1.0",
       lastUpdated: new Date().toISOString(),
@@ -745,23 +778,47 @@ export class DbStorage implements IStorage {
     // This allows adding new config keys without breaking existing deployments
     const configDefaults = [
       { key: "smtp_host", value: "smtp.gmail.com", desc: "SMTP server host" },
-      { key: "smtp_port", value: 587, desc: "SMTP server port" },
+      { key: "smtp_port", value: "587", desc: "SMTP server port" },
       { key: "smtp_user", value: "", desc: "SMTP username" },
       { key: "smtp_pass", value: "", desc: "SMTP password" },
       { key: "smtp_from", value: "alerts@example.com", desc: "Alert email sender" },
       { key: "alert_email", value: "", desc: "Alert recipient email" },
+      { key: "EMAIL_RECIPIENTS", value: JSON.stringify(["manager@factory.com", "supervisor@factory.com"]), desc: "Alert email recipients (array)" },
       { key: "google_sheets_url", value: "", desc: "Google Sheets logging URL" },
-      { key: "buzzer_gpio_pin", value: 17, desc: "Buzzer GPIO pin" },
-      { key: "led_gpio_pin", value: 27, desc: "LED GPIO pin" },
-      { key: "light_strip_gpio_pin", value: 18, desc: "LED light strip GPIO pin for consistent capture lighting" },
-      { key: "led_strip_num_leds", value: 99, desc: "Number of LEDs in the WS2812B light strip" },
-      { key: "led_strip_brightness", value: 100, desc: "LED strip brightness level (0-255)" },
-      { key: "alert_led_gpio_pin", value: 17, desc: "Red alert LED GPIO pin for flashing error indicators" },
+      { key: "buzzer_gpio_pin", value: "17", desc: "Buzzer GPIO pin" },
+      { key: "led_gpio_pin", value: "27", desc: "LED GPIO pin" },
+      { key: "light_strip_gpio_pin", value: "18", desc: "LED light strip GPIO pin for consistent capture lighting" },
+      { key: "led_strip_num_leds", value: "99", desc: "Number of LEDs in the WS2812B light strip" },
+      { key: "led_strip_brightness", value: "100", desc: "LED strip brightness level (0-255)" },
+      { key: "alert_led_gpio_pin", value: "17", desc: "Red alert LED GPIO pin for flashing error indicators" },
       { key: "calibration-info", value: JSON.stringify({
         version: "1.0",
         lastUpdated: new Date().toISOString(),
         notes: "Initial setup - calibration pending"
       }), desc: "Camera calibration metadata" },
+      { key: "capture_times", value: JSON.stringify(["08:00", "11:00", "14:00", "17:00"]), desc: "Scheduled capture times (JSON array)" },
+      { key: "timezone", value: "Asia/Tokyo", desc: "System timezone (JST)" },
+      { key: "scheduler_paused", value: "false", desc: "Scheduler pause state (true/false)" },
+      { key: "ALERT_TEMPLATES", value: JSON.stringify({
+        missing_tool: {
+          subject: "🔴 Tool Missing Alert - {{toolName}}",
+          body: "Tool {{toolName}} has been missing from slot {{slotNumber}} for {{duration}} minutes."
+        },
+        camera_offline: {
+          subject: "📷 Camera Offline - {{cameraName}}",
+          body: "Camera {{cameraName}} is offline or not responding."
+        }
+      }), desc: "Email alert templates" },
+      { key: "SHEETS_SPREADSHEET_ID", value: "", desc: "Google Sheets spreadsheet ID" },
+      { key: "SHEETS_FORMATTING", value: JSON.stringify({
+        tabFormat: "monthly",
+        headerRow: true,
+        autoWidth: true,
+        dateFormat: "YYYY-MM-DD HH:mm:ss"
+      }), desc: "Google Sheets formatting options" },
+      { key: "last_calibration_camera_id", value: "", desc: "ID of last calibrated camera" },
+      { key: "last_calibration_timestamp", value: "", desc: "Timestamp of last calibration" },
+      { key: "last_calibration_paper_size_format", value: "6-page-3x2", desc: "Last used paper size format" },
     ];
     
     for (const config of configDefaults) {
