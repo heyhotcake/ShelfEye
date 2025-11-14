@@ -13,9 +13,6 @@ import { RectifiedPreviewCanvas } from "@/components/canvas/rectified-preview-ca
 
 const TIMEZONE = "Asia/Tokyo";
 
-// Helper function to get camera-scoped storage keys (prevents template collisions in multi-camera setups)
-const getStorageKey = (key: string, cameraId: string) => `${key}_${cameraId}`;
-
 interface CalibrationResult {
   ok: boolean;
   homographyMatrix: number[];
@@ -63,7 +60,6 @@ export default function Calibration() {
   const [calibrationStep, setCalibrationStep] = useState<number>(0); // 0: Calibrate, 1: Error state, 2: Verify covered
   const [step2Result, setStep2Result] = useState<ValidationResult | null>(null);
   const [isCameraLocked, setIsCameraLocked] = useState<boolean>(false);
-  const [savedTemplateDesigns, setSavedTemplateDesigns] = useState<TemplateDesign[]>([]);
   const [adjustedTemplates, setAdjustedTemplates] = useState<any[]>([]);
   const [hasTemplateAdjustments, setHasTemplateAdjustments] = useState<boolean>(false);
   const previousCameraIdRef = useRef<string | undefined>(undefined);
@@ -105,6 +101,20 @@ export default function Calibration() {
     },
   });
 
+  // Fetch saved template designs from database (universal across all cameras)
+  const { data: templateDesignsFromDb = [] } = useQuery<any[]>({
+    queryKey: ['/api/template-designs'],
+  });
+
+  // Map database designs to TemplateDesign format
+  const savedTemplateDesigns: TemplateDesign[] = templateDesignsFromDb.map((design: any) => ({
+    name: design.name,
+    timestamp: design.createdAt || new Date().toISOString(), // Use createdAt timestamp for backend compatibility
+    paperSize: design.paperSize,
+    templateRectangles: design.templateRectangles || [],
+    categories: design.categories || [],
+  }));
+
   // Fetch template rectangles from DATABASE for the selected paper size (for calibration overlay)
   // This query now uses camera-specific coordinates with fallback to shared templates
   const selectedDesignForQuery = savedTemplateDesigns.find(d => d.timestamp === selectedTemplate);
@@ -122,54 +132,19 @@ export default function Calibration() {
     },
   });
 
-  // Load saved template designs from localStorage (camera-specific for multi-camera support)
-  useEffect(() => {
-    if (!selectedCameraId) {
-      setSavedTemplateDesigns([]);
-      return;
-    }
-    
-    // Camera-scoped storage key to prevent template conflicts between cameras
-    const storageKey = getStorageKey('templateConfigVersions', selectedCameraId);
-    const saved = localStorage.getItem(storageKey);
-    
-    if (saved) {
-      try {
-        setSavedTemplateDesigns(JSON.parse(saved));
-        console.log(`[Calibration] Loaded ${JSON.parse(saved).length} template designs for camera ${selectedCameraId}`);
-      } catch (e) {
-        console.error('Failed to load saved template designs:', e);
-        setSavedTemplateDesigns([]);
-      }
-    } else {
-      // MIGRATION: Check for legacy global key and migrate to camera-specific key
-      const legacyKey = 'templateConfigVersions';
-      const legacySaved = localStorage.getItem(legacyKey);
-      
-      if (legacySaved) {
-        try {
-          const legacyData = JSON.parse(legacySaved);
-          console.log(`[Calibration] Migrating ${legacyData.length} legacy template designs to camera ${selectedCameraId}`);
-          
-          // Migrate to camera-scoped key
-          localStorage.setItem(storageKey, legacySaved);
-          setSavedTemplateDesigns(legacyData);
-          
-          // Keep legacy key as backup (don't delete) in case user needs to rollback
-          console.log(`[Calibration] Migration complete. Legacy key preserved as backup.`);
-        } catch (e) {
-          console.error('Failed to migrate legacy template designs:', e);
-          setSavedTemplateDesigns([]);
-        }
-      } else {
-        console.log(`[Calibration] No saved templates found for camera ${selectedCameraId}`);
-        setSavedTemplateDesigns([]);
-      }
-    }
-  }, [selectedCameraId]); // Re-load when camera changes
-
-  // Show all saved template designs for this camera
+  // Show all saved template designs (universal - not camera-specific)
   const relevantDesigns = savedTemplateDesigns;
+
+  // Auto-select first template ONLY on initial load (when templates first become available)
+  const hasAutoSelectedRef = useRef(false);
+  useEffect(() => {
+    if (relevantDesigns.length > 0 && !selectedTemplate && !hasAutoSelectedRef.current) {
+      const firstTemplate = relevantDesigns[0].timestamp;
+      setSelectedTemplate(firstTemplate);
+      hasAutoSelectedRef.current = true;
+      console.log('[Calibration] Auto-selected first template on initial load:', relevantDesigns[0].name);
+    }
+  }, [relevantDesigns.length]);
 
   // Reset calibration when camera ACTUALLY changes (not just refetches)
   useEffect(() => {
@@ -180,12 +155,12 @@ export default function Calibration() {
     
     // Only reset if camera ID actually changed
     if (currentCameraId !== previousCameraId) {
-      console.log('[Calibration] Camera CHANGED, resetting...');
+      console.log('[Calibration] Camera CHANGED, resetting calibration state...');
       setCalibrationResult(null);
       setCalibrationStep(0);
       setStep2Result(null);
       setIsCameraLocked(false);
-      setSelectedTemplate(""); // Clear template selection when camera changes
+      // NOTE: Template selection is NOT cleared since templates are now universal across cameras
       
       // Update ref to current camera ID
       previousCameraIdRef.current = currentCameraId;
@@ -774,24 +749,11 @@ export default function Calibration() {
                                       }
                                     }
                                     
-                                    // Only update localStorage AFTER database save succeeds
-                                    const updatedRectangles = selectedDesign.templateRectangles.map((rect: any) => {
-                                      const adjusted = adjustedTemplates.find(t => t.autoQrId === rect.autoQrId);
-                                      if (adjusted) {
-                                        return { ...rect, xCm: adjusted.xCm, yCm: adjusted.yCm };
-                                      }
-                                      return rect;
-                                    });
+                                    // Invalidate queries to refetch updated templates from database
+                                    await queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
+                                    await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
                                     
-                                    const updatedDesign = { ...selectedDesign, templateRectangles: updatedRectangles };
-                                    const updatedDesigns = savedTemplateDesigns.map(d => 
-                                      d.timestamp === selectedTemplate ? updatedDesign : d
-                                    );
-                                    const storageKey = getStorageKey('templateConfigVersions', selectedCameraId!);
-                                    localStorage.setItem(storageKey, JSON.stringify(updatedDesigns));
-                                    setSavedTemplateDesigns(updatedDesigns);
-                                    
-                                    console.log('[RecalibrateButton] Successfully saved to DB and localStorage');
+                                    console.log('[RecalibrateButton] Successfully saved to database');
                                     toast({
                                       title: "Positions Saved",
                                       description: `Updated ${adjustedTemplates.length} template positions. Re-running calibration with adjusted coordinates...`,
