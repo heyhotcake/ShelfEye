@@ -16,24 +16,50 @@ ShelfEye includes multiple layers of protection to ensure the system remains ope
 ## 1. Hardware Watchdog (Auto-Reboot on Freeze)
 
 ### What It Does
-The hardware watchdog monitors the Pi at the kernel level. If the system becomes completely unresponsive (frozen, locked up), it automatically reboots the Pi after 15 seconds.
+The hardware watchdog monitors the Pi at the kernel level. If the system becomes completely unresponsive (frozen, locked up), it automatically reboots the Pi after 4 minutes.
 
 ### How It Works
 - **Watchdog Timer**: Hardware timer that must be "kicked" every second
-- **Kernel Module**: `bcm2835_wdt` provides the watchdog device
+- **Kernel Module**: `bcm2835_wdt` provides the watchdog device  
 - **Watchdog Daemon**: Sends heartbeats to `/dev/watchdog` every second
-- **Auto-Reboot**: If heartbeat stops for 15+ seconds, hardware forces a reboot
+- **Auto-Reboot**: If heartbeat stops for 240+ seconds, hardware forces a reboot
 
 ### Configuration
-Located in `/etc/watchdog.conf`:
+Located in `/etc/watchdog.conf` (created by `enable-watchdog.sh`):
 ```bash
 watchdog-device = /dev/watchdog
-watchdog-timeout = 15      # Reboot after 15 seconds of no response
+watchdog-timeout = 240     # Reboot after 240 seconds (4 minutes) of no response
 interval = 1               # Check every 1 second
-max-load-1 = 8            # Reboot if 1-min load > 8.0
-max-load-5 = 6            # Reboot if 5-min load > 6.0
-max-load-15 = 4           # Reboot if 15-min load > 4.0
+
+# Load-average triggers DISABLED for computer vision workloads
+# (OpenCV calibration routinely spikes >9 on 4-core Pi during startup)
+# The lines below are commented out in the actual config file:
+# max-load-1 = 0
+# max-load-5 = 0  
+# max-load-15 = 0
+
+realtime = yes             # High priority scheduling
+priority = 5               # Ensures daemon gets CPU during heavy loads
 ```
+
+**Note**: The enable-watchdog.sh script writes the load-average lines as comments. This completely disables load-based triggers - the watchdog only monitors for complete system freezes.
+
+### Why 240 Seconds?
+ShelfEye's startup process includes:
+- Git sync (network operations)
+- npm/pip dependency installs
+- Database schema push
+- Node.js application startup
+- Camera calibration validation (42-48s per camera)
+
+**Typical startup**: 60-90 seconds  
+**Slow startup** (slow WiFi, fresh install): 150-200 seconds  
+**240s timeout provides comfortable margin** while still protecting against real freezes
+
+### Why Load Triggers Are Disabled
+During startup calibration, OpenCV processing causes CPU load to spike above 9.0 on the 4-core Raspberry Pi. This is normal and expected behavior, NOT a system freeze. With load triggers enabled, the watchdog would falsely interpret high CPU usage as a hang and trigger unnecessary reboots.
+
+**The watchdog now ONLY reboots on complete system freezes**, not on high CPU usage.
 
 ### Setup Instructions
 
@@ -72,16 +98,44 @@ lsmod | grep bcm2835_wdt
    Active: active (running)
 ```
 
+### Startup Timing Instrumentation
+Every boot, the startup script records timing data to `/home/naniwa/ShelfEye/state/startup-timing.json`:
+
+```json
+{
+  "timestamp": "2025-11-14T09:15:42+09:00",
+  "total_startup_time": 87,
+  "phases": {
+    "git-check": 3,
+    "led-library-install": 0,
+    "db-push": 12,
+    "pre-app-complete": 87
+  }
+}
+```
+
+**Check startup timing:**
+```bash
+cat /home/naniwa/ShelfEye/state/startup-timing.json | jq
+```
+
+**Note**: This instrumentation tracks the bash script phases (git, npm, db) but stops before Node.js application startup and calibration. For complete timing including calibration, check the application logs:
+```bash
+sudo journalctl -u shelfeye -b | grep "Phase\|Calibration\|StartupCalibration"
+```
+
+This helps diagnose slow startups and ensure the system stays within the watchdog timeout.
+
 ### When It Helps
 - **Complete System Freeze**: Pi becomes totally unresponsive to keyboard/SSH
-- **Kernel Panic**: Low-level kernel crashes
-- **Infinite Loop**: Process consuming 100% CPU and blocking everything
+- **Kernel Panic**: Low-level kernel crashes  
 - **Hardware Lock-up**: USB/camera driver causing system hang
+- **Infinite hang**: Process stuck waiting for network/hardware indefinitely
 
 ### Limitations
 - Won't help with application-level bugs (use SystemD restart for that)
 - Won't prevent data corruption if process is killed mid-write
-- 15-second delay before reboot (configurable)
+- 240-second delay before reboot (trade-off for preventing false reboots)
 
 ---
 
@@ -367,6 +421,59 @@ You can schedule the health check to run periodically and send alerts if issues 
 
 ## 5. Troubleshooting Guide
 
+### Reboot Loop (System Keeps Rebooting)
+
+**Symptoms:**
+- Pi reboots repeatedly every 3-4 minutes
+- Can briefly SSH in but connection drops
+- Web interface becomes inaccessible after a few minutes
+
+**Cause:**
+Startup is taking longer than the watchdog timeout (240 seconds), causing the watchdog to falsely detect a freeze and trigger a reboot.
+
+**Diagnosis:**
+1. Check startup timing:
+   ```bash
+   cat /home/naniwa/ShelfEye/state/startup-timing.json | jq
+   ```
+   
+2. Check journalctl for timing clues:
+   ```bash
+   sudo journalctl -u shelfeye -b | grep "Phase"
+   ```
+
+3. Look for watchdog reboot messages:
+   ```bash
+   sudo journalctl -k | grep watchdog
+   ```
+
+**Solutions:**
+
+1. **Temporary fix** - Disable watchdog until startup is optimized:
+   ```bash
+   sudo systemctl stop watchdog
+   sudo systemctl disable watchdog
+   ```
+
+2. **Permanent fix** - Increase watchdog timeout if startup legitimately takes longer:
+   ```bash
+   # Edit watchdog config
+   sudo nano /etc/watchdog.conf
+   
+   # Change: watchdog-timeout = 240
+   # To:     watchdog-timeout = 300  (5 minutes)
+   
+   # Restart watchdog
+   sudo systemctl restart watchdog
+   ```
+
+3. **Optimize startup** - Reduce startup time:
+   ```bash
+   # Skip git fetch on every boot (edit pi-startup.sh)
+   # Use cached dependencies instead of fresh installs
+   # Defer calibration until after app is running
+   ```
+
 ### System Won't Start After Reboot
 
 **Symptoms:**
@@ -375,9 +482,8 @@ You can schedule the health check to run periodically and send alerts if issues 
 - Pi seems frozen
 
 **Steps:**
-1. Unplug and replug the Pi (as you did)
-2. Wait 2-3 minutes for full boot
-3. SSH in and check:
+1. Wait 4-5 minutes for full boot (startup can take time)
+2. SSH in and check:
    ```bash
    # Check if watchdog is running
    sudo systemctl status watchdog
@@ -387,6 +493,11 @@ You can schedule the health check to run periodically and send alerts if issues 
    
    # Check for errors
    sudo journalctl -u shelfeye --since "10 minutes ago" --priority=err
+   ```
+
+3. Check startup timing:
+   ```bash
+   cat /home/naniwa/ShelfEye/state/startup-timing.json | jq
    ```
 
 4. If watchdog isn't running:
@@ -552,10 +663,33 @@ journalctl -u shelfeye --priority=err -n 100 > ~/shelfeye-errors.txt
 
 ShelfEye has **4 layers of resilience**:
 
-1. **Hardware Watchdog** → Reboots Pi if completely frozen (15s timeout)
+1. **Hardware Watchdog** → Reboots Pi if completely frozen (240s/4-min timeout, load triggers disabled)
 2. **SystemD Restart with Resource Limits** → Restarts app if it crashes (10s delay), prevents memory/CPU overload (1.8GB max)
 3. **Daily Maintenance** → Cleans up old data at 3 AM daily
 4. **Health Monitoring** → Tracks system status in real-time
+
+### Key Configuration Details
+
+| Layer | Setting | Value | Why |
+|-------|---------|-------|-----|
+| Watchdog | Timeout | 240s (4 min) | Allows for slow startups on network issues |
+| Watchdog | Load Triggers | DISABLED | OpenCV calibration causes high load (>9.0) |
+| Watchdog | Priority | 5 | Ensures heartbeat during heavy processing |
+| SystemD | Memory Max | 1.8GB | Prevents runaway memory leaks |
+| SystemD | CPU Quota | 380% | Leaves 0.2 cores for OS |
+| Startup | Network Timeouts | 30-180s | Prevents infinite hangs on git/npm |
+
+### Startup Timing Breakdown
+
+| Phase | Typical | Slow | Maximum Timeout |
+|-------|---------|------|-----------------|
+| Git fetch/pull | 5s | 30s | 30s each |
+| npm install | 30s | 120s | 180s |
+| pip install | 0s (cached) | 30s | 45s |
+| DB schema push | 10s | 30s | 45s |
+| App startup | 15s | 20s | N/A |
+| Calibration | 45s | 60s | N/A |
+| **Total** | **60-90s** | **150-200s** | **240s watchdog** |
 
 ### Quick Reference Commands
 

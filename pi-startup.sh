@@ -91,8 +91,17 @@ if run_with_timeout $COMMAND_TIMEOUT git fetch origin main; then
             # Check if package.json changed
             if git diff --name-only HEAD@{1} HEAD | grep -q "package.json"; then
                 log "📦 Dependencies changed, running npm install..."
-                run_with_timeout 90 npm install --include=dev
-                record_phase "npm-install"
+                if run_with_timeout 180 npm install --include=dev; then
+                    record_phase "npm-install"
+                else
+                    log "⚠️  npm install timeout - dependencies may be incomplete"
+                    # Verify critical dependencies exist
+                    if ! npm list express >/dev/null 2>&1; then
+                        log "❌ FATAL: Core dependencies missing after timeout"
+                        exit 1
+                    fi
+                    record_phase "npm-install-timeout"
+                fi
             fi
             
             # Check if Python requirements changed (future-proofing)

@@ -22,9 +22,11 @@ sudo tee /etc/watchdog.conf > /dev/null <<EOF
 # Hardware watchdog device
 watchdog-device = /dev/watchdog
 
-# Timeout: reboot if no heartbeat for 180 seconds
-# (allows time for git sync + npm install + db push + startup calibration)
-watchdog-timeout = 180
+# Timeout: reboot if no heartbeat for 240 seconds (4 minutes)
+# Typical startup: 60-90s (git 5s + npm 30s + db 10s + app 15s + calibration 45s)
+# Slow startup: 150-200s (slow network + fresh npm install + retries)
+# 240s provides comfortable margin while still protecting against real freezes
+watchdog-timeout = 240
 
 # Test interval: ping every 1 second
 interval = 1
@@ -65,13 +67,14 @@ echo ""
 echo "Watchdog device:"
 ls -l /dev/watchdog
 echo ""
-echo "🐕 Your Pi will now automatically reboot if it freezes for more than 3 minutes!"
+echo "🐕 Your Pi will now automatically reboot if it freezes for more than 4 minutes!"
 echo ""
 echo "⚠️  Load average triggers are DISABLED to prevent false reboots during calibration."
 echo "    The watchdog only protects against complete system freezes, not high CPU usage."
 echo ""
-echo "📊 Startup typically takes 90-120 seconds (git + npm + calibration)."
-echo "    The 180s timeout provides comfortable safety margin."
+echo "📊 Startup typically takes 60-90 seconds (git + npm + calibration)."
+echo "    Worst case with slow network: ~180-240 seconds."
+echo "    The 240s timeout provides comfortable safety margin."
 echo ""
 echo "To test (WARNING: this will reboot your Pi):"
 echo "  sudo sh -c 'echo 1 > /proc/sys/kernel/sysrq'"
