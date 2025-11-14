@@ -13,8 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { clampToBounds, checkBoundaryViolations, PAPER_BOUNDS } from "@/lib/templateBounds";
-import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye, CheckCircle } from "lucide-react";
+import { Plus, Undo, Trash, ZoomIn, ZoomOut, Move, X, Save, Download, Upload, Clock, Layers, RotateCcw, RotateCw, Printer, Eye, CheckCircle, FileJson } from "lucide-react";
 import { CategoryManager } from "@/components/modals/category-manager";
+import { SlotImportExportModal } from "@/components/modals/slot-import-export-modal";
 
 interface Point {
   x: number;
@@ -88,6 +89,9 @@ export default function SlotDrawing() {
   
   // Category manager
   const [showCategoryManager, setShowCategoryManager] = useState(false);
+  
+  // Slot import/export modal
+  const [showSlotImportExport, setShowSlotImportExport] = useState(false);
   
   // Paper size configuration
   const [paperSize, setPaperSize] = useState('A4-landscape');
@@ -1830,6 +1834,14 @@ export default function SlotDrawing() {
                   </Button>
                   <Button
                     variant="outline"
+                    onClick={() => setShowSlotImportExport(true)}
+                    data-testid="button-slot-import-export"
+                  >
+                    <FileJson className="w-4 h-4 mr-2" />
+                    Import/Export Slots
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => setLocation('/template-print')}
                     data-testid="button-print-preview"
                     disabled={templateRectangles.length === 0}
@@ -2204,6 +2216,13 @@ export default function SlotDrawing() {
       <CategoryManager
         open={showCategoryManager}
         onOpenChange={setShowCategoryManager}
+      />
+      
+      <SlotImportExportModal
+        open={showSlotImportExport}
+        onOpenChange={setShowSlotImportExport}
+        cameraId={selectedCameraId}
+        cameraName={cameras?.find(c => c.id === selectedCameraId)?.name}
       />
       
       {/* Delete Confirmation Dialog */}
