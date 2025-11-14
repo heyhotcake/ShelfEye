@@ -295,6 +295,28 @@ export default function TemplatePrint() {
           ctx.drawImage(qrImageCache[rect.autoQrId], -qrSizePx / 2, -qrSizePx / 2, qrSizePx, qrSizePx);
         }
 
+        // Draw alignment guides (light grey horizontal lines for worker card placement)
+        // Two 4cm lines, 6.75cm apart vertically, centered on the ArUco marker
+        const guideWidthCm = 4;
+        const guideSpacingCm = 6.75;
+        const guideWidthPx = cmToPixels(guideWidthCm, true);
+        const guideSpacingPx = cmToPixels(guideSpacingCm, false);
+        
+        ctx.strokeStyle = '#CCCCCC'; // Light grey
+        ctx.lineWidth = 1;
+        
+        // Top guide line
+        ctx.beginPath();
+        ctx.moveTo(-guideWidthPx / 2, -guideSpacingPx / 2);
+        ctx.lineTo(guideWidthPx / 2, -guideSpacingPx / 2);
+        ctx.stroke();
+        
+        // Bottom guide line
+        ctx.beginPath();
+        ctx.moveTo(-guideWidthPx / 2, guideSpacingPx / 2);
+        ctx.lineTo(guideWidthPx / 2, guideSpacingPx / 2);
+        ctx.stroke();
+
         // Draw label above QR code (supports Japanese text)
         if (rect.category.label) {
           const padding = cmToPixels(0.3, true); // 0.3cm padding
@@ -536,6 +558,17 @@ export default function TemplatePrint() {
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
             
+            // Draw alignment guides (light grey horizontal lines for worker card placement)
+            const guideWidthMm = 40; // 4cm
+            const guideSpacingMm = 67.5; // 6.75cm
+            pdf.setDrawColor(204, 204, 204); // Light grey
+            pdf.setLineWidth(0.3);
+            // Top guide line
+            pdf.line(localX - guideWidthMm / 2, localY - guideSpacingMm / 2, localX + guideWidthMm / 2, localY - guideSpacingMm / 2);
+            // Bottom guide line
+            pdf.line(localX - guideWidthMm / 2, localY + guideSpacingMm / 2, localX + guideWidthMm / 2, localY + guideSpacingMm / 2);
+            pdf.setDrawColor(0, 0, 0); // Reset to black
+            
             // Add label above QR code
             if (rect.category.label) {
               const paddingMm = 3;
@@ -577,6 +610,17 @@ export default function TemplatePrint() {
             if (rect.autoQrId && qrCodes[rect.autoQrId]) {
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
+            
+            // Draw alignment guides (light grey horizontal lines for worker card placement)
+            const guideWidthMm = 40; // 4cm
+            const guideSpacingMm = 67.5; // 6.75cm
+            pdf.setDrawColor(204, 204, 204); // Light grey
+            pdf.setLineWidth(0.3);
+            // Top guide line
+            pdf.line(localX - guideWidthMm / 2, localY - guideSpacingMm / 2, localX + guideWidthMm / 2, localY - guideSpacingMm / 2);
+            // Bottom guide line
+            pdf.line(localX - guideWidthMm / 2, localY + guideSpacingMm / 2, localX + guideWidthMm / 2, localY + guideSpacingMm / 2);
+            pdf.setDrawColor(0, 0, 0); // Reset to black
             
             // Add label above QR code
             if (rect.category.label) {
@@ -710,6 +754,17 @@ export default function TemplatePrint() {
             pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
           }
           
+          // Draw alignment guides (light grey horizontal lines for worker card placement)
+          const guideWidthMm = 40; // 4cm
+          const guideSpacingMm = 67.5; // 6.75cm
+          pdf.setDrawColor(204, 204, 204); // Light grey
+          pdf.setLineWidth(0.3);
+          // Top guide line
+          pdf.line(xMm - guideWidthMm / 2, yMm - guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm - guideSpacingMm / 2);
+          // Bottom guide line
+          pdf.line(xMm - guideWidthMm / 2, yMm + guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm + guideSpacingMm / 2);
+          pdf.setDrawColor(0, 0, 0); // Reset to black
+          
           // Add label above QR code
           if (rect.category.label) {
             const paddingMm = 3;
@@ -737,6 +792,17 @@ export default function TemplatePrint() {
           if (rect.autoQrId && qrCodes[rect.autoQrId]) {
             pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
           }
+          
+          // Draw alignment guides (light grey horizontal lines for worker card placement)
+          const guideWidthMm = 40; // 4cm
+          const guideSpacingMm = 67.5; // 6.75cm
+          pdf.setDrawColor(204, 204, 204); // Light grey
+          pdf.setLineWidth(0.3);
+          // Top guide line
+          pdf.line(xMm - guideWidthMm / 2, yMm - guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm - guideSpacingMm / 2);
+          // Bottom guide line
+          pdf.line(xMm - guideWidthMm / 2, yMm + guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm + guideSpacingMm / 2);
+          pdf.setDrawColor(0, 0, 0); // Reset to black
           
           // Add label above QR code
           if (rect.category.label) {

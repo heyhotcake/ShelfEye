@@ -99,13 +99,22 @@ export default function WorkerTags() {
     const pdf = new jsPDF('portrait', 'mm', 'a4');
     const pageWidth = 210;
     const pageHeight = 297;
-    const margin = 30; // 3cm
-    const tagWidth = 50; // 5cm
-    const tagHeight = 150; // 15cm
+    const margin = 10; // 1cm
+    const tagWidth = 40; // 4cm
+    const tagHeight = 67.5; // 6.75cm
     
-    // Calculate tags per page
-    const tagsPerRow = Math.floor((pageWidth - 2 * margin) / tagWidth);
-    const tagsPerPage = tagsPerRow * Math.floor((pageHeight - 2 * margin) / tagHeight);
+    // Calculate tags per page (4x4 grid centered on page)
+    const tagsPerRow = 4;
+    const tagsPerCol = 4;
+    const tagsPerPage = tagsPerRow * tagsPerCol; // 16 tags
+    
+    // Center the grid within the usable area
+    const gridWidth = tagsPerRow * tagWidth; // 160mm
+    const gridHeight = tagsPerCol * tagHeight; // 270mm
+    const usableWidth = pageWidth - 2 * margin; // 190mm
+    const usableHeight = pageHeight - 2 * margin; // 277mm
+    const startX = margin + (usableWidth - gridWidth) / 2; // 10mm + 15mm = 25mm
+    const startY = margin + (usableHeight - gridHeight) / 2; // 10mm + 3.5mm = 13.5mm
     
     workersWithDuplicates.forEach((worker, index) => {
       if (index > 0 && index % tagsPerPage === 0) {
@@ -116,8 +125,8 @@ export default function WorkerTags() {
       const row = Math.floor(pageIndex / tagsPerRow);
       const col = pageIndex % tagsPerRow;
       
-      const x = margin + col * tagWidth;
-      const y = margin + row * tagHeight;
+      const x = startX + col * tagWidth;
+      const y = startY + row * tagHeight;
       
       // Draw tag border (light gray)
       pdf.setDrawColor(200, 200, 200);
@@ -145,32 +154,32 @@ export default function WorkerTags() {
       pdf.line(x + tagWidth + 1, y + tagHeight, x + tagWidth + 1 - guideLength, y + tagHeight);
       pdf.line(x + tagWidth, y + tagHeight + 1, x + tagWidth, y + tagHeight + 1 - guideLength);
       
-      // Add ArUco marker
+      // Add ArUco marker (3cm x 3cm, centered)
+      const markerSize = 30; // 3cm
       const arucoImage = arucoImages[worker.arucoId];
       if (arucoImage) {
-        const markerSize = 40;
         const markerX = x + (tagWidth - markerSize) / 2;
-        const markerY = y + 10;
+        const markerY = y + (tagHeight - markerSize) / 2;
         pdf.addImage(`data:image/png;base64,${arucoImage}`, 'PNG', markerX, markerY, markerSize, markerSize);
       }
       
-      // Add worker name
-      pdf.setFontSize(14);
+      // Add worker name (below ArUco marker)
+      pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
-      const nameY = y + 60;
+      const nameY = y + (tagHeight - markerSize) / 2 + markerSize + 5; // 5mm below marker
       pdf.text(worker.name, x + tagWidth / 2, nameY, { align: 'center' });
       
       // Add team if available
       if (worker.team) {
-        pdf.setFontSize(10);
+        pdf.setFontSize(8);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(worker.team, x + tagWidth / 2, nameY + 8, { align: 'center' });
+        pdf.text(worker.team, x + tagWidth / 2, nameY + 5, { align: 'center' });
       }
       
-      // Add ArUco ID (for reference)
-      pdf.setFontSize(8);
+      // Add ArUco ID (for reference, at bottom)
+      pdf.setFontSize(6);
       pdf.setTextColor(100, 100, 100);
-      pdf.text(`ID: ${worker.arucoId}`, x + tagWidth / 2, y + tagHeight - 5, { align: 'center' });
+      pdf.text(`ID: ${worker.arucoId}`, x + tagWidth / 2, y + tagHeight - 3, { align: 'center' });
     });
     
     pdf.save('worker-tags.pdf');
@@ -196,18 +205,24 @@ export default function WorkerTags() {
     );
   }
 
-  // Calculate layout
+  // Calculate layout (4x4 grid centered on page)
   const pageWidth = 210; // A4 width in mm
   const pageHeight = 297; // A4 height in mm
-  const margin = 30; // 3cm in mm
-  const tagWidth = 50; // 5cm in mm
-  const tagHeight = 150; // 15cm in mm
+  const margin = 10; // 1cm in mm
+  const tagWidth = 40; // 4cm in mm
+  const tagHeight = 67.5; // 6.75cm in mm
   
-  const usableWidth = pageWidth - 2 * margin; // 150mm
-  const usableHeight = pageHeight - 2 * margin; // 237mm
+  const tagsPerRow = 4; // 4 tags horizontally
+  const tagsPerCol = 4; // 4 tags vertically
+  const tagsPerPage = tagsPerRow * tagsPerCol; // 16 tags per page
   
-  const tagsPerRow = Math.floor(usableWidth / tagWidth); // 3 tags
-  const tagsPerPage = tagsPerRow * Math.floor(usableHeight / tagHeight); // 3 tags per page
+  // Center the grid within the usable area
+  const gridWidth = tagsPerRow * tagWidth; // 160mm
+  const gridHeight = tagsPerCol * tagHeight; // 270mm
+  const usableWidth = pageWidth - 2 * margin; // 190mm
+  const usableHeight = pageHeight - 2 * margin; // 277mm
+  const startX = margin + (usableWidth - gridWidth) / 2; // 25mm
+  const startY = margin + (usableHeight - gridHeight) / 2; // 13.5mm
   
   const totalPages = Math.ceil(workersWithDuplicates.length / tagsPerPage);
   const pages: (Worker & { copyNumber: number })[][] = [];
@@ -268,8 +283,8 @@ export default function WorkerTags() {
             {pageWorkers.map((worker, indexOnPage) => {
               const row = Math.floor(indexOnPage / tagsPerRow);
               const col = indexOnPage % tagsPerRow;
-              const x = margin + col * tagWidth;
-              const y = margin + row * tagHeight;
+              const x = startX + col * tagWidth;
+              const y = startY + row * tagHeight;
 
               return (
                 <div
@@ -282,9 +297,9 @@ export default function WorkerTags() {
                     height: `${tagHeight}mm`,
                   }}
                 >
-                  {/* ArUco Marker */}
+                  {/* ArUco Marker - centered vertically */}
                   {arucoImages[worker.arucoId] ? (
-                    <div className="mt-2">
+                    <div className="flex-1 flex items-center justify-center">
                       <img
                         src={`data:image/png;base64,${arucoImages[worker.arucoId]}`}
                         alt={`ArUco ${worker.arucoId}`}
@@ -292,25 +307,27 @@ export default function WorkerTags() {
                       />
                     </div>
                   ) : (
-                    <div className="mt-2 flex items-center justify-center" style={{ width: '30mm', height: '30mm', border: '1px dashed #ccc' }}>
-                      <p className="text-xs text-gray-400">Loading...</p>
+                    <div className="flex-1 flex items-center justify-center">
+                      <div style={{ width: '30mm', height: '30mm', border: '1px dashed #ccc' }} className="flex items-center justify-center">
+                        <p className="text-xs text-gray-400">Loading...</p>
+                      </div>
                     </div>
                   )}
 
-                  {/* Worker Name */}
-                  <div className="mt-3 text-center">
-                    <p className="font-bold text-base" style={{ fontSize: '14pt' }}>
+                  {/* Worker Name - below marker */}
+                  <div className="text-center pb-1">
+                    <p className="font-bold" style={{ fontSize: '10pt' }}>
                       {worker.name}
                     </p>
                     {worker.team && (
-                      <p className="text-sm mt-1 text-gray-600" style={{ fontSize: '10pt' }}>
+                      <p className="text-gray-600" style={{ fontSize: '8pt' }}>
                         {worker.team}
                       </p>
                     )}
                   </div>
 
                   {/* ArUco ID (small, at bottom) */}
-                  <div className="absolute bottom-1 text-xs text-gray-400" style={{ fontSize: '8pt' }}>
+                  <div className="absolute bottom-0.5 text-xs text-gray-400" style={{ fontSize: '6pt' }}>
                     ID: {worker.arucoId}
                   </div>
 
