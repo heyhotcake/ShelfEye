@@ -91,7 +91,8 @@ check_shelfeye_service() {
         fi
         
         # Check for recent restarts
-        local restart_count=$(journalctl -u shelfeye --since "1 hour ago" | grep -c "Started ShelfEye" || echo "0")
+        local restart_count=$(journalctl -u shelfeye --since "1 hour ago" 2>/dev/null | grep -c "Started ShelfEye" 2>/dev/null || true)
+        restart_count=${restart_count:-0}
         if [ "$restart_count" -gt 1 ]; then
             print_warning "Service restarted $restart_count times in the last hour"
         else
@@ -256,7 +257,8 @@ check_maintenance() {
 check_recent_errors() {
     print_section "Recent Errors (Last Hour)"
     
-    local error_count=$(journalctl -u shelfeye --since "1 hour ago" --priority=err | grep -c "ERROR" || echo "0")
+    local error_count=$(journalctl -u shelfeye --since "1 hour ago" --priority=err 2>/dev/null | grep -c "ERROR" 2>/dev/null || true)
+    error_count=${error_count:-0}
     
     if [ "$error_count" -eq 0 ]; then
         print_success "No errors in the last hour"
