@@ -1,0 +1,30 @@
+ sudo systemctl status shelfeye
+● shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-11-14 11:34:30 JST; 3h 2min ago
+ Invocation: 19640c05c3634b25b30d99c394cc69fc
+   Main PID: 2045 (pi-startup.sh)
+      Tasks: 45 (limit: 1579)
+        CPU: 3min 51.640s
+     CGroup: /system.slice/shelfeye.service
+             ├─2045 /bin/bash /home/naniwa/ShelfEye/pi-startup.sh
+             ├─2453 "npm run dev"
+             ├─2454 tee -a /home/naniwa/ShelfEye/logs/startup.log
+             ├─2465 sh -c "NODE_ENV=development tsx server/index.ts"
+             ├─2466 node /home/naniwa/ShelfEye/node_modules/.bin/tsx server/index.ts
+             ├─2477 /usr/bin/node --require /home/naniwa/ShelfEye/node_modules/tsx/dist/preflight.cjs --import file:///home/naniwa/ShelfEye/node_modules/ts>
+             └─2524 /home/naniwa/ShelfEye/node_modules/vite/node_modules/@esbuild/linux-arm64/bin/esbuild --service=0.21.5 --ping
+
+Nov 14 14:01:16 NaniwaTanaCheck pi-startup.sh[2454]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 16/50: New best sharpness = 70.5
+Nov 14 14:01:16 NaniwaTanaCheck pi-startup.sh[2454]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 17/50: New best sharpness = 70.5
+Nov 14 14:01:16 NaniwaTanaCheck pi-startup.sh[2454]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 19/50: New best sharpness = 70.6
+Nov 14 14:01:19 NaniwaTanaCheck pi-startup.sh[2454]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 31/50: New best sharpness = 70.6
+Nov 14 14:01:19 NaniwaTanaCheck pi-startup.sh[2454]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 34/50: New best sharpness = 70.7
+Nov 14 14:01:20 NaniwaTanaCheck pi-startup.sh[2454]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 37/50: New best sharpness = 70.9
+Nov 14 14:01:22 NaniwaTanaCheck pi-startup.sh[2454]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 70.9
+Nov 14 14:01:22 NaniwaTanaCheck pi-startup.sh[2454]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Nov 14 14:01:23 NaniwaTanaCheck pi-startup.sh[2454]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Nov 14 14:01:23 NaniwaTanaCheck pi-startup.sh[2454]: 2:01:23 PM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 22595ms :: …
+
+naniwa@NaniwaTanaCheck:~ $ sudo systemctl is-enabled shelfeye
+enabled
