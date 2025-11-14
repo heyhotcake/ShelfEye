@@ -154,13 +154,19 @@ if [ -f "$APP_DIR/led-manager.service" ]; then
     sudo cp "$APP_DIR/led-manager.service" /etc/systemd/system/
     sudo systemctl daemon-reload
     sudo systemctl enable led-manager.service 2>&1 | tee -a "$LOG_FILE"
-    sudo systemctl restart led-manager.service 2>&1 | tee -a "$LOG_FILE"
     
-    # Check daemon status
+    # Only start if not already running (systemd handles startup via Before/After)
     if sudo systemctl is-active --quiet led-manager.service; then
-        log "✅ LED Manager Daemon is running"
+        log "✅ LED Manager Daemon is already running"
     else
-        log "⚠️  LED Manager Daemon failed to start - check: sudo journalctl -u led-manager"
+        log "Starting LED Manager Daemon..."
+        sudo systemctl start led-manager.service 2>&1 | tee -a "$LOG_FILE"
+        sleep 2
+        if sudo systemctl is-active --quiet led-manager.service; then
+            log "✅ LED Manager Daemon started successfully"
+        else
+            log "⚠️  LED Manager Daemon failed to start - check: sudo journalctl -u led-manager"
+        fi
     fi
 else
     log "⚠️  LED Manager Daemon service file not found"
