@@ -2,6 +2,8 @@
 Description=ShelfEye Tool Monitoring System
 After=network-online.target led-manager.service
 Wants=network-online.target led-manager.service
+StartLimitBurst=5
+StartLimitIntervalSec=600
 
 [Service]
 Type=simple
@@ -18,22 +20,10 @@ Environment="PATH=/home/naniwa/.nvm/versions/node/v20.18.0/bin:/usr/local/sbin:/
 
 # Resource limits for long-term reliability
 LimitNOFILE=65536
-
-# CPU limit: 380% = 3.8 cores out of 4 (leaves 0.2 for OS)
 CPUQuota=380%
-
-# Memory limits for 2GB Raspberry Pi
-MemoryHigh=1.5G     # Soft limit - triggers swapping/slowdown warning
-MemoryMax=1.8G      # Hard limit - process killed if exceeded
-
-# Restart safety: prevent infinite restart loops
-StartLimitBurst=5         # Max 5 restart attempts
-StartLimitIntervalSec=600 # Within 10 minutes
-# If app crashes 5 times in 10 min, systemd gives up
-
-# Failure handling
+MemoryHigh=1.5G
+MemoryMax=1.8G
 RestartPreventExitStatus=SIGKILL
-# Don't restart on SIGKILL (usually means hardware watchdog forced reboot)
 
 [Install]
 WantedBy=multi-user.target
