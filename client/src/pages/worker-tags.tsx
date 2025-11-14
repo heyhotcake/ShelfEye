@@ -153,12 +153,12 @@ export default function WorkerTags() {
       const nameY = y + nameBorderMm + fontSize * 0.35; // Convert pt to mm
       pdf.text(worker.name, x + tagWidth / 2, nameY, { align: 'center' });
       
-      // Add ArUco marker (3cm x 3cm, centered horizontally and vertically below name)
+      // Add ArUco marker (3cm x 3cm, perfectly centered horizontally and vertically)
       const markerSize = 30; // 3cm
       const arucoImage = arucoImages[worker.arucoId];
       if (arucoImage) {
-        const markerX = x + (tagWidth - markerSize) / 2;
-        const markerY = y + (tagHeight - markerSize) / 2 + 3; // Slightly below center to account for name at top
+        const markerX = x + (tagWidth - markerSize) / 2; // Perfect horizontal center
+        const markerY = y + (tagHeight - markerSize) / 2; // Perfect vertical center
         pdf.addImage(`data:image/png;base64,${arucoImage}`, 'PNG', markerX, markerY, markerSize, markerSize);
       }
     });
