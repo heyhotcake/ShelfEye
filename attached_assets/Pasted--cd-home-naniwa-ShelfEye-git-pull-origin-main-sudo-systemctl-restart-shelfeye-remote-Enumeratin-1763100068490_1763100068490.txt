@@ -1,0 +1,66 @@
+ cd /home/naniwa/ShelfEye
+git pull origin main
+sudo systemctl restart shelfeye
+remote: Enumerating objects: 8, done.
+remote: Counting objects: 100% (8/8), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 5 (delta 3), reused 5 (delta 3), pack-reused 0 (from 0)
+Unpacking objects: 100% (5/5), 2.23 KiB | 228.00 KiB/s, done.
+From https://github.com/heyhotcake/ShelfEye
+ * branch            main       -> FETCH_HEAD
+   8363d0d..b33582c  main       -> origin/main
+Updating 8363d0d..b33582c
+Fast-forward
+ ...wa-NaniwaTanaCheck-ShelfEye-git-pull-origin-main-remote-Enumera-1763099870425_1763099870425.txt | 70 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ pi-startup.sh                                                                                      | 14 +++++++---
+ 2 files changed, 80 insertions(+), 4 deletions(-)
+ create mode 100644 attached_assets/Pasted-cd-home-naniwa-ShelfEye-naniwa-NaniwaTanaCheck-ShelfEye-git-pull-origin-main-remote-Enumera-1763099870425_1763099870425.txt
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo systemctl status led-manager
+sudo systemctl status shelfeye
+● led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller
+     Loaded: loaded (/etc/systemd/system/led-manager.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-11-14 14:59:36 JST; 1min 15s ago
+ Invocation: 1117e0b8d022486c95437b7cc1882a22
+       Docs: file:///home/naniwa/ShelfEye/replit.md
+   Main PID: 4472 (python3)
+      Tasks: 2 (limit: 1579)
+        CPU: 322ms
+     CGroup: /system.slice/led-manager.service
+             └─4472 /usr/bin/python3 /home/naniwa/ShelfEye/python/led_manager_service.py
+
+Nov 14 14:59:36 NaniwaTanaCheck systemd[1]: Starting led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller...
+Nov 14 14:59:36 NaniwaTanaCheck systemd[1]: Started led-manager.service - LED Manager Daemon - WS2812B LED Strip Controller.
+Nov 14 14:59:36 NaniwaTanaCheck led-manager[4472]: 🔄 Restoring LED state: red_flash (saved 66s ago)
+Nov 14 14:59:36 NaniwaTanaCheck led-manager[4472]: ✅ Red flash alert restored
+Nov 14 14:59:36 NaniwaTanaCheck led-manager[4472]: ✅ LED hardware initialized: 99 LEDs, brightness 100
+Nov 14 14:59:36 NaniwaTanaCheck led-manager[4472]: ✅ Command pipe created: /home/naniwa/ShelfEye/state/led_command_pipe
+Nov 14 14:59:36 NaniwaTanaCheck led-manager[4472]: 🚀 LED Manager Daemon started, listening for commands...
+Nov 14 15:00:09 NaniwaTanaCheck led-manager[4472]: 📨 Received command: white
+Nov 14 15:00:42 NaniwaTanaCheck led-manager[4472]: 📨 Received command: white
+● shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-11-14 15:00:48 JST; 4s ago
+ Invocation: a0fea5becff74bcdafada34cd4ae6a53
+   Main PID: 4622 (pi-startup.sh)
+      Tasks: 34 (limit: 1579)
+        CPU: 2.329s
+     CGroup: /system.slice/shelfeye.service
+             ├─4622 /bin/bash /home/naniwa/ShelfEye/pi-startup.sh
+             ├─4874 timeout --foreground 45 npm run db:push
+             ├─4875 tee -a /home/naniwa/ShelfEye/logs/startup.log
+             ├─4876 "npm run db:push"
+             ├─4887 sh -c "drizzle-kit push"
+             ├─4888 node /home/naniwa/ShelfEye/node_modules/.bin/drizzle-kit push
+             └─4896 /home/naniwa/ShelfEye/node_modules/@esbuild/linux-arm64/bin/esbuild --service=0.25.9 --ping
+
+Nov 14 15:00:50 NaniwaTanaCheck sudo[4773]: pam_unix(sudo:session): session closed for user root
+Nov 14 15:00:50 NaniwaTanaCheck sudo[4865]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl is-active --quiet led-manager.ser>
+Nov 14 15:00:50 NaniwaTanaCheck sudo[4865]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Nov 14 15:00:50 NaniwaTanaCheck sudo[4865]: pam_unix(sudo:session): session closed for user root
+Nov 14 15:00:50 NaniwaTanaCheck pi-startup.sh[4869]: [2025-11-14 15:00:50] ✅ LED Manager Daemon is already running
+Nov 14 15:00:50 NaniwaTanaCheck pi-startup.sh[4872]: [2025-11-14 15:00:50] Syncing database schema...
+Nov 14 15:00:51 NaniwaTanaCheck pi-startup.sh[4875]: > rest-express@1.0.0 db:push
+Nov 14 15:00:51 NaniwaTanaCheck pi-startup.sh[4875]: > drizzle-kit push
+Nov 14 15:00:51 NaniwaTanaCheck pi-startup.sh[4875]: No config path provided, using default 'drizzle.config.ts'
+Nov 14 15:00:51 NaniwaTanaCheck pi-startup.sh[4875]: Reading config file '/home/naniwa/ShelfEye/drizzle.config.ts'
+lines 1-26/26 (END)
