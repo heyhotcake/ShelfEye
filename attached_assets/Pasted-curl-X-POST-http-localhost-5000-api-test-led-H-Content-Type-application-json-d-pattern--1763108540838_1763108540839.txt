@@ -1,0 +1,74 @@
+curl -X POST http://localhost:5000/api/test-led -H "Content-Type: application/json" -d '{"pattern":"red_flash"}'
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script type="module">
+import { createHotContext } from "/@vite/client";
+const hot = createHotContext("/__dummy__runtime-error-plugin");
+
+function sendError(error) {
+  if (!(error instanceof Error)) {
+    error = new Error("(unknown runtime error)");
+  }
+  const serialized = {
+    message: error.message,
+    stack: error.stack,
+  };
+  hot.send("runtime-error-plugin:error", serialized);
+}
+
+window.addEventListener("error", (evt) => {
+  sendError(evt.error);
+});
+
+window.addEventListener("unhandledrejection", (evt) => {
+  sendError(evt.reason);
+});
+</script>
+
+    <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- only the fonts used are downloaded, ref: https://www.w3.org/TR/css-fonts-3/#font-face-loading  -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Geist:wght@100..900&family=Oxanium:wght@200..800&family=Architects+Daughter&family=Space+Grotesk:wght@300..700&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Work+Sans:ital,wght@0,100..900;1,100..900&family=Manrope:wght@200..800&family=Lexend:wght@100..900&family=Figtree:ital,wght@0,300..900;1,300..900&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Bitter:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Fira+Code:wght@300..700&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Geist+Mono:wght@100..900&family=Inconsolata:wght@200..900&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx?v=xRNVXaloWAR7iPw-G4pG0"></script>
+  </body>
+</html>naniwa@NaniwaTanaChecurl -s http://localhost:5000/api/config/EMAIL_RECIPIENTS | python3 -m json.toolon.tool
+curl -s http://localhost:5000/api/config/smtp_from | python3 -m json.tool
+{
+    "id": "a1a806aa-2049-4a5e-aa08-36d8bc40e789",
+    "key": "EMAIL_RECIPIENTS",
+    "value": [
+        "t-azuma@fs-naniwa.co.jp"
+    ],
+    "description": null,
+    "updatedAt": "2025-10-15T09:49:33.401Z"
+}
+{
+    "id": "698b1c57-130f-47db-90ca-43787ac47fb4",
+    "key": "smtp_from",
+    "value": "alerts@example.com",
+    "description": "Alert email sender",
+    "updatedAt": "2025-10-30T05:23:11.252Z"
+}
+naniwa@NaniwaTanaCheck:~ $ curl -s http://localhost:5000/api/config/SHEETS_SPREADSHEET_ID | python3 -m json.tool
+curl -s http://localhost:5000/api/alerts/sheets-url
+{
+    "id": "71bc2119-0156-427e-870d-8f55f929730c",
+    "key": "SHEETS_SPREADSHEET_ID",
+    "value": "1zhyLhCBFj-PRc4IYmwyEODAeDn38W3-KTldYQMQzug0",
+    "description": "Google Sheets ID for alert logging",
+    "updatedAt": "2025-10-14T01:28:14.725Z"
+}
+{"url":"https://docs.google.com/spreadsheets/d/1zhyLhCBFj-PRc4IYmwyEODAeDn38W3-KTldYQMQzug0"}naniwa@NaniwaTanaCheck:~ $
