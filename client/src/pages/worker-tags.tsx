@@ -280,27 +280,38 @@ export default function WorkerTags() {
                   }}
                 >
                   {/* Worker Name - at top with 5mm borders */}
-                  <div className="text-center font-bold" style={{ 
+                  <div className="absolute text-center font-bold" style={{ 
                     fontSize: '16pt',
-                    paddingLeft: '5mm',
-                    paddingRight: '5mm',
-                    paddingTop: '5mm',
+                    left: '5mm',
+                    right: '5mm',
+                    top: '5mm',
                   }}>
                     {worker.name}
                   </div>
 
-                  {/* ArUco Marker - centered below name */}
+                  {/* ArUco Marker - perfectly centered in entire card */}
                   {arucoImages[worker.arucoId] ? (
-                    <div className="flex-1 flex items-center justify-center">
+                    <div className="absolute" style={{
+                      left: '5mm',
+                      top: '18.75mm',
+                      width: '30mm',
+                      height: '30mm',
+                    }}>
                       <img
                         src={`data:image/png;base64,${arucoImages[worker.arucoId]}`}
                         alt={`ArUco ${worker.arucoId}`}
-                        style={{ width: '30mm', height: '30mm' }}
+                        style={{ width: '100%', height: '100%' }}
                       />
                     </div>
                   ) : (
-                    <div className="flex-1 flex items-center justify-center">
-                      <div style={{ width: '30mm', height: '30mm', border: '1px dashed #ccc' }} className="flex items-center justify-center">
+                    <div className="absolute" style={{
+                      left: '5mm',
+                      top: '18.75mm',
+                      width: '30mm',
+                      height: '30mm',
+                      border: '1px dashed #ccc',
+                    }}>
+                      <div className="flex items-center justify-center w-full h-full">
                         <p className="text-xs text-gray-400">Loading...</p>
                       </div>
                     </div>
