@@ -1,0 +1,57 @@
+ls -lah data/captures/ | tail -20
+ls: cannot access 'data/captures/': No such file or directory
+naniwa@NaniwaTanaCheck:~/ShelfEye $ ls -lah data/detection_logs/ | tail -20
+ls: cannot access 'data/detection_logs/': No such file or directory
+naniwa@NaniwaTanaCheck:~/ShelfEye $ curl -s http://localhost:5000/api/capture-runs | python3 -m json.tool | head -50
+[
+    {
+        "id": "db452cdd-42eb-4baa-bb69-121ca006d89b",
+        "timestamp": "2025-11-14T08:05:26.566Z",
+        "triggerType": "manual",
+        "camerasCaptured": 2,
+        "slotsProcessed": 0,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+        "executionTimeMs": 38001
+    },
+    {
+        "id": "af785f27-28b6-4637-9043-64c42e49f592",
+        "timestamp": "2025-11-14T08:03:22.095Z",
+        "triggerType": "manual",
+        "camerasCaptured": 2,
+        "slotsProcessed": 0,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+        "executionTimeMs": 40178
+    },
+    {
+        "id": "40255ca9-d5fe-4e9d-a987-d3c544e555e5",
+        "timestamp": "2025-11-14T08:00:38.511Z",
+        "triggerType": "scheduled",
+        "camerasCaptured": 2,
+        "slotsProcessed": 0,
+        "failureCount": 0,
+        "status": "success",
+        "errorMessages": [],
+        "executionTimeMs": 37806
+    },
+    {
+        "id": "f4b7c21b-f9ae-42fa-8fcd-290d82e419c2",
+        "timestamp": "2025-11-14T07:30:04.774Z",
+        "triggerType": "diagnostic",
+        "camerasCaptured": 0,
+        "slotsProcessed": 0,
+        "failureCount": 1,
+        "status": "failure",
+        "errorMessages": [
+            "Python script exited with code 1: 2025-11-14 16:30:03,323 - __main__ - INFO - Starting diagnostics for 2 cameras\n2025-11-14 16:30:03,324 - __main__ - INFO - Checking camera 5e164d3c-1809-49ba-b284-a734843b32f1 (source /dev/video1)...\n2025-11-14 16:30:03,326 - __main__ - ERROR - Camera 5e164d3c-1809-49ba-b284-a734843b32f1: Cannot open source /dev/video1\n2025-11-14 16:30:03,326 - __main__ - INFO - Checking camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81 (source /dev/video0)...\n2025-11-14 16:30:04,534 - __main__ - ERROR - Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81: Only 3/4 corner markers visible\n2025-11-14 16:30:04,549 - __main__ - INFO - Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81: failed\n2025-11-14 16:30:04,553 - __main__ - INFO - Diagnostics complete: failed (0 healthy, 0 warnings, 2 failed)\n"
+        ],
+        "executionTimeMs": 4578
+    },
+    {
+        "id": "cb0d5a4c-9991-4c72-80ad-b03f725cd107",
+        "timestamp": "2025-11-14T07:30:02.979Z",
+naniwa@NaniwaTanaCheck:~/ShelfEye $ curl -s http://localhost:5000/api/slots | python3 -m json.tool
+[]
