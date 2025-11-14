@@ -31,5 +31,14 @@ StartLimitBurst=5         # Max 5 restart attempts
 StartLimitIntervalSec=600 # Within 10 minutes
 # If app crashes 5 times in 10 min, systemd gives up
 
+# Watchdog configuration for additional reliability
+# Service must send keep-alive signals to systemd every 60s
+WatchdogSec=120
+# If service becomes unresponsive, systemd will restart it
+
+# Failure handling
+RestartPreventExitStatus=SIGKILL
+# Don't restart on SIGKILL (usually means hardware watchdog forced reboot)
+
 [Install]
 WantedBy=multi-user.target
