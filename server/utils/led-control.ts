@@ -2,6 +2,7 @@ import { spawn, exec } from 'child_process';
 import path from 'path';
 import { storage } from '../storage';
 import { promisify } from 'util';
+import { subprocessManager } from '../subprocess-manager';
 
 const execAsync = promisify(exec);
 
@@ -99,6 +100,9 @@ async function executeLEDCommand(
       command,
       ...args
     ]);
+
+    // Track this LED control process
+    subprocessManager.trackProcess(ledProcess, 'led_control_client.py', 'led', `LED: ${operationName}`);
 
     let result = '';
     let error = '';

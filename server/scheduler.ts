@@ -471,15 +471,16 @@ export class CaptureScheduler {
       let stdout = '';
       let stderr = '';
       let isTimedOut = false;
-      let isCompleted = false;
+      let isSettled = false;
 
       // Track this process using centralized subprocess manager
       subprocessManager.trackProcess(python, scriptPath, 'python', 'scheduled_capture');
 
       // Timeout handler - kills process after CAPTURE_TIMEOUT_MS
       const timeoutHandle = setTimeout(() => {
-        if (!isCompleted && python.pid) {
+        if (!isSettled && python.pid) {
           isTimedOut = true;
+          isSettled = true;
           const elapsed = Date.now() - startTime;
           console.error(`[Scheduler] ⚠️ Process timeout after ${elapsed}ms - killing PID ${python.pid}`);
           
@@ -487,18 +488,29 @@ export class CaptureScheduler {
             // Try graceful termination first
             python.kill('SIGTERM');
             
-            // Force kill after 5 seconds if still alive
+            // Force kill after 5 seconds if SIGTERM didn't work and process is still alive
             setTimeout(() => {
-              if (!isCompleted) {
-                console.error(`[Scheduler] Force killing PID ${python.pid}`);
-                python.kill('SIGKILL');
+              // Only SIGKILL if process hasn't exited yet (exitCode is null when still running)
+              if (python.exitCode === null) {
+                try {
+                  python.kill('SIGKILL');
+                  console.error(`[Scheduler] Force killed unresponsive process PID ${python.pid}`);
+                } catch (err: any) {
+                  // ESRCH means process already died - that's fine
+                  if (err.code !== 'ESRCH') {
+                    console.error(`[Scheduler] SIGKILL failed for PID ${python.pid}:`, err);
+                  }
+                }
+              } else {
+                console.log(`[Scheduler] Process PID ${python.pid} exited after SIGTERM - SIGKILL not needed`);
               }
             }, 5000);
           } catch (killError) {
-            console.error(`[Scheduler] Failed to kill process ${python.pid}:`, killError);
+            console.error(`[Scheduler] Failed to send SIGTERM to process ${python.pid}:`, killError);
           }
 
-          reject(new Error(`Process timeout after ${elapsed}ms (max: ${this.CAPTURE_TIMEOUT_MS}ms)`));
+          // Reject the promise immediately - don't wait for close event
+          reject(new Error(`Capture timeout after ${elapsed}ms (exceeded ${this.CAPTURE_TIMEOUT_MS}ms limit)`));
         }
       }, this.CAPTURE_TIMEOUT_MS);
 
@@ -511,16 +523,18 @@ export class CaptureScheduler {
       });
 
       python.on('close', (code) => {
-        isCompleted = true;
         clearTimeout(timeoutHandle);
         
         const elapsed = Date.now() - startTime;
         console.log(`[Scheduler] Python process exited after ${elapsed}ms (code: ${code})`);
 
-        // If we already timed out, don't process results
-        if (isTimedOut) {
+        // If promise already settled (timeout or error), don't try to settle again
+        if (isSettled) {
+          console.log(`[Scheduler] Process completed after timeout/error - ignoring close event`);
           return;
         }
+
+        isSettled = true;
 
         if (code !== 0 && code !== 2) { // 0 = success, 2 = warning
           reject(new Error(`Python script exited with code ${code}: ${stderr}`));
@@ -536,10 +550,12 @@ export class CaptureScheduler {
       });
 
       python.on('error', (error) => {
-        isCompleted = true;
         clearTimeout(timeoutHandle);
 
-        reject(new Error(`Failed to spawn Python process: ${error.message}`));
+        if (!isSettled) {
+          isSettled = true;
+          reject(new Error(`Failed to spawn Python process: ${error.message}`));
+        }
       });
 
       // Send input data via stdin
@@ -549,7 +565,10 @@ export class CaptureScheduler {
       } catch (stdinError) {
         console.error(`[Scheduler] Failed to write to stdin:`, stdinError);
         clearTimeout(timeoutHandle);
-        reject(new Error(`Failed to write input data: ${stdinError}`));
+        if (!isSettled) {
+          isSettled = true;
+          reject(new Error(`Failed to write input data: ${stdinError}`));
+        }
       }
     });
   }

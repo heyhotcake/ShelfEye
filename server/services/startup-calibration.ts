@@ -9,6 +9,7 @@ import path from 'path';
 import { storage } from '../storage.js';
 import { setWhiteLight, turnOffLED, startRedFlash, stopRedFlash } from '../utils/led-control.js';
 import { cameraSessionManager } from '../camera-session-manager.js';
+import { subprocessManager } from '../subprocess-manager.js';
 
 export class StartupCalibrationService {
   private isRunning = false;
@@ -129,6 +130,9 @@ export class StartupCalibrationService {
       }
 
       const pythonProcess = spawn('python3', args);
+
+      // Track this calibration process
+      subprocessManager.trackProcess(pythonProcess, 'aruco_calibrator.py', 'python', `Startup calibration: ${camera.name}`);
 
       let result = '';
       let error = '';

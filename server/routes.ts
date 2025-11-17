@@ -8,6 +8,7 @@ import { startupCalibrationService } from "./services/startup-calibration";
 import { cameraSessionManager } from "./camera-session-manager";
 import { maintenanceService } from "./services/maintenance-service";
 import { piSimulationService } from "./services/pi-simulation-service";
+import { subprocessManager } from "./subprocess-manager";
 import multer from "multer";
 import { spawn, exec } from "child_process";
 import path from "path";
@@ -330,6 +331,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--camera', cameraIndex.toString()
       ]);
       
+      // Track this process
+      subprocessManager.trackProcess(pythonProcess, 'check_camera_capabilities.py', 'python', `Check capabilities: ${camera.name}`);
+      
       let output = '';
       let error = '';
       
@@ -575,6 +579,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const pythonProcess = spawn('python3', calibrationArgs);
+
+      // Track this calibration process
+      subprocessManager.trackProcess(pythonProcess, 'aruco_calibrator.py', 'python', `Calibration: ${camera.name}`);
 
       let result = '';
       let error = '';
@@ -890,6 +897,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[VerifyPositions] Generating rectified preview with adjusted templates...');
       const pythonProcess = spawn('python3', previewArgs);
       
+      // Track this preview generation process
+      subprocessManager.trackProcess(pythonProcess, 'rectified_preview.py', 'python', `Verify positions preview: ${camera.name}`);
+      
       let result = '';
       let error = '';
       
@@ -1120,6 +1130,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const pythonProcess = spawn('python3', validationArgs);
       
+      // Track this validation process
+      subprocessManager.trackProcess(pythonProcess, 'validate_slot_qrs.py', 'python', `Validation: ${camera.name}`);
+      
       let result = '';
       let error = '';
       let responseSent = false;
@@ -1290,6 +1303,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const pythonProcess = spawn('python3', previewArgs);
+
+      // Track this preview process
+      subprocessManager.trackProcess(pythonProcess, 'camera_preview.py', 'python', `Camera preview: ${camera.name}`);
 
       let result = '';
       let error = '';
@@ -1506,6 +1522,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const pythonProcess = spawn('python3', args);
 
+      // Track this rectified preview process
+      subprocessManager.trackProcess(pythonProcess, 'rectified_preview.py', 'python', `Rectified preview: ${camera.name}`);
+
       let result = '';
       let error = '';
       let responseSent = false;
@@ -1587,6 +1606,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }))),
         '--homography', JSON.stringify(activeCamera.homographyMatrix || [])
       ]);
+
+      // Track this manual capture process
+      subprocessManager.trackProcess(pythonProcess, 'camera_manager.py', 'python', `Manual capture: ${activeCamera.name}`);
 
       let result = '';
       let error = '';
@@ -2068,6 +2090,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const result = await new Promise((resolve, reject) => {
         const process = spawn('python3', args);
+        
+        // Track this ArUco generation process
+        subprocessManager.trackProcess(process, 'aruco_generator.py', 'python', `ArUco ${mode}: ${markerId}`);
+        
         let output = '';
         let errorOutput = '';
 
@@ -3129,6 +3155,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const childProcess = spawn('python3', args, {
           env: { ...process.env }
         });
+
+        // Track this camera detection process
+        subprocessManager.trackProcess(childProcess, 'detect_cameras.py', 'python', 'Camera detection');
 
         let stdout = '';
         let stderr = '';
