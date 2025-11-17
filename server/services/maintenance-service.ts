@@ -2,7 +2,6 @@ import { db } from "../db";
 import { detectionLogs, alertQueue } from "@shared/schema";
 import { sql } from "drizzle-orm";
 import * as fs from "fs/promises";
-import type { Stats } from "fs";
 import * as path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -98,7 +97,7 @@ export class MaintenanceService {
       // Recursively scan ROIs directory
       await this.cleanupDirectory(roisDir, cutoffTime, (stats) => {
         deletedFiles++;
-        freedBytes += stats.size;
+        freedBytes += Number(stats.size);
       });
 
       const freedMB = Math.round(freedBytes / (1024 * 1024) * 100) / 100;
@@ -117,7 +116,7 @@ export class MaintenanceService {
   private async cleanupDirectory(
     dirPath: string,
     cutoffTime: number,
-    onDelete: (stats: fs.Stats) => void
+    onDelete: (stats: Awaited<ReturnType<typeof fs.stat>>) => void
   ): Promise<void> {
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
@@ -179,8 +178,9 @@ export class MaintenanceService {
 
   /**
    * Check disk space and take action if needed
+   * Alerts at 70%, 80%, cleanup at 75%, 80%, 90%
    */
-  async checkDiskSpace(): Promise<{ status: 'ok' | 'warning' | 'critical'; usage: DiskUsage; action?: string }> {
+  async checkDiskSpace(alertQueue?: any): Promise<{ status: 'ok' | 'warning' | 'critical'; usage: DiskUsage; action?: string }> {
     try {
       const usage = await this.getDiskUsage();
       console.log(`[Maintenance] Disk usage: ${usage.percentUsed}% (${usage.used.toFixed(2)}GB / ${usage.total.toFixed(2)}GB)`);
@@ -190,29 +190,102 @@ export class MaintenanceService {
         
         // Emergency cleanup: delete ROI images older than 30 days
         console.log('[Maintenance] Running emergency cleanup (30-day retention)');
-        await this.cleanupOldImages(30);
+        const cleanup = await this.cleanupOldImages(30);
         
         // Re-check usage
         const newUsage = await this.getDiskUsage();
         const freedGB = usage.used - newUsage.used;
         console.log(`[Maintenance] Emergency cleanup freed ${freedGB.toFixed(2)}GB`);
 
+        // Send critical alert via queue (both email and Sheets)
+        if (alertQueue) {
+          const message = `Disk usage reached ${usage.percentUsed}% (${usage.used.toFixed(2)}GB / ${usage.total.toFixed(2)}GB).\n\nEmergency cleanup deleted ${cleanup.deletedFiles} ROI images (>30 days), freed ${cleanup.freedMB}MB.\n\nNew disk usage: ${newUsage.percentUsed}% (${newUsage.used.toFixed(2)}GB used).`;
+          
+          // Queue email alert
+          await alertQueue.queueEmailAlert('disk-critical-90', 'CRITICAL: Disk Usage at 90%+', { message });
+          
+          // Queue Sheets alert
+          await alertQueue.queueSheetsAlert({
+            alertType: 'disk_critical',
+            cameraId: null,
+            severity: 'critical',
+            message
+          });
+        }
+
         return {
           status: 'critical',
           usage: newUsage,
-          action: `Emergency cleanup: deleted ROI images >30 days, freed ${freedGB.toFixed(2)}GB`
+          action: `Emergency cleanup: deleted ${cleanup.deletedFiles} ROI images >30 days, freed ${cleanup.freedMB}MB`
         };
       } else if (usage.percentUsed >= 80) {
         console.warn('[Maintenance] WARNING: Disk usage at 80%+');
         
         // Accelerated cleanup: delete ROI images older than 60 days
         console.log('[Maintenance] Running accelerated cleanup (60-day retention)');
-        await this.cleanupOldImages(60);
+        const cleanup = await this.cleanupOldImages(60);
+        
+        // Re-check usage
+        const newUsage = await this.getDiskUsage();
+        const freedGB = usage.used - newUsage.used;
+        console.log(`[Maintenance] Accelerated cleanup freed ${freedGB.toFixed(2)}GB`);
+        
+        // Send warning alert via queue (both email and Sheets)
+        if (alertQueue) {
+          const message = `Disk usage reached ${usage.percentUsed}% (${usage.used.toFixed(2)}GB / ${usage.total.toFixed(2)}GB).\n\nAccelerated cleanup deleted ${cleanup.deletedFiles} ROI images (>60 days), freed ${cleanup.freedMB}MB.\n\nNew disk usage: ${newUsage.percentUsed}% (${newUsage.used.toFixed(2)}GB used).`;
+          
+          // Queue email alert
+          await alertQueue.queueEmailAlert('disk-warning-80', 'WARNING: Disk Usage at 80%+', { message });
+          
+          // Queue Sheets alert
+          await alertQueue.queueSheetsAlert({
+            alertType: 'disk_warning',
+            cameraId: null,
+            severity: 'warning',
+            message
+          });
+        }
+        
+        return {
+          status: 'warning',
+          usage: newUsage,
+          action: `Accelerated cleanup: deleted ${cleanup.deletedFiles} ROI images >60 days, freed ${cleanup.freedMB}MB`
+        };
+      } else if (usage.percentUsed >= 75) {
+        console.warn('[Maintenance] Disk usage at 75%+ - running aggressive cleanup');
+        
+        // Aggressive cleanup at 75%: delete ROI images older than 90 days
+        console.log('[Maintenance] Running aggressive cleanup (90-day retention)');
+        const cleanup = await this.cleanupOldImages(90);
         
         return {
           status: 'warning',
           usage,
-          action: 'Accelerated cleanup: deleted ROI images >60 days'
+          action: `Aggressive cleanup at 75%: deleted ${cleanup.deletedFiles} ROI images >90 days, freed ${cleanup.freedMB}MB`
+        };
+      } else if (usage.percentUsed >= 70) {
+        console.warn('[Maintenance] Disk usage at 70%+ - sending alert');
+        
+        // Send early warning alert via queue (both email and Sheets)
+        if (alertQueue) {
+          const message = `Disk usage reached ${usage.percentUsed}% (${usage.used.toFixed(2)}GB / ${usage.total.toFixed(2)}GB).\n\nThis is an early warning. Aggressive cleanup will start at 75%.`;
+          
+          // Queue email alert
+          await alertQueue.queueEmailAlert('disk-warning-70', 'INFO: Disk Usage at 70%+', { message });
+          
+          // Queue Sheets alert
+          await alertQueue.queueSheetsAlert({
+            alertType: 'disk_info',
+            cameraId: null,
+            severity: 'info',
+            message
+          });
+        }
+        
+        return {
+          status: 'warning',
+          usage,
+          action: 'Early warning alert sent'
         };
       }
 
@@ -227,7 +300,7 @@ export class MaintenanceService {
    * Run full maintenance routine
    * Called daily by scheduler
    */
-  async runDailyMaintenance(): Promise<void> {
+  async runDailyMaintenance(alertQueue?: any): Promise<void> {
     if (this.cleanupRunning) {
       console.log('[Maintenance] Cleanup already running, skipping');
       return;
@@ -239,8 +312,8 @@ export class MaintenanceService {
       console.log('[Maintenance] Starting daily maintenance');
       const startTime = Date.now();
 
-      // 1. Check disk space first (may trigger emergency cleanup)
-      const diskCheck = await this.checkDiskSpace();
+      // 1. Check disk space first (may trigger emergency cleanup and alerts)
+      const diskCheck = await this.checkDiskSpace(alertQueue);
       console.log(`[Maintenance] Disk status: ${diskCheck.status}`);
 
       // 2. Clean up old detection logs (3 years retention)

@@ -186,7 +186,7 @@ export class CaptureScheduler {
     const task = cron.schedule('0 3 * * *', async () => {
       console.log('[Scheduler] Running daily maintenance at 3:00 AM JST');
       try {
-        await maintenanceService.runDailyMaintenance();
+        await maintenanceService.runDailyMaintenance(this.alertQueue);
       } catch (error) {
         console.error('[Scheduler] Daily maintenance failed:', error);
       }
@@ -777,6 +777,13 @@ export class CaptureScheduler {
     console.log('[Scheduler] Shutdown complete');
   }
 
+  /**
+   * Get alert retry queue instance
+   */
+  getAlertQueue() {
+    return this.alertQueue;
+  }
+  
   /**
    * Get alert retry queue statistics
    */

@@ -251,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/maintenance/run", async (_req, res) => {
     try {
-      await maintenanceService.runDailyMaintenance();
+      await maintenanceService.runDailyMaintenance(scheduler.getAlertQueue());
       res.json({ message: "Maintenance completed successfully" });
     } catch (error) {
       res.status(500).json({ message: "Maintenance failed", error });
@@ -260,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/maintenance/disk-usage", async (_req, res) => {
     try {
-      const diskCheck = await maintenanceService.checkDiskSpace();
+      const diskCheck = await maintenanceService.checkDiskSpace(scheduler.getAlertQueue());
       res.json(diskCheck);
     } catch (error) {
       res.status(500).json({ message: "Failed to check disk usage", error });
