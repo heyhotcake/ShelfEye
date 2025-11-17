@@ -8,6 +8,7 @@ import { SheetsLogger } from './services/sheets-logger';
 import { getAlertLEDController } from './services/alert-led';
 import { maintenanceService } from './services/maintenance-service';
 import { cameraSessionManager } from './camera-session-manager';
+import { subprocessManager } from './subprocess-manager';
 
 const TIMEZONE = 'Asia/Tokyo';
 
@@ -23,6 +24,8 @@ export class CaptureScheduler {
   private diagnosticTasks: Map<string, cron.ScheduledTask> = new Map();
   private isInitialized = false;
   private sheetsLogger: SheetsLogger;
+  
+  private readonly CAPTURE_TIMEOUT_MS = 600000; // 10 minutes
 
   constructor(storage: IStorage) {
     this.storage = storage;
@@ -456,14 +459,48 @@ export class CaptureScheduler {
   }
 
   /**
-   * Run Python script with input data via stdin
+   * Run Python script with input data via stdin, with timeout protection
+   * Kills process and alerts if it exceeds CAPTURE_TIMEOUT_MS (10 minutes)
    */
   private runPythonScript(scriptPath: string, inputData: any): Promise<any> {
     return new Promise((resolve, reject) => {
       const python = spawn('python3', [scriptPath]);
+      const pid = python.pid;
+      const startTime = Date.now();
       
       let stdout = '';
       let stderr = '';
+      let isTimedOut = false;
+      let isCompleted = false;
+
+      // Track this process using centralized subprocess manager
+      subprocessManager.trackProcess(python, scriptPath, 'python', 'scheduled_capture');
+
+      // Timeout handler - kills process after CAPTURE_TIMEOUT_MS
+      const timeoutHandle = setTimeout(() => {
+        if (!isCompleted && python.pid) {
+          isTimedOut = true;
+          const elapsed = Date.now() - startTime;
+          console.error(`[Scheduler] ⚠️ Process timeout after ${elapsed}ms - killing PID ${python.pid}`);
+          
+          try {
+            // Try graceful termination first
+            python.kill('SIGTERM');
+            
+            // Force kill after 5 seconds if still alive
+            setTimeout(() => {
+              if (!isCompleted) {
+                console.error(`[Scheduler] Force killing PID ${python.pid}`);
+                python.kill('SIGKILL');
+              }
+            }, 5000);
+          } catch (killError) {
+            console.error(`[Scheduler] Failed to kill process ${python.pid}:`, killError);
+          }
+
+          reject(new Error(`Process timeout after ${elapsed}ms (max: ${this.CAPTURE_TIMEOUT_MS}ms)`));
+        }
+      }, this.CAPTURE_TIMEOUT_MS);
 
       python.stdout.on('data', (data) => {
         stdout += data.toString();
@@ -474,6 +511,17 @@ export class CaptureScheduler {
       });
 
       python.on('close', (code) => {
+        isCompleted = true;
+        clearTimeout(timeoutHandle);
+        
+        const elapsed = Date.now() - startTime;
+        console.log(`[Scheduler] Python process exited after ${elapsed}ms (code: ${code})`);
+
+        // If we already timed out, don't process results
+        if (isTimedOut) {
+          return;
+        }
+
         if (code !== 0 && code !== 2) { // 0 = success, 2 = warning
           reject(new Error(`Python script exited with code ${code}: ${stderr}`));
           return;
@@ -488,12 +536,21 @@ export class CaptureScheduler {
       });
 
       python.on('error', (error) => {
+        isCompleted = true;
+        clearTimeout(timeoutHandle);
+
         reject(new Error(`Failed to spawn Python process: ${error.message}`));
       });
 
       // Send input data via stdin
-      python.stdin.write(JSON.stringify(inputData));
-      python.stdin.end();
+      try {
+        python.stdin.write(JSON.stringify(inputData));
+        python.stdin.end();
+      } catch (stdinError) {
+        console.error(`[Scheduler] Failed to write to stdin:`, stdinError);
+        clearTimeout(timeoutHandle);
+        reject(new Error(`Failed to write input data: ${stdinError}`));
+      }
     });
   }
 
