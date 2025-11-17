@@ -8,7 +8,7 @@ import { startupCalibrationService } from "./services/startup-calibration";
 import { cameraSessionManager } from "./camera-session-manager";
 import { maintenanceService } from "./services/maintenance-service";
 import { piSimulationService } from "./services/pi-simulation-service";
-import { subprocessManager } from "./subprocess-manager";
+import { subprocessManager, spawnTracked } from "./subprocess-manager";
 import multer from "multer";
 import { spawn, exec } from "child_process";
 import path from "path";
@@ -335,13 +335,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const cameraIndex = camera.deviceIndex || 0;
-      const pythonProcess = spawn('python3', [
-        path.join(process.cwd(), 'python/check_camera_capabilities.py'),
-        '--camera', cameraIndex.toString()
-      ]);
-      
-      // Track this process
-      subprocessManager.trackProcess(pythonProcess, 'check_camera_capabilities.py', 'python', `Check capabilities: ${camera.name}`);
+      const pythonProcess = spawnTracked(
+        'python3',
+        [path.join(process.cwd(), 'python/check_camera_capabilities.py'), '--camera', cameraIndex.toString()],
+        'check_camera_capabilities.py',
+        'python',
+        `Check capabilities: ${camera.name}`
+      );
       
       let output = '';
       let error = '';

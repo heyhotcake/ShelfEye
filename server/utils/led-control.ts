@@ -1,8 +1,8 @@
-import { spawn, exec } from 'child_process';
+import { exec } from 'child_process';
 import path from 'path';
 import { storage } from '../storage';
 import { promisify } from 'util';
-import { subprocessManager } from '../subprocess-manager';
+import { spawnTracked } from '../subprocess-manager';
 
 const execAsync = promisify(exec);
 
@@ -94,15 +94,13 @@ async function executeLEDCommand(
   operationName: string
 ): Promise<{ success?: boolean; status?: string; blocked?: boolean; message?: string }> {
   return new Promise((resolve, reject) => {
-    const ledProcess = spawn('sudo', [
-      'python3',
-      path.join(process.cwd(), 'python/led_control_client.py'),
-      command,
-      ...args
-    ]);
-
-    // Track this LED control process
-    subprocessManager.trackProcess(ledProcess, 'led_control_client.py', 'led', `LED: ${operationName}`);
+    const ledProcess = spawnTracked(
+      'sudo',
+      ['python3', path.join(process.cwd(), 'python/led_control_client.py'), command, ...args],
+      'led_control_client.py',
+      'led',
+      `LED: ${operationName}`
+    );
 
     let result = '';
     let error = '';

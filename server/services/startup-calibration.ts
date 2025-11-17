@@ -4,12 +4,11 @@
  * Flashes red LED if calibration fails or is missing
  */
 
-import { spawn } from 'child_process';
 import path from 'path';
 import { storage } from '../storage.js';
 import { setWhiteLight, turnOffLED, startRedFlash, stopRedFlash } from '../utils/led-control.js';
 import { cameraSessionManager } from '../camera-session-manager.js';
-import { subprocessManager } from '../subprocess-manager.js';
+import { spawnTracked } from '../subprocess-manager.js';
 
 export class StartupCalibrationService {
   private isRunning = false;
@@ -129,10 +128,13 @@ export class StartupCalibrationService {
         console.log(`[StartupCalibration] Using camera index: ${camera.deviceIndex || 0}`);
       }
 
-      const pythonProcess = spawn('python3', args);
-
-      // Track this calibration process
-      subprocessManager.trackProcess(pythonProcess, 'aruco_calibrator.py', 'python', `Startup calibration: ${camera.name}`);
+      const pythonProcess = spawnTracked(
+        'python3',
+        args,
+        'aruco_calibrator.py',
+        'python',
+        `Startup calibration: ${camera.name}`
+      );
 
       let result = '';
       let error = '';
