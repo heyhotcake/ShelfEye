@@ -328,11 +328,28 @@ export class CaptureScheduler {
         }
       }
 
-      // If there were failures, trigger alert
+      // If there were failures, trigger alert with detailed camera information
       if (result.status === 'failure' || result.status === 'partial_failure') {
-        // Extract first failed camera for alert identification
-        const failedCameraId = result.results?.find((r: any) => r.status === 'failed')?.cameraId;
-        await this.sendAlert('capture_failure', `Capture ${result.status}: ${result.failureCount} failures`, failedCameraId);
+        const failedCameras = result.results?.filter((r: any) => r.status === 'failed') || [];
+        const successCameras = result.results?.filter((r: any) => r.status === 'success') || [];
+        
+        let message = `Capture ${result.status}: ${result.failureCount}/${result.results?.length || 0} cameras failed`;
+        
+        if (failedCameras.length > 0) {
+          message += '\n\nFailed cameras:\n';
+          failedCameras.forEach((cam: any) => {
+            const errors = cam.errors?.join(', ') || 'Unknown error';
+            message += `• ${cam.cameraId}: ${errors}\n`;
+          });
+        }
+        
+        if (result.status === 'partial_failure' && successCameras.length > 0) {
+          message += `\n✓ ${successCameras.length} camera(s) succeeded (${result.slotsProcessed} slots processed)`;
+        }
+        
+        // Use first failed camera ID for alert reference
+        const failedCameraId = failedCameras[0]?.cameraId;
+        await this.sendAlert('capture_failure', message, failedCameraId);
       }
 
       console.log(`[Scheduler] Capture complete: ${result.status} (${executionTime}ms)`);
