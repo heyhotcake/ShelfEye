@@ -63,36 +63,88 @@ class SubprocessManager {
     })) as any;
   }
 
+  /**
+   * Detect and cleanup problematic processes using /proc filesystem inspection
+   * Catches STAT=Z (zombie), STAT=D (uninterruptible sleep), and long-running processes
+   * More reliable than grep for detecting hung camera processes
+   */
   async detectZombieProcesses(): Promise<void> {
     try {
-      const { stdout } = await execAsync('ps aux | grep "python3\\|defunct" | grep -v grep');
-      const lines = stdout.trim().split('\n');
+      // Get all python3 processes with their state
+      const { stdout } = await execAsync('ps -eo pid,state,cmd | grep python3 | grep -v grep');
+      const lines = stdout.trim().split('\n').filter(l => l.trim());
 
-      const zombies = lines.filter(line => line.includes('defunct') || line.includes('Z'));
+      const problematicProcesses: { pid: number; state: string; cmd: string }[] = [];
 
-      if (zombies.length > 0) {
+      for (const line of lines) {
+        const match = line.trim().match(/^(\d+)\s+(\S+)\s+(.+)$/);
+        if (!match) continue;
+
+        const [, pidStr, state, cmd] = match;
+        const pid = parseInt(pidStr);
+        const stateChar = state[0]; // First char is the main state
+
+        // Detect problematic states:
+        // Z = Zombie (defunct)
+        // D = Uninterruptible sleep (hung on I/O, can't be killed normally)
+        // T = Stopped (suspended)
+        if (stateChar === 'Z' || stateChar === 'D' || stateChar === 'T') {
+          problematicProcesses.push({ pid, state: stateChar, cmd });
+        }
+      }
+
+      if (problematicProcesses.length > 0) {
         console.warn(
-          `[SubprocessManager] ⚠️ Detected ${zombies.length} zombie processes:`
+          `[SubprocessManager] ⚠️ Detected ${problematicProcesses.length} problematic process(es):`
         );
-        zombies.forEach(z => console.warn(`  ${z}`));
+        
+        for (const proc of problematicProcesses) {
+          console.warn(`  PID ${proc.pid} [${proc.state}]: ${proc.cmd.substring(0, 80)}`);
 
-        zombies.forEach(line => {
-          const parts = line.trim().split(/\s+/);
-          if (parts[1]) {
-            const pid = parseInt(parts[1]);
-            try {
-              process.kill(pid, 'SIGKILL');
-              console.log(`[SubprocessManager] Killed zombie process PID ${pid}`);
-            } catch (error) {
-              console.error(`[SubprocessManager] Failed to kill zombie PID ${pid}:`, error);
+          // Try escalating kill signals based on state
+          try {
+            if (proc.state === 'Z') {
+              // Zombies are already dead, just need parent to reap
+              console.log(`[SubprocessManager] Zombie PID ${proc.pid} - attempting SIGCHLD to parent`);
+            } else if (proc.state === 'D') {
+              // D-state processes are stuck in kernel, try SIGKILL but may not work
+              console.log(`[SubprocessManager] D-state PID ${proc.pid} - attempting SIGKILL (may not work)`);
+              process.kill(proc.pid, 'SIGKILL');
+              
+              // Mark for monitoring - if still alive after 60s, alert
+              this.markProcessForEscalation(proc.pid, 'D-state hung process');
+            } else {
+              // T-state or other - try SIGKILL
+              process.kill(proc.pid, 'SIGKILL');
+              console.log(`[SubprocessManager] Killed ${proc.state}-state process PID ${proc.pid}`);
+            }
+          } catch (error: any) {
+            if (error.code === 'ESRCH') {
+              console.log(`[SubprocessManager] PID ${proc.pid} already gone`);
+            } else {
+              console.error(`[SubprocessManager] Failed to kill PID ${proc.pid}:`, error.message);
             }
           }
-        });
+        }
       }
     } catch (error: any) {
       if (error.code !== 1) {
-        console.error('[SubprocessManager] Error detecting zombies:', error);
+        console.error('[SubprocessManager] Error detecting problematic processes:', error);
       }
+    }
+  }
+
+  /**
+   * Track processes that can't be killed for escalation
+   */
+  private escalationQueue: Map<number, { reason: string; since: number; attempts: number }> = new Map();
+
+  private markProcessForEscalation(pid: number, reason: string): void {
+    const existing = this.escalationQueue.get(pid);
+    if (existing) {
+      existing.attempts++;
+    } else {
+      this.escalationQueue.set(pid, { reason, since: Date.now(), attempts: 1 });
     }
   }
 
@@ -141,28 +193,82 @@ class SubprocessManager {
     );
 
     const entries = Array.from(this.processes.entries());
+    const survivingProcesses = new Set<number>();
+
     for (const [pid, proc] of entries) {
       try {
         console.log(`[SubprocessManager] Killing PID ${pid} (${proc.purpose})`);
-        process.kill(pid, 'SIGTERM');
+        
+        // Try SIGTERM first (graceful)
+        try {
+          process.kill(pid, 'SIGTERM');
+        } catch (error: any) {
+          if (error.code === 'ESRCH') {
+            // Process already gone
+            this.processes.delete(pid);
+            continue;
+          }
+        }
 
+        // Wait 2s for graceful shutdown
         await new Promise(resolve => setTimeout(resolve, 2000));
 
+        // Check if still alive
+        let isAlive = false;
         try {
-          process.kill(pid, 0);
-          console.log(`[SubprocessManager] Force killing PID ${pid}`);
-          process.kill(pid, 'SIGKILL');
+          process.kill(pid, 0); // Signal 0 just checks if process exists
+          isAlive = true;
         } catch {
-          console.log(`[SubprocessManager] PID ${pid} already terminated`);
+          // Process is gone
+          this.processes.delete(pid);
+          console.log(`[SubprocessManager] ✓ PID ${pid} terminated gracefully`);
+          continue;
+        }
+
+        if (isAlive) {
+          // Force kill with SIGKILL
+          console.log(`[SubprocessManager] Force killing PID ${pid}`);
+          try {
+            process.kill(pid, 'SIGKILL');
+          } catch (error: any) {
+            if (error.code === 'ESRCH') {
+              this.processes.delete(pid);
+              continue;
+            }
+          }
+
+          // Wait 1s and verify
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // Final check
+          try {
+            process.kill(pid, 0);
+            // Still alive! Keep in tracking and escalate
+            console.error(`[SubprocessManager] ⚠️ CRITICAL: PID ${pid} survived SIGKILL! (likely D-state)`);
+            survivingProcesses.add(pid);
+            this.markProcessForEscalation(pid, `Survived SIGKILL: ${proc.purpose}`);
+          } catch {
+            // Finally dead
+            this.processes.delete(pid);
+            console.log(`[SubprocessManager] ✓ PID ${pid} force killed`);
+          }
         }
       } catch (error: any) {
-        if (error.code !== 'ESRCH') {
-          console.error(`[SubprocessManager] Failed to kill PID ${pid}:`, error);
-        }
+        console.error(`[SubprocessManager] Error killing PID ${pid}:`, error);
+        // Keep in tracking if we can't confirm it's dead
+        survivingProcesses.add(pid);
       }
     }
 
-    this.processes.clear();
+    if (survivingProcesses.size > 0) {
+      console.error(
+        `[SubprocessManager] ⚠️ ${survivingProcesses.size} process(es) survived kill attempts:`,
+        Array.from(survivingProcesses)
+      );
+      console.error('[SubprocessManager] These processes remain tracked and will be retried');
+    } else {
+      console.log('[SubprocessManager] All processes terminated successfully');
+    }
   }
 
   private setupShutdownHandlers(): void {

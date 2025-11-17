@@ -737,10 +737,24 @@ export class MemStorage implements IStorage {
 import { db } from './db';
 import * as schema from '@shared/schema';
 import { eq, desc, and, gte, lte, isNull } from 'drizzle-orm';
+import { withRetry } from './db-retry';
 
 export class DbStorage implements IStorage {
   constructor() {
     this.initializeDefaults();
+  }
+  
+  /**
+   * Wrap database operations with automatic retry logic for transient errors
+   * Handles network drops, connection resets, timeouts - critical for Pi WiFi + Neon
+   */
+  private async withDbRetry<T>(operation: () => Promise<T>, context?: string): Promise<T> {
+    return withRetry(operation, {
+      maxAttempts: 3,
+      initialDelayMs: 100,
+      maxDelayMs: 2000,
+      backoffMultiplier: 2
+    });
   }
 
   private async initializeDefaults() {
@@ -938,8 +952,10 @@ export class DbStorage implements IStorage {
   }
 
   async createDetectionLog(log: InsertDetectionLog): Promise<DetectionLog> {
-    const result = await db.insert(schema.detectionLogs).values(log).returning();
-    return result[0];
+    return this.withDbRetry(async () => {
+      const result = await db.insert(schema.detectionLogs).values(log).returning();
+      return result[0];
+    }, 'createDetectionLog');
   }
 
   async deleteDetectionLogsBySlotId(slotId: string): Promise<number> {
@@ -1003,19 +1019,23 @@ export class DbStorage implements IStorage {
   }
 
   async getConfigByKey(key: string): Promise<SystemConfig | undefined> {
-    const result = await db.select().from(schema.systemConfig).where(eq(schema.systemConfig.key, key));
-    return result[0];
+    return this.withDbRetry(async () => {
+      const result = await db.select().from(schema.systemConfig).where(eq(schema.systemConfig.key, key));
+      return result[0];
+    }, `getConfigByKey:${key}`);
   }
 
   async setConfig(key: string, value: any, description?: string): Promise<SystemConfig> {
-    const existing = await this.getConfigByKey(key);
-    if (existing) {
-      const result = await db.update(schema.systemConfig).set({ value, description, updatedAt: new Date() }).where(eq(schema.systemConfig.key, key)).returning();
-      return result[0];
-    } else {
-      const result = await db.insert(schema.systemConfig).values({ key, value, description }).returning();
-      return result[0];
-    }
+    return this.withDbRetry(async () => {
+      const existing = await this.getConfigByKey(key);
+      if (existing) {
+        const result = await db.update(schema.systemConfig).set({ value, description, updatedAt: new Date() }).where(eq(schema.systemConfig.key, key)).returning();
+        return result[0];
+      } else {
+        const result = await db.insert(schema.systemConfig).values({ key, value, description }).returning();
+        return result[0];
+      }
+    }, `setConfig:${key}`);
   }
 
   async updateConfig(key: string, value: any): Promise<SystemConfig | undefined> {
@@ -1259,8 +1279,10 @@ export class DbStorage implements IStorage {
   }
 
   async createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun> {
-    const result = await db.insert(schema.captureRuns).values(run).returning();
-    return result[0];
+    return this.withDbRetry(async () => {
+      const result = await db.insert(schema.captureRuns).values(run).returning();
+      return result[0];
+    }, 'createCaptureRun');
   }
 
   // Google OAuth credential methods

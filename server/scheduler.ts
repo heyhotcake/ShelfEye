@@ -1,14 +1,13 @@
 import cron from 'node-cron';
 import { format, toZonedTime } from 'date-fns-tz';
 import type { IStorage } from './storage';
-import { spawn } from 'child_process';
 import type { Camera, Slot } from '@shared/schema';
 import { sendAlertEmail } from './services/email-alerts';
 import { SheetsLogger } from './services/sheets-logger';
 import { getAlertLEDController } from './services/alert-led';
 import { maintenanceService } from './services/maintenance-service';
 import { cameraSessionManager } from './camera-session-manager';
-import { subprocessManager } from './subprocess-manager';
+import { subprocessManager, spawnTracked } from './subprocess-manager';
 import { AlertRetryQueue } from './services/alert-queue';
 
 const TIMEZONE = 'Asia/Tokyo';
@@ -487,7 +486,7 @@ export class CaptureScheduler {
    */
   private runPythonScript(scriptPath: string, inputData: any): Promise<any> {
     return new Promise((resolve, reject) => {
-      const python = spawn('python3', [scriptPath]);
+      const python = spawnTracked('python3', [scriptPath], scriptPath, 'python', 'scheduled_capture');
       const pid = python.pid;
       const startTime = Date.now();
       
@@ -495,9 +494,6 @@ export class CaptureScheduler {
       let stderr = '';
       let isTimedOut = false;
       let isSettled = false;
-
-      // Track this process using centralized subprocess manager
-      subprocessManager.trackProcess(python, scriptPath, 'python', 'scheduled_capture');
 
       // Timeout handler - kills process after CAPTURE_TIMEOUT_MS
       const timeoutHandle = setTimeout(() => {
