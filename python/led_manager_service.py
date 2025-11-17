@@ -61,6 +61,8 @@ class LEDManagerDaemon:
             'priority': PRIORITY_OFF,
             'flash_active': False,
             'flash_thread': None,
+            'flash_heartbeat': 0,
+            'flash_error_count': 0,
         }
         self.state_lock = threading.Lock()
         
@@ -134,49 +136,78 @@ class LEDManagerDaemon:
         if not self.strip:
             return
         
-        try:
-            for i in range(self.strip.numPixels()):
-                self.strip.setPixelColor(i, Color(0, 0, 0))
-            self.strip.show()
-        except Exception as e:
-            print(f"⚠️  Hardware error in _clear_strip: {e}", file=sys.stderr)
+        for i in range(self.strip.numPixels()):
+            self.strip.setPixelColor(i, Color(0, 0, 0))
+        self.strip.show()
     
     def _set_all_leds(self, color: tuple):
         """Set all LEDs to a specific RGB color"""
         if not self.strip:
             return
         
-        try:
-            r, g, b = color
-            for i in range(self.strip.numPixels()):
-                self.strip.setPixelColor(i, Color(r, g, b))
-            self.strip.show()
-        except Exception as e:
-            print(f"⚠️  Hardware error in _set_all_leds: {e}", file=sys.stderr)
+        r, g, b = color
+        for i in range(self.strip.numPixels()):
+            self.strip.setPixelColor(i, Color(r, g, b))
+        self.strip.show()
     
     def _flash_red_thread(self):
-        """Background thread for red flashing (runs until stopped)"""
-        try:
-            while True:
-                with self.state_lock:
-                    if not self.current_state['flash_active']:
-                        break
-                
-                # Flash on
+        """Background thread for red flashing (self-healing, runs until stopped)"""
+        consecutive_errors = 0
+        max_consecutive_errors = 10
+        
+        print("🔴 Red flash thread started")
+        
+        while True:
+            with self.state_lock:
+                if not self.current_state['flash_active']:
+                    print("🔴 Flash thread stopping (flash_active=False)")
+                    break
+            
+            try:
                 self._set_all_leds((255, 0, 0))
-                time.sleep(0.5)
-                
+            except Exception as e:
+                consecutive_errors += 1
                 with self.state_lock:
-                    if not self.current_state['flash_active']:
-                        break
+                    self.current_state['flash_error_count'] += 1
+                print(f"⚠️  Flash ON error ({consecutive_errors}/{max_consecutive_errors}): {e}", file=sys.stderr)
                 
-                # Flash off
+                if consecutive_errors >= max_consecutive_errors:
+                    print(f"❌ Flash thread hit error limit, exiting to trigger watchdog restart", file=sys.stderr)
+                    break
+                
+                time.sleep(1)
+                continue
+            
+            time.sleep(0.5)
+            
+            with self.state_lock:
+                if not self.current_state['flash_active']:
+                    print("🔴 Flash thread stopping (flash_active=False)")
+                    break
+            
+            try:
                 self._clear_strip()
-                time.sleep(0.5)
-        except Exception as e:
-            print(f"❌ Flash thread error: {e}", file=sys.stderr)
-        finally:
-            print("🔴 Flash thread stopped")
+            except Exception as e:
+                consecutive_errors += 1
+                with self.state_lock:
+                    self.current_state['flash_error_count'] += 1
+                print(f"⚠️  Flash OFF error ({consecutive_errors}/{max_consecutive_errors}): {e}", file=sys.stderr)
+                
+                if consecutive_errors >= max_consecutive_errors:
+                    print(f"❌ Flash thread hit error limit, exiting to trigger watchdog restart", file=sys.stderr)
+                    break
+                
+                time.sleep(1)
+                continue
+            
+            consecutive_errors = 0
+            
+            with self.state_lock:
+                self.current_state['flash_heartbeat'] = time.time()
+            
+            time.sleep(0.5)
+        
+        print("🔴 Flash thread stopped")
     
     def _update_config(self, num_leds: Optional[int] = None, brightness: Optional[int] = None) -> bool:
         """Update LED strip configuration dynamically"""
@@ -247,7 +278,12 @@ class LEDManagerDaemon:
         
         # Update state
         with self.state_lock:
-            self._set_all_leds((255, 255, 255))
+            try:
+                self._set_all_leds((255, 255, 255))
+            except Exception as e:
+                print(f"⚠️  Failed to set white light: {e}", file=sys.stderr)
+                return {'status': 'error', 'message': f'Hardware error: {e}'}
+            
             self.current_state['mode'] = 'white'
             self.current_state['priority'] = PRIORITY_WHITE
             self.current_state['flash_thread'] = None
@@ -268,7 +304,11 @@ class LEDManagerDaemon:
         
         # Update state
         with self.state_lock:
-            self._clear_strip()
+            try:
+                self._clear_strip()
+            except Exception as e:
+                print(f"⚠️  Failed to clear LEDs: {e}", file=sys.stderr)
+            
             self.current_state['mode'] = 'off'
             self.current_state['priority'] = PRIORITY_OFF
             self.current_state['flash_thread'] = None
@@ -317,7 +357,11 @@ class LEDManagerDaemon:
         
         # Update state
         with self.state_lock:
-            self._clear_strip()
+            try:
+                self._clear_strip()
+            except Exception as e:
+                print(f"⚠️  Failed to clear LEDs: {e}", file=sys.stderr)
+            
             self.current_state['mode'] = 'off'
             self.current_state['priority'] = PRIORITY_OFF
             self.current_state['flash_thread'] = None
@@ -328,11 +372,17 @@ class LEDManagerDaemon:
     def _cmd_status(self) -> Dict[str, Any]:
         """Get current LED status"""
         with self.state_lock:
+            thread_alive = self.current_state['flash_thread'] is not None and self.current_state['flash_thread'].is_alive()
+            heartbeat_age = time.time() - self.current_state['flash_heartbeat'] if self.current_state['flash_heartbeat'] > 0 else -1
+            
             return {
                 'status': 'success',
                 'mode': self.current_state['mode'],
                 'priority': self.current_state['priority'],
                 'flash_active': self.current_state['flash_active'],
+                'flash_thread_alive': thread_alive,
+                'flash_heartbeat_age': heartbeat_age,
+                'flash_error_count': self.current_state['flash_error_count'],
             }
     
     def _save_state(self):
@@ -371,11 +421,14 @@ class LEDManagerDaemon:
             
             # Restore state based on mode
             if mode == 'white':
-                self._set_all_leds((255, 255, 255))
-                with self.state_lock:
-                    self.current_state['mode'] = 'white'
-                    self.current_state['priority'] = PRIORITY_WHITE
-                print("✅ White lighting restored")
+                try:
+                    self._set_all_leds((255, 255, 255))
+                    with self.state_lock:
+                        self.current_state['mode'] = 'white'
+                        self.current_state['priority'] = PRIORITY_WHITE
+                    print("✅ White lighting restored")
+                except Exception as e:
+                    print(f"⚠️  Failed to restore white light: {e}", file=sys.stderr)
                 
             elif mode == 'red_flash':
                 # Restart red flash
@@ -421,6 +474,52 @@ class LEDManagerDaemon:
         print(f"\n🛑 Received signal {signum}, shutting down...")
         self.running = False
     
+    def _watchdog_check_flash_thread(self):
+        """Watchdog: check flash thread health and restart if needed"""
+        with self.state_lock:
+            if not self.current_state['flash_active']:
+                return
+            
+            thread = self.current_state['flash_thread']
+            heartbeat = self.current_state['flash_heartbeat']
+            
+            thread_alive = thread is not None and thread.is_alive()
+            heartbeat_age = time.time() - heartbeat if heartbeat > 0 else 9999
+            heartbeat_stale = heartbeat_age > 5
+            
+            needs_restart = not thread_alive or heartbeat_stale
+            
+            if not needs_restart:
+                return
+            
+            if not thread_alive:
+                print("⚠️  WATCHDOG: Flash thread died, restarting...", file=sys.stderr)
+            elif heartbeat_stale:
+                print(f"⚠️  WATCHDOG: Flash thread heartbeat stale ({heartbeat_age:.1f}s), restarting...", file=sys.stderr)
+            
+            self.current_state['flash_active'] = False
+        
+        if thread and thread.is_alive():
+            thread.join(timeout=2)
+        
+        with self.state_lock:
+            try:
+                self._clear_strip()
+            except Exception as e:
+                print(f"⚠️  WATCHDOG: Failed to clear LEDs before restart: {e}", file=sys.stderr)
+            
+            self.current_state['flash_active'] = True
+            self.current_state['mode'] = 'red_flash'
+            self.current_state['priority'] = PRIORITY_RED_FLASH
+            self.current_state['flash_heartbeat'] = 0
+            self.current_state['flash_thread'] = threading.Thread(
+                target=self._flash_red_thread,
+                daemon=True
+            )
+            self.current_state['flash_thread'].start()
+            
+            print("✅ WATCHDOG: Flash thread restarted")
+    
     def run(self):
         """Main daemon loop - listen for commands on named pipe"""
         # Set up signal handlers
@@ -432,39 +531,49 @@ class LEDManagerDaemon:
         
         # Main loop
         self.running = True
+        last_watchdog_check = time.time()
+        watchdog_interval = 3.0
+        
         print("🚀 LED Manager Daemon started, listening for commands...")
         
         try:
             while self.running:
                 try:
-                    # Open pipe for reading (blocks until writer opens)
-                    with open(COMMAND_PIPE, 'r') as pipe:
-                        # Read command in blocking mode (completes when writer closes)
-                        command_str = pipe.read()
-                        if not command_str:
-                            continue
+                    if time.time() - last_watchdog_check >= watchdog_interval:
+                        self._watchdog_check_flash_thread()
+                        last_watchdog_check = time.time()
+                    
+                    pipe_fd = os.open(COMMAND_PIPE, os.O_RDONLY | os.O_NONBLOCK)
+                    
+                    try:
+                        command_str = os.read(pipe_fd, 4096).decode('utf-8')
                         
-                        # Parse and handle command
-                        try:
-                            command = json.loads(command_str)
-                            print(f"📨 Received command: {command.get('action')}")
-                            
-                            response = self._handle_command(command)
-                            
-                            # Write response if response pipe specified
-                            response_pipe = command.get('response_pipe')
-                            if response_pipe:
-                                try:
-                                    with open(response_pipe, 'w') as resp:
-                                        json.dump(response, resp)
-                                except Exception as e:
-                                    print(f"⚠️  Failed to send response: {e}", file=sys.stderr)
-                            
-                        except json.JSONDecodeError as e:
-                            print(f"⚠️  Invalid JSON command: {e}", file=sys.stderr)
+                        if command_str:
+                            try:
+                                command = json.loads(command_str)
+                                print(f"📨 Received command: {command.get('action')}")
+                                
+                                response = self._handle_command(command)
+                                
+                                response_pipe = command.get('response_pipe')
+                                if response_pipe:
+                                    try:
+                                        with open(response_pipe, 'w') as resp:
+                                            json.dump(response, resp)
+                                    except Exception as e:
+                                        print(f"⚠️  Failed to send response: {e}", file=sys.stderr)
+                                
+                            except json.JSONDecodeError as e:
+                                print(f"⚠️  Invalid JSON command: {e}", file=sys.stderr)
+                    
+                    finally:
+                        os.close(pipe_fd)
+                    
+                    time.sleep(0.1)
                 
                 except OSError as e:
-                    print(f"⚠️  Pipe error: {e}", file=sys.stderr)
+                    if e.errno != 11:
+                        print(f"⚠️  Pipe error: {e}", file=sys.stderr)
                     time.sleep(0.1)
         
         except Exception as e:
@@ -489,7 +598,10 @@ class LEDManagerDaemon:
         
         # Clear LEDs and finalize state
         with self.state_lock:
-            self._clear_strip()
+            try:
+                self._clear_strip()
+            except Exception as e:
+                print(f"⚠️  Failed to clear LEDs during shutdown: {e}", file=sys.stderr)
             self.current_state['flash_thread'] = None
         
         # Remove command pipe
