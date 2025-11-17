@@ -3,6 +3,12 @@
 ## Overview
 The Tool Tracking System is a Raspberry Pi-based solution for real-time tool monitoring in workshops. It uses computer vision and ArUco markers to track tool presence and checkout status, aiming to prevent tool loss and improve accountability. Key features include ArUco marker validation, temporal smoothing, multi-channel alerting (email, Google Sheets, sound), and a React web dashboard for calibration, slot management, analytics, and administration. The system supports 4K cameras with intelligent dual-resolution modes and worker tracking via ArUco-enabled identification tags.
 
+**Production Reliability (Phase 1 - Completed Nov 17, 2025):**
+- Database resilience with exponential retry (3 attempts, 2s→4s→8s backoff) on critical operations
+- Comprehensive subprocess tracking with enhanced zombie/D-state detection  
+- Bulletproof spawn enforcement (ALL 13+ spawn calls use spawnTracked())
+- Persistent cleanup with exit verification (prevents premature process removal)
+
 ## User Preferences
 - Preferred communication style: Simple, everyday language.
 - **Deployment Context**: User runs the application on a Raspberry Pi at `http://naniwatanacheck.local:5000`. **ALL debugging, testing, and issue reports refer to the Pi deployment, NOT the Replit web preview.** The Replit environment is for code development only; actual hardware features (camera, GPIO) only work on the Raspberry Pi. When user reports issues or provides screenshots, they are ALWAYS from the Pi, not from Replit webview.

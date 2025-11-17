@@ -587,10 +587,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Calibration] Using camera index: ${camera.deviceIndex || 0}`);
       }
       
-      const pythonProcess = spawn('python3', calibrationArgs);
-
-      // Track this calibration process
-      subprocessManager.trackProcess(pythonProcess, 'aruco_calibrator.py', 'python', `Calibration: ${camera.name}`);
+      const pythonProcess = spawnTracked(
+        'python3',
+        calibrationArgs,
+        'aruco_calibrator.py',
+        'python',
+        `Calibration: ${camera.name}`
+      );
 
       let result = '';
       let error = '';
@@ -904,10 +907,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[VerifyPositions] Python args:', previewArgs.join(' '));
       
       console.log('[VerifyPositions] Generating rectified preview with adjusted templates...');
-      const pythonProcess = spawn('python3', previewArgs);
-      
-      // Track this preview generation process
-      subprocessManager.trackProcess(pythonProcess, 'rectified_preview.py', 'python', `Verify positions preview: ${camera.name}`);
+      const pythonProcess = spawnTracked(
+        'python3',
+        previewArgs,
+        'rectified_preview.py',
+        'python',
+        `Verify positions preview: ${camera.name}`
+      );
       
       let result = '';
       let error = '';
@@ -1137,10 +1143,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Validation] Using camera index: ${camera.deviceIndex || 0}`);
       }
       
-      const pythonProcess = spawn('python3', validationArgs);
-      
-      // Track this validation process
-      subprocessManager.trackProcess(pythonProcess, 'validate_slot_qrs.py', 'python', `Validation: ${camera.name}`);
+      const pythonProcess = spawnTracked(
+        'python3',
+        validationArgs,
+        'validate_slot_qrs.py',
+        'python',
+        `Validation: ${camera.name}`
+      );
       
       let result = '';
       let error = '';
@@ -1311,10 +1320,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         previewArgs.push('--camera', camera.deviceIndex?.toString() || '0');
       }
       
-      const pythonProcess = spawn('python3', previewArgs);
-
-      // Track this preview process
-      subprocessManager.trackProcess(pythonProcess, 'camera_preview.py', 'python', `Camera preview: ${camera.name}`);
+      const pythonProcess = spawnTracked(
+        'python3',
+        previewArgs,
+        'camera_preview.py',
+        'python',
+        `Camera preview: ${camera.name}`
+      );
 
       let result = '';
       let error = '';
@@ -1529,10 +1541,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Rectified Preview] No camera calibration parameters - skipping undistortion`);
       }
       
-      const pythonProcess = spawn('python3', args);
-
-      // Track this rectified preview process
-      subprocessManager.trackProcess(pythonProcess, 'rectified_preview.py', 'python', `Rectified preview: ${camera.name}`);
+      const pythonProcess = spawnTracked(
+        'python3',
+        args,
+        'rectified_preview.py',
+        'python',
+        `Rectified preview: ${camera.name}`
+      );
 
       let result = '';
       let error = '';
@@ -1605,19 +1620,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const slots = await storage.getSlotsByCamera(activeCamera.id);
 
       // Call Python capture and analysis script
-      const pythonProcess = spawn('python3', [
-        path.join(process.cwd(), 'python/camera_manager.py'),
-        '--camera', activeCamera.deviceIndex?.toString() || '0',
-        '--slots', JSON.stringify(slots.map(s => ({
-          id: s.slotId,
-          coords: s.regionCoords,
-          expectedQr: s.expectedQrId
-        }))),
-        '--homography', JSON.stringify(activeCamera.homographyMatrix || [])
-      ]);
-
-      // Track this manual capture process
-      subprocessManager.trackProcess(pythonProcess, 'camera_manager.py', 'python', `Manual capture: ${activeCamera.name}`);
+      const pythonProcess = spawnTracked(
+        'python3',
+        [
+          path.join(process.cwd(), 'python/camera_manager.py'),
+          '--camera', activeCamera.deviceIndex?.toString() || '0',
+          '--slots', JSON.stringify(slots.map(s => ({
+            id: s.slotId,
+            coords: s.regionCoords,
+            expectedQr: s.expectedQrId
+          }))),
+          '--homography', JSON.stringify(activeCamera.homographyMatrix || [])
+        ],
+        'camera_manager.py',
+        'python',
+        `Manual capture: ${activeCamera.name}`
+      );
 
       let result = '';
       let error = '';
@@ -2098,10 +2116,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const result = await new Promise((resolve, reject) => {
-        const process = spawn('python3', args);
-        
-        // Track this ArUco generation process
-        subprocessManager.trackProcess(process, 'aruco_generator.py', 'python', `ArUco ${mode}: ${markerId}`);
+        const process = spawnTracked(
+          'python3',
+          args,
+          'aruco_generator.py',
+          'python',
+          `ArUco ${mode}: ${markerId}`
+        );
         
         let output = '';
         let errorOutput = '';
@@ -3171,12 +3192,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const args = [pythonScript, '--max-index', '10'];
 
       const result = await new Promise<any>((resolve, reject) => {
-        const childProcess = spawn('python3', args, {
-          env: { ...process.env }
-        });
-
-        // Track this camera detection process
-        subprocessManager.trackProcess(childProcess, 'detect_cameras.py', 'python', 'Camera detection');
+        const childProcess = spawnTracked(
+          'python3',
+          args,
+          'detect_cameras.py',
+          'python',
+          'Camera detection'
+        );
 
         let stdout = '';
         let stderr = '';
