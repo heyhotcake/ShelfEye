@@ -9,6 +9,7 @@ import { getAlertLEDController } from './services/alert-led';
 import { maintenanceService } from './services/maintenance-service';
 import { cameraSessionManager } from './camera-session-manager';
 import { subprocessManager } from './subprocess-manager';
+import { AlertRetryQueue } from './services/alert-queue';
 
 const TIMEZONE = 'Asia/Tokyo';
 
@@ -24,12 +25,14 @@ export class CaptureScheduler {
   private diagnosticTasks: Map<string, cron.ScheduledTask> = new Map();
   private isInitialized = false;
   private sheetsLogger: SheetsLogger;
+  private alertQueue: AlertRetryQueue;
   
   private readonly CAPTURE_TIMEOUT_MS = 600000; // 10 minutes
 
   constructor(storage: IStorage) {
     this.storage = storage;
     this.sheetsLogger = new SheetsLogger(storage);
+    this.alertQueue = new AlertRetryQueue(storage, this.sheetsLogger);
   }
 
   /**
@@ -136,6 +139,9 @@ export class CaptureScheduler {
 
     // Initialize sheets logger
     await this.sheetsLogger.initialize();
+
+    // Start alert retry queue processor
+    await this.alertQueue.start();
 
     this.isInitialized = true;
     await this.reload();
@@ -663,19 +669,30 @@ export class CaptureScheduler {
       const emailBody = substituteTemplate(template.emailBody);
       const sheetsMessage = substituteTemplate(template.sheetsMessage);
       
-      // Send email with camera identification
-      await sendAlertEmail({
-        type: emailType,
-        subject,
-        details: {
+      // Send email with camera identification - queue for retry if fails
+      try {
+        await sendAlertEmail({
+          type: emailType,
+          subject,
+          details: {
+            timestamp,
+            errorMessage: emailBody,
+            cameraId,
+            cameraName
+          }
+        });
+        console.log('[Scheduler] Alert email sent successfully');
+      } catch (emailError) {
+        console.error('[Scheduler] Failed to send alert email - queuing for retry:', emailError);
+        await this.alertQueue.queueEmailAlert(emailType, subject, {
           timestamp,
           errorMessage: emailBody,
           cameraId,
           cameraName
-        }
-      });
+        });
+      }
       
-      // Log to Google Sheets with camera identification
+      // Log to Google Sheets with camera identification - queue for retry if fails
       try {
         await this.sheetsLogger.logAlert({
           timestamp,
@@ -686,8 +703,18 @@ export class CaptureScheduler {
           cameraName,
           slotId
         });
+        console.log('[Scheduler] Alert logged to sheets successfully');
       } catch (sheetsError) {
-        console.error('[Scheduler] Failed to log alert to sheets:', sheetsError);
+        console.error('[Scheduler] Failed to log alert to sheets - queuing for retry:', sheetsError);
+        await this.alertQueue.queueSheetsAlert({
+          timestamp,
+          alertType,
+          status: 'queued',
+          errorMessage: sheetsMessage,
+          cameraId,
+          cameraName,
+          slotId
+        });
       }
       
       // Flash alert LED
@@ -736,6 +763,25 @@ export class CaptureScheduler {
       console.log(`[Scheduler] Stopped diagnostic task: ${key}`);
     });
     this.diagnosticTasks.clear();
+
+    // Note: Alert queue processor continues running independently of scheduler tasks
+  }
+
+  /**
+   * Shutdown scheduler and all background tasks
+   */
+  shutdown() {
+    console.log('[Scheduler] Shutting down...');
+    this.stopAll();
+    this.alertQueue.stop();
+    console.log('[Scheduler] Shutdown complete');
+  }
+
+  /**
+   * Get alert retry queue statistics
+   */
+  getAlertQueueStats() {
+    return this.alertQueue.getQueueStats();
   }
 
   /**

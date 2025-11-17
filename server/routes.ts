@@ -196,6 +196,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   scheduler = new CaptureScheduler(storage);
   await scheduler.initialize();
   
+  // Register shutdown handlers for graceful cleanup
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`[Server] Received ${signal} - gracefully shutting down scheduler...`);
+    scheduler.shutdown();
+  };
+  
+  process.once('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.once('SIGINT', () => gracefulShutdown('SIGINT'));
+  
   // Run startup calibration
   await startupCalibrationService.initialize();
   // Health check with detailed system metrics
@@ -2726,6 +2735,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(nextRuns);
     } catch (error) {
       res.status(500).json({ message: "Failed to get next runs", error });
+    }
+  });
+
+  // Alert retry queue stats
+  app.get("/api/alert-queue/stats", async (_req, res) => {
+    try {
+      const stats = scheduler.getAlertQueueStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get alert queue stats", error });
     }
   });
 
