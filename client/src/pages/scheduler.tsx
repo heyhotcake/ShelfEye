@@ -1,40 +1,25 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tantml:function_calls>
-<invoke name="architect">
-<parameter name="task">**Phase 2 Task 1 Review: Per-Camera Error Handling Enhancement**
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Trash2, Calendar, Clock, Play, AlertTriangle, Settings } from "lucide-react";
+import { format, toZonedTime } from "date-fns-tz";
+import type { CaptureRun } from "@shared/schema";
 
-I've enhanced the per-camera error handling system. Please review my implementation:
+const TIMEZONE = "Asia/Tokyo";
 
-**Changes Made:**
-
-1. **Enhanced Alert Messages** (scheduler.ts lines 334-356):
-   - Detailed breakdown of which cameras failed
-   - Shows error messages for each failed camera
-   - For partial failures, also shows success count
-   - Example output:
-     ```
-     Capture partial_failure: 1/3 cameras failed
-     
-     Failed cameras:
-     • camera-001: Camera not calibrated (missing homography matrix)
-     
-     ✓ 2 camera(s) succeeded (24 slots processed)
-     ```
-
-2. **Existing System Validation**:
-   - `process_cameras.py` already continues with other cameras when one fails ✓
-   - Returns 'partial_failure' status correctly ✓
-   - Frontend already displays error messages in dashboard ✓
-   - Scheduler history shows failure counts ✓
-
-**What I'm Planning Next:**
-- Add expandable error details to scheduler history page (paused due to LSP errors)
-- Should I continue with this UI enhancement or move to next Phase 2 task?
-
-**Questions:**
-1. Is the enhanced alert message format good? Should I adjust formatting?
-2. The existing system already handles per-camera failures well - should I add more UI enhancements or is this sufficient?
-3. Ready to move to Phase 2 Task 2 (Alert Queue Persistence)?
+export default function Scheduler() {
+  const { toast } = useToast();
+  const [newCaptureTime, setNewCaptureTime] = useState("");
+  const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   // Fetch schedule configuration
   const { data: scheduleConfig, isLoading: isLoadingConfig } = useQuery({
