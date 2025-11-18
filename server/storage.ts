@@ -1,5 +1,4 @@
 import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type TemplateDesign, type Worker, type CaptureRun, type GoogleOAuthCredential, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle, type InsertTemplateDesign, type InsertWorker, type InsertCaptureRun, type InsertGoogleOAuthCredential } from "@shared/schema";
-import { randomUUID } from "crypto";
 
 export interface IStorage {
   // Camera methods
@@ -94,646 +93,6 @@ export interface IStorage {
   createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun>;
 }
 
-export class MemStorage implements IStorage {
-  private cameras: Map<string, Camera> = new Map();
-  private slots: Map<string, Slot> = new Map();
-  private detectionLogs: DetectionLog[] = [];
-  private alertRules: Map<string, AlertRule> = new Map();
-  private alertQueue: Map<string, AlertQueue> = new Map();
-  private systemConfig: Map<string, SystemConfig> = new Map();
-  private users: Map<string, User> = new Map();
-  private toolCategories: Map<string, ToolCategory> = new Map();
-  private templateRectangles: Map<string, TemplateRectangle> = new Map();
-  private templateDesigns: Map<string, TemplateDesign> = new Map();
-  private workers: Map<string, Worker> = new Map();
-  private captureRuns: Map<string, CaptureRun> = new Map();
-
-  constructor() {
-    // Initialize with default camera and slots
-    this.initializeDefaults();
-  }
-
-  private async initializeDefaults() {
-    // Create default camera
-    const defaultCamera = await this.createCamera({
-      name: "Camera Station A",
-      deviceIndex: 0,
-      resolution: [3840, 2160],
-      isActive: true,
-    });
-
-    // No default slots - user will create their own via the slot drawing UI
-
-    // Create default alert rules
-    await this.createAlertRule({
-      name: "Tool Missing Alert",
-      ruleType: "TOOL_MISSING",
-      isEnabled: true,
-      verificationWindow: 5,
-      businessHoursOnly: true,
-      priority: "high",
-      conditions: { emptyDurationMinutes: 5 },
-    });
-
-    await this.createAlertRule({
-      name: "QR Detection Failure",
-      ruleType: "QR_FAILURE",
-      isEnabled: true,
-      verificationWindow: 3,
-      businessHoursOnly: false,
-      priority: "medium",
-      conditions: { consecutiveFailures: 3 },
-    });
-
-    await this.createAlertRule({
-      name: "Camera Health Alert",
-      ruleType: "CAMERA_HEALTH",
-      isEnabled: true,
-      verificationWindow: 1,
-      businessHoursOnly: false,
-      priority: "high",
-      conditions: { maxReprojectionError: 2.5 },
-    });
-
-    // SMTP Email Configuration (all stored as strings for consistency)
-    await this.setConfig("smtp_host", "smtp.gmail.com", "SMTP server host");
-    await this.setConfig("smtp_port", "587", "SMTP server port");
-    await this.setConfig("smtp_user", "", "SMTP username");
-    await this.setConfig("smtp_pass", "", "SMTP password");
-    await this.setConfig("smtp_from", "alerts@example.com", "Alert email sender");
-    await this.setConfig("alert_email", "", "Alert recipient email");
-    await this.setConfig("EMAIL_RECIPIENTS", JSON.stringify(["manager@factory.com", "supervisor@factory.com"]), "Alert email recipients (array)");
-    
-    // Scheduler configuration
-    await this.setConfig("capture_times", JSON.stringify(["08:00", "11:00", "14:00", "17:00"]), "Scheduled capture times (JSON array)");
-    await this.setConfig("timezone", "Asia/Tokyo", "System timezone (JST)");
-    await this.setConfig("scheduler_paused", "false", "Scheduler pause state (true/false)");
-    
-    // Alert templates
-    await this.setConfig("ALERT_TEMPLATES", JSON.stringify({
-      missing_tool: {
-        subject: "🔴 Tool Missing Alert - {{toolName}}",
-        body: "Tool {{toolName}} has been missing from slot {{slotNumber}} for {{duration}} minutes."
-      },
-      camera_offline: {
-        subject: "📷 Camera Offline - {{cameraName}}",
-        body: "Camera {{cameraName}} is offline or not responding."
-      }
-    }), "Email alert templates");
-    
-    // Google Sheets configuration
-    await this.setConfig("google_sheets_url", "", "Google Sheets logging URL");
-    await this.setConfig("SHEETS_SPREADSHEET_ID", "", "Google Sheets spreadsheet ID");
-    await this.setConfig("SHEETS_FORMATTING", JSON.stringify({
-      tabFormat: "monthly",
-      headerRow: true,
-      autoWidth: true,
-      dateFormat: "YYYY-MM-DD HH:mm:ss"
-    }), "Google Sheets formatting options");
-    
-    // GPIO pin configuration (all strings for consistency)
-    await this.setConfig("buzzer_gpio_pin", "17", "Buzzer GPIO pin");
-    await this.setConfig("led_gpio_pin", "27", "LED GPIO pin");
-    await this.setConfig("light_strip_gpio_pin", "18", "LED light strip GPIO pin");
-    await this.setConfig("alert_led_gpio_pin", "17", "Red alert LED GPIO pin");
-    
-    // LED strip configuration
-    await this.setConfig("led_strip_num_leds", "99", "Number of LEDs in the WS2812B strip");
-    await this.setConfig("led_strip_brightness", "100", "LED strip brightness (0-255)");
-    
-    // Calibration state tracking
-    await this.setConfig("last_calibration_camera_id", "", "ID of last calibrated camera");
-    await this.setConfig("last_calibration_timestamp", "", "Timestamp of last calibration");
-    await this.setConfig("last_calibration_paper_size_format", "6-page-3x2", "Last used paper size format");
-    await this.setConfig("calibration-info", JSON.stringify({
-      version: "1.0",
-      lastUpdated: new Date().toISOString(),
-      notes: "Initial setup - calibration pending"
-    }), "Camera calibration metadata");
-
-    // Create admin user
-    await this.createUser({
-      username: "admin",
-      email: "admin@factory.com",
-      role: "admin",
-      password: "admin123", // In real app, this would be hashed
-    });
-  }
-
-  // Camera methods
-  async getCameras(): Promise<Camera[]> {
-    return Array.from(this.cameras.values());
-  }
-
-  async getCamera(id: string): Promise<Camera | undefined> {
-    return this.cameras.get(id);
-  }
-
-  async createCamera(camera: InsertCamera): Promise<Camera> {
-    const id = randomUUID();
-    const newCamera: Camera = {
-      ...camera,
-      id,
-      createdAt: new Date(),
-      calibrationTimestamp: null,
-      homographyMatrix: null,
-    };
-    this.cameras.set(id, newCamera);
-    return newCamera;
-  }
-
-  async updateCamera(id: string, updates: Partial<InsertCamera>): Promise<Camera | undefined> {
-    const camera = this.cameras.get(id);
-    if (!camera) return undefined;
-
-    const updated = { ...camera, ...updates };
-    this.cameras.set(id, updated);
-    return updated;
-  }
-
-  async deleteCamera(id: string): Promise<boolean> {
-    return this.cameras.delete(id);
-  }
-
-  // Slot methods
-  async getSlots(): Promise<Slot[]> {
-    return Array.from(this.slots.values());
-  }
-
-  async getSlotsByCamera(cameraId: string): Promise<Slot[]> {
-    return Array.from(this.slots.values()).filter(slot => slot.cameraId === cameraId);
-  }
-
-  async getSlot(id: string): Promise<Slot | undefined> {
-    return this.slots.get(id);
-  }
-
-  async getSlotBySlotId(slotId: string): Promise<Slot | undefined> {
-    return Array.from(this.slots.values()).find(slot => slot.slotId === slotId);
-  }
-
-  async createSlot(slot: InsertSlot): Promise<Slot> {
-    const id = randomUUID();
-    
-    const cameraSlots = Array.from(this.slots.values()).filter(s => s.cameraId === slot.cameraId);
-    const maxNumber = cameraSlots.reduce((max, s) => {
-      return s.slotNumber > max ? s.slotNumber : max;
-    }, 0);
-    const nextSlotNumber = maxNumber + 1;
-    
-    const newSlot: Slot = {
-      ...slot,
-      id,
-      slotNumber: nextSlotNumber,
-      createdAt: new Date(),
-    };
-    this.slots.set(id, newSlot);
-    return newSlot;
-  }
-
-  async updateSlot(id: string, updates: Partial<InsertSlot>): Promise<Slot | undefined> {
-    const slot = this.slots.get(id);
-    if (!slot) return undefined;
-
-    const definedUpdates = Object.fromEntries(
-      Object.entries(updates).filter(([_, value]) => value !== undefined)
-    );
-    const updated = { ...slot, ...definedUpdates };
-    this.slots.set(id, updated);
-    return updated;
-  }
-
-  async deleteSlot(id: string): Promise<boolean> {
-    return this.slots.delete(id);
-  }
-
-  // Detection log methods
-  async getDetectionLogs(limit = 100, offset = 0): Promise<DetectionLog[]> {
-    return this.detectionLogs
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(offset, offset + limit);
-  }
-
-  async getDetectionLogsBySlot(slotId: string, limit = 50): Promise<DetectionLog[]> {
-    return this.detectionLogs
-      .filter(log => log.slotId === slotId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, limit);
-  }
-
-  async getDetectionLogsByDateRange(startDate: Date, endDate: Date): Promise<DetectionLog[]> {
-    return this.detectionLogs.filter(log => 
-      log.timestamp >= startDate && log.timestamp <= endDate
-    ).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }
-
-  async getLatestDetectionLogBySlotBeforeTime(slotId: string, timestamp: Date): Promise<DetectionLog | undefined> {
-    const slotLogs = this.detectionLogs
-      .filter(log => log.slotId === slotId && log.timestamp <= timestamp)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-    return slotLogs[0];
-  }
-
-  async createDetectionLog(log: InsertDetectionLog): Promise<DetectionLog> {
-    const id = randomUUID();
-    const newLog: DetectionLog = {
-      ...log,
-      id,
-      timestamp: log.timestamp || new Date(),
-    };
-    this.detectionLogs.push(newLog);
-    return newLog;
-  }
-
-  async deleteDetectionLogsBySlotId(slotId: string): Promise<number> {
-    const initialLength = this.detectionLogs.length;
-    this.detectionLogs = this.detectionLogs.filter(log => log.slotId !== slotId);
-    return initialLength - this.detectionLogs.length;
-  }
-
-  // Alert rule methods
-  async getAlertRules(): Promise<AlertRule[]> {
-    return Array.from(this.alertRules.values());
-  }
-
-  async getActiveAlertRules(): Promise<AlertRule[]> {
-    return Array.from(this.alertRules.values()).filter(rule => rule.isEnabled);
-  }
-
-  async getAlertRule(id: string): Promise<AlertRule | undefined> {
-    return this.alertRules.get(id);
-  }
-
-  async createAlertRule(rule: InsertAlertRule): Promise<AlertRule> {
-    const id = randomUUID();
-    const newRule: AlertRule = {
-      ...rule,
-      id,
-      createdAt: new Date(),
-    };
-    this.alertRules.set(id, newRule);
-    return newRule;
-  }
-
-  async updateAlertRule(id: string, updates: Partial<InsertAlertRule>): Promise<AlertRule | undefined> {
-    const rule = this.alertRules.get(id);
-    if (!rule) return undefined;
-
-    const updated = { ...rule, ...updates };
-    this.alertRules.set(id, updated);
-    return updated;
-  }
-
-  async deleteAlertRule(id: string): Promise<boolean> {
-    return this.alertRules.delete(id);
-  }
-
-  // Alert queue methods
-  async getAlertQueue(): Promise<AlertQueue[]> {
-    return Array.from(this.alertQueue.values())
-      .sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime());
-  }
-
-  async getPendingAlerts(): Promise<AlertQueue[]> {
-    return Array.from(this.alertQueue.values())
-      .filter(alert => alert.status === "pending");
-  }
-
-  async getFailedAlerts(): Promise<AlertQueue[]> {
-    return Array.from(this.alertQueue.values())
-      .filter(alert => alert.status === "failed");
-  }
-
-  async createAlert(alert: InsertAlertQueue): Promise<AlertQueue> {
-    const id = randomUUID();
-    const newAlert: AlertQueue = {
-      ...alert,
-      id,
-      createdAt: new Date(),
-      sentAt: null,
-    };
-    this.alertQueue.set(id, newAlert);
-    return newAlert;
-  }
-
-  async updateAlertStatus(id: string, status: string, sentAt?: Date): Promise<AlertQueue | undefined> {
-    const alert = this.alertQueue.get(id);
-    if (!alert) return undefined;
-
-    const updated = { ...alert, status, sentAt: sentAt || null };
-    this.alertQueue.set(id, updated);
-    return updated;
-  }
-
-  // System config methods
-  async getSystemConfig(): Promise<SystemConfig[]> {
-    return Array.from(this.systemConfig.values());
-  }
-
-  async getConfigByKey(key: string): Promise<SystemConfig | undefined> {
-    return this.systemConfig.get(key);
-  }
-
-  async setConfig(key: string, value: any, description?: string): Promise<SystemConfig> {
-    const config: SystemConfig = {
-      id: randomUUID(),
-      key,
-      value,
-      description: description || null,
-      updatedAt: new Date(),
-    };
-    this.systemConfig.set(key, config);
-    return config;
-  }
-
-  async updateConfig(key: string, value: any): Promise<SystemConfig | undefined> {
-    const config = this.systemConfig.get(key);
-    if (!config) return undefined;
-
-    const updated = { ...config, value, updatedAt: new Date() };
-    this.systemConfig.set(key, updated);
-    return updated;
-  }
-
-  // User methods
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const newUser: User = { ...user, id };
-    this.users.set(id, newUser);
-    return newUser;
-  }
-
-  // Tool category methods
-  async getToolCategories(): Promise<ToolCategory[]> {
-    return Array.from(this.toolCategories.values());
-  }
-
-  async getToolCategory(id: string): Promise<ToolCategory | undefined> {
-    return this.toolCategories.get(id);
-  }
-
-  async createToolCategory(category: InsertToolCategory): Promise<ToolCategory> {
-    const id = randomUUID();
-    const newCategory: ToolCategory = {
-      ...category,
-      id,
-      createdAt: new Date(),
-    };
-    this.toolCategories.set(id, newCategory);
-    return newCategory;
-  }
-
-  async updateToolCategory(id: string, updates: Partial<InsertToolCategory>): Promise<ToolCategory | undefined> {
-    const category = this.toolCategories.get(id);
-    if (!category) return undefined;
-
-    const updated = { ...category, ...updates };
-    this.toolCategories.set(id, updated);
-    return updated;
-  }
-
-  async deleteToolCategory(id: string): Promise<boolean> {
-    return this.toolCategories.delete(id);
-  }
-
-  // Template rectangle methods
-  async getTemplateRectangles(): Promise<TemplateRectangle[]> {
-    return Array.from(this.templateRectangles.values());
-  }
-
-  async getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]> {
-    return Array.from(this.templateRectangles.values())
-      .filter(rect => rect.paperSize === paperSize)
-      .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0)); // Order by creation time
-  }
-
-  async getTemplateRectanglesByPaperSizeAndCamera(paperSize: string, cameraId: string): Promise<TemplateRectangle[]> {
-    // First try to get camera-specific templates
-    const cameraSpecific = Array.from(this.templateRectangles.values())
-      .filter(rect => rect.paperSize === paperSize && rect.cameraId === cameraId)
-      .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
-    
-    // If camera-specific templates exist, return them
-    if (cameraSpecific.length > 0) {
-      return cameraSpecific;
-    }
-    
-    // Otherwise, fall back to shared templates (cameraId is null)
-    return Array.from(this.templateRectangles.values())
-      .filter(rect => rect.paperSize === paperSize && rect.cameraId === null)
-      .sort((a, b) => (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0));
-  }
-
-  async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {
-    return this.templateRectangles.get(id);
-  }
-
-  async createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle> {
-    const id = randomUUID();
-    const newRectangle: TemplateRectangle = {
-      ...rectangle,
-      id,
-      createdAt: new Date(),
-    };
-    this.templateRectangles.set(id, newRectangle);
-    return newRectangle;
-  }
-
-  async updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined> {
-    const rectangle = this.templateRectangles.get(id);
-    if (!rectangle) return undefined;
-
-    const updated = { ...rectangle, ...updates };
-    this.templateRectangles.set(id, updated);
-    return updated;
-  }
-
-  async deleteTemplateRectangle(id: string): Promise<boolean> {
-    return this.templateRectangles.delete(id);
-  }
-
-  async getTemplateRectanglesByDesignId(designId: string): Promise<TemplateRectangle[]> {
-    return Array.from(this.templateRectangles.values()).filter(r => r.designId === designId);
-  }
-
-  async deleteTemplateRectanglesByDesignId(designId: string): Promise<number> {
-    const rectangles = await this.getTemplateRectanglesByDesignId(designId);
-    rectangles.forEach(r => this.templateRectangles.delete(r.id));
-    return rectangles.length;
-  }
-
-  // Template design methods
-  async getTemplateDesigns(): Promise<TemplateDesign[]> {
-    return Array.from(this.templateDesigns.values());
-  }
-
-  async getTemplateDesign(id: string): Promise<TemplateDesign | undefined> {
-    return this.templateDesigns.get(id);
-  }
-
-  async createTemplateDesign(design: InsertTemplateDesign): Promise<TemplateDesign> {
-    const id = randomUUID();
-    const newDesign: TemplateDesign = {
-      ...design,
-      id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.templateDesigns.set(id, newDesign);
-    return newDesign;
-  }
-
-  async updateTemplateDesign(id: string, updates: Partial<InsertTemplateDesign>): Promise<TemplateDesign | undefined> {
-    const design = this.templateDesigns.get(id);
-    if (!design) return undefined;
-
-    const updated = { 
-      ...design, 
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.templateDesigns.set(id, updated);
-    return updated;
-  }
-
-  async deleteTemplateDesign(id: string): Promise<boolean> {
-    // Also delete associated rectangles
-    await this.deleteTemplateRectanglesByDesignId(id);
-    return this.templateDesigns.delete(id);
-  }
-
-  async saveTemplateDesignWithRectangles(design: InsertTemplateDesign, rectangles: InsertTemplateRectangle[], existingId?: string): Promise<TemplateDesign> {
-    // Atomic operation for MemStorage (synchronous)
-    try {
-      let savedDesign: TemplateDesign;
-      
-      if (existingId) {
-        // Update existing design
-        const updated = await this.updateTemplateDesign(existingId, design);
-        if (!updated) {
-          throw new Error(`Template design ${existingId} not found`);
-        }
-        savedDesign = updated;
-        
-        // Delete old rectangles
-        await this.deleteTemplateRectanglesByDesignId(existingId);
-      } else {
-        // Create new design
-        savedDesign = await this.createTemplateDesign(design);
-      }
-      
-      // Create all rectangles linked to this design
-      for (const rect of rectangles) {
-        await this.createTemplateRectangle({
-          ...rect,
-          designId: savedDesign.id,
-          paperSize: savedDesign.paperSize,
-        });
-      }
-      
-      return savedDesign;
-    } catch (error) {
-      // Rollback on error (for MemStorage, state is already consistent)
-      throw error;
-    }
-  }
-
-  // Worker methods
-  async getWorkers(): Promise<Worker[]> {
-    return Array.from(this.workers.values());
-  }
-
-  async getActiveWorkers(): Promise<Worker[]> {
-    return Array.from(this.workers.values()).filter(w => w.isActive);
-  }
-
-  async getWorker(id: string): Promise<Worker | undefined> {
-    return this.workers.get(id);
-  }
-
-  async getWorkerByCode(workerCode: string): Promise<Worker | undefined> {
-    return Array.from(this.workers.values()).find(w => w.workerCode === workerCode);
-  }
-
-  async createWorker(worker: InsertWorker & { arucoId: number; workerCode: string }): Promise<Worker> {
-    const existing = Array.from(this.workers.values()).find(w => w.workerCode === worker.workerCode);
-    if (existing) {
-      throw new Error(`Worker with code ${worker.workerCode} already exists`);
-    }
-
-    const id = randomUUID();
-    const newWorker: Worker = {
-      id,
-      workerCode: worker.workerCode,
-      arucoId: worker.arucoId,
-      name: worker.name,
-      team: worker.team ?? null,
-      department: worker.department ?? null,
-      qrPayload: null,
-      isActive: worker.isActive ?? true,
-      createdAt: new Date(),
-    };
-    this.workers.set(id, newWorker);
-    return newWorker;
-  }
-
-  async updateWorker(id: string, updates: Partial<Worker>): Promise<Worker | undefined> {
-    const worker = this.workers.get(id);
-    if (!worker) return undefined;
-
-    if (updates.workerCode && updates.workerCode !== worker.workerCode) {
-      const existing = Array.from(this.workers.values()).find(
-        w => w.id !== id && w.workerCode === updates.workerCode
-      );
-      if (existing) {
-        throw new Error(`Worker with code ${updates.workerCode} already exists`);
-      }
-    }
-
-    const updated = { ...worker, ...updates, id: worker.id };
-    this.workers.set(id, updated);
-    return updated;
-  }
-
-  async deleteWorker(id: string): Promise<boolean> {
-    return this.workers.delete(id);
-  }
-
-  // Capture run methods
-  async getCaptureRuns(limit = 50): Promise<CaptureRun[]> {
-    return Array.from(this.captureRuns.values())
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, limit);
-  }
-
-  async getCaptureRun(id: string): Promise<CaptureRun | undefined> {
-    return this.captureRuns.get(id);
-  }
-
-  async createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun> {
-    const id = randomUUID();
-    const newRun: CaptureRun = {
-      ...run,
-      id,
-      timestamp: new Date(),
-    };
-    this.captureRuns.set(id, newRun);
-    return newRun;
-  }
-}
-
 import { db } from './db';
 import * as schema from '@shared/schema';
 import { eq, desc, and, gte, lte, isNull } from 'drizzle-orm';
@@ -775,7 +134,7 @@ export class DbStorage implements IStorage {
         verificationWindow: 5,
         businessHoursOnly: true,
         priority: "high",
-        conditions: { emptyDurationMinutes: 5 },
+        conditions: { emptyDurationMinutes: 5 } as Record<string, any>,
       });
 
       await this.createAlertRule({
@@ -785,7 +144,7 @@ export class DbStorage implements IStorage {
         verificationWindow: 3,
         businessHoursOnly: false,
         priority: "medium",
-        conditions: { consecutiveFailures: 3 },
+        conditions: { consecutiveFailures: 3 } as Record<string, any>,
       });
 
       await this.createAlertRule({
@@ -795,7 +154,7 @@ export class DbStorage implements IStorage {
         verificationWindow: 1,
         businessHoursOnly: false,
         priority: "high",
-        conditions: { maxReprojectionError: 2.5 },
+        conditions: { maxReprojectionError: 2.5 } as Record<string, any>,
       });
     }
     
@@ -864,12 +223,12 @@ export class DbStorage implements IStorage {
   }
 
   async createCamera(camera: InsertCamera): Promise<Camera> {
-    const result = await db.insert(schema.cameras).values(camera).returning();
+    const result = await db.insert(schema.cameras).values(camera as any).returning();
     return result[0];
   }
 
   async updateCamera(id: string, updates: Partial<InsertCamera>): Promise<Camera | undefined> {
-    const result = await db.update(schema.cameras).set(updates).where(eq(schema.cameras.id, id)).returning();
+    const result = await db.update(schema.cameras).set(updates as any).where(eq(schema.cameras.id, id)).returning();
     return result[0];
   }
 
@@ -911,7 +270,7 @@ export class DbStorage implements IStorage {
       slotNumber: nextSlotNumber,
     };
     
-    const result = await db.insert(schema.slots).values(slotToInsert).returning();
+    const result = await db.insert(schema.slots).values(slotToInsert as any).returning();
     return result[0];
   }
 
@@ -919,7 +278,7 @@ export class DbStorage implements IStorage {
     const definedUpdates = Object.fromEntries(
       Object.entries(updates).filter(([_, value]) => value !== undefined)
     ) as Partial<InsertSlot>;
-    const result = await db.update(schema.slots).set(definedUpdates).where(eq(schema.slots.id, id)).returning();
+    const result = await db.update(schema.slots).set(definedUpdates as any).where(eq(schema.slots.id, id)).returning();
     return result[0];
   }
 
@@ -937,7 +296,7 @@ export class DbStorage implements IStorage {
   }
 
   async getDetectionLogsByDateRange(startDate: Date, endDate: Date): Promise<DetectionLog[]> {
-    return await db.select().from(schema.detectionLogs).where(and(gte(schema.detectionLogs.timestamp, startDate), lte(schema.detectionLogs.timestamp, endDate))).orderBy(desc(schema.detectionLogs.timestamp));
+    return await db.select().from(schema.detectionLogs).where(and(gte(schema.detectionLogs.timestamp, startDate), lte(schema.detectionLogs.timestamp, endDate))).orderBy(desc(schema.detectionLogs.timestamp)).limit(10000);
   }
 
   async getLatestDetectionLogBySlotBeforeTime(slotId: string, timestamp: Date): Promise<DetectionLog | undefined> {
@@ -1280,7 +639,7 @@ export class DbStorage implements IStorage {
 
   async createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun> {
     return this.withDbRetry(async () => {
-      const result = await db.insert(schema.captureRuns).values(run).returning();
+      const result = await db.insert(schema.captureRuns).values(run as any).returning();
       return result[0];
     }, 'createCaptureRun');
   }
