@@ -12,7 +12,6 @@ import {
   TrendingUp, 
   Database,
   Bolt,
-  LogOut,
   User,
   Printer,
   Cloud
@@ -127,25 +126,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-
-      {/* User Section */}
-      <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <User className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground" data-testid="text-user-name">Admin User</p>
-            <p className="text-xs text-muted-foreground">admin@factory.com</p>
-          </div>
-          <button 
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            data-testid="button-logout"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
     </aside>
   );
 }

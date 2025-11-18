@@ -1,4 +1,4 @@
-import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type User, type ToolCategory, type TemplateRectangle, type TemplateDesign, type Worker, type CaptureRun, type GoogleOAuthCredential, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertUser, type InsertToolCategory, type InsertTemplateRectangle, type InsertTemplateDesign, type InsertWorker, type InsertCaptureRun, type InsertGoogleOAuthCredential } from "@shared/schema";
+import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type ToolCategory, type TemplateRectangle, type TemplateDesign, type Worker, type CaptureRun, type GoogleOAuthCredential, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertToolCategory, type InsertTemplateRectangle, type InsertTemplateDesign, type InsertWorker, type InsertCaptureRun, type InsertGoogleOAuthCredential } from "@shared/schema";
 
 export interface IStorage {
   // Camera methods
@@ -45,12 +45,6 @@ export interface IStorage {
   getConfigByKey(key: string): Promise<SystemConfig | undefined>;
   setConfig(key: string, value: any, description?: string): Promise<SystemConfig>;
   updateConfig(key: string, value: any): Promise<SystemConfig | undefined>;
-
-  // User methods
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
 
   // Tool category methods
   getToolCategories(): Promise<ToolCategory[]>;
@@ -399,26 +393,6 @@ export class DbStorage implements IStorage {
 
   async updateConfig(key: string, value: any): Promise<SystemConfig | undefined> {
     const result = await db.update(schema.systemConfig).set({ value, updatedAt: new Date() }).where(eq(schema.systemConfig.key, key)).returning();
-    return result[0];
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
-    const result = await db.select().from(schema.users).where(eq(schema.users.id, id));
-    return result[0];
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(schema.users).where(eq(schema.users.username, username));
-    return result[0];
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(schema.users).where(eq(schema.users.email, email));
-    return result[0];
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(schema.users).values(user).returning();
     return result[0];
   }
 

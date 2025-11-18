@@ -173,7 +173,35 @@ export class CaptureScheduler {
     // Schedule daily maintenance at 3 AM JST
     this.scheduleDailyMaintenance();
 
-    console.log(`[Scheduler] Scheduled ${config.captureTimes.length} capture times + daily maintenance`);
+    // Schedule hourly memory monitoring
+    this.scheduleMemoryMonitoring();
+
+    console.log(`[Scheduler] Scheduled ${config.captureTimes.length} capture times + daily maintenance + memory monitoring`);
+  }
+
+  /**
+   * Schedule memory monitoring task
+   * Runs every hour to log memory usage for Pi stability tracking
+   */
+  private scheduleMemoryMonitoring() {
+    // Cron: 0 * * * * = Every hour at minute 0
+    const task = cron.schedule('0 * * * *', () => {
+      const memUsage = process.memoryUsage();
+      const uptime = process.uptime();
+      
+      console.log('[Memory Monitor] Memory usage:', {
+        rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
+        heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+        heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
+        external: `${Math.round(memUsage.external / 1024 / 1024)}MB`,
+        uptime: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m`
+      });
+    }, {
+      timezone: TIMEZONE
+    });
+
+    this.tasks.set('memory-monitoring', task);
+    console.log('[Scheduler] Scheduled hourly memory monitoring');
   }
 
   /**
