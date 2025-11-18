@@ -89,14 +89,6 @@ export const systemConfig = pgTable("system_config", {
   updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
-  role: text("role").notNull().default("admin"),
-  password: text("password").notNull(),
-});
-
 export const toolCategories = pgTable("tool_categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -211,7 +203,6 @@ export const insertDetectionLogSchema = createInsertSchema(detectionLogs).omit({
 export const insertAlertRuleSchema = createInsertSchema(alertRules).omit({ id: true, createdAt: true });
 export const insertAlertQueueSchema = createInsertSchema(alertQueue).omit({ id: true, createdAt: true });
 export const insertSystemConfigSchema = createInsertSchema(systemConfig).omit({ id: true, updatedAt: true });
-export const insertUserSchema = createInsertSchema(users).pick({ username: true, password: true, email: true, role: true });
 export const insertToolCategorySchema = createInsertSchema(toolCategories).omit({ id: true, createdAt: true });
 export const insertTemplateDesignSchema = createInsertSchema(templateDesigns).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTemplateRectangleSchema = createInsertSchema(templateRectangles).omit({ id: true, createdAt: true });
@@ -227,7 +218,6 @@ export type InsertDetectionLog = z.infer<typeof insertDetectionLogSchema>;
 export type InsertAlertRule = z.infer<typeof insertAlertRuleSchema>;
 export type InsertAlertQueue = z.infer<typeof insertAlertQueueSchema>;
 export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
-export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertToolCategory = z.infer<typeof insertToolCategorySchema>;
 export type InsertTemplateDesign = z.infer<typeof insertTemplateDesignSchema>;
 export type InsertTemplateRectangle = z.infer<typeof insertTemplateRectangleSchema>;
@@ -241,7 +231,6 @@ export type DetectionLog = typeof detectionLogs.$inferSelect;
 export type AlertRule = typeof alertRules.$inferSelect;
 export type AlertQueue = typeof alertQueue.$inferSelect;
 export type SystemConfig = typeof systemConfig.$inferSelect;
-export type User = typeof users.$inferSelect;
 export type ToolCategory = typeof toolCategories.$inferSelect;
 export type TemplateDesign = typeof templateDesigns.$inferSelect;
 export type TemplateRectangle = typeof templateRectangles.$inferSelect;
