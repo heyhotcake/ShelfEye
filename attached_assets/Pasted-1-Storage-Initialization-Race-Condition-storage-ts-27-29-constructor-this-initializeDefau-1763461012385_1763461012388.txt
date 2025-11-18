@@ -1,0 +1,196 @@
+1. Storage Initialization Race Condition (storage.ts:27-29)
+constructor() {
+  this.initializeDefaults(); // ❌ Async method called without await
+}
+Problem: initializeDefaults() is async but not awaited in constructor. Database may not be initialized when first queries run.
+
+Fix:
+
+// Remove from constructor, call explicitly after instantiation
+export const storage = new DbStorage();
+await storage.initializeDefaults();
+2. Promise Double-Rejection Risk (scheduler.ts:478-512)
+const timeoutHandle = setTimeout(() => {
+  if (!isSettled && python.pid) {
+    isTimedOut = true;
+    isSettled = true;
+    // ... kill process
+    reject(new Error(`Capture timeout`)); // May reject twice
+  }
+}, this.CAPTURE_TIMEOUT_MS);
+Problem: close event handler may also reject after timeout rejects, causing unhandled rejection.
+
+Fix: Check isSettled in BOTH timeout AND close handlers before rejecting.
+
+3. Alert Queue Data Loss (alert-queue.ts:41, 58, 95, etc.)
+this.queue.set(id, alert);
+await this.saveQueueToStorage(); // ❌ If this throws, alert is lost from memory
+Problem: Alert added to memory map before saving to storage. If save fails, alert exists in memory but will be lost on restart.
+
+Fix: Wrap in try-catch and remove from memory map if save fails.
+
+4. Maintenance Lock Deadlock (maintenance-service.ts:139-192)
+async runDailyMaintenance(alertQueue?: any): Promise<void> {
+  if (this.cleanupRunning) return; // ❌ If process crashes, flag never resets
+  this.cleanupRunning = true;
+  try { /* ... */ } finally {
+    this.cleanupRunning = false;
+  }
+}
+Problem: If Node.js crashes during maintenance, cleanupRunning stays true forever (persists in memory, not storage).
+
+Fix: Use database-backed lock with timestamp expiry, or reset flag on startup.
+
+🟠 HIGH PRIORITY BUGS
+5. Camera Session Lock Timeout Missing (camera-session-manager.ts:8-30)
+acquireExclusiveLock(cameraId: string): Promise<void> {
+  this.locks.set(cameraId, { /* ... */ type: 'exclusive' });
+  // ❌ No timeout! If calibration hangs, camera locked forever
+}
+Problem: Exclusive locks don't expire. If calibration process hangs, camera remains locked until server restart.
+
+Fix: Add timeout for exclusive locks (e.g., 15 minutes) with automatic cleanup.
+
+6. Subprocess Zombie Process Escalation (subprocess-manager.ts:88-100)
+private markProcessForEscalation(pid: number, reason: string): void {
+  this.escalationQueue.set(pid, { /* ... */ });
+  // ❌ No code actually processes this queue
+}
+Problem: D-state processes are detected and marked but never escalated to system admin or killed via reboot.
+
+Fix: Add escalation processor that alerts admin when D-state process survives 3+ kill attempts.
+
+7. Database Connection Pool Leak (db.ts:42-75)
+private async handleConnectionLoss(): Promise<void> {
+  // ...
+  await this.pool.end();
+  this.pool = this.createPool(); // ❌ Old pool connections may not be fully closed
+  this.db = drizzle(this.pool, { schema });
+}
+Problem: pool.end() is awaited but may not fully close all connections before new pool is created. Can leak connections.
+
+Fix: Add connection count verification before creating new pool.
+
+8. LED Control Retry Startup Delay (led-control.ts:31-63)
+async function retryWithBackoff<T>(/* ... */): Promise<T> {
+  // Exponential backoff: 1s, 2s, 4s
+  // ❌ Blocks calibration/validation for up to 7 seconds waiting for LED daemon
+}
+Problem: LED daemon may not start immediately. Retry logic causes 7+ second delay during critical operations (calibration).
+
+Fix: Check daemon status first (fast check), only retry if daemon is starting up. Or run LED operations in background.
+
+9. Missing Timeout on Python Subprocesses (routes.ts: multiple locations)
+Multiple routes spawn Python without timeout:
+
+/api/camera-preview/:cameraId (line ~960) - NO TIMEOUT
+/api/rectified-preview/:cameraId (line ~1100) - NO TIMEOUT
+/api/calibrate/:cameraId/verify-positions (line ~800) - NO TIMEOUT
+Problem: If Python hangs, request never completes. Client waits forever.
+
+Fix: Add 60-second timeout to ALL Python subprocess spawns.
+
+🟡 MEDIUM PRIORITY ISSUES
+10. SQL Injection Risk (maintenance-service.ts:29, 47)
+.where(sql`timestamp < NOW() - INTERVAL '${sql.raw(retentionDays.toString())} days'`)
+Problem: While retentionDays is a number, using sql.raw() is risky. If caller passes malicious input, SQL injection possible.
+
+Fix: Use parameterized query:
+
+.where(sql`timestamp < NOW() - INTERVAL ${retentionDays} days`)
+11. Unchecked Array Access (scheduler.ts:343-345, 425-427)
+const firstFailedCameraId = failedCameras[0]?.cameraId; // ✅ Safe
+// BUT:
+const failedCameraId = failedCameras[0]?.cameraId;  // Later in code
+await this.sendAlert('capture_failure', message, failedCameraId); // ❌ undefined if no failures
+Problem: Alert may be sent with undefined cameraId if failedCameras array is empty in some edge cases.
+
+Fix: Check array length before accessing.
+
+12. Memory Leak: Large File Operations (routes.ts:~1850)
+const imageBuffer = await fs.readFile(imagePath);
+res.set('Content-Type', 'image/png');
+res.send(imageBuffer); // ❌ Loads entire file into memory
+Problem: On Raspberry Pi with 2GB RAM, serving large debug images loads entire file. Multiple concurrent requests can OOM.
+
+Fix: Use streaming:
+
+res.sendFile(imagePath);
+13. Slot Number Auto-Assignment Race Condition (storage.ts:215-228)
+async createSlot(slot: InsertSlot): Promise<Slot> {
+  const cameraSlots = await this.getSlotsByCamera(slot.cameraId);
+  const maxNumber = cameraSlots.reduce((max, s) => /*...*/);
+  const nextSlotNumber = maxNumber + 1;
+  // ❌ RACE: Two concurrent createSlot() calls can get same nextSlotNumber
+  const result = await db.insert(schema.slots).values(/*...*/);
+}
+Problem: No transaction isolation. Two slots created concurrently for same camera can get duplicate slot numbers, violating unique constraint.
+
+Fix: Use database transaction with row-level locking, or use MAX(slot_number) + 1 in INSERT query.
+
+14. Error Swallowing (routes.ts: multiple catch blocks)
+Over 50 catch blocks just log and return 500, losing error details:
+
+} catch (error) {
+  res.status(500).json({ message: "Failed to...", error }); // ❌ 'error' may not serialize
+}
+Problem: Error objects don't serialize properly to JSON. Client gets {} instead of error message.
+
+Fix: Use error.message or serialize properly:
+
+error: error instanceof Error ? error.message : String(error)
+🟢 LOW PRIORITY / IMPROVEMENTS
+15. Hardcoded Retry Limits (led-control.ts:24-28, db-retry.ts, etc.)
+const LED_RETRY_CONFIG = {
+  maxRetries: 3,
+  initialDelayMs: 1000,
+  // ❌ Should be configurable via environment or database
+};
+Suggestion: Move to system config table for runtime tuning.
+
+16. Missing Input Validation (routes.ts:~1450-1470)
+app.get("/api/detection-logs", async (req, res) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 100, 1), 1000);
+  // ✅ Good validation
+});
+
+app.post("/api/calibrate/:cameraId", async (req, res) => {
+  const { paperSize } = req.body; // ❌ No validation, could be null/undefined/malicious
+});
+Problem: Inconsistent input validation across routes. Some validate, some don't.
+
+Fix: Use middleware like express-validator or Zod validation on all routes.
+
+17. Zombie Process Detection Interval (subprocess-manager.ts:13-14)
+private readonly ZOMBIE_CHECK_INTERVAL_MS = 60000; // 1 minute
+private readonly PROCESS_TIMEOUT_WARNING_MS = 300000; // 5 minutes
+Problem: 1-minute check interval may miss short-lived zombies. 5-minute timeout too long for stuck camera operations.
+
+Suggestion: Reduce check interval to 30s, timeout to 2 minutes for camera ops.
+
+18. Python Process Communication (scheduler.ts:520-540)
+python.stdin.write(JSON.stringify(inputData));
+python.stdin.end();
+Problem: Large JSON payloads (100+ slots) may exceed stdin buffer. No chunking.
+
+Suggestion: For large payloads, write to temp file and pass filename to Python.
+
+19. Camera Preview Lock Expiry (camera-session-manager.ts:19-30)
+if (!existing || (existing.type === 'preview' && Date.now() - existing.timestamp > this.PREVIEW_TIMEOUT)) {
+  // Locks auto-expire, but no cleanup of expired locks
+}
+Problem: Expired locks stay in Map forever, causing memory leak if preview called frequently.
+
+Fix: Add periodic cleanup task to remove expired locks.
+
+20. No Health Check for LED Daemon (led-control.ts)
+Problem: Retry logic assumes daemon will eventually start. If daemon is dead, all LED operations fail silently after retries.
+
+Suggestion: Add health check endpoint to verify daemon is running before camera operations.
+
+📊 SUMMARY
+Critical Bugs: 4 (fix immediately)
+High Priority: 5 (fix within 1 week)
+Medium Priority: 5 (fix within 1 month)
+Low Priority: 6 (refactor when convenient)
+Total Issues Found: 20 major bugs/problems across 150 files
