@@ -1,0 +1,43 @@
+[Unit]
+Description=LED Manager Daemon - WS2812B LED Strip Controller
+Documentation=file:///home/naniwa/ShelfEye/replit.md
+After=network.target
+Wants=network.target
+Before=shelfeye.service
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/home/naniwa/ShelfEye
+Environment="PYTHONUNBUFFERED=1"
+
+# Create state directory
+ExecStartPre=/bin/mkdir -p /home/naniwa/ShelfEye/state
+ExecStartPre=/bin/chown naniwa:naniwa /home/naniwa/ShelfEye/state
+
+# Start daemon
+ExecStart=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_manager_service.py
+
+# Restart policy
+Restart=always
+RestartSec=5s
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=led-manager
+
+# Security and permissions
+NoNewPrivileges=false
+PrivateTmp=no
+
+# Graceful shutdown
+TimeoutStopSec=10s
+KillMode=mixed
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

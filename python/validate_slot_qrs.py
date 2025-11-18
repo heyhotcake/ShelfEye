@@ -1,0 +1,685 @@
+#!/usr/bin/env python3
+"""
+Validate slot ArUco markers in calibrated camera view.
+Used for two-step calibration validation:
+1. Verify ArUco markers ARE readable when slots are empty
+2. Verify ArUco markers are NOT readable when tools are placed (covering markers)
+"""
+
+import os
+import cv2
+import numpy as np
+import json
+import sys
+import time
+import argparse
+
+# Suppress OpenCV warnings/info to prevent polluting stdout
+os.environ['OPENCV_LOG_LEVEL'] = 'FATAL'
+cv2.setLogLevel(0)
+
+# Log OpenCV version for debugging
+OPENCV_VERSION = cv2.__version__
+OPENCV_MAJOR = int(OPENCV_VERSION.split('.')[0])
+OPENCV_MINOR = int(OPENCV_VERSION.split('.')[1])
+OPENCV_PATCH = int(OPENCV_VERSION.split('.')[2]) if len(OPENCV_VERSION.split('.')) > 2 else 0
+
+# Check for known bugs
+OPENCV_HAS_455_BUG = (OPENCV_MAJOR == 4 and OPENCV_MINOR == 5 and OPENCV_PATCH >= 5)
+if OPENCV_HAS_455_BUG:
+    print(f"[WARNING] OpenCV {OPENCV_VERSION} has known ArUco detection bug (over-aggressive filtering)", file=sys.stderr)
+    print(f"[WARNING] Consider upgrading to 4.6+ or using workarounds", file=sys.stderr)
+
+def decode_aruco_markers(image, expected_count=None, include_workers=False):
+    """Decode all ArUco markers in image with multi-pass detection for robustness
+    
+    Multi-pass strategy (like old QR system):
+    1. Original grayscale image
+    2. CLAHE enhanced (improves local contrast)
+    3. Adaptive threshold binarization (clean black/white)
+    
+    Args:
+        image: Input image to scan for ArUco markers
+        expected_count: If provided, exit early once this many markers are found (optimization)
+        include_workers: If True, include worker markers (50-95) in results
+    """
+    results = []
+    found_marker_ids = set()
+    
+    # Initialize ArUco detector (using 4x4_100 dictionary, IDs 0-99)
+    # Slot markers: 1-50, Worker markers: 51-95, Corner markers: 96-99 (reserved)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+    aruco_params = cv2.aruco.DetectorParameters()
+    
+    # Balanced parameters for printed markers
+    aruco_params.adaptiveThreshWinSizeMin = 3
+    aruco_params.adaptiveThreshWinSizeMax = 50
+    aruco_params.adaptiveThreshWinSizeStep = 10
+    aruco_params.adaptiveThreshConstant = 7
+    aruco_params.minMarkerPerimeterRate = 0.01
+    aruco_params.maxMarkerPerimeterRate = 4.0
+    aruco_params.polygonalApproxAccuracyRate = 0.05
+    aruco_params.minCornerDistanceRate = 0.05
+    aruco_params.minDistanceToBorder = 1
+    aruco_params.minMarkerDistanceRate = 0.05
+    aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+    aruco_params.cornerRefinementWinSize = 5
+    aruco_params.cornerRefinementMaxIterations = 30
+    aruco_params.cornerRefinementMinAccuracy = 0.01
+    aruco_params.markerBorderBits = 1
+    # CRITICAL: Higher resolution prevents bit pattern corruption during canonicalization
+    # 3cm markers at 31.8 px/cm = ~95px. With 6 cells (4x4 + borders), need 14-16 px/cell
+    # to preserve detail. Default 8 px/cell downsamples to 48px total, corrupting bits.
+    aruco_params.perspectiveRemovePixelPerCell = 16  # Increased from 8 to preserve marker detail
+    aruco_params.perspectiveRemoveIgnoredMarginPerCell = 0.13
+    aruco_params.maxErroneousBitsInBorderRate = 0.35
+    aruco_params.minOtsuStdDev = 5.0
+    aruco_params.errorCorrectionRate = 0.6
+    
+    # Input is already grayscale from rectification (memory-optimized)
+    gray = image if len(image.shape) == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # MULTI-PASS DETECTION: Try multiple preprocessing approaches (like old QR system)
+    preprocessing_passes = [
+        ('original', gray),
+        ('clahe', None),  # Will be generated
+        ('adaptive_threshold', None),  # Will be generated
+    ]
+    
+    # Generate CLAHE enhanced image
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe_enhanced = clahe.apply(gray)
+    preprocessing_passes[1] = ('clahe', clahe_enhanced)
+    
+    # Generate adaptive threshold image
+    adaptive_thresh = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+    )
+    preprocessing_passes[2] = ('adaptive_threshold', adaptive_thresh)
+    
+    # DEBUG: Print image stats
+    print(f"    [ArUco Debug] Image size: {gray.shape}, dtype: {gray.dtype}, range: [{gray.min()}, {gray.max()}]", file=sys.stderr)
+    
+    # Try each preprocessing approach until we find markers
+    for pass_name, processed_image in preprocessing_passes:
+        try:
+            corners, ids, rejected = cv2.aruco.detectMarkers(processed_image, aruco_dict, parameters=aruco_params)
+            
+            markers_found = len(ids) if ids is not None else 0
+            print(f"    [ArUco Debug] Pass '{pass_name}': {markers_found} markers, {len(rejected)} rejected", file=sys.stderr)
+            
+            if ids is not None and len(ids) > 0:
+                # Process detected markers
+                for i, marker_id in enumerate(ids.flatten()):
+                    # Filter markers based on type:
+                    # - Slot markers: 0-50 (including 0 for compatibility with printed templates)
+                    # - Worker markers: 51-95 (only if include_workers=True)
+                    # - Corner markers: 96-99 (exclude)
+                    is_slot = 0 <= marker_id <= 50
+                    is_worker = 51 <= marker_id <= 95
+                    is_corner = 96 <= marker_id <= 99
+                    
+                    # Skip corner markers but allow marker ID 0 (it's a valid slot marker)
+                    if is_corner:
+                        continue
+                    
+                    # Skip negative marker IDs (invalid)
+                    if marker_id < 0:
+                        continue
+                    
+                    # Skip worker markers unless explicitly requested
+                    if is_worker and not include_workers:
+                        continue
+                    
+                    if marker_id not in found_marker_ids:
+                        found_marker_ids.add(marker_id)
+                        
+                        # Get marker corners
+                        marker_corners = corners[i][0]
+                        
+                        # Calculate center
+                        center_x = int(np.mean(marker_corners[:, 0]))
+                        center_y = int(np.mean(marker_corners[:, 1]))
+                        
+                        # Calculate bounding box
+                        x_min = int(np.min(marker_corners[:, 0]))
+                        y_min = int(np.min(marker_corners[:, 1]))
+                        x_max = int(np.max(marker_corners[:, 0]))
+                        y_max = int(np.max(marker_corners[:, 1]))
+                        
+                        # Determine marker category
+                        marker_category = 'worker' if is_worker else 'slot'
+                        
+                        results.append({
+                            'data': str(marker_id),  # Store marker ID as string for compatibility
+                            'type': 'ARUCO',
+                            'category': marker_category,  # 'slot' or 'worker'
+                            'rect': {'x': x_min, 'y': y_min, 'width': x_max - x_min, 'height': y_max - y_min},
+                            'polygon': [(int(p[0]), int(p[1])) for p in marker_corners],
+                            'center': (center_x, center_y),
+                            'detection_method': f'aruco_{pass_name}'  # Track which pass succeeded
+                        })
+                        print(f"    [ArUco] Marker ID {marker_id} ({marker_category}) detected via '{pass_name}' at ({center_x}, {center_y})", file=sys.stderr)
+                
+                # Check if we found all expected markers (early exit optimization)
+                if expected_count and len(found_marker_ids) >= expected_count:
+                    print(f"    [ArUco Debug] SUCCESS: Found all {len(found_marker_ids)} expected markers using '{pass_name}' preprocessing", file=sys.stderr)
+                    return results
+                    
+        except Exception as e:
+            print(f"    [ERROR] ArUco detection pass '{pass_name}' failed: {e}", file=sys.stderr)
+            continue
+    
+    # After all passes, report results
+    if results:
+        print(f"    [ArUco Debug] Completed all passes: Found {len(results)} markers total", file=sys.stderr)
+    
+    # If no markers found after all passes
+    if not results:
+        print(f"    [ArUco Debug] FAILED: No markers found after all {len(preprocessing_passes)} preprocessing passes", file=sys.stderr)
+    
+    return results
+
+def point_in_rotated_rect(point, center_cm, width_cm, height_cm, rotation_deg, scale_x, scale_y):
+    """Check if point (in pixels) is inside a rotated rectangle (defined in cm)"""
+    # Convert point to cm space
+    point_cm = np.array([point[0] / scale_x, point[1] / scale_y])
+    
+    # Translate to rectangle center
+    translated = point_cm - center_cm
+    
+    # Rotate by negative angle (to align rectangle with axes)
+    angle_rad = -np.radians(rotation_deg)
+    cos_a, sin_a = np.cos(angle_rad), np.sin(angle_rad)
+    rotated = np.array([
+        translated[0] * cos_a - translated[1] * sin_a,
+        translated[0] * sin_a + translated[1] * cos_a
+    ])
+    
+    # Check if point is inside axis-aligned rectangle
+    half_width = width_cm / 2
+    half_height = height_cm / 2
+    return (abs(rotated[0]) <= half_width and abs(rotated[1]) <= half_height)
+
+def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_matrix=None, 
+                      dist_coeffs=None, paper_width_cm=None, paper_height_cm=None, 
+                      expected_slots=None, use_saved_rectified=False):
+    """
+    Validate QR codes in calibrated camera view
+    
+    Args:
+        camera_id: ID of the camera to validate
+        mode: 'visible' (QRs should be visible) or 'covered' (QRs should be covered)
+        homography_matrix: Homography matrix for perspective correction
+        camera_matrix: Camera intrinsic matrix for distortion correction
+        dist_coeffs: Distortion coefficients
+        paper_width_cm: Paper width in cm
+        paper_height_cm: Paper height in cm
+        expected_slots: List of expected slot configurations
+        use_saved_rectified: If True, load saved rectified image from calibration
+    
+    Returns:
+        Dictionary with validation results
+    """
+    print(f"[VALIDATION] Starting validation for camera {camera_id} in mode '{mode}'", file=sys.stderr)
+    print(f"[VALIDATION] OpenCV version: {OPENCV_VERSION}", file=sys.stderr)
+    if OPENCV_HAS_455_BUG:
+        print(f"[VALIDATION] WARNING: OpenCV {OPENCV_VERSION} has known ArUco bug - using multi-pass detection", file=sys.stderr)
+    if use_saved_rectified:
+        print(f"[VALIDATION] Will use saved calibration rectified image", file=sys.stderr)
+    sys.stderr.flush()
+    
+    # Set default for expected_slots if not provided
+    if expected_slots is None:
+        expected_slots = []
+    
+    # Set up debug directory
+    import os
+    enable_debug_images = os.environ.get('DEBUG_IMAGES', '1') == '1'  # Default enabled for compatibility
+    debug_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+    data_dir = debug_dir  # Use same directory for both debug and data files
+    os.makedirs(debug_dir, exist_ok=True)
+    
+    # Create camera-specific ROI subdirectory for multi-camera support
+    roi_dir = os.path.join(data_dir, 'rois', camera_id)
+    os.makedirs(roi_dir, exist_ok=True)
+    
+    # Validate and print received parameters
+    print(f"[VALIDATION] Received parameters:", file=sys.stderr)
+    print(f"  - Homography matrix: {'Yes' if homography_matrix else 'No'}", file=sys.stderr)
+    print(f"  - Camera matrix: {'Yes' if camera_matrix else 'No'}", file=sys.stderr)
+    print(f"  - Distortion coeffs: {'Yes' if dist_coeffs else 'No'}", file=sys.stderr)
+    print(f"  - Paper size: {paper_width_cm}x{paper_height_cm} cm", file=sys.stderr)
+    print(f"  - Use saved rectified: {use_saved_rectified}", file=sys.stderr)
+    sys.stderr.flush()
+    
+    # VALIDATION ALWAYS USES SAVED RECTIFIED IMAGE FROM CALIBRATION
+    # No camera capture allowed in validation - calibration creates the high-res rectified image
+    print(f"[VALIDATION] Loading saved calibration rectified image (NO CAMERA CAPTURE)", file=sys.stderr)
+    saved_rectified_path = os.path.join(data_dir, f'latest_calibration_rectified_{camera_id}.png')
+    
+    if not os.path.exists(saved_rectified_path):
+        print(f"[VALIDATION] ERROR: Saved rectified image not found at {saved_rectified_path}", file=sys.stderr)
+        print(f"[VALIDATION] ERROR: You must complete calibration first before validating!", file=sys.stderr)
+        print(f"[VALIDATION] ERROR: Calibration saves a high-resolution rectified image that validation uses.", file=sys.stderr)
+        sys.stderr.flush()
+        return {
+            'success': False,
+            'error': 'No calibration image found. Please complete calibration first to save a rectified image for validation.'
+        }
+    
+    rectified = cv2.imread(saved_rectified_path, cv2.IMREAD_GRAYSCALE)
+    
+    if rectified is None:
+        print(f"[VALIDATION] ERROR: Failed to load rectified image from {saved_rectified_path}", file=sys.stderr)
+        print(f"[VALIDATION] ERROR: The file exists but cannot be read. It may be corrupted.", file=sys.stderr)
+        sys.stderr.flush()
+        return {
+            'success': False,
+            'error': 'Failed to load calibration image. Please run calibration again.'
+        }
+    
+    print(f"[VALIDATION] ✓ Loaded rectified image: {rectified.shape[1]}x{rectified.shape[0]}px (from saved calibration)", file=sys.stderr)
+    print(f"[VALIDATION] Found {len(expected_slots)} expected slots for validation", file=sys.stderr)
+    sys.stderr.flush()
+    
+    # Calculate ACTUAL scale factors from the loaded image dimensions
+    if paper_width_cm and paper_height_cm:
+        scale_x = rectified.shape[1] / paper_width_cm
+        scale_y = rectified.shape[0] / paper_height_cm
+        # Use uniform scaling to prevent marker distortion - CRITICAL for ArUco detection
+        pixels_per_cm = min(scale_x, scale_y)  # Use the smaller scale to fit within bounds
+        print(f"[VALIDATION] Calculated pixel density: {scale_x:.1f} px/cm (width), {scale_y:.1f} px/cm (height)", file=sys.stderr)
+        print(f"[VALIDATION] Using uniform {pixels_per_cm:.1f} px/cm to prevent marker distortion", file=sys.stderr)
+        # Override scales with uniform value to keep markers square
+        scale_x = scale_y = pixels_per_cm
+    else:
+        scale_x = scale_y = pixels_per_cm = 1.0
+        print(f"[VALIDATION] No paper dimensions provided, using scale 1.0", file=sys.stderr)
+    
+    
+    # Save debug rectified image (if enabled) - PNG for lossless quality
+    rectified_path = os.path.join(debug_dir, f'validation_rectified_debug_{camera_id}.png')
+    if enable_debug_images and rectified is not None:
+        cv2.imwrite(rectified_path, rectified, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+        print(f"[VALIDATION] Saved rectified view to: {rectified_path}", file=sys.stderr)
+        sys.stderr.flush()
+    else:
+        # Still create path for result even if not saved
+        print(f"[VALIDATION] Rectified debug image not saved (DEBUG_IMAGES=0)", file=sys.stderr)
+        sys.stderr.flush()
+    
+    # PER-SLOT ROI SCANNING: Extract and scan each slot individually for better accuracy
+    print(f"[VALIDATION] Starting per-slot ROI QR code detection...", file=sys.stderr)
+    sys.stderr.flush()
+    
+    # Build validation results based on mode
+    validation_details = []
+    missing_qrs = []
+    incorrectly_visible = []
+    detected_qrs_list = []
+    
+    # DIAGNOSTIC MODE: Track raw detections for debugging
+    raw_detections = {}  # slot_id -> detected_marker_id mapping
+    
+    # Process each expected slot - extract ROI and scan individually
+    for idx, slot in enumerate(expected_slots):
+        # Backend sends camelCase JSON, handle both snake_case (legacy) and camelCase (current)
+        slot_id = slot.get('slotId') or slot.get('slot_id', 'unknown')
+        expected_qr = slot.get('id') or slot.get('expected_qr_id', '')
+        x_cm = slot.get('x') or slot.get('x_cm', 0)
+        y_cm = slot.get('y') or slot.get('y_cm', 0)
+        width_cm = slot.get('width') or slot.get('width_cm', 3.0)
+        height_cm = slot.get('height') or slot.get('height_cm', 3.0)
+        rotation = slot.get('rotation', 0)
+        
+        print(f"[VALIDATION] ========== SLOT {idx+1}/{len(expected_slots)} ==========", file=sys.stderr)
+        print(f"[VALIDATION] Slot ID: {slot_id}", file=sys.stderr)
+        print(f"[VALIDATION] Expected ArUco ID: '{expected_qr}'", file=sys.stderr)
+        print(f"[VALIDATION] Slot dimensions: {width_cm}x{height_cm} cm (slot size)", file=sys.stderr)
+        
+        # Convert slot center position from cm to pixels
+        center_x_px = int(x_cm * scale_x)
+        center_y_px = int(y_cm * scale_y)
+        
+        # TIGHT ROI EXTRACTION: Extract only marker area, ignoring slot borders
+        # Adjust this based on your actual marker size:
+        # - If markers are 2x2cm, use 3.0
+        # - If markers are 3x3cm, use 4.0 
+        # - If markers are 4x4cm, use 5.0
+        marker_roi_size_cm = 4.0  # CHANGE THIS to match your marker size + 1cm margin
+        roi_width_px = int(marker_roi_size_cm * scale_x)
+        roi_height_px = int(marker_roi_size_cm * scale_y)
+        
+        print(f"[VALIDATION] Using tight marker ROI: {marker_roi_size_cm}x{marker_roi_size_cm}cm = {roi_width_px}x{roi_height_px}px", file=sys.stderr)
+        
+        # Calculate ROI boundaries centered on slot position
+        roi_x1 = max(0, center_x_px - roi_width_px // 2)
+        roi_y1 = max(0, center_y_px - roi_height_px // 2)
+        
+        # Check if rectified exists before accessing shape
+        if rectified is None:
+            print(f"  ERROR: Rectified image is None for slot {slot_id}", file=sys.stderr)
+            continue
+            
+        roi_x2 = min(rectified.shape[1], center_x_px + roi_width_px // 2)
+        roi_y2 = min(rectified.shape[0], center_y_px + roi_height_px // 2)
+        
+        # Extract ROI
+        roi = rectified[roi_y1:roi_y2, roi_x1:roi_x2]
+        
+        if roi.size == 0:
+            print(f"  WARNING: Empty ROI for slot {slot_id}", file=sys.stderr)
+            if mode == 'visible':
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'missing',
+                    'detected': False,
+                    'in_bounds': False
+                })
+                missing_qrs.append(expected_qr)
+            else:
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'correct',
+                    'detected': False,
+                    'in_bounds': True
+                })
+            continue
+        
+        print(f"  ROI size: {roi.shape[1]}x{roi.shape[0]}px at ({roi_x1},{roi_y1})", file=sys.stderr)
+        
+        # DEBUG: Save ROI image to inspect what we're actually scanning
+        # Use camera-specific subdirectory for multi-camera support
+        debug_roi_path = os.path.join(roi_dir, f'validation_roi_{slot_id}.jpg')
+        cv2.imwrite(debug_roi_path, roi)
+        print(f"  DEBUG: Saved ROI to {debug_roi_path}", file=sys.stderr)
+        print(f"  DEBUG: ROI shape={roi.shape}, dtype={roi.dtype}, min={roi.min()}, max={roi.max()}", file=sys.stderr)
+        
+        # For ArUco markers, try detection on ORIGINAL image first (no preprocessing)
+        # ArUco markers are simpler patterns than QR codes and work better without aggressive preprocessing
+        # IMPORTANT: Scan for BOTH slot markers (1-50) AND worker markers (51-95)
+        print(f"  DEBUG: Starting ArUco decode for slot {slot_id} (original image)...", file=sys.stderr)
+        roi_marker_results = decode_aruco_markers(roi, expected_count=1, include_workers=True)
+        print(f"  DEBUG: Decode complete. Found {len(roi_marker_results)} ArUco markers", file=sys.stderr)
+        
+        # If no markers found, try with light preprocessing as fallback
+        if not roi_marker_results:
+            print(f"  DEBUG: No markers on original, trying with normalization...", file=sys.stderr)
+            roi_normalized = np.zeros_like(roi)
+            cv2.normalize(roi, roi_normalized, 0, 255, cv2.NORM_MINMAX)
+            
+            # Save normalized version for debugging
+            # Use camera-specific subdirectory for multi-camera support
+            boosted_path = os.path.join(roi_dir, f'validation_roi_{slot_id}_normalized.jpg')
+            cv2.imwrite(boosted_path, roi_normalized)
+            
+            roi_marker_results = decode_aruco_markers(roi_normalized, expected_count=1, include_workers=True)
+            print(f"  DEBUG: Normalized attempt found {len(roi_marker_results)} ArUco markers", file=sys.stderr)
+        
+        if roi_marker_results:
+            # Separate slot markers from worker markers
+            slot_markers = [m for m in roi_marker_results if m.get('category') == 'slot']
+            worker_markers = [m for m in roi_marker_results if m.get('category') == 'worker']
+            
+            # NEW WORKER TRACKING LOGIC:
+            # - Slot marker visible + worker marker visible → tool in use by worker (OK)
+            # - Slot marker visible + NO worker marker → ERROR (missing without checkout)
+            # - Slot marker NOT visible → tool present (OK)
+            
+            if slot_markers:
+                # Slot marker detected in ROI
+                slot_marker = slot_markers[0]
+                marker_data = slot_marker['data']
+                detected_qrs_list.append(marker_data)
+                
+                # Store raw detection for diagnostic output
+                raw_detections[slot_id] = marker_data
+                
+                print(f"  ✓✓✓ DETECTED ArUco Marker ID: {marker_data} ✓✓✓", file=sys.stderr)
+                print(f"  Detection method: {slot_marker['detection_method']}", file=sys.stderr)
+                
+                # Check if there's also a worker marker
+                if worker_markers:
+                    worker_marker = worker_markers[0]
+                    worker_id = worker_marker['data']
+                    print(f"  ✓ Detected Worker ArUco: '{worker_id}' - Tool in use by worker", file=sys.stderr)
+                
+                if mode == 'visible':
+                    # ArUco marker should be visible - check if it matches expected
+                    if marker_data == expected_qr:
+                        validation_details.append({
+                            'slot_id': slot_id,
+                            'expected_qr': expected_qr,
+                            'status': 'correct',
+                            'detected': True,
+                            'in_bounds': True,
+                            'detection_method': slot_marker['detection_method']
+                        })
+                        print(f"  ✓ CORRECT: Matches expected marker ID '{expected_qr}'", file=sys.stderr)
+                    else:
+                        validation_details.append({
+                            'slot_id': slot_id,
+                            'expected_qr': expected_qr,
+                            'status': 'wrong_qr',
+                            'detected': True,
+                            'in_bounds': True,
+                            'actual_qr': marker_data,
+                            'detection_method': slot_marker['detection_method']
+                        })
+                        missing_qrs.append(expected_qr)
+                        print(f"  ✗ WRONG MARKER: Expected '{expected_qr}' but found '{marker_data}'", file=sys.stderr)
+                else:
+                    # Slot marker should NOT be visible (tool should cover it)
+                    # NEW LOGIC: Check if worker marker is present
+                    if worker_markers:
+                        # Worker marker present → tool in use (OK, not an error)
+                        worker_id = worker_markers[0]['data']
+                        validation_details.append({
+                            'slot_id': slot_id,
+                            'expected_qr': expected_qr,
+                            'status': 'in_use',  # Tool is being used by worker
+                            'detected': True,
+                            'in_bounds': True,
+                            'actual_qr': marker_data,
+                            'worker_id': worker_id,  # Include worker ID
+                            'detection_method': slot_marker['detection_method']
+                        })
+                        print(f"  ✓ TOOL IN USE: Worker {worker_id} is using the tool", file=sys.stderr)
+                    else:
+                        # NO worker marker → ERROR (tool missing without checkout)
+                        validation_details.append({
+                            'slot_id': slot_id,
+                            'expected_qr': expected_qr,
+                            'status': 'missing_without_checkout',  # ERROR: Missing tool without worker checkout
+                            'detected': True,
+                            'in_bounds': True,
+                            'actual_qr': marker_data,
+                            'detection_method': slot_marker['detection_method']
+                        })
+                        incorrectly_visible.append(expected_qr)
+                        print(f"  ✗ ERROR: Slot marker '{marker_data}' is visible but NO worker marker detected - Tool missing without checkout", file=sys.stderr)
+            
+            elif worker_markers:
+                # Only worker marker detected (no slot marker) - This shouldn't happen but handle it
+                worker_id = worker_markers[0]['data']
+                print(f"  ⚠ WARNING: Worker marker {worker_id} detected but no slot marker", file=sys.stderr)
+                # Treat this as if slot marker is covered (tool present with worker tag)
+                if mode == 'covered':
+                    validation_details.append({
+                        'slot_id': slot_id,
+                        'expected_qr': expected_qr,
+                        'status': 'correct',
+                        'detected': False,
+                        'in_bounds': True,
+                        'worker_id': worker_id
+                    })
+                    print(f"  ✓ CORRECT: Tool covered, worker {worker_id} present", file=sys.stderr)
+                else:
+                    validation_details.append({
+                        'slot_id': slot_id,
+                        'expected_qr': expected_qr,
+                        'status': 'missing',
+                        'detected': False,
+                        'in_bounds': False
+                    })
+                    missing_qrs.append(expected_qr)
+                    print(f"  ✗ ERROR: Expected slot marker '{expected_qr}' not detected", file=sys.stderr)
+        else:
+            # No ArUco marker detected in this slot's ROI
+            raw_detections[slot_id] = "NONE"
+            print(f"  XXX NO ArUco MARKER DETECTED IN THIS SLOT XXX", file=sys.stderr)
+            
+            if mode == 'visible':
+                # ArUco marker should be visible but isn't - MISSING
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'missing',
+                    'detected': False,
+                    'in_bounds': False
+                })
+                missing_qrs.append(expected_qr)
+                print(f"  ✗ ERROR: Expected marker ID '{expected_qr}' not detected", file=sys.stderr)
+            else:
+                # ArUco marker not visible - CORRECT (tool is covering it)
+                validation_details.append({
+                    'slot_id': slot_id,
+                    'expected_qr': expected_qr,
+                    'status': 'correct',
+                    'detected': False,
+                    'in_bounds': True
+                })
+                print(f"  ✓ CORRECT: Marker is covered as expected", file=sys.stderr)
+    
+    # Calculate summary
+    expected_visible = 0
+    actual_visible = 0
+    expected_hidden = 0
+    actual_hidden = 0
+    
+    if mode == 'visible':
+        expected_visible = len(expected_slots)
+        actual_visible = len([d for d in validation_details if d['detected']])
+        success = len(missing_qrs) == 0
+        
+        result = {
+            'success': success,
+            'expected_visible': expected_visible,
+            'actual_visible': actual_visible,
+            'missing_qrs': missing_qrs,
+            'detected_qrs': detected_qrs_list,
+            'details': validation_details,
+            'debug_image': rectified_path
+        }
+    else:
+        expected_hidden = len(expected_slots)
+        actual_hidden = len([d for d in validation_details if not d['detected']])
+        success = len(incorrectly_visible) == 0
+        
+        result = {
+            'success': success,
+            'expected_hidden': expected_hidden,
+            'actual_hidden': actual_hidden,
+            'incorrectly_visible': incorrectly_visible,
+            'details': validation_details,
+            'debug_image': rectified_path
+        }
+    
+    # DIAGNOSTIC OUTPUT: Show raw detection data for all slots
+    print(f"\n[VALIDATION] ========================================", file=sys.stderr)
+    print(f"[VALIDATION] RAW DETECTION SUMMARY (DIAGNOSTIC)", file=sys.stderr)
+    print(f"[VALIDATION] ========================================", file=sys.stderr)
+    for idx, slot in enumerate(expected_slots):
+        slot_id = slot.get('slotId', 'unknown')
+        expected = slot.get('id', 'unknown')
+        detected = raw_detections.get(slot_id, "NOT_PROCESSED")
+        match_status = "✓ MATCH" if detected == expected else "✗ MISMATCH" if detected != "NONE" else "- NO DETECTION"
+        print(f"[VALIDATION] Slot #{idx+1} ({slot_id}):", file=sys.stderr)
+        print(f"[VALIDATION]   Expected ArUco ID: {expected}", file=sys.stderr)
+        print(f"[VALIDATION]   Detected ArUco ID: {detected}", file=sys.stderr)
+        print(f"[VALIDATION]   Status: {match_status}", file=sys.stderr)
+    print(f"[VALIDATION] ========================================", file=sys.stderr)
+    
+    # Count unique detected ArUco IDs
+    unique_detected = set([v for v in raw_detections.values() if v != "NONE" and v != "NOT_PROCESSED"])
+    print(f"[VALIDATION] Unique ArUco IDs detected: {sorted(unique_detected) if unique_detected else 'None'}", file=sys.stderr)
+    print(f"[VALIDATION] Total unique markers found: {len(unique_detected)}", file=sys.stderr)
+    print(f"[VALIDATION] ========================================", file=sys.stderr)
+    
+    print(f"\n[VALIDATION] Summary:", file=sys.stderr)
+    print(f"  - Success: {success}", file=sys.stderr)
+    if mode == 'visible':
+        print(f"  - Expected visible: {expected_visible}", file=sys.stderr)
+        print(f"  - Actually visible: {actual_visible}", file=sys.stderr)
+        if missing_qrs:
+            print(f"  - Missing: {', '.join(missing_qrs)}", file=sys.stderr)
+    else:
+        print(f"  - Expected hidden: {expected_hidden}", file=sys.stderr)
+        print(f"  - Actually hidden: {actual_hidden}", file=sys.stderr)
+        if incorrectly_visible:
+            print(f"  - Incorrectly visible: {', '.join(incorrectly_visible)}", file=sys.stderr)
+    sys.stderr.flush()
+    
+    return result
+
+if __name__ == "__main__":
+    # Check if being called with old positional arguments or new named arguments
+    if len(sys.argv) >= 3 and not sys.argv[1].startswith('--'):
+        # Old style: python validate_slot_qrs.py camera_id mode
+        parser = argparse.ArgumentParser(description='Validate slot QR codes in calibrated camera view')
+        parser.add_argument('camera_id', help='Camera ID')
+        parser.add_argument('mode', choices=['visible', 'covered'], help='Validation mode')
+        
+        args = parser.parse_args()
+        
+        # Run validation with minimal parameters (for manual testing)
+        result = validate_slot_qrs(args.camera_id, args.mode)
+    else:
+        # New style with named arguments (from backend)
+        parser = argparse.ArgumentParser(description='Validate slot QR codes in calibrated camera view')
+        parser.add_argument('--camera-id', type=str, required=True, help='Camera ID for file namespacing (multi-camera support)')
+        parser.add_argument('--resolution', help='Camera resolution (e.g., 1920x1080)')
+        parser.add_argument('--homography', help='Homography matrix as JSON string')
+        parser.add_argument('--slots', help='Expected slots configuration as JSON string')
+        parser.add_argument('--should-detect', choices=['true', 'false'], help='Whether QRs should be detected')
+        parser.add_argument('--paper-width-cm', type=float, help='Paper width in cm')
+        parser.add_argument('--paper-height-cm', type=float, help='Paper height in cm')
+        parser.add_argument('--camera-matrix', help='Camera matrix for distortion correction')
+        parser.add_argument('--dist-coeffs', help='Distortion coefficients')
+        parser.add_argument('--device-path', help='Camera device path (e.g., /dev/video0)')
+        parser.add_argument('--camera', type=int, help='Camera index', default=0)
+        parser.add_argument('--use-saved-rectified', action='store_true', help='Use saved high-res rectified image from calibration instead of capturing new frame')
+        
+        args = parser.parse_args()
+        
+        # Determine mode based on should-detect flag
+        mode = 'visible' if args.should_detect == 'true' else 'covered'
+        
+        # Use camera ID from arguments
+        camera_id = args.camera_id
+        
+        # Parse JSON parameters
+        homography_matrix = json.loads(args.homography) if args.homography else None
+        camera_matrix = json.loads(args.camera_matrix) if args.camera_matrix else None
+        dist_coeffs = json.loads(args.dist_coeffs) if args.dist_coeffs else None
+        expected_slots = json.loads(args.slots) if args.slots else []
+        
+        # Run validation with parsed parameters
+        result = validate_slot_qrs(
+            camera_id=camera_id,
+            mode=mode,
+            homography_matrix=homography_matrix,
+            camera_matrix=camera_matrix,
+            dist_coeffs=dist_coeffs,
+            paper_width_cm=args.paper_width_cm,
+            paper_height_cm=args.paper_height_cm,
+            expected_slots=expected_slots,
+            use_saved_rectified=args.use_saved_rectified
+        )
+    
+    # Output JSON result
+    print(json.dumps(result))
+    sys.exit(0 if result['success'] else 1)

@@ -1,0 +1,12 @@
+# Allow naniwa user to run LED control scripts as root without password
+# This is required for WS2812B LED control which needs /dev/mem access
+#
+# Installation:
+#   sudo cp sudoers-gpio /etc/sudoers.d/gpio
+#   sudo chmod 0440 /etc/sudoers.d/gpio
+#
+# LED Manager Daemon (runs as systemd service under root, doesn't need sudo)
+# LED Control Client (called by application to communicate with daemon)
+naniwa ALL=(ALL) NOPASSWD: /usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py*
+# Legacy unified controller (for backward compatibility during migration)
+naniwa ALL=(ALL) NOPASSWD: /usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py*

@@ -1,0 +1,29 @@
+[Unit]
+Description=ShelfEye Tool Monitoring System
+After=network-online.target led-manager.service
+Wants=network-online.target led-manager.service
+StartLimitBurst=5
+StartLimitIntervalSec=600
+
+[Service]
+Type=simple
+User=naniwa
+WorkingDirectory=/home/naniwa/ShelfEye
+ExecStart=/home/naniwa/ShelfEye/pi-startup.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables (loaded from .env.pi in startup script)
+Environment="PATH=/home/naniwa/.nvm/versions/node/v20.18.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Resource limits for long-term reliability
+LimitNOFILE=65536
+CPUQuota=380%
+MemoryHigh=1.5G
+MemoryMax=1.8G
+RestartPreventExitStatus=SIGKILL
+
+[Install]
+WantedBy=multi-user.target
