@@ -148,6 +148,75 @@ class SubprocessManager {
     }
   }
 
+  /**
+   * Process the escalation queue to handle stuck D-state processes
+   * - Remove entries for processes that no longer exist
+   * - Escalate processes stuck for >60s with structured logging
+   * - Attempt one more SIGKILL for stuck processes
+   */
+  private async processEscalationQueue(): Promise<void> {
+    const now = Date.now();
+    const ESCALATION_THRESHOLD_MS = 60000; // 60 seconds
+    const toRemove: number[] = [];
+    
+    for (const [pid, entry] of this.escalationQueue.entries()) {
+      // Check if process still exists
+      let processExists = false;
+      try {
+        process.kill(pid, 0); // Signal 0 just checks existence
+        processExists = true;
+      } catch (error: any) {
+        if (error.code === 'ESRCH') {
+          // Process no longer exists - clean up entry
+          toRemove.push(pid);
+          console.log(`[SubprocessManager] Escalation queue: PID ${pid} no longer exists - removed from queue`);
+          continue;
+        }
+      }
+      
+      const elapsed = now - entry.since;
+      
+      // Escalate if stuck for more than threshold
+      if (processExists && elapsed > ESCALATION_THRESHOLD_MS) {
+        console.error(`[SubprocessManager] ⚠️ ESCALATED: PID ${pid} stuck in ${entry.reason} for ${Math.round(elapsed / 1000)}s (${entry.attempts} kill attempts)`);
+        console.error(`[SubprocessManager] Process details: ${JSON.stringify(this.processes.get(pid) || { status: 'not tracked' })}`);
+        
+        // Attempt one more SIGKILL
+        try {
+          process.kill(pid, 'SIGKILL');
+          console.log(`[SubprocessManager] Escalation: Attempted SIGKILL on PID ${pid}`);
+        } catch (killError: any) {
+          if (killError.code === 'ESRCH') {
+            toRemove.push(pid);
+            console.log(`[SubprocessManager] Escalation: PID ${pid} disappeared during kill attempt`);
+          } else {
+            console.error(`[SubprocessManager] Escalation: Failed to SIGKILL PID ${pid}:`, killError.message);
+          }
+        }
+        
+        // Rate limit: only escalate once per entry (don't spam logs)
+        // Mark as escalated by increasing attempts count
+        entry.attempts++;
+        
+        // If we've tried many times (>5), give up and remove from queue
+        if (entry.attempts > 5) {
+          console.error(`[SubprocessManager] Escalation: Giving up on PID ${pid} after ${entry.attempts} attempts`);
+          toRemove.push(pid);
+        }
+      }
+    }
+    
+    // Clean up removed entries
+    for (const pid of toRemove) {
+      this.escalationQueue.delete(pid);
+    }
+    
+    // Log queue status if non-empty
+    if (this.escalationQueue.size > 0) {
+      console.warn(`[SubprocessManager] Escalation queue: ${this.escalationQueue.size} processes being monitored`);
+    }
+  }
+
   private async checkLongRunningProcesses(): Promise<void> {
     const now = Date.now();
     const warnings: string[] = [];
@@ -176,6 +245,7 @@ class SubprocessManager {
     this.zombieCheckInterval = setInterval(async () => {
       await this.detectZombieProcesses();
       await this.checkLongRunningProcesses();
+      await this.processEscalationQueue(); // Process stuck D-state processes
     }, this.ZOMBIE_CHECK_INTERVAL_MS);
   }
 

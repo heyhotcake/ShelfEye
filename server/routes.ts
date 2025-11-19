@@ -31,6 +31,114 @@ function getCameraDeviceSource(camera: { devicePath?: string | null; deviceIndex
   throw new Error('Camera has neither devicePath nor deviceIndex configured');
 }
 
+// Shared timeout wrapper for Python subprocess calls
+// Follows the same pattern as scheduler's runPythonScript
+const PREVIEW_TIMEOUT_MS = 60000; // 60 seconds
+
+interface PythonTimeoutOptions {
+  args: string[];
+  scriptName: string;
+  purpose: string;
+  timeoutMs?: number;
+  onTimeout?: () => void | Promise<void>;
+}
+
+function runPythonWithTimeout(options: PythonTimeoutOptions): Promise<string> {
+  const { args, scriptName, purpose, timeoutMs = PREVIEW_TIMEOUT_MS, onTimeout } = options;
+  
+  return new Promise((resolve, reject) => {
+    const pythonProcess = spawnTracked('python3', args, scriptName, 'python', purpose);
+    const startTime = Date.now();
+    
+    let stdout = '';
+    let stderr = '';
+    let isTimedOut = false;
+    let isSettled = false;
+    
+    // Timeout handler - kills process after specified timeout
+    const timeoutHandle = setTimeout(async () => {
+      if (!isSettled && pythonProcess.pid) {
+        isTimedOut = true;
+        isSettled = true;
+        const elapsed = Date.now() - startTime;
+        console.error(`[Preview] ⚠️ Process timeout after ${elapsed}ms - killing PID ${pythonProcess.pid}`);
+        
+        // Execute cleanup callback if provided
+        if (onTimeout) {
+          try {
+            await onTimeout();
+          } catch (err) {
+            console.error('[Preview] Timeout cleanup error:', err);
+          }
+        }
+        
+        try {
+          // Try graceful termination first
+          pythonProcess.kill('SIGTERM');
+          
+          // Force kill after 5 seconds if SIGTERM didn't work
+          setTimeout(() => {
+            if (pythonProcess.exitCode === null) {
+              try {
+                pythonProcess.kill('SIGKILL');
+                console.error(`[Preview] Force killed unresponsive process PID ${pythonProcess.pid}`);
+              } catch (err: any) {
+                if (err.code !== 'ESRCH') {
+                  console.error(`[Preview] SIGKILL failed for PID ${pythonProcess.pid}:`, err);
+                }
+              }
+            }
+          }, 5000);
+        } catch (killError) {
+          console.error(`[Preview] Failed to send SIGTERM to process ${pythonProcess.pid}:`, killError);
+        }
+        
+        // Reject immediately - don't wait for close event
+        reject(new Error(`Preview timeout after ${elapsed}ms (exceeded ${timeoutMs}ms limit)`));
+      }
+    }, timeoutMs);
+    
+    pythonProcess.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+    
+    pythonProcess.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    
+    pythonProcess.on('close', (code) => {
+      clearTimeout(timeoutHandle);
+      
+      const elapsed = Date.now() - startTime;
+      console.log(`[Preview] Python process exited after ${elapsed}ms (code: ${code})`);
+      
+      // If promise already settled (timeout or error), don't try to settle again
+      if (isSettled) {
+        console.log(`[Preview] Process completed after timeout/error - ignoring close event`);
+        return;
+      }
+      
+      isSettled = true;
+      
+      if (code !== 0) {
+        reject(new Error(`Python script exited with code ${code}: ${stderr}`));
+        return;
+      }
+      
+      resolve(stdout);
+    });
+    
+    pythonProcess.on('error', (error) => {
+      clearTimeout(timeoutHandle);
+      
+      if (!isSettled) {
+        isSettled = true;
+        reject(new Error(`Failed to spawn Python process: ${error.message}`));
+      }
+    });
+  });
+}
+
 // Global scheduler instance
 let scheduler: CaptureScheduler;
 
@@ -907,60 +1015,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[VerifyPositions] Python args:', previewArgs.join(' '));
       
       console.log('[VerifyPositions] Generating rectified preview with adjusted templates...');
-      const pythonProcess = spawnTracked(
-        'python3',
-        previewArgs,
-        'rectified_preview.py',
-        'python',
-        `Verify positions preview: ${camera.name}`
-      );
       
-      let result = '';
-      let error = '';
-      
-      pythonProcess.stdout.on('data', (data) => {
-        result += data.toString();
-      });
-      
-      pythonProcess.stderr.on('data', (data) => {
-        const stderrText = data.toString();
-        console.error('[VerifyPositions] Python stderr:', stderrText);
-        error += stderrText;
-      });
-      
-      pythonProcess.on('close', (code) => {
-        console.log(`[VerifyPositions] Python process exited with code ${code}`);
+      try {
+        const stdout = await runPythonWithTimeout({
+          args: previewArgs,
+          scriptName: 'rectified_preview.py',
+          purpose: `Verify positions preview: ${camera.name}`,
+          timeoutMs: PREVIEW_TIMEOUT_MS,
+          onTimeout: () => {
+            // Telemetry only - actual cleanup happens in finally block
+            console.log(`[VerifyPositions] Timeout detected for camera ${cameraId} after 60 seconds`);
+          }
+        });
         
-        // Release camera lock when Python process completes
+        // Parse and return preview data
+        try {
+          const previewData = JSON.parse(stdout);
+          console.log('[VerifyPositions] Preview data parsed successfully:', { ok: previewData.ok });
+          if (previewData.ok) {
+            res.json({
+              ok: true,
+              rectifiedPreview: previewData.image
+            });
+          } else {
+            console.error('[VerifyPositions] Preview generation failed:', previewData.error);
+            res.status(500).json({ message: "Failed to generate preview", error: previewData.error });
+          }
+        } catch (parseError) {
+          console.error('[VerifyPositions] Failed to parse result:', parseError);
+          console.error('[VerifyPositions] Raw output:', stdout);
+          res.status(500).json({ message: "Failed to parse preview result", error: String(parseError) });
+        }
+      } catch (error: any) {
+        // Handle error responses (lock release happens in finally)
+        if (error.message.includes('timeout')) {
+          res.status(504).json({ 
+            message: "Verify positions timeout after 60 seconds", 
+            error: error.message 
+          });
+        } else {
+          console.error('[VerifyPositions] Python failed with error:', error.message);
+          res.status(500).json({ message: "Preview generation failed", error: error.message });
+        }
+      } finally {
+        // Always release lock after operation completes (success or error)
         if (lockAcquired) {
           cameraSessionManager.releaseLock(cameraId);
           lockAcquired = false;
           console.log('[VerifyPositions] Released camera lock');
         }
-        
-        if (code === 0) {
-          try {
-            const previewData = JSON.parse(result);
-            console.log('[VerifyPositions] Preview data parsed successfully:', { ok: previewData.ok });
-            if (previewData.ok) {
-              res.json({
-                ok: true,
-                rectifiedPreview: previewData.image
-              });
-            } else {
-              console.error('[VerifyPositions] Preview generation failed:', previewData.error);
-              res.status(500).json({ message: "Failed to generate preview", error: previewData.error });
-            }
-          } catch (parseError) {
-            console.error('[VerifyPositions] Failed to parse result:', parseError);
-            console.error('[VerifyPositions] Raw output:', result);
-            res.status(500).json({ message: "Failed to parse preview result", error: String(parseError) });
-          }
-        } else {
-          console.error('[VerifyPositions] Python failed with error:', error);
-          res.status(500).json({ message: "Preview generation failed", error });
-        }
-      });
+      }
       
     } catch (error) {
       console.error('[VerifyPositions] Error:', error);
@@ -1298,7 +1402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Call Python preview script
+      // Call Python preview script with timeout protection
       // Use 1920x1080 for preview to avoid RAM overload on 2GB Raspberry Pi
       // Calibration uses full resolution (3840x2160) but same camera settings
       const previewWidth = 1920;
@@ -1320,61 +1424,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         previewArgs.push('--camera', camera.deviceIndex?.toString() || '0');
       }
       
-      const pythonProcess = spawnTracked(
-        'python3',
-        previewArgs,
-        'camera_preview.py',
-        'python',
-        `Camera preview: ${camera.name}`
-      );
-
-      let result = '';
-      let error = '';
-      let responseSent = false;
-
-      pythonProcess.on('error', (err) => {
-        if (!responseSent) {
-          responseSent = true;
-          res.status(503).json({ 
-            message: "Camera preview not available", 
-            error: err.message 
+      try {
+        const stdout = await runPythonWithTimeout({
+          args: previewArgs,
+          scriptName: 'camera_preview.py',
+          purpose: `Camera preview: ${camera.name}`,
+          timeoutMs: PREVIEW_TIMEOUT_MS,
+          onTimeout: () => {
+            // Telemetry only - actual cleanup happens in finally block
+            console.log(`[Preview] Timeout detected for camera ${cameraId} after 60 seconds`);
+          }
+        });
+        
+        // Parse and return preview data
+        try {
+          const previewData = JSON.parse(stdout);
+          res.json(previewData);
+        } catch (parseError) {
+          res.status(500).json({ message: "Failed to parse preview result", error: parseError });
+        }
+      } catch (error: any) {
+        // Handle error responses (lock release happens in finally)
+        if (error.message.includes('timeout')) {
+          res.status(504).json({ 
+            message: "Preview timeout after 60 seconds", 
+            error: error.message 
+          });
+        } else {
+          res.status(500).json({ 
+            message: "Preview failed", 
+            error: error.message 
           });
         }
-      });
-
-      pythonProcess.stdout.on('data', (data) => {
-        result += data.toString();
-      });
-
-      pythonProcess.stderr.on('data', (data) => {
-        const errStr = data.toString();
-        console.error(`[Validation] Python stderr: ${errStr}`);
-        error += errStr;
-        
-        // Turn off LED immediately after frame capture completes (~30s)
-        if (errStr.includes('[LED_OFF_SIGNAL]')) {
-          console.log('[Validation] Frame capture complete - turning off LED');
-          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
-        }
-      });
-
-      pythonProcess.on('close', (code) => {
-        if (responseSent) return;
-        
-        // Note: Preview lock is auto-expired after 5 seconds, so no explicit release needed
-        // The lock will be cleaned up automatically by the session manager
-        
-        if (code === 0) {
-          try {
-            const previewData = JSON.parse(result);
-            res.json(previewData);
-          } catch (parseError) {
-            res.status(500).json({ message: "Failed to parse preview result", error: parseError });
-          }
-        } else {
-          res.status(500).json({ message: "Preview failed", error });
-        }
-      });
+      } finally {
+        // Always release lock after operation completes (success or error)
+        cameraSessionManager.releaseLock(cameraId);
+      }
 
     } catch (error) {
       res.status(500).json({ message: "Preview error", error });
@@ -1541,66 +1626,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Rectified Preview] No camera calibration parameters - skipping undistortion`);
       }
       
-      const pythonProcess = spawnTracked(
-        'python3',
-        args,
-        'rectified_preview.py',
-        'python',
-        `Rectified preview: ${camera.name}`
-      );
-
-      let result = '';
-      let error = '';
-      let responseSent = false;
-
-      pythonProcess.on('error', (err) => {
-        if (!responseSent) {
-          responseSent = true;
-          res.status(503).json({ 
-            message: "Rectified preview not available", 
-            error: err.message 
+      // Acquire preview lock to prevent concurrent camera access
+      const lockAcquired = cameraSessionManager.acquirePreviewLock(cameraId);
+      if (!lockAcquired) {
+        return res.status(423).json({ 
+          ok: false,
+          message: "Camera is busy", 
+          reason: 'calibration_in_progress'
+        });
+      }
+      
+      try {
+        const stdout = await runPythonWithTimeout({
+          args,
+          scriptName: 'rectified_preview.py',
+          purpose: `Rectified preview: ${camera.name}`,
+          timeoutMs: PREVIEW_TIMEOUT_MS,
+          onTimeout: () => {
+            // Telemetry only - actual cleanup happens in finally block
+            console.log(`[Rectified Preview] Timeout detected for camera ${cameraId} after 60 seconds`);
+          }
+        });
+        
+        // Parse and return preview data
+        try {
+          const previewData = JSON.parse(stdout);
+          // Add no-cache headers to prevent browser from caching stale rectified preview
+          res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
+          res.json(previewData);
+        } catch (parseError) {
+          console.error('[Rectified Preview] Parse error:', parseError);
+          res.status(500).json({ message: "Failed to parse rectified preview result", error: parseError });
+        }
+      } catch (error: any) {
+        // Handle error responses (lock release happens in finally)
+        if (error.message.includes('timeout')) {
+          res.status(504).json({ 
+            message: "Rectified preview timeout after 60 seconds", 
+            error: error.message 
+          });
+        } else {
+          res.status(500).json({ 
+            message: "Rectified preview failed", 
+            error: error.message 
           });
         }
-      });
-
-      pythonProcess.stdout.on('data', (data) => {
-        result += data.toString();
-      });
-
-      pythonProcess.stderr.on('data', (data) => {
-        const errStr = data.toString();
-        console.error(`[Validation] Python stderr: ${errStr}`);
-        error += errStr;
-        
-        // Turn off LED immediately after frame capture completes (~30s)
-        if (errStr.includes('[LED_OFF_SIGNAL]')) {
-          console.log('[Validation] Frame capture complete - turning off LED');
-          turnOffLED().catch(err => console.error('[Validation] LED turnoff error:', err));
-        }
-      });
-
-      pythonProcess.on('close', (code) => {
-        if (responseSent) return;
-        
-        if (code === 0) {
-          try {
-            const previewData = JSON.parse(result);
-            // Add no-cache headers to prevent browser from caching stale rectified preview
-            res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-            res.set('Pragma', 'no-cache');
-            res.set('Expires', '0');
-            res.json(previewData);
-          } catch (parseError) {
-            console.error('[Rectified Preview] Parse error:', parseError);
-            res.status(500).json({ message: "Failed to parse rectified preview result", error: parseError });
-          }
-        } else {
-          console.error('[Rectified Preview] Python script failed with code', code);
-          console.error('[Rectified Preview] Error output:', error);
-          console.error('[Rectified Preview] Stdout output:', result);
-          res.status(500).json({ message: "Rectified preview failed", error });
-        }
-      });
+      } finally {
+        // Always release lock after operation completes (success or error)
+        cameraSessionManager.releaseLock(cameraId);
+      }
 
     } catch (error) {
       res.status(500).json({ message: "Rectified preview error", error });

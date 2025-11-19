@@ -13,6 +13,87 @@ class CameraSessionManager {
   // Global calibration lock - ensures only one camera can calibrate at a time (2GB RAM constraint)
   private globalCalibrationLock: { cameraId: string; timestamp: number } | null = null;
   private readonly CALIBRATION_TIMEOUT = 300000; // 5 minutes max for calibration
+  
+  // Periodic cleanup interval
+  private cleanupInterval: NodeJS.Timeout | null = null;
+  private readonly CLEANUP_INTERVAL_MS = 60000; // 60 seconds
+
+  constructor() {
+    this.startPeriodicCleanup();
+    this.setupShutdownHandlers();
+  }
+
+  /**
+   * Start periodic cleanup of expired locks
+   * Runs every 60 seconds to prevent lock leaks from crashed operations
+   */
+  private startPeriodicCleanup(): void {
+    console.log(`[CameraSessionManager] Starting periodic lock cleanup (interval: ${this.CLEANUP_INTERVAL_MS}ms)`);
+    
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupExpiredLocks();
+    }, this.CLEANUP_INTERVAL_MS);
+  }
+
+  /**
+   * Clean up expired locks that weren't explicitly released
+   * Handles both camera-specific locks and the global calibration lock
+   */
+  private cleanupExpiredLocks(): void {
+    const now = Date.now();
+    const toRemove: string[] = [];
+    
+    // Check camera-specific locks
+    for (const [cameraId, lock] of this.locks.entries()) {
+      const elapsed = now - lock.timestamp;
+      
+      if (lock.type === 'preview' && elapsed > this.PREVIEW_TIMEOUT) {
+        console.log(`[CameraSessionManager] Cleanup: Removing expired preview lock for camera ${cameraId} (age: ${Math.round(elapsed / 1000)}s)`);
+        toRemove.push(cameraId);
+      } else if (lock.type === 'exclusive' && elapsed > this.CALIBRATION_TIMEOUT) {
+        console.log(`[CameraSessionManager] Cleanup: Removing expired exclusive lock for camera ${cameraId} (age: ${Math.round(elapsed / 1000)}s)`);
+        toRemove.push(cameraId);
+      }
+    }
+    
+    // Remove expired locks
+    for (const cameraId of toRemove) {
+      this.locks.delete(cameraId);
+    }
+    
+    // Check global calibration lock
+    if (this.globalCalibrationLock) {
+      const elapsed = now - this.globalCalibrationLock.timestamp;
+      if (elapsed > this.CALIBRATION_TIMEOUT) {
+        console.log(`[CameraSessionManager] Cleanup: Removing expired global calibration lock for camera ${this.globalCalibrationLock.cameraId} (age: ${Math.round(elapsed / 1000)}s)`);
+        this.globalCalibrationLock = null;
+      }
+    }
+    
+    // Log status if cleanup actually happened
+    if (toRemove.length > 0) {
+      console.log(`[CameraSessionManager] Cleanup: Removed ${toRemove.length} expired camera locks`);
+    }
+  }
+
+  /**
+   * Setup graceful shutdown handlers
+   * Ensures cleanup interval is cleared to prevent memory leaks
+   */
+  private setupShutdownHandlers(): void {
+    const shutdown = () => {
+      console.log('[CameraSessionManager] Shutting down...');
+      if (this.cleanupInterval) {
+        clearInterval(this.cleanupInterval);
+        this.cleanupInterval = null;
+        console.log('[CameraSessionManager] Cleanup interval stopped');
+      }
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+    process.on('beforeExit', shutdown);
+  }
 
   /**
    * Attempt to acquire a lock for camera preview (shared, short-lived)
