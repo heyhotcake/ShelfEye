@@ -41,6 +41,33 @@ class AsyncMutex {
   }
 }
 
+/**
+ * Retry queue for failed email and Google Sheets alerts
+ * Provides exponential backoff and automatic retry with persistence
+ * Uses AsyncMutex to prevent concurrent queue modifications and race conditions
+ * 
+ * ## Production Considerations
+ * 
+ * ### Edge Case 1: Long Retry Handlers (>5 minutes)
+ * - Alerts are marked "in-flight" with a 5-minute buffer during processing
+ * - If a single retry takes longer than 5 minutes (e.g., slow email server),
+ *   the next retry cycle may attempt to process the same alert again
+ * - Mitigation: Monitor retry handler execution time; extend IN_FLIGHT_BUFFER_MS if needed
+ * - Impact: Potential duplicate email/sheets logging (rare, requires >5min network delays)
+ * 
+ * ### Edge Case 2: setConfig Persistence Failures
+ * - If storage.setConfig() fails during Phase 3 commit, in-memory queue advances
+ *   but storage state remains outdated
+ * - Mitigation: Logs "[AlertQueue] Failed to commit retry results" for monitoring
+ * - Impact: Queue diverges from storage until next successful save; alerts may be
+ *   reprocessed after server restart (duplicate delivery risk)
+ * - Recovery: Next successful queue modification will resync storage state
+ * 
+ * ### Monitoring Recommendations
+ * - Alert on repeated "Failed to commit retry results" errors
+ * - Track retry handler execution times via logs
+ * - Monitor queue size growth (indicates persistent delivery failures)
+ */
 export class AlertRetryQueue {
   private storage: IStorage;
   private sheetsLogger: SheetsLogger;
