@@ -9,6 +9,12 @@ The Tool Tracking System is a Raspberry Pi-based solution for real-time tool mon
 - Bulletproof spawn enforcement (ALL 13+ spawn calls use spawnTracked())
 - Persistent cleanup with exit verification (prevents premature process removal)
 
+**Production Reliability (Phase 2 - Completed Nov 19, 2025):**
+- Preview timeout protection: All camera endpoints (preview, rectified, verify-positions) enforce 60s timeout with automatic process cleanup
+- Lock leak prevention: Finally blocks ensure camera locks are ALWAYS released on all code paths (success/error/timeout)
+- Escalation queue for D-state processes: Automated reconciliation, re-termination attempts, and structured logging for hung processes
+- Proactive lock cleanup: 60s interval scans for expired camera locks and global calibration lock, preventing leaks from crashes
+
 ## User Preferences
 - Preferred communication style: Simple, everyday language.
 - **Deployment Context**: User runs the application on a Raspberry Pi at `http://naniwatanacheck.local:5000`. **ALL debugging, testing, and issue reports refer to the Pi deployment, NOT the Replit web preview.** The Replit environment is for code development only; actual hardware features (camera, GPIO) only work on the Raspberry Pi. When user reports issues or provides screenshots, they are ALWAYS from the Pi, not from Replit webview.
