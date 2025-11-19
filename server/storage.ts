@@ -124,17 +124,19 @@ export class DbStorage implements IStorage {
   }
 
   private async initializeDefaults() {
-    const existingCameras = await this.getCameras();
+    // Use direct DB access to avoid re-entering ensureInitialized() (deadlock prevention)
+    const existingCameras = await db.select().from(schema.cameras);
     
     if (existingCameras.length === 0) {
-      await this.createCamera({
+      // Direct DB insert - do NOT call public methods to avoid re-entrancy deadlock
+      await db.insert(schema.cameras).values({
         name: "Camera Station A",
         deviceIndex: 0,
         resolution: [3840, 2160],
         isActive: true,
       });
 
-      await this.createAlertRule({
+      await db.insert(schema.alertRules).values({
         name: "Tool Missing Alert",
         ruleType: "TOOL_MISSING",
         isEnabled: true,
@@ -144,7 +146,7 @@ export class DbStorage implements IStorage {
         conditions: { emptyDurationMinutes: 5 } as Record<string, any>,
       });
 
-      await this.createAlertRule({
+      await db.insert(schema.alertRules).values({
         name: "QR Detection Failure",
         ruleType: "QR_FAILURE",
         isEnabled: true,
@@ -154,7 +156,7 @@ export class DbStorage implements IStorage {
         conditions: { consecutiveFailures: 3 } as Record<string, any>,
       });
 
-      await this.createAlertRule({
+      await db.insert(schema.alertRules).values({
         name: "Camera Health Alert",
         ruleType: "CAMERA_HEALTH",
         isEnabled: true,
@@ -212,10 +214,15 @@ export class DbStorage implements IStorage {
       { key: "last_calibration_paper_size_format", value: "6-page-3x2", desc: "Last used paper size format" },
     ];
     
+    // Direct DB access for config defaults to avoid re-entrancy deadlock
     for (const config of configDefaults) {
-      const existing = await this.getConfigByKey(config.key);
-      if (!existing) {
-        await this.setConfig(config.key, config.value, config.desc);
+      const existing = await db.select().from(schema.systemConfig).where(eq(schema.systemConfig.key, config.key));
+      if (!existing || existing.length === 0) {
+        await db.insert(schema.systemConfig).values({
+          key: config.key,
+          value: config.value,
+          description: config.desc
+        });
       }
     }
   }

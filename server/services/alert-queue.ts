@@ -12,6 +12,35 @@ interface QueuedAlert {
   data: any;
 }
 
+/**
+ * Simple async mutex for serializing queue operations
+ * Prevents concurrent modifications from creating race conditions in persistence
+ */
+class AsyncMutex {
+  private locked = false;
+  private waitQueue: Array<() => void> = [];
+
+  async lock(): Promise<void> {
+    if (!this.locked) {
+      this.locked = true;
+      return;
+    }
+    // Wait for lock to be released
+    return new Promise((resolve) => {
+      this.waitQueue.push(resolve);
+    });
+  }
+
+  unlock(): void {
+    if (this.waitQueue.length > 0) {
+      const resolve = this.waitQueue.shift()!;
+      resolve();
+    } else {
+      this.locked = false;
+    }
+  }
+}
+
 export class AlertRetryQueue {
   private storage: IStorage;
   private sheetsLogger: SheetsLogger;
@@ -19,6 +48,7 @@ export class AlertRetryQueue {
   private retryIntervalMs = 60000; // Check every 1 minute
   private maxRetryDurationMs = 24 * 60 * 60 * 1000; // 24 hours
   private retryTimer?: NodeJS.Timeout;
+  private queueMutex = new AsyncMutex(); // Serialize queue modifications
   
   constructor(storage: IStorage, sheetsLogger: SheetsLogger) {
     this.storage = storage;
@@ -58,6 +88,7 @@ export class AlertRetryQueue {
       await this.storage.setConfig('ALERT_RETRY_QUEUE', items);
     } catch (error) {
       console.error('[AlertQueue] Failed to save queue to storage:', error);
+      throw error; // Re-throw so callers know the save failed
     }
   }
   
@@ -73,9 +104,22 @@ export class AlertRetryQueue {
       data: { emailType, subject, details }
     };
     
-    this.queue.set(id, alert);
-    await this.saveQueueToStorage();
-    console.log(`[AlertQueue] Queued email alert: ${id} (${emailType})`);
+    // Acquire lock to serialize queue modifications
+    await this.queueMutex.lock();
+    try {
+      // Add to queue and persist atomically
+      this.queue.set(id, alert);
+      const items = Array.from(this.queue.entries());
+      await this.storage.setConfig('ALERT_RETRY_QUEUE', items);
+      console.log(`[AlertQueue] Queued email alert: ${id} (${emailType})`);
+    } catch (error) {
+      // Rollback in-memory change on save failure
+      this.queue.delete(id);
+      console.error(`[AlertQueue] Failed to queue email alert ${id} - save failed:`, error);
+      throw error; // Propagate error so caller knows the alert wasn't queued
+    } finally {
+      this.queueMutex.unlock();
+    }
   }
   
   async queueSheetsAlert(alertData: any) {
@@ -90,9 +134,22 @@ export class AlertRetryQueue {
       data: alertData
     };
     
-    this.queue.set(id, alert);
-    await this.saveQueueToStorage();
-    console.log(`[AlertQueue] Queued sheets alert: ${id}`);
+    // Acquire lock to serialize queue modifications
+    await this.queueMutex.lock();
+    try {
+      // Add to queue and persist atomically
+      this.queue.set(id, alert);
+      const items = Array.from(this.queue.entries());
+      await this.storage.setConfig('ALERT_RETRY_QUEUE', items);
+      console.log(`[AlertQueue] Queued sheets alert: ${id}`);
+    } catch (error) {
+      // Rollback in-memory change on save failure
+      this.queue.delete(id);
+      console.error(`[AlertQueue] Failed to queue sheets alert ${id} - save failed:`, error);
+      throw error; // Propagate error so caller knows the alert wasn't queued
+    } finally {
+      this.queueMutex.unlock();
+    }
   }
   
   private startRetryProcessor() {
@@ -104,9 +161,36 @@ export class AlertRetryQueue {
   
   private async processRetries() {
     const now = Date.now();
+    const IN_FLIGHT_BUFFER_MS = 5 * 60 * 1000; // 5 minutes - prevents overlapping cycles
+    
+    // Phase 1: Acquire lock, snapshot alerts to process, mark as in-flight, release lock
+    await this.queueMutex.lock();
     const alertsToRetry = Array.from(this.queue.values()).filter(
       alert => alert.nextRetryAt <= now
     );
+    
+    // Mark alerts as in-flight to prevent overlapping retry cycles
+    for (const alert of alertsToRetry) {
+      alert.nextRetryAt = now + IN_FLIGHT_BUFFER_MS;
+    }
+    
+    // Persist in-flight markers immediately (prevents concurrent processing)
+    if (alertsToRetry.length > 0) {
+      try {
+        const items = Array.from(this.queue.entries());
+        await this.storage.setConfig('ALERT_RETRY_QUEUE', items);
+      } catch (error) {
+        console.error('[AlertQueue] Failed to mark alerts as in-flight:', error);
+        // Restore original nextRetryAt values since we couldn't persist
+        for (const alert of alertsToRetry) {
+          alert.nextRetryAt = now; // Will be retried next cycle
+        }
+        this.queueMutex.unlock();
+        return;
+      }
+    }
+    
+    this.queueMutex.unlock();
     
     if (alertsToRetry.length === 0) {
       // Queue is empty or no alerts ready for retry - processor is idle but running
@@ -116,48 +200,78 @@ export class AlertRetryQueue {
     
     console.log(`[AlertQueue] Processing ${alertsToRetry.length} queued alerts...`);
     
+    // Phase 2: Process alerts without holding lock (network IO operations)
+    // Store results for later commit
+    const results = new Map<string, {action: 'delete' | 'update', retryCount?: number, nextRetryAt?: number}>();
+    
     for (const alert of alertsToRetry) {
       const age = now - alert.createdAt;
       
       // Check if alert has exceeded max duration
       if (age > this.maxRetryDurationMs) {
-        console.error(`[AlertQueue] Alert ${alert.id} exceeded 24hr timeout - removing from queue`);
-        this.queue.delete(alert.id);
-        await this.saveQueueToStorage();
+        console.error(`[AlertQueue] Alert ${alert.id} exceeded 24hr timeout - marking for deletion`);
+        results.set(alert.id, { action: 'delete' });
         continue;
       }
       
       // Check if exceeded max retries
       if (alert.retryCount >= alert.maxRetries) {
-        console.error(`[AlertQueue] Alert ${alert.id} exceeded max retries (${alert.maxRetries}) - removing from queue`);
-        this.queue.delete(alert.id);
-        await this.saveQueueToStorage();
+        console.error(`[AlertQueue] Alert ${alert.id} exceeded max retries (${alert.maxRetries}) - marking for deletion`);
+        results.set(alert.id, { action: 'delete' });
         continue;
       }
       
-      // Attempt retry
+      // Attempt retry (network IO - done without lock)
       const success = await this.retryAlert(alert);
       
       if (success) {
-        // Remove from queue on success
-        this.queue.delete(alert.id);
-        console.log(`[AlertQueue] Alert ${alert.id} delivered successfully - removed from queue`);
+        console.log(`[AlertQueue] Alert ${alert.id} delivered successfully - marking for deletion`);
+        results.set(alert.id, { action: 'delete' });
       } else {
-        // Update retry count and schedule next retry with exponential backoff
-        alert.retryCount++;
+        // Schedule next retry with exponential backoff
+        const newRetryCount = alert.retryCount + 1;
         const backoffMs = Math.min(
-          60000 * Math.pow(2, alert.retryCount), // Exponential: 1min, 2min, 4min, 8min, 16min, etc.
+          60000 * Math.pow(2, newRetryCount), // Exponential: 1min, 2min, 4min, 8min, 16min, etc.
           60 * 60 * 1000 // Cap at 1 hour
         );
-        alert.nextRetryAt = now + backoffMs;
+        const newNextRetryAt = now + backoffMs;
         
         console.log(
-          `[AlertQueue] Alert ${alert.id} retry ${alert.retryCount}/${alert.maxRetries} failed - ` +
+          `[AlertQueue] Alert ${alert.id} retry ${newRetryCount}/${alert.maxRetries} failed - ` +
           `next retry in ${Math.round(backoffMs / 60000)} minutes`
         );
+        results.set(alert.id, { action: 'update', retryCount: newRetryCount, nextRetryAt: newNextRetryAt });
       }
-      
-      await this.saveQueueToStorage();
+    }
+    
+    // Phase 3: Acquire lock, apply all changes, persist, release lock
+    if (results.size > 0) {
+      await this.queueMutex.lock();
+      try {
+        // Apply all changes to in-memory queue
+        for (const [id, result] of results.entries()) {
+          if (result.action === 'delete') {
+            this.queue.delete(id);
+          } else if (result.action === 'update') {
+            const alert = this.queue.get(id);
+            if (alert && result.retryCount !== undefined && result.nextRetryAt !== undefined) {
+              alert.retryCount = result.retryCount;
+              alert.nextRetryAt = result.nextRetryAt;
+            }
+          }
+        }
+        
+        // Persist updated queue to storage
+        const items = Array.from(this.queue.entries());
+        await this.storage.setConfig('ALERT_RETRY_QUEUE', items);
+        console.log(`[AlertQueue] Committed ${results.size} alert updates to storage`);
+      } catch (error) {
+        console.error('[AlertQueue] Failed to commit retry results to storage:', error);
+        // Changes already applied to in-memory queue, but persistence failed
+        // Queue will be out of sync with storage until next successful save
+      } finally {
+        this.queueMutex.unlock();
+      }
     }
   }
   
@@ -194,7 +308,8 @@ export class AlertRetryQueue {
     let nextRetryAt = Infinity;
     let oldestCreatedAt = Infinity;
     
-    for (const alert of this.queue.values()) {
+    const alerts = Array.from(this.queue.values());
+    for (const alert of alerts) {
       if (alert.type === 'email') stats.emailQueued++;
       if (alert.type === 'sheets') stats.sheetsQueued++;
       
