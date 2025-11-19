@@ -93,8 +93,21 @@ import { eq, desc, and, gte, lte, isNull } from 'drizzle-orm';
 import { withRetry } from './db-retry';
 
 export class DbStorage implements IStorage {
+  private initPromise: Promise<void> | null = null;
+  
   constructor() {
-    this.initializeDefaults();
+    // Lazy initialization - will be triggered on first method call
+  }
+  
+  /**
+   * Ensure initialization has completed before executing any storage operation
+   * Lazy initialization pattern - runs once on first method call
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initPromise) {
+      this.initPromise = this.initializeDefaults();
+    }
+    await this.initPromise;
   }
   
   /**
@@ -208,48 +221,58 @@ export class DbStorage implements IStorage {
   }
 
   async getCameras(): Promise<Camera[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.cameras);
   }
 
   async getCamera(id: string): Promise<Camera | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.cameras).where(eq(schema.cameras.id, id));
     return result[0];
   }
 
   async createCamera(camera: InsertCamera): Promise<Camera> {
+    await this.ensureInitialized();
     const result = await db.insert(schema.cameras).values(camera as any).returning();
     return result[0];
   }
 
   async updateCamera(id: string, updates: Partial<InsertCamera>): Promise<Camera | undefined> {
+    await this.ensureInitialized();
     const result = await db.update(schema.cameras).set(updates as any).where(eq(schema.cameras.id, id)).returning();
     return result[0];
   }
 
   async deleteCamera(id: string): Promise<boolean> {
+    await this.ensureInitialized();
     const result = await db.delete(schema.cameras).where(eq(schema.cameras.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getSlots(): Promise<Slot[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.slots);
   }
 
   async getSlotsByCamera(cameraId: string): Promise<Slot[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.slots).where(eq(schema.slots.cameraId, cameraId));
   }
 
   async getSlot(id: string): Promise<Slot | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.slots).where(eq(schema.slots.id, id));
     return result[0];
   }
 
   async getSlotBySlotId(slotId: string): Promise<Slot | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.slots).where(eq(schema.slots.slotId, slotId));
     return result[0];
   }
 
   async createSlot(slot: InsertSlot): Promise<Slot> {
+    await this.ensureInitialized();
     // Auto-assign sequential slot number per camera (1, 2, 3, ...)
     // Get highest slot number for this camera
     const cameraSlots = await this.getSlotsByCamera(slot.cameraId);
@@ -269,6 +292,7 @@ export class DbStorage implements IStorage {
   }
 
   async updateSlot(id: string, updates: Partial<InsertSlot>): Promise<Slot | undefined> {
+    await this.ensureInitialized();
     const definedUpdates = Object.fromEntries(
       Object.entries(updates).filter(([_, value]) => value !== undefined)
     ) as Partial<InsertSlot>;
@@ -277,23 +301,28 @@ export class DbStorage implements IStorage {
   }
 
   async deleteSlot(id: string): Promise<boolean> {
+    await this.ensureInitialized();
     const result = await db.delete(schema.slots).where(eq(schema.slots.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getDetectionLogs(limit: number = 100, offset: number = 0): Promise<DetectionLog[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.detectionLogs).orderBy(desc(schema.detectionLogs.timestamp)).limit(limit).offset(offset);
   }
 
   async getDetectionLogsBySlot(slotId: string, limit: number = 100): Promise<DetectionLog[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.detectionLogs).where(eq(schema.detectionLogs.slotId, slotId)).orderBy(desc(schema.detectionLogs.timestamp)).limit(limit);
   }
 
   async getDetectionLogsByDateRange(startDate: Date, endDate: Date): Promise<DetectionLog[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.detectionLogs).where(and(gte(schema.detectionLogs.timestamp, startDate), lte(schema.detectionLogs.timestamp, endDate))).orderBy(desc(schema.detectionLogs.timestamp)).limit(10000);
   }
 
   async getLatestDetectionLogBySlotBeforeTime(slotId: string, timestamp: Date): Promise<DetectionLog | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.detectionLogs)
       .where(and(
         eq(schema.detectionLogs.slotId, slotId),
@@ -305,6 +334,7 @@ export class DbStorage implements IStorage {
   }
 
   async createDetectionLog(log: InsertDetectionLog): Promise<DetectionLog> {
+    await this.ensureInitialized();
     return this.withDbRetry(async () => {
       const result = await db.insert(schema.detectionLogs).values(log).returning();
       return result[0];
@@ -312,66 +342,80 @@ export class DbStorage implements IStorage {
   }
 
   async deleteDetectionLogsBySlotId(slotId: string): Promise<number> {
+    await this.ensureInitialized();
     const result = await db.delete(schema.detectionLogs)
       .where(eq(schema.detectionLogs.slotId, slotId));
     return result.rowCount || 0;
   }
 
   async getAlertRules(): Promise<AlertRule[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.alertRules);
   }
 
   async getActiveAlertRules(): Promise<AlertRule[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.alertRules).where(eq(schema.alertRules.isEnabled, true));
   }
 
   async getAlertRule(id: string): Promise<AlertRule | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.alertRules).where(eq(schema.alertRules.id, id));
     return result[0];
   }
 
   async createAlertRule(rule: InsertAlertRule): Promise<AlertRule> {
+    await this.ensureInitialized();
     const result = await db.insert(schema.alertRules).values(rule).returning();
     return result[0];
   }
 
   async updateAlertRule(id: string, updates: Partial<InsertAlertRule>): Promise<AlertRule | undefined> {
+    await this.ensureInitialized();
     const result = await db.update(schema.alertRules).set(updates).where(eq(schema.alertRules.id, id)).returning();
     return result[0];
   }
 
   async deleteAlertRule(id: string): Promise<boolean> {
+    await this.ensureInitialized();
     const result = await db.delete(schema.alertRules).where(eq(schema.alertRules.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getAlertQueue(): Promise<AlertQueue[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.alertQueue).orderBy(desc(schema.alertQueue.scheduledAt));
   }
 
   async getPendingAlerts(): Promise<AlertQueue[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.alertQueue).where(eq(schema.alertQueue.status, 'pending')).orderBy(desc(schema.alertQueue.scheduledAt));
   }
 
   async getFailedAlerts(): Promise<AlertQueue[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.alertQueue).where(eq(schema.alertQueue.status, 'failed')).orderBy(desc(schema.alertQueue.scheduledAt));
   }
 
   async createAlert(alert: InsertAlertQueue): Promise<AlertQueue> {
+    await this.ensureInitialized();
     const result = await db.insert(schema.alertQueue).values(alert).returning();
     return result[0];
   }
 
   async updateAlertStatus(id: string, status: string, sentAt?: Date): Promise<AlertQueue | undefined> {
+    await this.ensureInitialized();
     const result = await db.update(schema.alertQueue).set({ status, sentAt }).where(eq(schema.alertQueue.id, id)).returning();
     return result[0];
   }
 
   async getSystemConfig(): Promise<SystemConfig[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.systemConfig);
   }
 
   async getConfigByKey(key: string): Promise<SystemConfig | undefined> {
+    await this.ensureInitialized();
     return this.withDbRetry(async () => {
       const result = await db.select().from(schema.systemConfig).where(eq(schema.systemConfig.key, key));
       return result[0];
@@ -379,6 +423,7 @@ export class DbStorage implements IStorage {
   }
 
   async setConfig(key: string, value: any, description?: string): Promise<SystemConfig> {
+    await this.ensureInitialized();
     return this.withDbRetry(async () => {
       const existing = await this.getConfigByKey(key);
       if (existing) {
@@ -392,45 +437,54 @@ export class DbStorage implements IStorage {
   }
 
   async updateConfig(key: string, value: any): Promise<SystemConfig | undefined> {
+    await this.ensureInitialized();
     const result = await db.update(schema.systemConfig).set({ value, updatedAt: new Date() }).where(eq(schema.systemConfig.key, key)).returning();
     return result[0];
   }
 
   async getToolCategories(): Promise<ToolCategory[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.toolCategories);
   }
 
   async getToolCategory(id: string): Promise<ToolCategory | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.toolCategories).where(eq(schema.toolCategories.id, id));
     return result[0];
   }
 
   async createToolCategory(category: InsertToolCategory): Promise<ToolCategory> {
+    await this.ensureInitialized();
     const result = await db.insert(schema.toolCategories).values(category).returning();
     return result[0];
   }
 
   async updateToolCategory(id: string, updates: Partial<InsertToolCategory>): Promise<ToolCategory | undefined> {
+    await this.ensureInitialized();
     const result = await db.update(schema.toolCategories).set(updates).where(eq(schema.toolCategories.id, id)).returning();
     return result[0];
   }
 
   async deleteToolCategory(id: string): Promise<boolean> {
+    await this.ensureInitialized();
     const result = await db.delete(schema.toolCategories).where(eq(schema.toolCategories.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getTemplateRectangles(): Promise<TemplateRectangle[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.templateRectangles);
   }
 
   async getTemplateRectanglesByPaperSize(paperSize: string): Promise<TemplateRectangle[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.templateRectangles)
       .where(eq(schema.templateRectangles.paperSize, paperSize))
       .orderBy(schema.templateRectangles.createdAt); // Order by creation time for consistency
   }
 
   async getTemplateRectanglesByPaperSizeAndCamera(paperSize: string, cameraId: string): Promise<TemplateRectangle[]> {
+    await this.ensureInitialized();
     // First try to get camera-specific templates
     const cameraSpecific = await db.select().from(schema.templateRectangles)
       .where(
@@ -458,32 +512,38 @@ export class DbStorage implements IStorage {
   }
 
   async getTemplateRectangle(id: string): Promise<TemplateRectangle | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.templateRectangles).where(eq(schema.templateRectangles.id, id));
     return result[0];
   }
 
   async createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle> {
+    await this.ensureInitialized();
     const result = await db.insert(schema.templateRectangles).values(rectangle).returning();
     return result[0];
   }
 
   async updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined> {
+    await this.ensureInitialized();
     const result = await db.update(schema.templateRectangles).set(updates).where(eq(schema.templateRectangles.id, id)).returning();
     return result[0];
   }
 
   async deleteTemplateRectangle(id: string): Promise<boolean> {
+    await this.ensureInitialized();
     const result = await db.delete(schema.templateRectangles).where(eq(schema.templateRectangles.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getTemplateRectanglesByDesignId(designId: string): Promise<TemplateRectangle[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.templateRectangles)
       .where(eq(schema.templateRectangles.designId, designId))
       .orderBy(schema.templateRectangles.createdAt);
   }
 
   async deleteTemplateRectanglesByDesignId(designId: string): Promise<number> {
+    await this.ensureInitialized();
     const result = await db.delete(schema.templateRectangles)
       .where(eq(schema.templateRectangles.designId, designId));
     return result.rowCount || 0;
@@ -491,17 +551,20 @@ export class DbStorage implements IStorage {
 
   // Template design methods
   async getTemplateDesigns(): Promise<TemplateDesign[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.templateDesigns)
       .orderBy(desc(schema.templateDesigns.createdAt));
   }
 
   async getTemplateDesign(id: string): Promise<TemplateDesign | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.templateDesigns)
       .where(eq(schema.templateDesigns.id, id));
     return result[0];
   }
 
   async createTemplateDesign(design: InsertTemplateDesign): Promise<TemplateDesign> {
+    await this.ensureInitialized();
     const result = await db.insert(schema.templateDesigns)
       .values(design)
       .returning();
@@ -509,6 +572,7 @@ export class DbStorage implements IStorage {
   }
 
   async updateTemplateDesign(id: string, updates: Partial<InsertTemplateDesign>): Promise<TemplateDesign | undefined> {
+    await this.ensureInitialized();
     const result = await db.update(schema.templateDesigns)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(schema.templateDesigns.id, id))
@@ -517,6 +581,7 @@ export class DbStorage implements IStorage {
   }
 
   async deleteTemplateDesign(id: string): Promise<boolean> {
+    await this.ensureInitialized();
     // Delete associated rectangles first (cascade)
     await this.deleteTemplateRectanglesByDesignId(id);
     
@@ -526,6 +591,7 @@ export class DbStorage implements IStorage {
   }
 
   async saveTemplateDesignWithRectangles(design: InsertTemplateDesign, rectangles: InsertTemplateRectangle[], existingId?: string): Promise<TemplateDesign> {
+    await this.ensureInitialized();
     // Atomic transaction - all or nothing
     return await db.transaction(async (tx) => {
       let savedDesign: TemplateDesign;
@@ -570,48 +636,58 @@ export class DbStorage implements IStorage {
 
   // Worker methods
   async getWorkers(): Promise<Worker[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.workers);
   }
 
   async getActiveWorkers(): Promise<Worker[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.workers).where(eq(schema.workers.isActive, true));
   }
 
   async getWorker(id: string): Promise<Worker | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.workers).where(eq(schema.workers.id, id));
     return result[0];
   }
 
   async getWorkerByCode(workerCode: string): Promise<Worker | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.workers).where(eq(schema.workers.workerCode, workerCode));
     return result[0];
   }
 
   async createWorker(worker: InsertWorker & { arucoId: number; workerCode: string }): Promise<Worker> {
+    await this.ensureInitialized();
     const result = await db.insert(schema.workers).values(worker).returning();
     return result[0];
   }
 
   async updateWorker(id: string, updates: Partial<Worker>): Promise<Worker | undefined> {
+    await this.ensureInitialized();
     const result = await db.update(schema.workers).set(updates).where(eq(schema.workers.id, id)).returning();
     return result[0];
   }
 
   async deleteWorker(id: string): Promise<boolean> {
+    await this.ensureInitialized();
     const result = await db.delete(schema.workers).where(eq(schema.workers.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
   async getCaptureRuns(limit: number = 50): Promise<CaptureRun[]> {
+    await this.ensureInitialized();
     return await db.select().from(schema.captureRuns).orderBy(desc(schema.captureRuns.timestamp)).limit(limit);
   }
 
   async getCaptureRun(id: string): Promise<CaptureRun | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.captureRuns).where(eq(schema.captureRuns.id, id));
     return result[0];
   }
 
   async createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun> {
+    await this.ensureInitialized();
     return this.withDbRetry(async () => {
       const result = await db.insert(schema.captureRuns).values(run as any).returning();
       return result[0];
@@ -620,11 +696,13 @@ export class DbStorage implements IStorage {
 
   // Google OAuth credential methods
   async getGoogleOAuthCredential(service: 'gmail' | 'sheets'): Promise<GoogleOAuthCredential | undefined> {
+    await this.ensureInitialized();
     const result = await db.select().from(schema.googleOAuthCredentials).where(eq(schema.googleOAuthCredentials.service, service));
     return result[0];
   }
 
   async setGoogleOAuthCredential(service: 'gmail' | 'sheets', credential: Partial<InsertGoogleOAuthCredential>): Promise<GoogleOAuthCredential> {
+    await this.ensureInitialized();
     const existing = await this.getGoogleOAuthCredential(service);
     
     if (existing) {
@@ -642,6 +720,7 @@ export class DbStorage implements IStorage {
   }
 
   async deleteGoogleOAuthCredential(service: 'gmail' | 'sheets'): Promise<boolean> {
+    await this.ensureInitialized();
     const result = await db.delete(schema.googleOAuthCredentials).where(eq(schema.googleOAuthCredentials.service, service));
     return result.rowCount !== null && result.rowCount > 0;
   }
