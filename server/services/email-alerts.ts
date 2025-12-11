@@ -23,19 +23,29 @@ interface AlertEmailData {
 function buildAlertSubject(alertData: AlertEmailData): string {
   const { type, details } = alertData;
   
+  // Alert type labels in Japanese
+  const alertTypeLabels: Record<string, string> = {
+    diagnostic_failure: '診断チェック失敗',
+    capture_failure: '撮影失敗',
+    camera_offline: 'カメラ異常',
+    test_alert: 'テスト通知',
+    missing_tool: '工具不足'
+  };
+  
+  const typeLabel = alertTypeLabels[type] || type.replace(/_/g, ' ');
+  
   // For missing tool alerts, include camera name and tool name
   if (type === 'missing_tool' && details.cameraName && details.toolName) {
-    return `🔧 Tool Alert - ${details.cameraName} - ${details.toolName} Missing`;
+    return `【工具管理システム】${details.cameraName} - ${details.toolName} 不足`;
   }
   
   // For all other alerts, include camera name if available
   if (details.cameraName) {
-    const alertType = type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    return `⚠️ System Alert - ${details.cameraName} - ${alertType}`;
+    return `【工具管理システム】${details.cameraName} - ${typeLabel}`;
   }
   
   // Fallback for alerts without camera name
-  return alertData.subject || `Tool Tracking System - ${type.replace(/_/g, ' ')}`;
+  return alertData.subject || `【工具管理システム】${typeLabel}`;
 }
 
 export async function sendAlertEmail(alertData: AlertEmailData): Promise<boolean> {
@@ -101,54 +111,65 @@ export async function sendAlertEmail(alertData: AlertEmailData): Promise<boolean
 function buildEmailBody(alertData: AlertEmailData): string {
   const { type, details } = alertData;
   
-  let body = `Tool Tracking System Alert\n\n`;
+  // Alert type labels in Japanese
+  const alertTypeLabels: Record<string, string> = {
+    diagnostic_failure: '診断チェック失敗',
+    capture_failure: '撮影失敗',
+    camera_offline: 'カメラ異常',
+    test_alert: 'テスト通知',
+    missing_tool: '工具不足'
+  };
+  
+  const typeLabel = alertTypeLabels[type] || type.replace(/_/g, ' ').toUpperCase();
+  
+  let body = `工具管理システム通知\n\n`;
   
   // Show camera name prominently at the top for all alerts
   if (details.cameraName) {
-    body += `Camera: ${details.cameraName}\n`;
+    body += `カメラ: ${details.cameraName}\n`;
   }
   if (details.cameraId) {
-    body += `Camera ID: ${details.cameraId}\n`;
+    body += `カメラID: ${details.cameraId}\n`;
   }
   
-  body += `Alert Type: ${type.replace(/_/g, ' ').toUpperCase()}\n`;
-  body += `Timestamp: ${details.timestamp}\n\n`;
+  body += `通知種別: ${typeLabel}\n`;
+  body += `日時: ${details.timestamp}\n\n`;
 
   if (type === 'diagnostic_failure') {
-    body += `Pre-flight diagnostic check failed.\n`;
+    body += `事前診断チェックが失敗しました。\n`;
     if (details.errorMessage) {
-      body += `Error: ${details.errorMessage}\n`;
+      body += `エラー内容: ${details.errorMessage}\n`;
     }
   } else if (type === 'capture_failure') {
-    body += `Scheduled capture failed.\n`;
+    body += `定時撮影が失敗しました。\n`;
     if (details.failedCameras !== undefined && details.totalCameras !== undefined) {
-      body += `Failed Cameras: ${details.failedCameras}/${details.totalCameras}\n`;
+      body += `失敗カメラ数: ${details.failedCameras}/${details.totalCameras}\n`;
     }
     if (details.slotsProcessed !== undefined) {
-      body += `Slots Processed: ${details.slotsProcessed}\n`;
+      body += `処理済みスロット数: ${details.slotsProcessed}\n`;
     }
     if (details.errorMessage) {
-      body += `Error: ${details.errorMessage}\n`;
+      body += `エラー内容: ${details.errorMessage}\n`;
     }
   } else if (type === 'camera_offline') {
-    body += `Camera is offline or inaccessible.\n`;
+    body += `カメラがオフラインまたはアクセス不可の状態です。\n`;
     if (details.errorMessage) {
-      body += `Error: ${details.errorMessage}\n`;
+      body += `エラー内容: ${details.errorMessage}\n`;
     }
   } else if (type === 'missing_tool') {
-    body += `Tool is missing from its designated slot.\n`;
+    body += `指定スロットから工具が不足しています。\n`;
     if (details.slotNumber) {
-      body += `Slot Number: ${details.slotNumber}\n`;
+      body += `スロット番号: ${details.slotNumber}\n`;
     }
     if (details.toolName) {
-      body += `Missing Tool: ${details.toolName}\n`;
+      body += `不足工具: ${details.toolName}\n`;
     }
     if (details.slotId) {
-      body += `Slot ID: ${details.slotId}\n`;
+      body += `スロットID: ${details.slotId}\n`;
     }
   }
 
-  body += `\n---\nThis is an automated alert from your Tool Tracking System.`;
+  body += `\n---\nこのメールは工具管理システムから自動送信されています。`;
   return body;
 }
 
@@ -162,16 +183,26 @@ function buildHtmlEmailBody(alertData: AlertEmailData): string {
     test_alert: '#3b82f6',
     missing_tool: '#dc2626'
   };
+  
+  // Alert type labels in Japanese
+  const alertTypeLabels: Record<string, string> = {
+    diagnostic_failure: '診断チェック失敗',
+    capture_failure: '撮影失敗',
+    camera_offline: 'カメラ異常',
+    test_alert: 'テスト通知',
+    missing_tool: '工具不足'
+  };
 
   const color = alertColors[type] || '#6b7280';
+  const typeLabel = alertTypeLabels[type] || type.replace(/_/g, ' ');
 
   // Build camera info section (shown for all non-test alerts)
   let cameraInfoHtml = '';
   if (type !== 'test_alert' && (details.cameraName || details.cameraId)) {
     cameraInfoHtml = `
       <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
-        ${details.cameraName ? `<p style="margin: 5px 0; font-weight: bold; color: #1e40af;">📷 Camera: ${details.cameraName}</p>` : ''}
-        ${details.cameraId ? `<p style="margin: 5px 0; font-size: 12px; color: #6b7280;">ID: ${details.cameraId}</p>` : ''}
+        ${details.cameraName ? `<p style="margin: 5px 0; font-weight: bold; color: #1e40af;">カメラ: ${details.cameraName}</p>` : ''}
+        ${details.cameraId ? `<p style="margin: 5px 0; font-size: 12px; color: #6b7280;">カメラID: ${details.cameraId}</p>` : ''}
       </div>
     `;
   }
@@ -180,34 +211,34 @@ function buildHtmlEmailBody(alertData: AlertEmailData): string {
   
   if (type === 'diagnostic_failure') {
     detailsHtml = `
-      <p style="margin: 10px 0;">Pre-flight diagnostic check failed.</p>
-      ${details.errorMessage ? `<p style="margin: 5px 0; color: #dc2626;"><strong>Error:</strong> ${details.errorMessage}</p>` : ''}
+      <p style="margin: 10px 0;">事前診断チェックが失敗しました。</p>
+      ${details.errorMessage ? `<p style="margin: 5px 0; color: #dc2626;"><strong>エラー内容:</strong> ${details.errorMessage}</p>` : ''}
     `;
   } else if (type === 'capture_failure') {
     detailsHtml = `
-      <p style="margin: 10px 0;">Scheduled capture failed.</p>
+      <p style="margin: 10px 0;">定時撮影が失敗しました。</p>
       ${details.failedCameras !== undefined && details.totalCameras !== undefined ? 
-        `<p style="margin: 5px 0;"><strong>Failed Cameras:</strong> ${details.failedCameras}/${details.totalCameras}</p>` : ''}
+        `<p style="margin: 5px 0;"><strong>失敗カメラ数:</strong> ${details.failedCameras}/${details.totalCameras}</p>` : ''}
       ${details.slotsProcessed !== undefined ? 
-        `<p style="margin: 5px 0;"><strong>Slots Processed:</strong> ${details.slotsProcessed}</p>` : ''}
+        `<p style="margin: 5px 0;"><strong>処理済みスロット数:</strong> ${details.slotsProcessed}</p>` : ''}
       ${details.failureCount !== undefined ? 
-        `<p style="margin: 5px 0; color: #dc2626;"><strong>Failures:</strong> ${details.failureCount}</p>` : ''}
-      ${details.errorMessage ? `<p style="margin: 5px 0; color: #dc2626;"><strong>Error:</strong> ${details.errorMessage}</p>` : ''}
+        `<p style="margin: 5px 0; color: #dc2626;"><strong>失敗件数:</strong> ${details.failureCount}</p>` : ''}
+      ${details.errorMessage ? `<p style="margin: 5px 0; color: #dc2626;"><strong>エラー内容:</strong> ${details.errorMessage}</p>` : ''}
     `;
   } else if (type === 'camera_offline') {
     detailsHtml = `
-      <p style="margin: 10px 0;">Camera is offline or inaccessible.</p>
-      ${details.errorMessage ? `<p style="margin: 5px 0; color: #dc2626;"><strong>Error:</strong> ${details.errorMessage}</p>` : ''}
+      <p style="margin: 10px 0;">カメラがオフラインまたはアクセス不可の状態です。</p>
+      ${details.errorMessage ? `<p style="margin: 5px 0; color: #dc2626;"><strong>エラー内容:</strong> ${details.errorMessage}</p>` : ''}
     `;
   } else if (type === 'missing_tool') {
     detailsHtml = `
-      <p style="margin: 10px 0; font-size: 16px; font-weight: bold; color: #dc2626;">🔧 Tool is missing from its designated slot!</p>
-      ${details.toolName ? `<p style="margin: 10px 0;"><strong>Missing Tool:</strong> <span style="color: #dc2626; font-size: 18px;">${details.toolName}</span></p>` : ''}
-      ${details.slotNumber ? `<p style="margin: 5px 0;"><strong>Slot Number:</strong> ${details.slotNumber}</p>` : ''}
-      ${details.slotId ? `<p style="margin: 5px 0; font-size: 12px; color: #6b7280;">Slot ID: ${details.slotId}</p>` : ''}
+      <p style="margin: 10px 0; font-size: 16px; font-weight: bold; color: #dc2626;">指定スロットから工具が不足しています</p>
+      ${details.toolName ? `<p style="margin: 10px 0;"><strong>不足工具:</strong> <span style="color: #dc2626; font-size: 18px;">${details.toolName}</span></p>` : ''}
+      ${details.slotNumber ? `<p style="margin: 5px 0;"><strong>スロット番号:</strong> ${details.slotNumber}</p>` : ''}
+      ${details.slotId ? `<p style="margin: 5px 0; font-size: 12px; color: #6b7280;">スロットID: ${details.slotId}</p>` : ''}
     `;
   } else if (type === 'test_alert') {
-    detailsHtml = `<p style="margin: 10px 0;">This is a test alert to verify your email configuration is working correctly.</p>`;
+    detailsHtml = `<p style="margin: 10px 0;">これはメール設定の動作確認用テスト通知です。</p>`;
   }
 
   return `
@@ -220,14 +251,14 @@ function buildHtmlEmailBody(alertData: AlertEmailData): string {
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 20px; background-color: #f3f4f6;">
       <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
         <div style="background-color: ${color}; color: white; padding: 20px;">
-          <h1 style="margin: 0; font-size: 24px; font-weight: bold;">🔧 Tool Tracking System Alert</h1>
+          <h1 style="margin: 0; font-size: 24px; font-weight: bold;">工具管理システム通知</h1>
         </div>
         <div style="padding: 30px;">
           <div style="background-color: #fef3c7; border-left: 4px solid ${color}; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
-            <p style="margin: 0; font-weight: bold; color: #92400e;">Alert Type: ${type.replace(/_/g, ' ').toUpperCase()}</p>
+            <p style="margin: 0; font-weight: bold; color: #92400e;">通知種別: ${typeLabel}</p>
           </div>
           
-          <p style="margin: 10px 0; color: #6b7280;"><strong>Timestamp:</strong> ${details.timestamp}</p>
+          <p style="margin: 10px 0; color: #6b7280;"><strong>日時:</strong> ${details.timestamp}</p>
           
           ${cameraInfoHtml}
           
@@ -236,7 +267,7 @@ function buildHtmlEmailBody(alertData: AlertEmailData): string {
           </div>
         </div>
         <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="margin: 0; font-size: 12px; color: #6b7280;">This is an automated alert from your Tool Tracking System</p>
+          <p style="margin: 0; font-size: 12px; color: #6b7280;">このメールは工具管理システムから自動送信されています</p>
         </div>
       </div>
     </body>
@@ -250,7 +281,7 @@ export async function sendTestAlert(): Promise<boolean> {
 
   return sendAlertEmail({
     type: 'test_alert',
-    subject: '🧪 Tool Tracker - Test Alert',
+    subject: '【工具管理システム】テスト通知',
     details: {
       timestamp
     }

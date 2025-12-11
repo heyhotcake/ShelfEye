@@ -1,0 +1,87 @@
+AggregateError [ETIMEDOUT]:
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     at /home/naniwa/ShelfEye/node_modules/pg-pool/index.js:45:11
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     at async Object.query (/home/naniwa/ShelfEye/node_modules/drizzle-kit/bin.cjs:80601:26)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     at async fromDatabase2 (/home/naniwa/ShelfEye/node_modules/drizzle-kit/bin.cjs:19253:25) {
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:   code: 'ETIMEDOUT',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:   [errors]: [
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     Error: connect ETIMEDOUT 3.132.12.55:5432
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at createConnectionError (node:net:1652:14)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at Timeout.internalConnectMultipleTimeout (node:net:1711:38)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at listOnTimeout (node:internal/timers:583:11)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at process.processTimers (node:internal/timers:519:7) {
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       errno: -110,
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       code: 'ETIMEDOUT',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       syscall: 'connect',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       address: '3.132.12.55',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       port: 5432
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     },
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     Error: connect ETIMEDOUT 3.147.243.31:5432
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at createConnectionError (node:net:1652:14)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at Timeout.internalConnectMultipleTimeout (node:net:1711:38)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at listOnTimeout (node:internal/timers:583:11)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at process.processTimers (node:internal/timers:519:7) {
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       errno: -110,
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       code: 'ETIMEDOUT',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       syscall: 'connect',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       address: '3.147.243.31',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       port: 5432
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     },
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     Error: connect ETIMEDOUT 3.137.42.68:5432
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at createConnectionError (node:net:1652:14)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:         at afterConnectMultiple (node:net:1682:16) {
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       errno: -110,
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       code: 'ETIMEDOUT',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       syscall: 'connect',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       address: '3.137.42.68',
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:       port: 5432
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:     }
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]:   ]
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6568]: }
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6654]: [2025-12-11 17:09:13] ⚠️  Database sync timeout or failed (continuing anyway)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6658]: [2025-12-11 17:09:13] ⏱️  Phase 'db-push-failed' completed in 146s (cumulative)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6663]: [2025-12-11 17:09:13] ⏱️  Phase 'pre-app-complete' completed in 146s (cumulative)
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6671]: [2025-12-11 17:09:13] 📊 Total pre-app startup: 146s
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6674]: [2025-12-11 17:09:13]    Timing details saved to: /home/naniwa/ShelfEye/state/startup-timing.json
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6677]: [2025-12-11 17:09:13] 🚀 Starting ShelfEye application...
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6680]: [2025-12-11 17:09:13] Access at: http://naniwatanacheck.local:5000
+Dec 11 17:09:13 NaniwaTanaCheck pi-startup.sh[6683]: [2025-12-11 17:09:13] =========================================
+Dec 11 17:09:14 NaniwaTanaCheck pi-startup.sh[6686]: > rest-express@1.0.0 dev
+Dec 11 17:09:14 NaniwaTanaCheck pi-startup.sh[6686]: > NODE_ENV=development tsx server/index.ts
+Dec 11 17:09:20 NaniwaTanaCheck pi-startup.sh[6686]: [Database] Connection pool created
+Dec 11 17:09:20 NaniwaTanaCheck pi-startup.sh[6686]: [Database] Health check started (interval: 30000ms)
+Dec 11 17:09:25 NaniwaTanaCheck pi-startup.sh[6686]: [SubprocessManager] Starting zombie detection (interval: 60000ms)
+Dec 11 17:09:25 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Initializing...
+Dec 11 17:09:25 NaniwaTanaCheck pi-startup.sh[6686]: [Database] ✅ Client connected to pool
+Dec 11 17:09:25 NaniwaTanaCheck pi-startup.sh[6686]: [Database] ✅ Client connected to pool
+Dec 11 17:09:31 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Starting alert retry queue processor
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor interval started (60s)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Reloading configuration...
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled daily maintenance at 3:00 AM JST
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled hourly memory monitoring
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Scheduled 4 capture times + daily maintenance + memory monitoring
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Initialized successfully
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [StartupCalibration] Starting startup calibration check for ALL cameras...
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [StartupCalibration] Found 2 calibrated camera(s) to validate
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [CameraSessionManager] Global calibration lock acquired for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [StartupCalibration] Validating camera: Wide Shelf (/dev/video0)
+Dec 11 17:09:32 NaniwaTanaCheck pi-startup.sh[6686]: [StartupCalibration] Paper size: 6-page-3x2
+Dec 11 17:09:33 NaniwaTanaCheck pi-startup.sh[6686]: [SubprocessManager] Tracking led process PID 6721: LED: setWhiteLight
+Dec 11 17:09:33 NaniwaTanaCheck sudo[6721]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py white --num-leds 99 --brightness 100
+Dec 11 17:09:33 NaniwaTanaCheck sudo[6721]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Dec 11 17:09:33 NaniwaTanaCheck sudo[6721]: pam_unix(sudo:session): session closed for user root
+Dec 11 17:09:33 NaniwaTanaCheck pi-startup.sh[6686]: [SubprocessManager] Process PID 6721 exited after 251ms (code: 1, signal: null)
+Dec 11 17:09:33 NaniwaTanaCheck pi-startup.sh[6686]: [LED] setWhiteLight failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Dec 11 17:09:33 NaniwaTanaCheck pi-startup.sh[6686]: [LED] Unexpected response: { success: false }
+Dec 11 17:09:33 NaniwaTanaCheck pi-startup.sh[6686]: [StartupCalibration] Using device path: /dev/video0
+Dec 11 17:09:33 NaniwaTanaCheck pi-startup.sh[6686]: [SubprocessManager] Tracking python process PID 6724: Startup calibration: Wide Shelf
+Dec 11 17:09:56 NaniwaTanaCheck pi-startup.sh[6686]: [Database] Client removed from pool
+^C
