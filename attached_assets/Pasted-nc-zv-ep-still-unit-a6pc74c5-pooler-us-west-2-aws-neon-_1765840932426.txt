@@ -1,0 +1,63 @@
+nc -zv ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech 5432 -w 5
+nc: connect to ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech (44.236.99.237) port 5432 (tcp) timed out: Operation now in progress
+nc: connect to ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech (18.236.35.18) port 5432 (tcp) timed out: Operation now in progress
+nc: connect to ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech (35.84.214.33) port 5432 (tcp) timed out: Operation now in progress
+nc: connect to ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech (18.236.14.165) port 5432 (tcp) timed out: Operation now in progress
+nc: connect to ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech (2600:1f14:3392:6b30:d28d:658c:574f:408f) port 5432 (tcp) failed: Network is unreachable
+nc: connect to ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech (2600:1f14:3392:6b04:7827:8c76:39d1:f7da) port 5432 (tcp) failed: Network is unreachable
+nc: connect to ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech (2600:1f14:3392:6b2c:92f3:5c5a:b24:4481) port 5432 (tcp) failed: Network is unreachable
+nc: connect to ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech (2600:1f14:3392:6b13:6fd4:8b4:96f:e269) port 5432 (tcp) failed: Network is unreachable
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -u shelfeye.service -n 50 --no-pager
+Dec 16 07:52:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 07:53:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 07:54:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 07:55:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 07:56:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 07:57:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 07:58:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 07:59:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]: [Memory Monitor] Memory usage: {
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]:   rss: '420MB',
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]:   heapUsed: '217MB',
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]:   heapTotal: '235MB',
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]:   external: '60MB',
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]:   uptime: '110h 50m'
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]: }
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Running scheduled capture at 08:00 JST
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Starting scheduled capture...
+Dec 16 08:00:00 NaniwaTanaCheck pi-startup.sh[6686]: [SubprocessManager] Tracking python process PID 39786: scheduled_capture
+Dec 16 08:00:01 NaniwaTanaCheck sudo[39787]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action white
+Dec 16 08:00:01 NaniwaTanaCheck sudo[39787]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Dec 16 08:00:01 NaniwaTanaCheck sudo[39787]: pam_unix(sudo:session): session closed for user root
+Dec 16 08:00:36 NaniwaTanaCheck sudo[39801]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/unified_led_controller.py --pin 18 --action off
+Dec 16 08:00:36 NaniwaTanaCheck sudo[39801]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Dec 16 08:00:36 NaniwaTanaCheck sudo[39801]: pam_unix(sudo:session): session closed for user root
+Dec 16 08:00:37 NaniwaTanaCheck pi-startup.sh[6686]: [SubprocessManager] Process PID 39786 exited after 36584ms (code: 0, signal: null)
+Dec 16 08:00:37 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Python process exited after 36584ms (code: 0)
+Dec 16 08:00:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:00:38 NaniwaTanaCheck pi-startup.sh[6686]: [SheetsLogger] Logged alert: CAPTURE_RUN at 2025-12-16 08:00:37 to tab Alerts-{YYYY-MM}
+Dec 16 08:00:38 NaniwaTanaCheck pi-startup.sh[6686]: [Scheduler] Capture complete: success (37098ms)
+Dec 16 08:01:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:02:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:03:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:04:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:05:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:06:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:07:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:08:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:09:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:10:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:11:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:12:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:13:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:14:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:15:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:16:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:17:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:18:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:19:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:20:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Dec 16 08:21:37 NaniwaTanaCheck pi-startup.sh[6686]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+naniwa@NaniwaTanaCheck:~ $ nslookup ep-still-unit-a6pc74c5-pooler.us-west-2.aws.neon.tech
+-bash: nslookup: command not found
+naniwa@NaniwaTanaCheck:~ $
