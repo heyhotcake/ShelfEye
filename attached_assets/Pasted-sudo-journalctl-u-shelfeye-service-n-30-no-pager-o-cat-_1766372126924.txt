@@ -1,0 +1,32 @@
+sudo journalctl -u shelfeye.service -n 30 --no-pager -o cat
+[2025-12-22 11:55:04] Installing LED Manager Daemon service...
+  naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/cp /home/naniwa/ShelfEye/led-manager.service /etc/systemd/system/
+pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+pam_unix(sudo:session): session closed for user root
+  naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl daemon-reload
+pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+pam_unix(sudo:session): session closed for user root
+  naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl enable led-manager.service
+pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+pam_unix(sudo:session): session closed for user root
+  naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl is-active --quiet led-manager.service
+pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+pam_unix(sudo:session): session closed for user root
+[2025-12-22 11:55:05] ✅ LED Manager Daemon is already running
+[2025-12-22 11:55:05] Skipping database schema sync (managed from Replit)
+[2025-12-22 11:55:05] ⏱️  Phase 'db-push-skipped' completed in 2s (cumulative)
+[2025-12-22 11:55:05] ⏱️  Phase 'pre-app-complete' completed in 2s (cumulative)
+[2025-12-22 11:55:05] 📊 Total pre-app startup: 2s
+[2025-12-22 11:55:05]    Timing details saved to: /home/naniwa/ShelfEye/state/startup-timing.json
+[2025-12-22 11:55:05] 🚀 Starting ShelfEye application...
+[2025-12-22 11:55:05] Access at: http://naniwatanacheck.local:5000
+[2025-12-22 11:55:05] =========================================
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+[Database] Connection pool created
+[Database] Health check started (interval: 30000ms)
+[SubprocessManager] Starting zombie detection (interval: 60000ms)
+[Scheduler] Initializing...
+[Database] ✅ Client connected to pool
+[Database] ✅ Client connected to pool
+naniwa@NaniwaTanaCheck:~/ShelfEye $
