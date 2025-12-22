@@ -157,6 +157,7 @@ class CameraManager:
             'present': True,
             'pose_quality': 0.0,
             'aruco_id': None,
+            'qr_id': None,  # Worker code (e.g., "W51") for database lookup
             'worker_name': None,
             'image_path': None,
             'alert_triggered': False,
@@ -196,6 +197,7 @@ class CameraManager:
                     # Worker badge visible → checked out
                     result['status'] = 'CHECKED_OUT'
                     result['worker_name'] = aruco_result.get('worker_name')
+                    result['qr_id'] = f"W{aruco_result.get('id')}"  # Format as workerCode (e.g., "W51")
                     result['present'] = True  # Item is "present" with worker
                     result['alert_triggered'] = False
                     
