@@ -172,14 +172,10 @@ else
     log "⚠️  LED Manager Daemon service file not found"
 fi
 
-# Database schema sync (if needed)
-log "Syncing database schema..."
-if run_with_timeout 45 npm run db:push; then
-    record_phase "db-push"
-else
-    log "⚠️  Database sync timeout or failed (continuing anyway)"
-    record_phase "db-push-failed"
-fi
+# Database schema sync - SKIP on Pi (drizzle-kit uses port 5432 which is blocked by firewall)
+# Schema is managed from Replit dashboard instead
+log "Skipping database schema sync (managed from Replit)"
+record_phase "db-push-skipped"
 
 # Save timing data
 TOTAL_STARTUP_TIME=$(($(date +%s) - START_TIME))
