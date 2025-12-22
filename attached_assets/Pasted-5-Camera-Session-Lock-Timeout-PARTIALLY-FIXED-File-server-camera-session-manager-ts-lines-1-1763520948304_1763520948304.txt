@@ -1,0 +1,90 @@
+5. Camera Session Lock Timeout - PARTIALLY FIXED ⚠️
+File: server/camera-session-manager.ts (lines 112-119)
+
+// Check if global lock exists and isn't expired
+if (this.globalCalibrationLock) {
+  const elapsed = Date.now() - this.globalCalibrationLock.timestamp;
+  
+  // If lock is expired (calibration took too long), release it
+  if (elapsed > this.CALIBRATION_TIMEOUT) {
+    console.log(`[CameraSessionManager] Global calibration lock expired...`);
+    this.globalCalibrationLock = null;
+  }
+}
+Issue: Timeout exists but only checked when someone tries to acquire a lock. No background cleanup task for expired locks in the locks Map.
+
+Recommended Fix:
+
+// Add periodic cleanup in constructor
+constructor() {
+  setInterval(() => this.cleanupExpiredLocks(), 60000); // Every minute
+}
+
+private cleanupExpiredLocks(): void {
+  const now = Date.now();
+  for (const [cameraId, lock] of this.locks.entries()) {
+    if (lock.type === 'exclusive') {
+      const elapsed = now - lock.timestamp;
+      if (elapsed > this.CALIBRATION_TIMEOUT) {
+        console.log(`[CameraSessionManager] Removing expired lock for ${cameraId}`);
+        this.locks.delete(cameraId);
+      }
+    }
+  }
+}
+6. Subprocess Escalation Queue Not Processed - NOT FIXED ❌
+File: server/subprocess-manager.ts (lines 140-149)
+
+private escalationQueue: Map<number, { reason: string; since: number; attempts: number }> = new Map();
+
+private markProcessForEscalation(pid: number, reason: string): void {
+  const existing = this.escalationQueue.get(pid);
+  if (existing) {
+    existing.attempts++;
+  } else {
+    this.escalationQueue.set(pid, { reason, since: Date.now(), attempts: 1 });
+  }
+  // ❌ Queue is populated but NEVER processed
+}
+Issue: D-state processes are marked for escalation but no code processes this queue or sends alerts.
+
+Recommended Fix: Add escalation processor to the zombie check interval.
+
+7. Database Connection Pool - CANNOT VERIFY ⚠️
+File: server/db.ts (lines 60-73)
+The reconnection logic exists but I can't verify if connection count verification was added. The visible code looks similar to before.
+
+8. LED Control Retry Delay - NOT ADDRESSED ❌
+File: server/utils/led-control.ts (lines 24-63)
+Retry logic with exponential backoff still present (1s, 2s, 4s delays). While comments mention "daemon architecture," the retry logic that can block calibration for 7+ seconds remains active.
+
+9. Python Subprocess Timeouts Missing - NOT FIXED ❌
+Critical Issue: None of the three endpoints have timeout protection:
+
+camera-preview (line 1323): No timeout mechanism
+rectified-preview (line 1537): No timeout mechanism
+verify-positions (line 889): No timeout mechanism
+
+All use spawnTracked() with event handlers but lack the timeout wrapper used in scheduler's runPythonScript().
+
+Recommended Fix: Add timeout wrapper similar to scheduler:
+
+const PREVIEW_TIMEOUT_MS = 60000; // 60 seconds
+
+const timeoutHandle = setTimeout(() => {
+  if (!responseSent && pythonProcess.pid) {
+    responseSent = true;
+    try {
+      pythonProcess.kill('SIGTERM');
+      setTimeout(() => {
+        if (pythonProcess.exitCode === null) {
+          pythonProcess.kill('SIGKILL');
+        }
+      }, 5000);
+    } catch (err) {
+      console.error('[Preview] Kill error:', err);
+    }
+    cameraSessionManager.releaseLock(cameraId);
+    res.status(504).json({ message: "Preview timeout after 60 seconds" });
+  }
+}, PREVIEW_TIMEOUT_MS);

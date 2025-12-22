@@ -95,24 +95,24 @@ export class CaptureScheduler {
         'ALERT_TEMPLATES',
         {
           diagnostic_failure: {
-            subject: '⚠️ Tool Tracker - Diagnostic Check Failed',
-            emailBody: 'Pre-flight diagnostic check failed at {timestamp}.\n\nDetails:\n{errorMessage}\n\nPlease check the cameras before the next scheduled capture.',
-            sheetsMessage: 'Diagnostic check failed: {errorMessage}'
+            subject: '【工具管理システム】診断チェック失敗のお知らせ',
+            emailBody: '{timestamp} に事前診断チェックが失敗しました。\n\n詳細:\n{errorMessage}\n\n次回の撮影前にカメラをご確認ください。',
+            sheetsMessage: '診断チェック失敗: {errorMessage}'
           },
           capture_failure: {
-            subject: '🚨 Tool Tracker - Capture Failed',
-            emailBody: 'Scheduled capture failed at {timestamp}.\n\nDetails:\n{errorMessage}\n\nImmediate attention required.',
-            sheetsMessage: 'Capture failed: {errorMessage}'
+            subject: '【工具管理システム】撮影失敗のお知らせ',
+            emailBody: '{timestamp} に定時撮影が失敗しました。\n\n詳細:\n{errorMessage}\n\n早急にご対応ください。',
+            sheetsMessage: '撮影失敗: {errorMessage}'
           },
           camera_offline: {
-            subject: '📷 Tool Tracker - Camera Alert',
-            emailBody: 'Camera health issue detected at {timestamp}.\n\nDetails:\n{errorMessage}',
-            sheetsMessage: 'Camera issue: {errorMessage}'
+            subject: '【工具管理システム】カメラ異常のお知らせ',
+            emailBody: '{timestamp} にカメラの問題が検出されました。\n\n詳細:\n{errorMessage}',
+            sheetsMessage: 'カメラ異常: {errorMessage}'
           },
           test_alert: {
-            subject: '✅ Tool Tracker - Test Alert',
-            emailBody: 'This is a test alert from Tool Tracker at {timestamp}.\n\nIf you received this, your alert system is working correctly.',
-            sheetsMessage: 'Test alert sent successfully'
+            subject: '【工具管理システム】テスト通知',
+            emailBody: '{timestamp} に工具管理システムからテスト通知を送信しました。\n\nこのメールを受信できた場合、通知システムは正常に動作しています。',
+            sheetsMessage: 'テスト通知送信完了'
           }
         },
         'Alert message templates with placeholders: {timestamp}, {errorMessage}, {cameraId}, {slotId}'
@@ -667,7 +667,7 @@ export class CaptureScheduler {
       const templatesConfig = await this.storage.getConfigByKey('ALERT_TEMPLATES');
       const templates = templatesConfig?.value as Record<string, { subject: string; emailBody: string; sheetsMessage: string }> || {};
       const template = templates[emailType] || {
-        subject: 'Tool Tracker Alert',
+        subject: '【工具管理システム】通知',
         emailBody: '{errorMessage}',
         sheetsMessage: '{errorMessage}'
       };

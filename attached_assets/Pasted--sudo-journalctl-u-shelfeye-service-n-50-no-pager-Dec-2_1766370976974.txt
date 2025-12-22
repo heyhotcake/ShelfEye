@@ -1,0 +1,52 @@
+ sudo journalctl -u shelfeye.service -n 50 --no-pager
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]: AggregateError [ETIMEDOUT]:
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     at /home/naniwa/ShelfEye/node_modules/pg-pool/index.js:45:11
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     at async Object.query (/home/naniwa/ShelfEye/node_modules/drizzle-kit/bin.cjs:80601:26)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     at async fromDatabase2 (/home/naniwa/ShelfEye/node_modules/drizzle-kit/bin.cjs:19253:25) {
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:   code: 'ETIMEDOUT',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:   [errors]: [
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     Error: connect ETIMEDOUT 3.147.243.31:5432
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at createConnectionError (node:net:1652:14)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at Timeout.internalConnectMultipleTimeout (node:net:1711:38)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at listOnTimeout (node:internal/timers:583:11)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at process.processTimers (node:internal/timers:519:7) {
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       errno: -110,
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       code: 'ETIMEDOUT',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       syscall: 'connect',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       address: '3.147.243.31',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       port: 5432
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     },
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     Error: connect ETIMEDOUT 3.137.42.68:5432
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at createConnectionError (node:net:1652:14)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at Timeout.internalConnectMultipleTimeout (node:net:1711:38)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at listOnTimeout (node:internal/timers:583:11)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at process.processTimers (node:internal/timers:519:7) {
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       errno: -110,
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       code: 'ETIMEDOUT',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       syscall: 'connect',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       address: '3.137.42.68',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       port: 5432
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     },
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     Error: connect ETIMEDOUT 3.132.12.55:5432
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at createConnectionError (node:net:1652:14)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:         at afterConnectMultiple (node:net:1682:16) {
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       errno: -110,
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       code: 'ETIMEDOUT',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       syscall: 'connect',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       address: '3.132.12.55',
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:       port: 5432
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:     }
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]:   ]
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84089]: }
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84156]: [2025-12-22 11:35:55] ⚠️  Database sync timeout or failed (continuing anyway)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84160]: [2025-12-22 11:35:55] ⏱️  Phase 'db-push-failed' completed in 139s (cumulative)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84165]: [2025-12-22 11:35:55] ⏱️  Phase 'pre-app-complete' completed in 139s (cumulative)
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84173]: [2025-12-22 11:35:55] 📊 Total pre-app startup: 139s
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84176]: [2025-12-22 11:35:55]    Timing details saved to: /home/naniwa/ShelfEye/state/startup-timing.json
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84179]: [2025-12-22 11:35:55] 🚀 Starting ShelfEye application...
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84182]: [2025-12-22 11:35:55] Access at: http://naniwatanacheck.local:5000
+Dec 22 11:35:55 NaniwaTanaCheck pi-startup.sh[84185]: [2025-12-22 11:35:55] =========================================
+Dec 22 11:35:56 NaniwaTanaCheck pi-startup.sh[84188]: > rest-express@1.0.0 dev
+Dec 22 11:35:56 NaniwaTanaCheck pi-startup.sh[84188]: > NODE_ENV=development tsx server/index.ts
+naniwa@NaniwaTanaCheck:~/ShelfEye $
