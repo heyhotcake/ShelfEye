@@ -661,27 +661,6 @@ export default function TemplatePrint() {
           pdf.restoreGraphicsState();
         });
 
-        // Add assembly instructions on last page
-        if (sheetNum === totalSheets) {
-          pdf.setFontSize(8);
-          pdf.setTextColor(0, 0, 0);
-          const instructions = is8Page ? [
-            'Assembly Instructions:',
-            '1. Print all 8 pages on A4 landscape paper',
-            '2. Align sheets edge-to-edge in 4×2 grid (no gaps)',
-            '3. Sheets 1,2,3,4 on top row; sheets 5,6,7,8 on bottom',
-            '4. Tape sheets together on back side',
-          ] : [
-            'Assembly Instructions:',
-            '1. Print all 6 pages on A4 landscape paper',
-            '2. Align sheets edge-to-edge in 3×2 grid (no gaps)',
-            '3. Sheets 1,2,3 on top row; sheets 4,5,6 on bottom',
-            '4. Tape sheets together on back side',
-          ];
-          instructions.forEach((line, i) => {
-            pdf.text(line, 10, a4HeightMm - 30 + i * 4);
-          });
-        }
       }
 
       const filename = is8Page ? '8page-4x2' : '6page-3x2';
