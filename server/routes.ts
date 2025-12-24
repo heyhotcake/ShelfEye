@@ -2558,25 +2558,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, paperSize, rectangles } = req.body;
       
+      console.log(`[TemplateDesigns] Creating design: ${name}, paperSize: ${paperSize}, rectangles: ${rectangles?.length || 0}`);
+      
       if (!name || !paperSize || !rectangles || !Array.isArray(rectangles)) {
         return res.status(400).json({ message: "Missing required fields: name, paperSize, rectangles" });
       }
       
       // Create the design
       const design = await storage.createTemplateDesign({ name, paperSize });
+      console.log(`[TemplateDesigns] Created design with ID: ${design.id}`);
       
       // Create all rectangles linked to this design
+      let successCount = 0;
       for (const rect of rectangles) {
-        await storage.createTemplateRectangle({
-          ...rect,
-          designId: design.id,
-          paperSize: paperSize,
-        });
+        try {
+          await storage.createTemplateRectangle({
+            ...rect,
+            designId: design.id,
+            paperSize: paperSize,
+          });
+          successCount++;
+        } catch (rectError) {
+          console.error(`[TemplateDesigns] Failed to create rectangle:`, rectError, 'Data:', rect);
+        }
       }
       
-      res.json(design);
+      console.log(`[TemplateDesigns] Created ${successCount}/${rectangles.length} rectangles for design ${design.id}`);
+      
+      res.json({ ...design, rectangleCount: successCount });
     } catch (error) {
-      console.error('Error creating template design:', error);
+      console.error('[TemplateDesigns] Error creating template design:', error);
       res.status(500).json({ message: "Failed to create template design", error });
     }
   });
