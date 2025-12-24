@@ -165,25 +165,21 @@ export class SheetsSummaryReport {
     const weekRange = this.getWeekDateRange(now);
     const year = format(now, 'yyyy', { timeZone: TIMEZONE });
 
-    // Update only the dynamic cells: title and update date
+    // Update the date range in row 2 (replacing placeholder "20XX年 X月 X日 ～ X月 X日")
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: this.spreadsheetId,
       requestBody: {
         valueInputOption: 'RAW',
         data: [
           {
-            range: `'${tabName}'!A1`,
-            values: [[`東京４回物流部１部　しまむら班　備品貸出チェック表 ${year}年 ${weekRange.startStr} ～ ${weekRange.endStr}`]]
-          },
-          {
-            range: `'${tabName}'!U1`,
-            values: [[`更新日：${format(now, 'yyyy-MM-dd', { timeZone: TIMEZONE })}`]]
+            range: `'${tabName}'!A2`,
+            values: [[`${year}年 ${weekRange.startStr} ～ ${weekRange.endStr}`]]
           }
         ],
       },
     });
 
-    console.log(`[SheetsSummaryReport] Updated header for tab: ${tabName}`);
+    console.log(`[SheetsSummaryReport] Updated date range in row 2 for tab: ${tabName}`);
   }
 
   private getColumnForCaptureTime(dayOfWeek: number, captureTimeIndex: number): string {
