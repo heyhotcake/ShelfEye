@@ -120,13 +120,16 @@ export class SheetsSummaryReport {
       return tabName;
     }
 
-    // Find the Template tab to duplicate
+    // Find the Template tab to duplicate (case-insensitive search)
     const templateSheet = spreadsheet.data.sheets?.find(
-      s => s.properties?.title === 'Template'
+      s => s.properties?.title?.toLowerCase() === 'template'
     );
 
-    if (!templateSheet || !templateSheet.properties?.sheetId) {
-      throw new Error('Template tab not found in spreadsheet. Please create a tab named "Template" with the desired format.');
+    const existingTabs = spreadsheet.data.sheets?.map(s => `${s.properties?.title}(id:${s.properties?.sheetId})`).join(', ') || 'none';
+    console.log(`[SheetsSummaryReport] Available tabs: ${existingTabs}`);
+
+    if (!templateSheet || templateSheet.properties?.sheetId === undefined) {
+      throw new Error(`Template tab not found or has no sheetId. Available tabs: ${existingTabs}. Please create a tab named "Template" with the desired format.`);
     }
 
     const templateSheetId = templateSheet.properties.sheetId;
