@@ -104,11 +104,12 @@ export class SheetsSummaryReport {
     const weekRange = this.getWeekDateRange(now);
     const tabName = weekRange.tabName;
 
-    // Check if the tab already exists
+    // Get spreadsheet info to check existing tabs
     const spreadsheet = await sheets.spreadsheets.get({
       spreadsheetId: this.spreadsheetId,
     });
 
+    // Check if the weekly tab already exists
     const existingSheet = spreadsheet.data.sheets?.find(
       s => s.properties?.title === tabName
     );
@@ -119,31 +120,67 @@ export class SheetsSummaryReport {
       return tabName;
     }
 
-    // Create new tab for this week
-    console.log(`[SheetsSummaryReport] Creating new tab: ${tabName}`);
+    // Find the Template tab to duplicate
+    const templateSheet = spreadsheet.data.sheets?.find(
+      s => s.properties?.title === 'Template'
+    );
+
+    if (!templateSheet || !templateSheet.properties?.sheetId) {
+      throw new Error('Template tab not found in spreadsheet. Please create a tab named "Template" with the desired format.');
+    }
+
+    const templateSheetId = templateSheet.properties.sheetId;
+
+    // Duplicate the Template tab with the new name
+    console.log(`[SheetsSummaryReport] Duplicating Template tab as: ${tabName}`);
 
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: this.spreadsheetId,
       requestBody: {
         requests: [{
-          addSheet: {
-            properties: {
-              title: tabName,
-              gridProperties: {
-                frozenRowCount: 2,
-                frozenColumnCount: 3,
-              }
-            }
+          duplicateSheet: {
+            sourceSheetId: templateSheetId,
+            newSheetName: tabName,
+            insertSheetIndex: spreadsheet.data.sheets?.length || 1, // Add at the end
           }
         }]
       }
     });
 
-    // Initialize the new tab with headers and structure
-    await this.initializeSheetStructure(this.spreadsheetId, tabName);
+    // Update dynamic header cells on the new tab
+    await this.updateWeeklyHeader(tabName);
 
     this.currentSheetName = tabName;
     return tabName;
+  }
+
+  private async updateWeeklyHeader(tabName: string): Promise<void> {
+    if (!this.spreadsheetId) return;
+
+    const sheets = await getSheetsClient();
+    const now = toZonedTime(new Date(), TIMEZONE);
+    const weekRange = this.getWeekDateRange(now);
+    const year = format(now, 'yyyy', { timeZone: TIMEZONE });
+
+    // Update only the dynamic cells: title and update date
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: this.spreadsheetId,
+      requestBody: {
+        valueInputOption: 'RAW',
+        data: [
+          {
+            range: `'${tabName}'!A1`,
+            values: [[`東京４回物流部１部　しまむら班　備品貸出チェック表 ${year}年 ${weekRange.startStr} ～ ${weekRange.endStr}`]]
+          },
+          {
+            range: `'${tabName}'!U1`,
+            values: [[`更新日：${format(now, 'yyyy-MM-dd', { timeZone: TIMEZONE })}`]]
+          }
+        ],
+      },
+    });
+
+    console.log(`[SheetsSummaryReport] Updated header for tab: ${tabName}`);
   }
 
   private getColumnForCaptureTime(dayOfWeek: number, captureTimeIndex: number): string {
