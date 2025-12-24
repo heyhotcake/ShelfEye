@@ -2305,6 +2305,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Summary Report Google Sheets routes
+  app.get("/api/summary-report/status", async (_req, res) => {
+    try {
+      const url = scheduler.getSummaryReportUrl();
+      const spreadsheetIdConfig = await storage.getConfigByKey('SUMMARY_SPREADSHEET_ID');
+      res.json({
+        configured: !!spreadsheetIdConfig?.value,
+        spreadsheetId: spreadsheetIdConfig?.value || null,
+        url,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get summary report status", error });
+    }
+  });
+
+  app.post("/api/summary-report/set-spreadsheet", async (req, res) => {
+    try {
+      const { spreadsheetId } = req.body;
+      if (!spreadsheetId || typeof spreadsheetId !== 'string') {
+        return res.status(400).json({ message: "spreadsheetId is required" });
+      }
+
+      await storage.setConfig('SUMMARY_SPREADSHEET_ID', spreadsheetId, 'Summary report spreadsheet ID');
+      scheduler.setSummaryReportSpreadsheetId(spreadsheetId);
+
+      res.json({
+        ok: true,
+        url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to set spreadsheet ID", error });
+    }
+  });
+
+  app.post("/api/summary-report/create-weekly", async (_req, res) => {
+    try {
+      const spreadsheetId = await scheduler.createWeeklySummarySheet();
+      res.json({
+        ok: true,
+        spreadsheetId,
+        url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create weekly sheet", error });
+    }
+  });
+
+  app.post("/api/summary-report/sync", async (req, res) => {
+    try {
+      const { captureTime } = req.body;
+      const validTimes = ['08:00', '11:00', '14:00', '17:00'];
+      
+      if (!captureTime || !validTimes.includes(captureTime)) {
+        return res.status(400).json({ 
+          message: "Valid captureTime required (08:00, 11:00, 14:00, or 17:00)" 
+        });
+      }
+
+      await scheduler.triggerSummarySync(captureTime);
+      res.json({ ok: true, message: `Synced for ${captureTime}` });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to sync summary report", error });
+    }
+  });
+
+  app.get("/api/summary-report/tool-config", async (_req, res) => {
+    try {
+      const config = scheduler.getSummaryToolConfig();
+      res.json(config);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get tool config", error });
+    }
+  });
+
+  app.post("/api/summary-report/tool-config", async (req, res) => {
+    try {
+      const { tools } = req.body;
+      if (!Array.isArray(tools)) {
+        return res.status(400).json({ message: "tools must be an array" });
+      }
+
+      // Validate each tool entry
+      for (const tool of tools) {
+        if (!tool.name || typeof tool.name !== 'string') {
+          return res.status(400).json({ message: "Each tool must have a name" });
+        }
+        if (typeof tool.totalCount !== 'number' || tool.totalCount < 0) {
+          return res.status(400).json({ message: "Each tool must have a valid totalCount" });
+        }
+        if (typeof tool.isCheckType !== 'boolean') {
+          return res.status(400).json({ message: "Each tool must have isCheckType (boolean)" });
+        }
+      }
+
+      await scheduler.setSummaryToolConfig(tools);
+      res.json({ ok: true, tools });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update tool config", error });
+    }
+  });
+
   app.post("/api/alerts/test", async (_req, res) => {
     try {
       const result = await sendTestAlert();

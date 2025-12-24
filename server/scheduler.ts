@@ -4,6 +4,7 @@ import type { IStorage } from './storage';
 import type { Camera, Slot } from '@shared/schema';
 import { sendAlertEmail } from './services/email-alerts';
 import { SheetsLogger } from './services/sheets-logger';
+import { SheetsSummaryReport } from './services/sheets-summary-report';
 import { getAlertLEDController } from './services/alert-led';
 import { maintenanceService } from './services/maintenance-service';
 import { cameraSessionManager } from './camera-session-manager';
@@ -24,6 +25,7 @@ export class CaptureScheduler {
   private diagnosticTasks: Map<string, cron.ScheduledTask> = new Map();
   private isInitialized = false;
   private sheetsLogger: SheetsLogger;
+  private summaryReport: SheetsSummaryReport;
   private alertQueue: AlertRetryQueue;
   
   private readonly CAPTURE_TIMEOUT_MS = 600000; // 10 minutes
@@ -31,6 +33,7 @@ export class CaptureScheduler {
   constructor(storage: IStorage) {
     this.storage = storage;
     this.sheetsLogger = new SheetsLogger(storage);
+    this.summaryReport = new SheetsSummaryReport(storage);
     this.alertQueue = new AlertRetryQueue(storage, this.sheetsLogger);
   }
 
@@ -139,6 +142,9 @@ export class CaptureScheduler {
     // Initialize sheets logger
     await this.sheetsLogger.initialize();
 
+    // Initialize summary report
+    await this.summaryReport.initialize();
+
     // Start alert retry queue processor
     await this.alertQueue.start();
 
@@ -236,7 +242,7 @@ export class CaptureScheduler {
 
     const task = cron.schedule(cronExpression, async () => {
       console.log(`[Scheduler] Running scheduled capture at ${timeStr} JST`);
-      await this.executeCapture('scheduled');
+      await this.executeCapture('scheduled', timeStr);
     }, {
       timezone: TIMEZONE
     });
@@ -279,7 +285,7 @@ export class CaptureScheduler {
   /**
    * Execute capture process
    */
-  private async executeCapture(triggerType: 'scheduled' | 'manual'): Promise<any> {
+  private async executeCapture(triggerType: 'scheduled' | 'manual', captureTime?: string): Promise<any> {
     const startTime = Date.now();
 
     try {
@@ -386,6 +392,17 @@ export class CaptureScheduler {
       }
 
       console.log(`[Scheduler] Capture complete: ${result.status} (${executionTime}ms)`);
+
+      // Sync to Google Sheets summary report (if configured)
+      if (captureTime && triggerType === 'scheduled') {
+        try {
+          await this.summaryReport.syncAfterCapture(captureTime);
+        } catch (syncError) {
+          console.error('[Scheduler] Failed to sync summary report:', syncError);
+          // Don't fail the entire capture if sync fails
+        }
+      }
+
       return result;
 
     } catch (error: any) {
@@ -856,5 +873,54 @@ export class CaptureScheduler {
    */
   getSheetsUrl(): string | null {
     return this.sheetsLogger.getSpreadsheetUrl();
+  }
+
+  /**
+   * Get Google Sheets URL for summary report
+   */
+  getSummaryReportUrl(): string | null {
+    return this.summaryReport.getSpreadsheetUrl();
+  }
+
+  /**
+   * Set the spreadsheet ID for summary report
+   */
+  setSummaryReportSpreadsheetId(id: string): void {
+    this.summaryReport.setSpreadsheetId(id);
+  }
+
+  /**
+   * Create a new weekly summary sheet
+   */
+  async createWeeklySummarySheet(): Promise<string> {
+    return this.summaryReport.createWeeklySheet();
+  }
+
+  /**
+   * Manually trigger summary report sync
+   */
+  async triggerSummarySync(captureTime: string): Promise<void> {
+    await this.summaryReport.syncAfterCapture(captureTime);
+  }
+
+  /**
+   * Get the summary report instance for configuration
+   */
+  getSummaryReport(): SheetsSummaryReport {
+    return this.summaryReport;
+  }
+
+  /**
+   * Get the tool configuration for summary report
+   */
+  getSummaryToolConfig() {
+    return this.summaryReport.getToolConfig();
+  }
+
+  /**
+   * Set the tool configuration for summary report
+   */
+  async setSummaryToolConfig(config: Array<{ name: string; totalCount: number; isCheckType: boolean }>) {
+    await this.summaryReport.setToolConfig(config);
   }
 }
