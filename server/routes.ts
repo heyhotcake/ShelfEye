@@ -2564,12 +2564,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields: name, paperSize, rectangles" });
       }
       
+      if (rectangles.length === 0) {
+        return res.status(400).json({ message: "Cannot save template with 0 tools" });
+      }
+      
       // Create the design
       const design = await storage.createTemplateDesign({ name, paperSize });
       console.log(`[TemplateDesigns] Created design with ID: ${design.id}`);
       
-      // Create all rectangles linked to this design
+      // Create all rectangles linked to this design - FAIL FAST on any error
       let successCount = 0;
+      const errors: string[] = [];
+      
       for (const rect of rectangles) {
         try {
           await storage.createTemplateRectangle({
@@ -2578,14 +2584,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
             paperSize: paperSize,
           });
           successCount++;
-        } catch (rectError) {
-          console.error(`[TemplateDesigns] Failed to create rectangle:`, rectError, 'Data:', rect);
+        } catch (rectError: any) {
+          const errorMsg = rectError?.message || String(rectError);
+          console.error(`[TemplateDesigns] Failed to create rectangle:`, errorMsg, 'Data:', rect);
+          errors.push(`Tool ${rect.categoryId}: ${errorMsg}`);
         }
       }
       
       console.log(`[TemplateDesigns] Created ${successCount}/${rectangles.length} rectangles for design ${design.id}`);
       
-      res.json({ ...design, rectangleCount: successCount });
+      // If NO rectangles were saved, delete the design and return error
+      if (successCount === 0) {
+        await storage.deleteTemplateDesign(design.id);
+        console.error(`[TemplateDesigns] Deleted orphan design ${design.id} - no rectangles saved`);
+        return res.status(500).json({ 
+          message: "Failed to save any tools. Design was not created.", 
+          errors,
+          requested: rectangles.length,
+          saved: 0
+        });
+      }
+      
+      // If SOME rectangles failed, warn but still return success with details
+      if (successCount < rectangles.length) {
+        console.warn(`[TemplateDesigns] Partial save: ${successCount}/${rectangles.length} tools saved`);
+        return res.json({ 
+          ...design, 
+          rectangleCount: successCount,
+          requested: rectangles.length,
+          partialSave: true,
+          errors
+        });
+      }
+      
+      res.json({ ...design, rectangleCount: successCount, requested: rectangles.length });
     } catch (error) {
       console.error('[TemplateDesigns] Error creating template design:', error);
       res.status(500).json({ message: "Failed to create template design", error });

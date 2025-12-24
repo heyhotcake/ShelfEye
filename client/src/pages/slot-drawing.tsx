@@ -565,18 +565,34 @@ export default function SlotDrawing() {
   // Template design mutations (save/delete whole designs)
   const saveTemplateDesignMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/template-designs', data),
-    onSuccess: () => {
-      toast({
-        title: "Design Saved",
-        description: "Template design saved to database successfully",
-      });
+    onSuccess: (response: any) => {
+      // Check for partial save warning
+      if (response.partialSave) {
+        toast({
+          title: "⚠️ Partial Save",
+          description: `Only ${response.rectangleCount}/${response.requested} tools saved. Some tools may have invalid categories.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Design Saved",
+          description: `Template saved with ${response.rectangleCount} tools`,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
       setTemplateVersionName(''); // Clear input after save
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      // Parse error response for detailed info
+      const errorData = error?.data || {};
+      const message = errorData.message || error.message || "Unknown error";
+      const details = errorData.saved !== undefined 
+        ? ` (${errorData.saved}/${errorData.requested} tools saved)`
+        : '';
+      
       toast({
         title: "Failed to Save Design",
-        description: error.message,
+        description: `${message}${details}`,
         variant: "destructive",
       });
     },
