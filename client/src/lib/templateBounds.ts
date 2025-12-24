@@ -24,6 +24,20 @@ export interface Rectangle {
   yCm: number;
   widthCm: number;
   heightCm: number;
+  rotation?: number;
+}
+
+/**
+ * Calculate the axis-aligned bounding box dimensions for a rotated rectangle
+ */
+function getRotatedBoundingBox(widthCm: number, heightCm: number, rotation: number = 0): { width: number; height: number } {
+  const radians = (rotation * Math.PI) / 180;
+  const cosA = Math.abs(Math.cos(radians));
+  const sinA = Math.abs(Math.sin(radians));
+  return {
+    width: widthCm * cosA + heightCm * sinA,
+    height: widthCm * sinA + heightCm * cosA,
+  };
 }
 
 export interface BoundaryViolation {
@@ -80,8 +94,10 @@ export function checkBoundaryViolations(
 
   const violations: BoundaryViolation[] = [];
   
-  const halfWidth = rect.widthCm / 2;
-  const halfHeight = rect.heightCm / 2;
+  // Use rotated bounding box dimensions
+  const rotatedBox = getRotatedBoundingBox(rect.widthCm, rect.heightCm, rect.rotation || 0);
+  const halfWidth = rotatedBox.width / 2;
+  const halfHeight = rotatedBox.height / 2;
   
   const leftEdge = rect.xCm - halfWidth;
   const rightEdge = rect.xCm + halfWidth;
@@ -150,8 +166,10 @@ export function clampToBounds(
   const bounds = PAPER_BOUNDS[paperSize];
   if (!bounds) return { xCm: rect.xCm, yCm: rect.yCm, clamped: false };
 
-  const halfWidth = rect.widthCm / 2;
-  const halfHeight = rect.heightCm / 2;
+  // Use rotated bounding box dimensions
+  const rotatedBox = getRotatedBoundingBox(rect.widthCm, rect.heightCm, rect.rotation || 0);
+  const halfWidth = rotatedBox.width / 2;
+  const halfHeight = rotatedBox.height / 2;
   
   if (paperSize === '6-page-3x2' || paperSize === '8-page-4x2') {
     // For multi-page format, clamp to the appropriate sheet's safe zone

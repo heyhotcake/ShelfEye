@@ -1179,8 +1179,16 @@ export default function SlotDrawing() {
       // Simple bounds: just keep within overall canvas (no per-sheet locking)
       const bounds = PAPER_BOUNDS[paperSize];
       if (bounds) {
-        const halfWidth = rect.widthCm / 2;
-        const halfHeight = rect.heightCm / 2;
+        // Calculate rotated bounding box dimensions
+        const rotation = rect.rotation || 0;
+        const radians = (rotation * Math.PI) / 180;
+        const cosA = Math.abs(Math.cos(radians));
+        const sinA = Math.abs(Math.sin(radians));
+        const rotatedWidth = rect.widthCm * cosA + rect.heightCm * sinA;
+        const rotatedHeight = rect.widthCm * sinA + rect.heightCm * cosA;
+        
+        const halfWidth = rotatedWidth / 2;
+        const halfHeight = rotatedHeight / 2;
         const minX = bounds.safeMarginCm + halfWidth;
         const maxX = bounds.widthCm - bounds.safeMarginCm - halfWidth;
         const minY = bounds.safeMarginCm + halfHeight;
@@ -1453,13 +1461,13 @@ export default function SlotDrawing() {
       // Validate and auto-correct any out-of-bounds rectangles
       const validatedRects = loadedRects.map(rect => {
         const violations = checkBoundaryViolations(
-          { xCm: rect.xCm, yCm: rect.yCm, widthCm: rect.widthCm, heightCm: rect.heightCm },
+          { xCm: rect.xCm, yCm: rect.yCm, widthCm: rect.widthCm, heightCm: rect.heightCm, rotation: rect.rotation || 0 },
           version.paperSize
         );
         
         if (violations.length > 0) {
           const clamped = clampToBounds(
-            { xCm: rect.xCm, yCm: rect.yCm, widthCm: rect.widthCm, heightCm: rect.heightCm },
+            { xCm: rect.xCm, yCm: rect.yCm, widthCm: rect.widthCm, heightCm: rect.heightCm, rotation: rect.rotation || 0 },
             version.paperSize
           );
           
