@@ -90,7 +90,7 @@ export class SheetsSummaryReport {
       end,
       startStr: format(start, 'M月d日', { timeZone: TIMEZONE }),
       endStr: format(end, 'M月d日', { timeZone: TIMEZONE }),
-      tabName: format(start, 'M月d日', { timeZone: TIMEZONE }), // Tab name is just the start date
+      tabName: format(start, 'yy-MM-dd', { timeZone: TIMEZONE }) + 'の週', // e.g., "24-12-23の週"
     };
   }
 
