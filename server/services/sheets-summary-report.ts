@@ -19,10 +19,23 @@ interface CaptureTimeSummary {
   tools: ToolSummary[];
 }
 
+// Rows to skip when writing quantities (user-specified)
+const SKIP_ROWS = [10, 11, 17, 18, 20, 21];
+
+// Row where the N circle stamp exists in column D
+const STAMP_ROW = 23;
+
+interface ToolRowMapping {
+  toolName: string;
+  returnRow: number;    // Row for 返却数
+  checkoutRow: number;  // Row for 貸出数
+}
+
 export class SheetsSummaryReport {
   private storage: IStorage;
   private spreadsheetId: string | null = null;
   private currentSheetName: string | null = null; // Current week's tab name
+  private templateRowMapping: ToolRowMapping[] = []; // Dynamic row mapping from Template
 
   // Default tool configuration matching user's format
   // Can be overridden via SUMMARY_TOOL_CONFIG in database
@@ -64,6 +77,87 @@ export class SheetsSummaryReport {
 
   getToolConfig() {
     return this.toolConfig;
+  }
+
+  /**
+   * Scan the Template tab to build dynamic row mapping for each tool
+   * This reads column A and C to find tool names and their row positions
+   */
+  async scanTemplateLayout(): Promise<void> {
+    if (!this.spreadsheetId) {
+      console.log('[SheetsSummaryReport] No spreadsheet configured, cannot scan template');
+      return;
+    }
+
+    try {
+      const sheets = await getSheetsClient();
+      
+      // Read columns A and C from Template tab (rows 1-30 should cover all tools)
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId: this.spreadsheetId,
+        range: `'Template'!A1:C30`,
+      });
+
+      const rows = response.data.values || [];
+      this.templateRowMapping = [];
+      
+      let currentToolName: string | null = null;
+      let currentToolReturnRow: number = -1;
+
+      for (let i = 0; i < rows.length; i++) {
+        const rowNum = i + 1; // 1-indexed row number
+        const colA = rows[i]?.[0]?.toString().trim() || '';
+        const colC = rows[i]?.[2]?.toString().trim() || '';
+
+        // Skip rows that should be ignored
+        if (SKIP_ROWS.includes(rowNum)) {
+          continue;
+        }
+
+        // Check if column A has a tool name (non-empty and not a header)
+        if (colA && colA !== '備品名' && colA !== '確認者') {
+          currentToolName = colA;
+          
+          // Check if column C indicates this is 返却数 row
+          if (colC === '返却数') {
+            currentToolReturnRow = rowNum;
+          }
+        }
+
+        // Check if this row is 貸出数 for the current tool
+        if (currentToolName && colC === '貸出数' && currentToolReturnRow > 0) {
+          this.templateRowMapping.push({
+            toolName: currentToolName,
+            returnRow: currentToolReturnRow,
+            checkoutRow: rowNum,
+          });
+          console.log(`[SheetsSummaryReport] Mapped tool "${currentToolName}": 返却数=row ${currentToolReturnRow}, 貸出数=row ${rowNum}`);
+          
+          // Reset for next tool
+          currentToolName = null;
+          currentToolReturnRow = -1;
+        }
+      }
+
+      console.log(`[SheetsSummaryReport] Template scan complete: ${this.templateRowMapping.length} tools mapped`);
+
+    } catch (error) {
+      console.error('[SheetsSummaryReport] Failed to scan Template layout:', error);
+      // Fall back to empty mapping - will use toolConfig-based calculation
+      this.templateRowMapping = [];
+    }
+  }
+
+  /**
+   * Get row number for a tool from the scanned template mapping
+   */
+  private getTemplateRowForTool(toolName: string, rowType: '返却数' | '貸出数'): number {
+    const mapping = this.templateRowMapping.find(m => m.toolName === toolName);
+    if (!mapping) {
+      console.warn(`[SheetsSummaryReport] No template mapping found for tool: ${toolName}`);
+      return -1;
+    }
+    return rowType === '返却数' ? mapping.returnRow : mapping.checkoutRow;
   }
 
   async setToolConfig(config: Array<{ name: string; totalCount: number; isCheckType: boolean }>) {
@@ -243,6 +337,11 @@ export class SheetsSummaryReport {
         return;
       }
 
+      // Scan template layout if not done yet
+      if (this.templateRowMapping.length === 0) {
+        await this.scanTemplateLayout();
+      }
+
       // Ensure we have a tab for this week (creates if needed)
       const sheetName = await this.ensureWeeklyTab();
 
@@ -263,9 +362,9 @@ export class SheetsSummaryReport {
 
       for (const tool of summary) {
         if (tool.isCheckType) {
-          // ✔点 type - just check or X
-          const row = this.getRowForTool(tool.toolName, '確認');
-          if (row > 0) {
+          // ✔点 type - just check or X (use template mapping or fallback)
+          const row = this.getTemplateRowForTool(tool.toolName, '返却数');
+          if (row > 0 && !SKIP_ROWS.includes(row)) {
             const value = tool.presentCount > 0 ? '✔' : 'X';
             updates.push({
               range: `'${sheetName}'!${column}${row}`,
@@ -273,17 +372,17 @@ export class SheetsSummaryReport {
             });
           }
         } else {
-          // 返却数/貸出数 type
-          const returnRow = this.getRowForTool(tool.toolName, '返却数');
-          const checkoutRow = this.getRowForTool(tool.toolName, '貸出数');
+          // 返却数/貸出数 type - use template row mapping
+          const returnRow = this.getTemplateRowForTool(tool.toolName, '返却数');
+          const checkoutRow = this.getTemplateRowForTool(tool.toolName, '貸出数');
 
-          if (returnRow > 0) {
+          if (returnRow > 0 && !SKIP_ROWS.includes(returnRow)) {
             updates.push({
               range: `'${sheetName}'!${column}${returnRow}`,
               values: [[tool.presentCount]]
             });
           }
-          if (checkoutRow > 0) {
+          if (checkoutRow > 0 && !SKIP_ROWS.includes(checkoutRow)) {
             updates.push({
               range: `'${sheetName}'!${column}${checkoutRow}`,
               values: [[tool.missingCount]]
@@ -292,7 +391,7 @@ export class SheetsSummaryReport {
         }
       }
 
-      // Execute batch update
+      // Execute batch update for quantities
       if (updates.length > 0) {
         await sheets.spreadsheets.values.batchUpdate({
           spreadsheetId: this.spreadsheetId,
@@ -305,9 +404,51 @@ export class SheetsSummaryReport {
         console.log(`[SheetsSummaryReport] Synced ${updates.length} cells for ${captureTime} on ${this.dayLabels[mondayBasedDay]} to tab '${sheetName}'`);
       }
 
+      // Copy N circle stamp from D23 to the time column row 23
+      await this.copyStampToColumn(sheetName, column);
+
     } catch (error) {
       console.error('[SheetsSummaryReport] Failed to sync:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Copy the N circle stamp from D23 to the specified column row 23
+   */
+  private async copyStampToColumn(sheetName: string, column: string): Promise<void> {
+    if (!this.spreadsheetId) return;
+
+    try {
+      const sheets = await getSheetsClient();
+
+      // Read the stamp value from D23
+      const stampResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId: this.spreadsheetId,
+        range: `'${sheetName}'!D${STAMP_ROW}`,
+      });
+
+      const stampValue = stampResponse.data.values?.[0]?.[0] || '';
+
+      if (stampValue) {
+        // Write the stamp to the time column row 23
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: this.spreadsheetId,
+          range: `'${sheetName}'!${column}${STAMP_ROW}`,
+          valueInputOption: 'RAW',
+          requestBody: {
+            values: [[stampValue]]
+          }
+        });
+
+        console.log(`[SheetsSummaryReport] Copied N stamp from D${STAMP_ROW} to ${column}${STAMP_ROW}`);
+      } else {
+        console.log(`[SheetsSummaryReport] No stamp found at D${STAMP_ROW}, skipping stamp copy`);
+      }
+
+    } catch (error) {
+      console.error('[SheetsSummaryReport] Failed to copy stamp:', error);
+      // Don't throw - stamp copy is not critical
     }
   }
 
