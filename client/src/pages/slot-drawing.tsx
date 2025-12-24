@@ -1413,9 +1413,12 @@ export default function SlotDrawing() {
       }
       const existingRects = await response.json();
 
-      // Delete existing template rectangles for the target paper size
+      // Delete ONLY standalone template rectangles (no design_id)
+      // NEVER delete rectangles that belong to saved designs!
       for (const rect of existingRects) {
-        await apiRequest('DELETE', `/api/template-rectangles/${rect.id}`);
+        if (!rect.designId) {
+          await apiRequest('DELETE', `/api/template-rectangles/${rect.id}`);
+        }
       }
 
       // Set paper size AFTER deletion so state is consistent
