@@ -890,10 +890,10 @@ export class CaptureScheduler {
   }
 
   /**
-   * Create a new weekly summary sheet
+   * Create a new weekly tab in the summary spreadsheet
    */
-  async createWeeklySummarySheet(): Promise<string> {
-    return this.summaryReport.createWeeklySheet();
+  async createWeeklySummaryTab(): Promise<string> {
+    return this.summaryReport.createWeeklyTab();
   }
 
   /**

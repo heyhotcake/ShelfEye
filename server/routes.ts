@@ -2341,14 +2341,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/summary-report/create-weekly", async (_req, res) => {
     try {
-      const spreadsheetId = await scheduler.createWeeklySummarySheet();
+      const tabName = await scheduler.createWeeklySummaryTab();
+      const url = scheduler.getSummaryReportUrl();
       res.json({
         ok: true,
-        spreadsheetId,
-        url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
+        tabName,
+        url,
       });
     } catch (error) {
-      res.status(500).json({ message: "Failed to create weekly sheet", error });
+      res.status(500).json({ message: "Failed to create weekly tab", error });
     }
   });
 

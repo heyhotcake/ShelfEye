@@ -22,6 +22,7 @@ interface CaptureTimeSummary {
 export class SheetsSummaryReport {
   private storage: IStorage;
   private spreadsheetId: string | null = null;
+  private currentSheetName: string | null = null; // Current week's tab name
 
   // Default tool configuration matching user's format
   // Can be overridden via SUMMARY_TOOL_CONFIG in database
@@ -79,7 +80,7 @@ export class SheetsSummaryReport {
     return this.spreadsheetId;
   }
 
-  private getWeekDateRange(date: Date): { start: Date; end: Date; startStr: string; endStr: string } {
+  private getWeekDateRange(date: Date): { start: Date; end: Date; startStr: string; endStr: string; tabName: string } {
     const jstDate = toZonedTime(date, TIMEZONE);
     const start = startOfWeek(jstDate, { weekStartsOn: 1 }); // Monday
     const end = addDays(start, 4); // Friday
@@ -89,7 +90,60 @@ export class SheetsSummaryReport {
       end,
       startStr: format(start, 'M月d日', { timeZone: TIMEZONE }),
       endStr: format(end, 'M月d日', { timeZone: TIMEZONE }),
+      tabName: format(start, 'M月d日', { timeZone: TIMEZONE }), // Tab name is just the start date
     };
+  }
+
+  private async ensureWeeklyTab(): Promise<string> {
+    if (!this.spreadsheetId) {
+      throw new Error('No spreadsheet configured');
+    }
+
+    const sheets = await getSheetsClient();
+    const now = toZonedTime(new Date(), TIMEZONE);
+    const weekRange = this.getWeekDateRange(now);
+    const tabName = weekRange.tabName;
+
+    // Check if the tab already exists
+    const spreadsheet = await sheets.spreadsheets.get({
+      spreadsheetId: this.spreadsheetId,
+    });
+
+    const existingSheet = spreadsheet.data.sheets?.find(
+      s => s.properties?.title === tabName
+    );
+
+    if (existingSheet) {
+      console.log(`[SheetsSummaryReport] Using existing tab: ${tabName}`);
+      this.currentSheetName = tabName;
+      return tabName;
+    }
+
+    // Create new tab for this week
+    console.log(`[SheetsSummaryReport] Creating new tab: ${tabName}`);
+
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: this.spreadsheetId,
+      requestBody: {
+        requests: [{
+          addSheet: {
+            properties: {
+              title: tabName,
+              gridProperties: {
+                frozenRowCount: 2,
+                frozenColumnCount: 3,
+              }
+            }
+          }
+        }]
+      }
+    });
+
+    // Initialize the new tab with headers and structure
+    await this.initializeSheetStructure(this.spreadsheetId, tabName);
+
+    this.currentSheetName = tabName;
+    return tabName;
   }
 
   private getColumnForCaptureTime(dayOfWeek: number, captureTimeIndex: number): string {
@@ -153,6 +207,9 @@ export class SheetsSummaryReport {
         return;
       }
 
+      // Ensure we have a tab for this week (creates if needed)
+      const sheetName = await this.ensureWeeklyTab();
+
       const mondayBasedDay = dayOfWeek - 1; // Convert to 0=Monday
       const captureTimeIndex = this.captureTimes.indexOf(captureTime);
 
@@ -175,7 +232,7 @@ export class SheetsSummaryReport {
           if (row > 0) {
             const value = tool.presentCount > 0 ? '✔' : 'X';
             updates.push({
-              range: `Sheet1!${column}${row}`,
+              range: `'${sheetName}'!${column}${row}`,
               values: [[value]]
             });
           }
@@ -186,36 +243,17 @@ export class SheetsSummaryReport {
 
           if (returnRow > 0) {
             updates.push({
-              range: `Sheet1!${column}${returnRow}`,
+              range: `'${sheetName}'!${column}${returnRow}`,
               values: [[tool.presentCount]]
             });
           }
           if (checkoutRow > 0) {
             updates.push({
-              range: `Sheet1!${column}${checkoutRow}`,
+              range: `'${sheetName}'!${column}${checkoutRow}`,
               values: [[tool.missingCount]]
             });
           }
         }
-      }
-
-      // Update header date range if it's the first capture of the week
-      if (mondayBasedDay === 0 && captureTimeIndex === 0) {
-        const weekRange = this.getWeekDateRange(now);
-        const year = format(now, 'yyyy', { timeZone: TIMEZONE });
-
-        // Update the header with the date range
-        updates.push({
-          range: 'Sheet1!A1',
-          values: [[`東京４回物流部１部　しまむら班　備品貸出チェック表 ${year}年 ${weekRange.startStr} ～ ${weekRange.endStr}`]]
-        });
-
-        // Update the "更新日" cell
-        const updateDate = format(now, 'yyyy-MM-dd', { timeZone: TIMEZONE });
-        updates.push({
-          range: 'Sheet1!U1',
-          values: [[`更新日：${updateDate}`]]
-        });
       }
 
       // Execute batch update
@@ -228,7 +266,7 @@ export class SheetsSummaryReport {
           },
         });
 
-        console.log(`[SheetsSummaryReport] Synced ${updates.length} cells for ${captureTime} on ${this.dayLabels[mondayBasedDay]}`);
+        console.log(`[SheetsSummaryReport] Synced ${updates.length} cells for ${captureTime} on ${this.dayLabels[mondayBasedDay]} to tab '${sheetName}'`);
       }
 
     } catch (error) {
@@ -307,50 +345,23 @@ export class SheetsSummaryReport {
     return summaries;
   }
 
-  async createWeeklySheet(): Promise<string> {
+  async createWeeklyTab(): Promise<string> {
+    if (!this.spreadsheetId) {
+      throw new Error('No spreadsheet configured. Set spreadsheet ID first.');
+    }
+
     try {
-      const sheets = await getSheetsClient();
-      const now = toZonedTime(new Date(), TIMEZONE);
-      const weekRange = this.getWeekDateRange(now);
-      const year = format(now, 'yyyy', { timeZone: TIMEZONE });
-
-      // Create new spreadsheet with the weekly format
-      const response = await sheets.spreadsheets.create({
-        requestBody: {
-          properties: {
-            title: `備品貸出チェック表 ${year}年 ${weekRange.startStr}～${weekRange.endStr}`,
-          },
-          sheets: [{
-            properties: {
-              title: 'Sheet1',
-              gridProperties: {
-                frozenRowCount: 2,
-                frozenColumnCount: 3,
-              }
-            }
-          }]
-        }
-      });
-
-      const newSpreadsheetId = response.data.spreadsheetId!;
-
-      // Set up header and structure
-      await this.initializeSheetStructure(newSpreadsheetId);
-
-      // Save to config
-      await this.storage.setConfig('SUMMARY_SPREADSHEET_ID', newSpreadsheetId, 'Summary report spreadsheet ID');
-      this.spreadsheetId = newSpreadsheetId;
-
-      console.log(`[SheetsSummaryReport] Created new weekly sheet: ${newSpreadsheetId}`);
-      return newSpreadsheetId;
+      const tabName = await this.ensureWeeklyTab();
+      console.log(`[SheetsSummaryReport] Weekly tab ready: ${tabName}`);
+      return tabName;
 
     } catch (error) {
-      console.error('[SheetsSummaryReport] Failed to create weekly sheet:', error);
+      console.error('[SheetsSummaryReport] Failed to create weekly tab:', error);
       throw error;
     }
   }
 
-  private async initializeSheetStructure(spreadsheetId: string): Promise<void> {
+  private async initializeSheetStructure(spreadsheetId: string, tabName: string): Promise<void> {
     const sheets = await getSheetsClient();
     const now = toZonedTime(new Date(), TIMEZONE);
     const weekRange = this.getWeekDateRange(now);
@@ -388,10 +399,10 @@ export class SheetsSummaryReport {
     // Add 確認者 row at the bottom
     dataRows.push(['確認者', '', '', ...Array(20).fill('')]);
 
-    // Write all data
+    // Write all data to the specific tab
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: 'Sheet1!A1',
+      range: `'${tabName}'!A1`,
       valueInputOption: 'RAW',
       requestBody: {
         values: [headerRow1, headerRow2, ...dataRows],
