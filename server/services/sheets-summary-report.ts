@@ -63,7 +63,7 @@ export class SheetsSummaryReport {
     // Load tool configuration from database or use defaults
     const toolConfigData = await this.storage.getConfigByKey('SUMMARY_TOOL_CONFIG');
     if (toolConfigData?.value && Array.isArray(toolConfigData.value)) {
-      this.toolConfig = toolConfigData.value as typeof this.defaultToolConfig;
+      this.toolConfig = toolConfigData.value as Array<{ name: string; totalCount: number; isCheckType: boolean }>;
       console.log(`[SheetsSummaryReport] Loaded ${this.toolConfig.length} tools from config`);
     } else {
       this.toolConfig = [...this.defaultToolConfig];

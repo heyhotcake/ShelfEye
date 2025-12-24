@@ -923,4 +923,11 @@ export class CaptureScheduler {
   async setSummaryToolConfig(config: Array<{ name: string; totalCount: number; isCheckType: boolean }>) {
     await this.summaryReport.setToolConfig(config);
   }
+
+  /**
+   * Scan the Template tab to build dynamic row mapping
+   */
+  async scanSummaryTemplateLayout(): Promise<void> {
+    await this.summaryReport.scanTemplateLayout();
+  }
 }

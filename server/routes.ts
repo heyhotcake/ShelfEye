@@ -2371,6 +2371,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/summary-report/scan-template", async (_req, res) => {
+    try {
+      await scheduler.scanSummaryTemplateLayout();
+      res.json({ ok: true, message: "Template layout scanned successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to scan template layout", error });
+    }
+  });
+
   app.get("/api/summary-report/tool-config", async (_req, res) => {
     try {
       const config = scheduler.getSummaryToolConfig();
