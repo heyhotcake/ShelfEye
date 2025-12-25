@@ -485,23 +485,16 @@ export default function TemplatePrint() {
           const widthMm = cmToMm(rect.category.widthCm);
           const heightMm = cmToMm(rect.category.heightCm);
           
-          // For non-rotated rectangles, check if the rectangle BOUNDS overlap with this sheet
-          // (not just the center point)
-          const rectLeftMm = xMm - widthMm / 2;
-          const rectRightMm = xMm + widthMm / 2;
-          const rectTopMm = yMm - heightMm / 2;
-          const rectBottomMm = yMm + heightMm / 2;
-          
           const sheetLeftMm = sheetOffsetX;
           const sheetRightMm = sheetOffsetX + a4WidthMm;
           const sheetTopMm = sheetOffsetY;
           const sheetBottomMm = sheetOffsetY + a4HeightMm;
           
-          // Check if rectangle overlaps with this sheet (even partially)
-          const overlapsSheet = !(rectRightMm <= sheetLeftMm || rectLeftMm >= sheetRightMm ||
-                                  rectBottomMm <= sheetTopMm || rectTopMm >= sheetBottomMm);
+          // Check if the slot CENTER is within this sheet (prevents duplicates on adjacent sheets)
+          const centerInSheet = xMm >= sheetLeftMm && xMm < sheetRightMm &&
+                                yMm >= sheetTopMm && yMm < sheetBottomMm;
           
-          if (!overlapsSheet) return; // Skip if doesn't overlap this sheet
+          if (!centerInSheet) return; // Skip if center not in this sheet
 
           // CLAMP rectangle center to stay within sheet's safe zone
           // Safe zone is 10mm from all edges of the sheet
@@ -623,18 +616,19 @@ export default function TemplatePrint() {
               }
               
               // Position label between slot top and top guide line (above the guide line)
-              // Guide line is at guideSpacingMm/2 = 33.75mm from center
-              // Slot top is at heightMm/2 from center
+              // Calculate in slot-local coordinates, then rotate to page coordinates
               const slotTopOffset = heightMm / 2;
               const guideLineOffset = guideSpacingMm / 2;
-              // Label goes halfway between slot top and guide line
+              // Label goes halfway between slot top and guide line (in slot's local "up" direction)
               const labelOffset = (slotTopOffset + guideLineOffset) / 2;
               
-              // Rotate the label position around center
-              const labelPos = rotatePoint(localX, localY - labelOffset, localX, localY, angleRad);
+              // For rotated slots, we need to place label along the slot's rotated "up" direction
+              // The slot's local "up" direction after rotation is (-sin(θ), -cos(θ))
+              const labelX = localX - labelOffset * Math.sin(angleRad);
+              const labelY = localY - labelOffset * Math.cos(angleRad);
               
-              // Draw rotated text
-              pdf.text(rect.category.label, labelPos.x, labelPos.y, { 
+              // Draw text with rotation matching the slot
+              pdf.text(rect.category.label, labelX, labelY, { 
                 align: 'center', 
                 baseline: 'middle',
                 angle: rect.rotation
@@ -821,12 +815,14 @@ export default function TemplatePrint() {
             // Position label between slot top and top guide line (above the guide line)
             const slotTopOffset = heightMm / 2;
             const guideLineOffset = guideSpacingMm / 2;
+            // Label goes halfway between slot top and guide line (in slot's local "up" direction)
             const labelOffset = (slotTopOffset + guideLineOffset) / 2;
             
-            // Rotate the label position around center
-            const labelPos = rotatePoint(xMm, yMm - labelOffset, xMm, yMm, angleRad);
+            // For rotated slots, place label along the slot's rotated "up" direction
+            const labelX = xMm - labelOffset * Math.sin(angleRad);
+            const labelY = yMm - labelOffset * Math.cos(angleRad);
             
-            pdf.text(rect.category.label, labelPos.x, labelPos.y, { 
+            pdf.text(rect.category.label, labelX, labelY, { 
               align: 'center', 
               baseline: 'middle',
               angle: rect.rotation
