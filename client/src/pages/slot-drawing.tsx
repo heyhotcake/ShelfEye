@@ -2243,8 +2243,6 @@ export default function SlotDrawing() {
       <CategoryManager
         open={showCategoryManager}
         onOpenChange={setShowCategoryManager}
-        selectedCameraId={selectedCameraId}
-        selectedCameraName={selectedCamera?.name}
       />
       
       <SlotImportExportModal

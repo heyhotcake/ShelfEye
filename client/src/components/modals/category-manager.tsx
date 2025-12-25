@@ -36,8 +36,6 @@ import { Plus, Trash2, Edit, Save, X, Loader2, Grid3X3, Scan, Tag } from "lucide
 interface CategoryManagerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedCameraId?: string;
-  selectedCameraName?: string;
 }
 
 const formSchema = insertToolCategorySchema;
@@ -55,7 +53,7 @@ const scannerGridFormSchema = z.object({
 });
 type ScannerGridFormData = z.infer<typeof scannerGridFormSchema>;
 
-export function CategoryManager({ open, onOpenChange, selectedCameraId, selectedCameraName }: CategoryManagerProps) {
+export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -167,7 +165,7 @@ export function CategoryManager({ open, onOpenChange, selectedCameraId, selected
   });
 
   const createScannerGridMutation = useMutation({
-    mutationFn: (data: ScannerGridFormData & { cameraId: string }) =>
+    mutationFn: (data: ScannerGridFormData) =>
       apiRequest('POST', '/api/scanner-grids', data),
     onSuccess: () => {
       toast({
@@ -206,15 +204,7 @@ export function CategoryManager({ open, onOpenChange, selectedCameraId, selected
   });
 
   const handleCreateScannerGrid = (data: ScannerGridFormData) => {
-    if (!selectedCameraId) {
-      toast({
-        title: "No Camera Selected",
-        description: "Please select a camera before creating a grid.",
-        variant: "destructive",
-      });
-      return;
-    }
-    createScannerGridMutation.mutate({ ...data, cameraId: selectedCameraId });
+    createScannerGridMutation.mutate(data);
   };
 
   const handleCreate = (data: FormData) => {
@@ -357,17 +347,6 @@ export function CategoryManager({ open, onOpenChange, selectedCameraId, selected
               </p>
               <Form {...scannerGridForm}>
                 <form onSubmit={scannerGridForm.handleSubmit(handleCreateScannerGrid)} className="space-y-4">
-                  {selectedCameraName && (
-                    <div className="p-2 bg-muted rounded text-sm">
-                      <span className="text-muted-foreground">Camera: </span>
-                      <span className="font-medium">{selectedCameraName}</span>
-                    </div>
-                  )}
-                  {!selectedCameraId && (
-                    <div className="p-2 bg-destructive/10 border border-destructive/30 rounded text-sm text-destructive">
-                      No camera selected. Please select a camera first.
-                    </div>
-                  )}
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={scannerGridForm.control}
