@@ -508,11 +508,20 @@ export default function TemplatePrint() {
           const halfWidthMm = widthMm / 2;
           const halfHeightMm = heightMm / 2;
           
+          // Calculate rotation-aware bounding box dimensions
+          // When rotated, the axis-aligned bounding box is larger
+          const angleRad = (rect.rotation * Math.PI) / 180;
+          const cosA = Math.abs(Math.cos(angleRad));
+          const sinA = Math.abs(Math.sin(angleRad));
+          const rotatedHalfWidth = halfWidthMm * cosA + halfHeightMm * sinA;
+          const rotatedHalfHeight = halfWidthMm * sinA + halfHeightMm * cosA;
+          
           // Calculate safe zone bounds for this sheet (in global coordinates)
-          const sheetSafeLeft = sheetOffsetX + safeMarginMm + halfWidthMm;
-          const sheetSafeRight = sheetOffsetX + a4WidthMm - safeMarginMm - halfWidthMm;
-          const sheetSafeTop = sheetOffsetY + safeMarginMm + halfHeightMm;
-          const sheetSafeBottom = sheetOffsetY + a4HeightMm - safeMarginMm - halfHeightMm;
+          // Use rotation-aware bounding box for proper clamping
+          const sheetSafeLeft = sheetOffsetX + safeMarginMm + rotatedHalfWidth;
+          const sheetSafeRight = sheetOffsetX + a4WidthMm - safeMarginMm - rotatedHalfWidth;
+          const sheetSafeTop = sheetOffsetY + safeMarginMm + rotatedHalfHeight;
+          const sheetSafeBottom = sheetOffsetY + a4HeightMm - safeMarginMm - rotatedHalfHeight;
           
           // Clamp center position to safe zone
           const clampedXMm = Math.max(sheetSafeLeft, Math.min(sheetSafeRight, xMm));
@@ -527,7 +536,7 @@ export default function TemplatePrint() {
           pdf.setLineWidth(0.5);
 
           if (rect.rotation !== 0) {
-            const angleRad = (rect.rotation * Math.PI) / 180;
+            // angleRad already calculated above for rotation-aware bounding box
             const halfW = widthMm / 2;
             const halfH = heightMm / 2;
             const corners = [
