@@ -629,8 +629,8 @@ export default function TemplatePrint() {
               const angleRad = (rect.rotation * Math.PI) / 180;
               
               // Position label offset along the slot's "up" direction
-              // After rotation by θ (counter-clockwise), "up" becomes: (-sin(θ), -cos(θ))
-              const labelX = localX - labelOffset * Math.sin(angleRad);
+              // jsPDF uses clockwise rotation, so "up" in slot space becomes: (sin(θ), -cos(θ)) in page space
+              const labelX = localX + labelOffset * Math.sin(angleRad);
               const labelY = localY - labelOffset * Math.cos(angleRad);
               
               // Now center the text at this point
@@ -835,7 +835,8 @@ export default function TemplatePrint() {
             const angleRad = (rect.rotation * Math.PI) / 180;
             
             // Position label offset along the slot's "up" direction
-            const labelX = xMm - labelOffset * Math.sin(angleRad);
+            // jsPDF uses clockwise rotation, so "up" in slot space becomes: (sin(θ), -cos(θ)) in page space
+            const labelX = xMm + labelOffset * Math.sin(angleRad);
             const labelY = yMm - labelOffset * Math.cos(angleRad);
             
             // Center the text at this point
