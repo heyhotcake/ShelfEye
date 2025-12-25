@@ -617,20 +617,19 @@ export default function TemplatePrint() {
               }
               
               // Position label between slot top and top guide line (above the guide line)
+              // But ensure it stays within slot bounds
               const slotTopOffset = heightMm / 2;
               const guideLineOffset = guideSpacingMm / 2;
-              const labelOffset = (slotTopOffset + guideLineOffset) / 2;
+              // Clamp label to stay inside slot: at most (slotTopOffset - padding) from center
+              const maxLabelOffset = slotTopOffset - 5; // 5mm padding from edge
+              const idealLabelOffset = (slotTopOffset + guideLineOffset) / 2;
+              const labelOffset = Math.min(idealLabelOffset, maxLabelOffset);
               
               // For rotated text, we need to manually position since jsPDF's align is applied before rotation
-              // jsPDF angle rotates counter-clockwise, text baseline is at the given Y coordinate
-              // For rotated slots, position label offset along the slot's "up" direction
               const angleRad = (rect.rotation * Math.PI) / 180;
               
-              // In rotated space, "up" from center means:
-              // - For 0° rotation: (0, -1) → move up in Y
-              // - For 90° rotation: (1, 0) → move right in X
-              // But wait - jsPDF Y increases downward, so "up" visually is -Y
-              // After rotation by θ (counter-clockwise), "up" becomes: (sin(θ), -cos(θ))
+              // Position label offset along the slot's "up" direction
+              // After rotation by θ (counter-clockwise), "up" becomes: (-sin(θ), -cos(θ))
               const labelX = localX - labelOffset * Math.sin(angleRad);
               const labelY = localY - labelOffset * Math.cos(angleRad);
               
@@ -824,9 +823,13 @@ export default function TemplatePrint() {
             }
             
             // Position label between slot top and top guide line (above the guide line)
+            // But ensure it stays within slot bounds
             const slotTopOffset = heightMm / 2;
             const guideLineOffset = guideSpacingMm / 2;
-            const labelOffset = (slotTopOffset + guideLineOffset) / 2;
+            // Clamp label to stay inside slot: at most (slotTopOffset - padding) from center
+            const maxLabelOffset = slotTopOffset - 5; // 5mm padding from edge
+            const idealLabelOffset = (slotTopOffset + guideLineOffset) / 2;
+            const labelOffset = Math.min(idealLabelOffset, maxLabelOffset);
             
             // For rotated text, manually position since jsPDF's align is applied before rotation
             const angleRad = (rect.rotation * Math.PI) / 180;
