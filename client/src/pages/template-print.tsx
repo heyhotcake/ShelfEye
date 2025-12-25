@@ -621,12 +621,28 @@ export default function TemplatePrint() {
               const guideLineOffset = guideSpacingMm / 2;
               const labelOffset = (slotTopOffset + guideLineOffset) / 2;
               
-              // Simple approach: draw at slot center, let jsPDF handle centering
-              // Note: jsPDF rotates text around its origin point
-              pdf.text(rect.category.label, localX, localY - labelOffset, { 
-                angle: rect.rotation,
-                align: 'center'
-              });
+              // For rotated text, we need to manually position since jsPDF's align is applied before rotation
+              // jsPDF angle rotates counter-clockwise, text baseline is at the given Y coordinate
+              // For rotated slots, position label offset along the slot's "up" direction
+              const angleRad = (rect.rotation * Math.PI) / 180;
+              
+              // In rotated space, "up" from center means:
+              // - For 0° rotation: (0, -1) → move up in Y
+              // - For 90° rotation: (1, 0) → move right in X
+              // But wait - jsPDF Y increases downward, so "up" visually is -Y
+              // After rotation by θ (counter-clockwise), "up" becomes: (sin(θ), -cos(θ))
+              const labelX = localX - labelOffset * Math.sin(angleRad);
+              const labelY = localY - labelOffset * Math.cos(angleRad);
+              
+              // Now center the text at this point
+              const textWidthMm = pdf.getTextWidth(rect.category.label);
+              
+              // Text starts at (labelX, labelY) and extends in the rotated direction
+              // To center: offset by -textWidth/2 along the rotated X axis
+              const startX = labelX - (textWidthMm / 2) * Math.cos(angleRad);
+              const startY = labelY + (textWidthMm / 2) * Math.sin(angleRad);
+              
+              pdf.text(rect.category.label, startX, startY, { angle: rect.rotation });
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -812,11 +828,19 @@ export default function TemplatePrint() {
             const guideLineOffset = guideSpacingMm / 2;
             const labelOffset = (slotTopOffset + guideLineOffset) / 2;
             
-            // Simple approach: draw at slot center, let jsPDF handle centering
-            pdf.text(rect.category.label, xMm, yMm - labelOffset, { 
-              angle: rect.rotation,
-              align: 'center'
-            });
+            // For rotated text, manually position since jsPDF's align is applied before rotation
+            const angleRad = (rect.rotation * Math.PI) / 180;
+            
+            // Position label offset along the slot's "up" direction
+            const labelX = xMm - labelOffset * Math.sin(angleRad);
+            const labelY = yMm - labelOffset * Math.cos(angleRad);
+            
+            // Center the text at this point
+            const textWidthMm = pdf.getTextWidth(rect.category.label);
+            const startX = labelX - (textWidthMm / 2) * Math.cos(angleRad);
+            const startY = labelY + (textWidthMm / 2) * Math.sin(angleRad);
+            
+            pdf.text(rect.category.label, startX, startY, { angle: rect.rotation });
           }
         } else {
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
