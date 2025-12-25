@@ -621,23 +621,25 @@ export default function TemplatePrint() {
               const guideLineOffset = guideSpacingMm / 2;
               const labelOffset = (slotTopOffset + guideLineOffset) / 2;
               
-              // Use local coordinate transform: translate to center, rotate, draw at offset
-              // This avoids jsPDF's align/baseline offsets being applied before rotation
-              pdf.saveGraphicsState();
-              // Create transformation matrix: rotate then translate to slot center
-              const matrix = pdf.Matrix(
-                Math.cos(angleRad), Math.sin(angleRad),
-                -Math.sin(angleRad), Math.cos(angleRad),
-                localX, localY
-              );
-              pdf.setCurrentTransformationMatrix(matrix);
+              // For rotated text, don't use align/baseline as jsPDF applies them before rotation
+              // Instead, manually offset to center the text
+              const textWidthMm = pdf.getTextWidth(rect.category.label);
+              const fontSizeMm = fontPt * 0.352778; // Convert pt to mm (approx)
               
-              // Draw text at offset in slot-local coordinates (negative Y = up in slot space)
-              pdf.text(rect.category.label, 0, -labelOffset, { 
-                align: 'center', 
-                baseline: 'middle'
+              // Calculate label position in slot's rotated coordinate system
+              // Rotate point (0, -labelOffset) by θ: x' = labelOffset*sin(θ), y' = -labelOffset*cos(θ)
+              const labelCenterX = localX + labelOffset * Math.sin(angleRad);
+              const labelCenterY = localY - labelOffset * Math.cos(angleRad);
+              
+              // For rotated text, we need to offset along the rotated axes
+              // Text "left" in rotated space = cos(θ)*(-textWidth/2), sin(θ)*(-textWidth/2)
+              // Text "up" in rotated space for baseline = already handled by labelOffset
+              const textOffsetX = -(textWidthMm / 2) * Math.cos(angleRad);
+              const textOffsetY = -(textWidthMm / 2) * Math.sin(angleRad);
+              
+              pdf.text(rect.category.label, labelCenterX + textOffsetX, labelCenterY + textOffsetY, { 
+                angle: rect.rotation
               });
-              pdf.restoreGraphicsState();
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -823,21 +825,21 @@ export default function TemplatePrint() {
             const guideLineOffset = guideSpacingMm / 2;
             const labelOffset = (slotTopOffset + guideLineOffset) / 2;
             
-            // Use local coordinate transform: translate to center, rotate, draw at offset
-            pdf.saveGraphicsState();
-            const matrix = pdf.Matrix(
-              Math.cos(angleRad), Math.sin(angleRad),
-              -Math.sin(angleRad), Math.cos(angleRad),
-              xMm, yMm
-            );
-            pdf.setCurrentTransformationMatrix(matrix);
+            // For rotated text, manually calculate position to avoid jsPDF align/baseline drift
+            const textWidthMm = pdf.getTextWidth(rect.category.label);
             
-            // Draw text at offset in slot-local coordinates
-            pdf.text(rect.category.label, 0, -labelOffset, { 
-              align: 'center', 
-              baseline: 'middle'
+            // Calculate label position in slot's rotated coordinate system
+            // Rotate point (0, -labelOffset) by θ: x' = labelOffset*sin(θ), y' = -labelOffset*cos(θ)
+            const labelCenterX = xMm + labelOffset * Math.sin(angleRad);
+            const labelCenterY = yMm - labelOffset * Math.cos(angleRad);
+            
+            // Offset to center text along its rotated baseline
+            const textOffsetX = -(textWidthMm / 2) * Math.cos(angleRad);
+            const textOffsetY = -(textWidthMm / 2) * Math.sin(angleRad);
+            
+            pdf.text(rect.category.label, labelCenterX + textOffsetX, labelCenterY + textOffsetY, { 
+              angle: rect.rotation
             });
-            pdf.restoreGraphicsState();
           }
         } else {
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
