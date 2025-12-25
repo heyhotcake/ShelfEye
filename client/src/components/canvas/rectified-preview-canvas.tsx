@@ -18,12 +18,26 @@ interface TemplateRect {
   autoQrId?: string;
 }
 
+interface ScannerCellRect {
+  id: string;
+  gridId: string;
+  gridType: 'scanner' | 'worker_tag';
+  cellNumber: number;
+  xCm: number;
+  yCm: number;
+  widthCm: number;
+  heightCm: number;
+  label?: string;
+}
+
 interface RectifiedPreviewCanvasProps {
   baseImage: string;
   templates: TemplateRect[];
   paperWidthCm: number;
   paperHeightCm: number;
   onTemplatesAdjusted: (adjustedTemplates: TemplateRect[]) => void;
+  scannerCells?: ScannerCellRect[];
+  onScannerCellsAdjusted?: (adjustedCells: ScannerCellRect[]) => void;
   className?: string;
 }
 
@@ -33,22 +47,32 @@ export function RectifiedPreviewCanvas({
   paperWidthCm,
   paperHeightCm,
   onTemplatesAdjusted,
+  scannerCells = [],
+  onScannerCellsAdjusted,
   className
 }: RectifiedPreviewCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [draggedTemplate, setDraggedTemplate] = useState<string | null>(null);
+  const [draggedCell, setDraggedCell] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
   const [hoveredTemplate, setHoveredTemplate] = useState<string | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<string | null>(null);
   const [adjustedTemplates, setAdjustedTemplates] = useState<TemplateRect[]>(templates);
-  const [hasAdjustments, setHasAdjustments] = useState(false);
+  const [adjustedCells, setAdjustedCells] = useState<ScannerCellRect[]>(scannerCells);
+  const [hasTemplateAdjustments, setHasTemplateAdjustments] = useState(false);
+  const [hasCellAdjustments, setHasCellAdjustments] = useState(false);
 
-  // Sync adjustedTemplates when templates prop changes (e.g., when DB templates are loaded)
   useEffect(() => {
     setAdjustedTemplates(templates);
-    setHasAdjustments(false);
+    setHasTemplateAdjustments(false);
   }, [templates]);
+
+  useEffect(() => {
+    setAdjustedCells(scannerCells);
+    setHasCellAdjustments(false);
+  }, [scannerCells]);
 
   // Load base image
   useEffect(() => {
@@ -95,13 +119,10 @@ export function RectifiedPreviewCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw base image
     ctx.drawImage(imageRef.current, 0, 0, canvas.width, canvas.height);
 
-    // Draw template rectangles
     adjustedTemplates.forEach((template) => {
       const centerX = cmToPixels(template.xCm, 'x');
       const centerY = cmToPixels(template.yCm, 'y');
@@ -112,28 +133,23 @@ export function RectifiedPreviewCanvas({
       ctx.translate(centerX, centerY);
       ctx.rotate((template.rotation * Math.PI) / 180);
 
-      // Determine colors based on state
       const isHovered = hoveredTemplate === template.id;
       const isDragged = draggedTemplate === template.id;
       
-      // Draw rectangle (thin lines so template details are visible)
       ctx.strokeStyle = isDragged ? 'rgb(147, 51, 234)' : isHovered ? 'rgb(236, 72, 153)' : 'rgb(217, 70, 239)';
       ctx.lineWidth = isDragged ? 2 : isHovered ? 1.5 : 1;
       ctx.strokeRect(-width / 2, -height / 2, width, height);
 
-      // Draw semi-transparent fill on hover/drag
       if (isHovered || isDragged) {
         ctx.fillStyle = 'rgba(217, 70, 239, 0.1)';
         ctx.fillRect(-width / 2, -height / 2, width, height);
       }
 
-      // Draw label
       ctx.fillStyle = 'white';
       ctx.font = 'bold 14px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
-      // Draw background for label
       const labelText = template.categoryName;
       const metrics = ctx.measureText(labelText);
       const labelWidth = metrics.width + 8;
@@ -148,36 +164,90 @@ export function RectifiedPreviewCanvas({
       ctx.restore();
     });
 
-    // Draw cursor hint
-    if (hoveredTemplate || draggedTemplate) {
+    adjustedCells.forEach((cell) => {
+      const centerX = cmToPixels(cell.xCm, 'x');
+      const centerY = cmToPixels(cell.yCm, 'y');
+      const width = cmToPixels(cell.widthCm, 'x');
+      const height = cmToPixels(cell.heightCm, 'y');
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+
+      const isHovered = hoveredCell === cell.id;
+      const isDragged = draggedCell === cell.id;
+      
+      const isScanner = cell.gridType === 'scanner';
+      const baseColor = isScanner ? 'rgb(234, 179, 8)' : 'rgb(59, 130, 246)';
+      const hoverColor = isScanner ? 'rgb(250, 204, 21)' : 'rgb(96, 165, 250)';
+      const dragColor = isScanner ? 'rgb(202, 138, 4)' : 'rgb(37, 99, 235)';
+      const fillColor = isScanner ? 'rgba(234, 179, 8, 0.2)' : 'rgba(59, 130, 246, 0.2)';
+      
+      ctx.strokeStyle = isDragged ? dragColor : isHovered ? hoverColor : baseColor;
+      ctx.lineWidth = isDragged ? 3 : isHovered ? 2 : 1.5;
+      ctx.setLineDash([5, 3]);
+      ctx.strokeRect(-width / 2, -height / 2, width, height);
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = fillColor;
+      ctx.fillRect(-width / 2, -height / 2, width, height);
+
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const labelText = cell.label || `${isScanner ? 'S' : 'T'}${cell.cellNumber}`;
+      const metrics = ctx.measureText(labelText);
+      const labelWidth = metrics.width + 6;
+      const labelHeight = 16;
+      
+      ctx.fillStyle = isScanner ? 'rgba(234, 179, 8, 0.9)' : 'rgba(59, 130, 246, 0.9)';
+      ctx.fillRect(-labelWidth / 2, -labelHeight / 2, labelWidth, labelHeight);
+      
+      ctx.fillStyle = 'white';
+      ctx.fillText(labelText, 0, 0);
+
+      ctx.restore();
+    });
+
+    if (hoveredTemplate || draggedTemplate || hoveredCell || draggedCell) {
       canvas.style.cursor = 'move';
     } else {
       canvas.style.cursor = 'default';
     }
-  }, [adjustedTemplates, canvasSize, hoveredTemplate, draggedTemplate, paperWidthCm, paperHeightCm]);
+  }, [adjustedTemplates, adjustedCells, canvasSize, hoveredTemplate, draggedTemplate, hoveredCell, draggedCell, paperWidthCm, paperHeightCm]);
 
-  // Check if point is inside rotated rectangle
   const isPointInRect = (px: number, py: number, template: TemplateRect): boolean => {
     const centerX = cmToPixels(template.xCm, 'x');
     const centerY = cmToPixels(template.yCm, 'y');
     const width = cmToPixels(template.widthCm, 'x');
     const height = cmToPixels(template.heightCm, 'y');
 
-    // Translate point to rectangle's local coordinate system
     const dx = px - centerX;
     const dy = py - centerY;
 
-    // Rotate point by negative rotation angle
     const angle = (-template.rotation * Math.PI) / 180;
     const localX = dx * Math.cos(angle) - dy * Math.sin(angle);
     const localY = dx * Math.sin(angle) + dy * Math.cos(angle);
 
-    // Check if point is within rectangle bounds
     return (
       localX >= -width / 2 &&
       localX <= width / 2 &&
       localY >= -height / 2 &&
       localY <= height / 2
+    );
+  };
+
+  const isPointInCell = (px: number, py: number, cell: ScannerCellRect): boolean => {
+    const centerX = cmToPixels(cell.xCm, 'x');
+    const centerY = cmToPixels(cell.yCm, 'y');
+    const width = cmToPixels(cell.widthCm, 'x');
+    const height = cmToPixels(cell.heightCm, 'y');
+
+    return (
+      px >= centerX - width / 2 &&
+      px <= centerX + width / 2 &&
+      py >= centerY - height / 2 &&
+      py <= centerY + height / 2
     );
   };
 
@@ -189,9 +259,16 @@ export function RectifiedPreviewCanvas({
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // Find clicked template (check in reverse order to prioritize top templates)
+    const clickedCell = [...adjustedCells].reverse().find(c => isPointInCell(x, y, c));
+    if (clickedCell) {
+      setDraggedCell(clickedCell.id);
+      const centerX = cmToPixels(clickedCell.xCm, 'x');
+      const centerY = cmToPixels(clickedCell.yCm, 'y');
+      setDragOffset({ x: x - centerX, y: y - centerY });
+      return;
+    }
+
     const clickedTemplate = [...adjustedTemplates].reverse().find(t => isPointInRect(x, y, t));
-    
     if (clickedTemplate) {
       setDraggedTemplate(clickedTemplate.id);
       const centerX = cmToPixels(clickedTemplate.xCm, 'x');
@@ -208,8 +285,21 @@ export function RectifiedPreviewCanvas({
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    if (draggedTemplate) {
-      // Update dragged template position
+    if (draggedCell) {
+      const newX = x - dragOffset.x;
+      const newY = y - dragOffset.y;
+      const newXCm = pixelsToCm(newX, 'x');
+      const newYCm = pixelsToCm(newY, 'y');
+
+      setAdjustedCells(prev =>
+        prev.map(c =>
+          c.id === draggedCell
+            ? { ...c, xCm: newXCm, yCm: newYCm }
+            : c
+        )
+      );
+      setHasCellAdjustments(true);
+    } else if (draggedTemplate) {
       const newX = x - dragOffset.x;
       const newY = y - dragOffset.y;
       const newXCm = pixelsToCm(newX, 'x');
@@ -222,34 +312,57 @@ export function RectifiedPreviewCanvas({
             : t
         )
       );
-      setHasAdjustments(true);
+      setHasTemplateAdjustments(true);
     } else {
-      // Update hovered template
-      const hoveredTemplate = [...adjustedTemplates].reverse().find(t => isPointInRect(x, y, t));
-      setHoveredTemplate(hoveredTemplate?.id || null);
+      const foundCell = [...adjustedCells].reverse().find(c => isPointInCell(x, y, c));
+      if (foundCell) {
+        setHoveredCell(foundCell.id);
+        setHoveredTemplate(null);
+      } else {
+        setHoveredCell(null);
+        const foundTemplate = [...adjustedTemplates].reverse().find(t => isPointInRect(x, y, t));
+        setHoveredTemplate(foundTemplate?.id || null);
+      }
     }
   };
 
   const handleMouseUp = () => {
+    if (draggedCell) {
+      setDraggedCell(null);
+      if (onScannerCellsAdjusted) {
+        onScannerCellsAdjusted(adjustedCells);
+      }
+    }
     if (draggedTemplate) {
       setDraggedTemplate(null);
-      // Notify parent of changes
       onTemplatesAdjusted(adjustedTemplates);
     }
   };
 
   const handleMouseLeave = () => {
+    if (draggedCell) {
+      setDraggedCell(null);
+      if (onScannerCellsAdjusted) {
+        onScannerCellsAdjusted(adjustedCells);
+      }
+    }
     if (draggedTemplate) {
       setDraggedTemplate(null);
       onTemplatesAdjusted(adjustedTemplates);
     }
     setHoveredTemplate(null);
+    setHoveredCell(null);
   };
 
   const resetPositions = () => {
     setAdjustedTemplates(templates);
-    setHasAdjustments(false);
+    setAdjustedCells(scannerCells);
+    setHasTemplateAdjustments(false);
+    setHasCellAdjustments(false);
     onTemplatesAdjusted(templates);
+    if (onScannerCellsAdjusted) {
+      onScannerCellsAdjusted(scannerCells);
+    }
   };
 
   return (
@@ -265,7 +378,7 @@ export function RectifiedPreviewCanvas({
         className="w-full h-full rounded"
         data-testid="canvas-rectified-preview"
       />
-      {hasAdjustments && (
+      {(hasTemplateAdjustments || hasCellAdjustments) && (
         <div className="absolute top-2 right-2 flex gap-2">
           <button
             onClick={resetPositions}
