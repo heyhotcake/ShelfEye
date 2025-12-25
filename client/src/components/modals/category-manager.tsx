@@ -36,13 +36,14 @@ import { Plus, Trash2, Edit, Save, X, Loader2, Grid3X3, Scan, Tag } from "lucide
 interface CategoryManagerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  selectedCameraId?: string;
+  selectedCameraName?: string;
 }
 
 const formSchema = insertToolCategorySchema;
 type FormData = z.infer<typeof formSchema>;
 
 const scannerGridFormSchema = z.object({
-  cameraId: z.string().min(1, "Camera is required"),
   name: z.string().min(1, "Name is required"),
   gridType: z.enum(["scanner", "worker_tag"]),
   rows: z.number().min(1).max(10).default(2),
@@ -54,7 +55,7 @@ const scannerGridFormSchema = z.object({
 });
 type ScannerGridFormData = z.infer<typeof scannerGridFormSchema>;
 
-export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
+export function CategoryManager({ open, onOpenChange, selectedCameraId, selectedCameraName }: CategoryManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -82,7 +83,6 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
   const scannerGridForm = useForm<ScannerGridFormData>({
     resolver: zodResolver(scannerGridFormSchema),
     defaultValues: {
-      cameraId: "",
       name: "",
       gridType: "scanner",
       rows: 2,
@@ -167,7 +167,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
   });
 
   const createScannerGridMutation = useMutation({
-    mutationFn: (data: ScannerGridFormData) =>
+    mutationFn: (data: ScannerGridFormData & { cameraId: string }) =>
       apiRequest('POST', '/api/scanner-grids', data),
     onSuccess: () => {
       toast({
@@ -206,7 +206,15 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
   });
 
   const handleCreateScannerGrid = (data: ScannerGridFormData) => {
-    createScannerGridMutation.mutate(data);
+    if (!selectedCameraId) {
+      toast({
+        title: "No Camera Selected",
+        description: "Please select a camera before creating a grid.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createScannerGridMutation.mutate({ ...data, cameraId: selectedCameraId });
   };
 
   const handleCreate = (data: FormData) => {
@@ -349,31 +357,18 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
               </p>
               <Form {...scannerGridForm}>
                 <form onSubmit={scannerGridForm.handleSubmit(handleCreateScannerGrid)} className="space-y-4">
+                  {selectedCameraName && (
+                    <div className="p-2 bg-muted rounded text-sm">
+                      <span className="text-muted-foreground">Camera: </span>
+                      <span className="font-medium">{selectedCameraName}</span>
+                    </div>
+                  )}
+                  {!selectedCameraId && (
+                    <div className="p-2 bg-destructive/10 border border-destructive/30 rounded text-sm text-destructive">
+                      No camera selected. Please select a camera first.
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={scannerGridForm.control}
-                      name="cameraId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Camera</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-scanner-camera">
-                                <SelectValue placeholder="Select camera" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {cameras.map((camera) => (
-                                <SelectItem key={camera.id} value={camera.id}>
-                                  {camera.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                     <FormField
                       control={scannerGridForm.control}
                       name="gridType"
