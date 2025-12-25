@@ -622,23 +622,23 @@ export default function TemplatePrint() {
                 textWidth = pdf.getTextWidth(rect.category.label);
               }
               
-              // Position label halfway between top of slot and top of QR code
-              const slotTop = localY - heightMm / 2;
-              const qrTop = localY - qrSizeMm / 2;
-              const labelYOffset = (slotTop + qrTop) / 2 - localY;
+              // Position label between slot top and top guide line (above the guide line)
+              // Guide line is at guideSpacingMm/2 = 33.75mm from center
+              // Slot top is at heightMm/2 from center
+              const slotTopOffset = heightMm / 2;
+              const guideLineOffset = guideSpacingMm / 2;
+              // Label goes halfway between slot top and guide line
+              const labelOffset = (slotTopOffset + guideLineOffset) / 2;
               
-              // Rotate the label position
-              const labelPos = rotatePoint(localX, localY + labelYOffset, localX, localY, angleRad);
+              // Rotate the label position around center
+              const labelPos = rotatePoint(localX, localY - labelOffset, localX, localY, angleRad);
               
               // Draw rotated text
-              pdf.saveGraphicsState();
-              const rotationDeg = rect.rotation;
               pdf.text(rect.category.label, labelPos.x, labelPos.y, { 
                 align: 'center', 
                 baseline: 'middle',
-                angle: rotationDeg
+                angle: rect.rotation
               });
-              pdf.restoreGraphicsState();
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -659,7 +659,7 @@ export default function TemplatePrint() {
             pdf.line(localX - guideWidthMm / 2, localY + guideSpacingMm / 2, localX + guideWidthMm / 2, localY + guideSpacingMm / 2);
             pdf.setDrawColor(0, 0, 0); // Reset to black
             
-            // Add label above QR code
+            // Add label above the top guide line (not cutting through it)
             if (rect.category.label) {
               const paddingMm = 3;
               const maxFontPt = 28;
@@ -687,10 +687,13 @@ export default function TemplatePrint() {
                 textWidth = pdf.getTextWidth(rect.category.label);
               }
               
-              // Position label halfway between top of slot and top of QR code
+              // Position label between slot top and top guide line (above the guide line)
+              // Guide line is at guideSpacingMm/2 = 33.75mm from center
+              // Slot top is at heightMm/2 from center
               const slotTop = localY - heightMm / 2;
-              const qrTop = localY - qrSizeMm / 2;
-              const labelY = (slotTop + qrTop) / 2;
+              const guideLineY = localY - guideSpacingMm / 2;
+              // Label goes halfway between slot top and guide line
+              const labelY = (slotTop + guideLineY) / 2;
               pdf.text(rect.category.label, localX, labelY, { align: 'center', baseline: 'middle' });
             }
           }
@@ -797,7 +800,7 @@ export default function TemplatePrint() {
           pdf.line(bottomGuideLeft.x, bottomGuideLeft.y, bottomGuideRight.x, bottomGuideRight.y);
           pdf.setDrawColor(0, 0, 0); // Reset to black
           
-          // Add label above QR code (rotated)
+          // Add label above the top guide line (rotated)
           if (rect.category.label) {
             const paddingMm = 3;
             const maxFontPt = 16;
@@ -815,13 +818,17 @@ export default function TemplatePrint() {
               textWidth = pdf.getTextWidth(rect.category.label);
             }
             
-            // Calculate rotated label position
-            const labelYOffset = -(qrSizeMm / 2 + paddingMm);
-            const labelPos = rotatePoint(xMm, yMm + labelYOffset, xMm, yMm, angleRad);
+            // Position label between slot top and top guide line (above the guide line)
+            const slotTopOffset = heightMm / 2;
+            const guideLineOffset = guideSpacingMm / 2;
+            const labelOffset = (slotTopOffset + guideLineOffset) / 2;
+            
+            // Rotate the label position around center
+            const labelPos = rotatePoint(xMm, yMm - labelOffset, xMm, yMm, angleRad);
             
             pdf.text(rect.category.label, labelPos.x, labelPos.y, { 
               align: 'center', 
-              baseline: 'bottom',
+              baseline: 'middle',
               angle: rect.rotation
             });
           }
@@ -844,7 +851,7 @@ export default function TemplatePrint() {
           pdf.line(xMm - guideWidthMm / 2, yMm + guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm + guideSpacingMm / 2);
           pdf.setDrawColor(0, 0, 0); // Reset to black
           
-          // Add label above QR code
+          // Add label above the top guide line (not cutting through it)
           if (rect.category.label) {
             const paddingMm = 3;
             const maxFontPt = 16;
@@ -854,15 +861,19 @@ export default function TemplatePrint() {
             pdf.setFont('NotoSansJP', 'bold');
             pdf.setTextColor(0, 0, 0); // Black text
             pdf.setFontSize(fontPt);
-            const textWidth = pdf.getTextWidth(rect.category.label);
+            let textWidth = pdf.getTextWidth(rect.category.label);
             const maxTextWidth = widthMm - 2 * paddingMm;
             while (textWidth > maxTextWidth && fontPt > minFontPt) {
               fontPt -= 0.5;
               pdf.setFontSize(fontPt);
+              textWidth = pdf.getTextWidth(rect.category.label);
             }
             
-            const labelY = yMm - qrSizeMm / 2 - paddingMm;
-            pdf.text(rect.category.label, xMm, labelY, { align: 'center', baseline: 'bottom' });
+            // Position label between slot top and top guide line (above the guide line)
+            const slotTop = yMm - heightMm / 2;
+            const guideLineY = yMm - guideSpacingMm / 2;
+            const labelY = (slotTop + guideLineY) / 2;
+            pdf.text(rect.category.label, xMm, labelY, { align: 'center', baseline: 'middle' });
           }
         }
 
