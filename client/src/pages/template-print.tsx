@@ -623,8 +623,8 @@ export default function TemplatePrint() {
               const labelOffset = (slotTopOffset + guideLineOffset) / 2;
               
               // For rotated slots, we need to place label along the slot's rotated "up" direction
-              // The slot's local "up" direction after rotation is (-sin(θ), -cos(θ))
-              const labelX = localX - labelOffset * Math.sin(angleRad);
+              // Rotating point (0, -labelOffset) around origin by θ gives (labelOffset*sin(θ), -labelOffset*cos(θ))
+              const labelX = localX + labelOffset * Math.sin(angleRad);
               const labelY = localY - labelOffset * Math.cos(angleRad);
               
               // Draw text with rotation matching the slot
@@ -819,7 +819,8 @@ export default function TemplatePrint() {
             const labelOffset = (slotTopOffset + guideLineOffset) / 2;
             
             // For rotated slots, place label along the slot's rotated "up" direction
-            const labelX = xMm - labelOffset * Math.sin(angleRad);
+            // Rotating point (0, -labelOffset) around origin by θ gives (labelOffset*sin(θ), -labelOffset*cos(θ))
+            const labelX = xMm + labelOffset * Math.sin(angleRad);
             const labelY = yMm - labelOffset * Math.cos(angleRad);
             
             pdf.text(rect.category.label, labelX, labelY, { 
