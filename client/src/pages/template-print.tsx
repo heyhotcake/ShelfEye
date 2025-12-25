@@ -621,25 +621,23 @@ export default function TemplatePrint() {
               const guideLineOffset = guideSpacingMm / 2;
               const labelOffset = (slotTopOffset + guideLineOffset) / 2;
               
-              // For rotated text, don't use align/baseline as jsPDF applies them before rotation
-              // Instead, manually offset to center the text
-              const textWidthMm = pdf.getTextWidth(rect.category.label);
-              const fontSizeMm = fontPt * 0.352778; // Convert pt to mm (approx)
+              // Use jsPDF's translate and rotate to work in slot's local coordinate system
+              pdf.saveGraphicsState();
               
-              // Calculate label position in slot's rotated coordinate system
-              // Rotate point (0, -labelOffset) by θ: x' = labelOffset*sin(θ), y' = -labelOffset*cos(θ)
-              const labelCenterX = localX + labelOffset * Math.sin(angleRad);
-              const labelCenterY = localY - labelOffset * Math.cos(angleRad);
+              // Move origin to slot center
+              (pdf as any).translate(localX, localY);
               
-              // For rotated text, we need to offset along the rotated axes
-              // Text "left" in rotated space = cos(θ)*(-textWidth/2), sin(θ)*(-textWidth/2)
-              // Text "up" in rotated space for baseline = already handled by labelOffset
-              const textOffsetX = -(textWidthMm / 2) * Math.cos(angleRad);
-              const textOffsetY = -(textWidthMm / 2) * Math.sin(angleRad);
+              // Rotate coordinate system by slot angle (jsPDF uses degrees)
+              (pdf as any).rotate(rect.rotation);
               
-              pdf.text(rect.category.label, labelCenterX + textOffsetX, labelCenterY + textOffsetY, { 
-                angle: rect.rotation
+              // Draw text at offset above center in local coordinates
+              // In rotated space, (0, -labelOffset) is "above" center
+              pdf.text(rect.category.label, 0, -labelOffset, { 
+                align: 'center', 
+                baseline: 'middle'
               });
+              
+              pdf.restoreGraphicsState();
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -825,21 +823,22 @@ export default function TemplatePrint() {
             const guideLineOffset = guideSpacingMm / 2;
             const labelOffset = (slotTopOffset + guideLineOffset) / 2;
             
-            // For rotated text, manually calculate position to avoid jsPDF align/baseline drift
-            const textWidthMm = pdf.getTextWidth(rect.category.label);
+            // Use jsPDF's translate and rotate to work in slot's local coordinate system
+            pdf.saveGraphicsState();
             
-            // Calculate label position in slot's rotated coordinate system
-            // Rotate point (0, -labelOffset) by θ: x' = labelOffset*sin(θ), y' = -labelOffset*cos(θ)
-            const labelCenterX = xMm + labelOffset * Math.sin(angleRad);
-            const labelCenterY = yMm - labelOffset * Math.cos(angleRad);
+            // Move origin to slot center
+            (pdf as any).translate(xMm, yMm);
             
-            // Offset to center text along its rotated baseline
-            const textOffsetX = -(textWidthMm / 2) * Math.cos(angleRad);
-            const textOffsetY = -(textWidthMm / 2) * Math.sin(angleRad);
+            // Rotate coordinate system by slot angle (jsPDF uses degrees)
+            (pdf as any).rotate(rect.rotation);
             
-            pdf.text(rect.category.label, labelCenterX + textOffsetX, labelCenterY + textOffsetY, { 
-              angle: rect.rotation
+            // Draw text at offset above center in local coordinates
+            pdf.text(rect.category.label, 0, -labelOffset, { 
+              align: 'center', 
+              baseline: 'middle'
             });
+            
+            pdf.restoreGraphicsState();
           }
         } else {
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
