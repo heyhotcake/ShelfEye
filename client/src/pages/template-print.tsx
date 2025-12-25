@@ -621,34 +621,12 @@ export default function TemplatePrint() {
               const guideLineOffset = guideSpacingMm / 2;
               const labelOffset = (slotTopOffset + guideLineOffset) / 2;
               
-              // For rotated slots, we cannot use align/baseline as jsPDF applies them BEFORE rotation
-              // Instead, manually calculate the exact start position for the text
-              const cosA = Math.cos(angleRad);
-              const sinA = Math.sin(angleRad);
-              
-              // Get text dimensions
-              const textWidthMm = pdf.getTextWidth(rect.category.label);
-              const fontSizeMm = fontPt * 0.352778; // approx mm per pt
-              
-              // Target: text center should be at (localX + labelOffset*sinA, localY - labelOffset*cosA)
-              // jsPDF draws text from bottom-left when no align/baseline specified
-              // In rotated space:
-              //   - "left" offset of textWidth/2 rotates to: (textWidth/2 * cosA, textWidth/2 * sinA)
-              //   - "down" offset of fontHeight/2 rotates to: (fontHeight/2 * sinA, -fontHeight/2 * cosA)
-              // Combined offset from center to bottom-left start:
-              const halfWidth = textWidthMm / 2;
-              const halfHeight = fontSizeMm / 2;
-              
-              // Text center position in rotated space
-              const centerX = localX + labelOffset * sinA;
-              const centerY = localY - labelOffset * cosA;
-              
-              // Offset from center to text start point (bottom-left in rotated space)
-              // In rotated coords: start = center - (halfWidth, -halfHeight) rotated by θ
-              const startX = centerX - halfWidth * cosA + halfHeight * sinA;
-              const startY = centerY - halfWidth * sinA - halfHeight * cosA;
-              
-              pdf.text(rect.category.label, startX, startY, { angle: rect.rotation });
+              // Simple approach: draw at slot center, let jsPDF handle centering
+              // Note: jsPDF rotates text around its origin point
+              pdf.text(rect.category.label, localX, localY - labelOffset, { 
+                angle: rect.rotation,
+                align: 'center'
+              });
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -834,26 +812,11 @@ export default function TemplatePrint() {
             const guideLineOffset = guideSpacingMm / 2;
             const labelOffset = (slotTopOffset + guideLineOffset) / 2;
             
-            // For rotated slots, we cannot use align/baseline as jsPDF applies them BEFORE rotation
-            // Instead, manually calculate the exact start position for the text
-            const cosA = Math.cos(angleRad);
-            const sinA = Math.sin(angleRad);
-            
-            // Get text dimensions
-            const textWidthMm = pdf.getTextWidth(rect.category.label);
-            const fontSizeMm = fontPt * 0.352778; // approx mm per pt
-            
-            // Text center position in rotated space
-            const centerX = xMm + labelOffset * sinA;
-            const centerY = yMm - labelOffset * cosA;
-            
-            // Offset from center to text start point (bottom-left in rotated space)
-            const halfWidth = textWidthMm / 2;
-            const halfHeight = fontSizeMm / 2;
-            const startX = centerX - halfWidth * cosA + halfHeight * sinA;
-            const startY = centerY - halfWidth * sinA - halfHeight * cosA;
-            
-            pdf.text(rect.category.label, startX, startY, { angle: rect.rotation });
+            // Simple approach: draw at slot center, let jsPDF handle centering
+            pdf.text(rect.category.label, xMm, yMm - labelOffset, { 
+              angle: rect.rotation,
+              align: 'center'
+            });
           }
         } else {
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
