@@ -558,18 +558,34 @@ export default function TemplatePrint() {
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
             
-            // Draw alignment guides (light grey horizontal lines for worker card placement)
+            // Helper function to rotate a point around center
+            const rotatePoint = (px: number, py: number, cx: number, cy: number, angle: number) => {
+              const cos = Math.cos(angle);
+              const sin = Math.sin(angle);
+              return {
+                x: cx + (px - cx) * cos - (py - cy) * sin,
+                y: cy + (px - cx) * sin + (py - cy) * cos
+              };
+            };
+            
+            // Draw alignment guides (rotated with shape)
             const guideWidthMm = 40; // 4cm
             const guideSpacingMm = 67.5; // 6.75cm
             pdf.setDrawColor(204, 204, 204); // Light grey
             pdf.setLineWidth(0.3);
-            // Top guide line
-            pdf.line(localX - guideWidthMm / 2, localY - guideSpacingMm / 2, localX + guideWidthMm / 2, localY - guideSpacingMm / 2);
-            // Bottom guide line
-            pdf.line(localX - guideWidthMm / 2, localY + guideSpacingMm / 2, localX + guideWidthMm / 2, localY + guideSpacingMm / 2);
+            
+            // Top guide line (rotated)
+            const topGuideLeft = rotatePoint(localX - guideWidthMm / 2, localY - guideSpacingMm / 2, localX, localY, angleRad);
+            const topGuideRight = rotatePoint(localX + guideWidthMm / 2, localY - guideSpacingMm / 2, localX, localY, angleRad);
+            pdf.line(topGuideLeft.x, topGuideLeft.y, topGuideRight.x, topGuideRight.y);
+            
+            // Bottom guide line (rotated)
+            const bottomGuideLeft = rotatePoint(localX - guideWidthMm / 2, localY + guideSpacingMm / 2, localX, localY, angleRad);
+            const bottomGuideRight = rotatePoint(localX + guideWidthMm / 2, localY + guideSpacingMm / 2, localX, localY, angleRad);
+            pdf.line(bottomGuideLeft.x, bottomGuideLeft.y, bottomGuideRight.x, bottomGuideRight.y);
             pdf.setDrawColor(0, 0, 0); // Reset to black
             
-            // Add label above QR code
+            // Add label above QR code (rotated)
             if (rect.category.label) {
               const paddingMm = 3;
               const maxFontPt = 28;
@@ -600,8 +616,20 @@ export default function TemplatePrint() {
               // Position label halfway between top of slot and top of QR code
               const slotTop = localY - heightMm / 2;
               const qrTop = localY - qrSizeMm / 2;
-              const labelY = (slotTop + qrTop) / 2;
-              pdf.text(rect.category.label, localX, labelY, { align: 'center', baseline: 'middle' });
+              const labelYOffset = (slotTop + qrTop) / 2 - localY;
+              
+              // Rotate the label position
+              const labelPos = rotatePoint(localX, localY + labelYOffset, localX, localY, angleRad);
+              
+              // Draw rotated text
+              pdf.saveGraphicsState();
+              const rotationDeg = rect.rotation;
+              pdf.text(rect.category.label, labelPos.x, labelPos.y, { 
+                align: 'center', 
+                baseline: 'middle',
+                angle: rotationDeg
+              });
+              pdf.restoreGraphicsState();
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -733,18 +761,34 @@ export default function TemplatePrint() {
             pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
           }
           
-          // Draw alignment guides (light grey horizontal lines for worker card placement)
+          // Helper function to rotate a point around center
+          const rotatePoint = (px: number, py: number, cx: number, cy: number, angle: number) => {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return {
+              x: cx + (px - cx) * cos - (py - cy) * sin,
+              y: cy + (px - cx) * sin + (py - cy) * cos
+            };
+          };
+          
+          // Draw alignment guides (rotated with shape)
           const guideWidthMm = 40; // 4cm
           const guideSpacingMm = 67.5; // 6.75cm
           pdf.setDrawColor(204, 204, 204); // Light grey
           pdf.setLineWidth(0.3);
-          // Top guide line
-          pdf.line(xMm - guideWidthMm / 2, yMm - guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm - guideSpacingMm / 2);
-          // Bottom guide line
-          pdf.line(xMm - guideWidthMm / 2, yMm + guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm + guideSpacingMm / 2);
+          
+          // Top guide line (rotated)
+          const topGuideLeft = rotatePoint(xMm - guideWidthMm / 2, yMm - guideSpacingMm / 2, xMm, yMm, angleRad);
+          const topGuideRight = rotatePoint(xMm + guideWidthMm / 2, yMm - guideSpacingMm / 2, xMm, yMm, angleRad);
+          pdf.line(topGuideLeft.x, topGuideLeft.y, topGuideRight.x, topGuideRight.y);
+          
+          // Bottom guide line (rotated)
+          const bottomGuideLeft = rotatePoint(xMm - guideWidthMm / 2, yMm + guideSpacingMm / 2, xMm, yMm, angleRad);
+          const bottomGuideRight = rotatePoint(xMm + guideWidthMm / 2, yMm + guideSpacingMm / 2, xMm, yMm, angleRad);
+          pdf.line(bottomGuideLeft.x, bottomGuideLeft.y, bottomGuideRight.x, bottomGuideRight.y);
           pdf.setDrawColor(0, 0, 0); // Reset to black
           
-          // Add label above QR code
+          // Add label above QR code (rotated)
           if (rect.category.label) {
             const paddingMm = 3;
             const maxFontPt = 16;
@@ -754,15 +798,23 @@ export default function TemplatePrint() {
             pdf.setFont('NotoSansJP', 'bold');
             pdf.setTextColor(0, 0, 0); // Black text
             pdf.setFontSize(fontPt);
-            const textWidth = pdf.getTextWidth(rect.category.label);
+            let textWidth = pdf.getTextWidth(rect.category.label);
             const maxTextWidth = widthMm - 2 * paddingMm;
             while (textWidth > maxTextWidth && fontPt > minFontPt) {
               fontPt -= 0.5;
               pdf.setFontSize(fontPt);
+              textWidth = pdf.getTextWidth(rect.category.label);
             }
             
-            const labelY = yMm - qrSizeMm / 2 - paddingMm;
-            pdf.text(rect.category.label, xMm, labelY, { align: 'center', baseline: 'bottom' });
+            // Calculate rotated label position
+            const labelYOffset = -(qrSizeMm / 2 + paddingMm);
+            const labelPos = rotatePoint(xMm, yMm + labelYOffset, xMm, yMm, angleRad);
+            
+            pdf.text(rect.category.label, labelPos.x, labelPos.y, { 
+              align: 'center', 
+              baseline: 'bottom',
+              angle: rect.rotation
+            });
           }
         } else {
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
