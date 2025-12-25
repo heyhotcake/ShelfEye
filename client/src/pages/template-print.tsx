@@ -588,6 +588,7 @@ export default function TemplatePrint() {
             pdf.setDrawColor(0, 0, 0); // Reset to black
             
             // Add label above QR code (rotated)
+            // Use coordinate transform to avoid jsPDF's align/baseline drift with rotation
             if (rect.category.label) {
               const paddingMm = 3;
               const maxFontPt = 28;
@@ -616,23 +617,27 @@ export default function TemplatePrint() {
               }
               
               // Position label between slot top and top guide line (above the guide line)
-              // Calculate in slot-local coordinates, then rotate to page coordinates
               const slotTopOffset = heightMm / 2;
               const guideLineOffset = guideSpacingMm / 2;
-              // Label goes halfway between slot top and guide line (in slot's local "up" direction)
               const labelOffset = (slotTopOffset + guideLineOffset) / 2;
               
-              // For rotated slots, we need to place label along the slot's rotated "up" direction
-              // Rotating point (0, -labelOffset) around origin by θ gives (labelOffset*sin(θ), -labelOffset*cos(θ))
-              const labelX = localX + labelOffset * Math.sin(angleRad);
-              const labelY = localY - labelOffset * Math.cos(angleRad);
+              // Use local coordinate transform: translate to center, rotate, draw at offset
+              // This avoids jsPDF's align/baseline offsets being applied before rotation
+              pdf.saveGraphicsState();
+              // Create transformation matrix: rotate then translate to slot center
+              const matrix = pdf.Matrix(
+                Math.cos(angleRad), Math.sin(angleRad),
+                -Math.sin(angleRad), Math.cos(angleRad),
+                localX, localY
+              );
+              pdf.setCurrentTransformationMatrix(matrix);
               
-              // Draw text with rotation matching the slot
-              pdf.text(rect.category.label, labelX, labelY, { 
+              // Draw text at offset in slot-local coordinates (negative Y = up in slot space)
+              pdf.text(rect.category.label, 0, -labelOffset, { 
                 align: 'center', 
-                baseline: 'middle',
-                angle: rect.rotation
+                baseline: 'middle'
               });
+              pdf.restoreGraphicsState();
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -795,6 +800,7 @@ export default function TemplatePrint() {
           pdf.setDrawColor(0, 0, 0); // Reset to black
           
           // Add label above the top guide line (rotated)
+          // Use coordinate transform to avoid jsPDF's align/baseline drift with rotation
           if (rect.category.label) {
             const paddingMm = 3;
             const maxFontPt = 16;
@@ -815,19 +821,23 @@ export default function TemplatePrint() {
             // Position label between slot top and top guide line (above the guide line)
             const slotTopOffset = heightMm / 2;
             const guideLineOffset = guideSpacingMm / 2;
-            // Label goes halfway between slot top and guide line (in slot's local "up" direction)
             const labelOffset = (slotTopOffset + guideLineOffset) / 2;
             
-            // For rotated slots, place label along the slot's rotated "up" direction
-            // Rotating point (0, -labelOffset) around origin by θ gives (labelOffset*sin(θ), -labelOffset*cos(θ))
-            const labelX = xMm + labelOffset * Math.sin(angleRad);
-            const labelY = yMm - labelOffset * Math.cos(angleRad);
+            // Use local coordinate transform: translate to center, rotate, draw at offset
+            pdf.saveGraphicsState();
+            const matrix = pdf.Matrix(
+              Math.cos(angleRad), Math.sin(angleRad),
+              -Math.sin(angleRad), Math.cos(angleRad),
+              xMm, yMm
+            );
+            pdf.setCurrentTransformationMatrix(matrix);
             
-            pdf.text(rect.category.label, labelX, labelY, { 
+            // Draw text at offset in slot-local coordinates
+            pdf.text(rect.category.label, 0, -labelOffset, { 
               align: 'center', 
-              baseline: 'middle',
-              angle: rect.rotation
+              baseline: 'middle'
             });
+            pdf.restoreGraphicsState();
           }
         } else {
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
