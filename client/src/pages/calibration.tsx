@@ -9,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Camera, CheckCircle, Ruler, X, Download } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
-import { RectifiedPreviewCanvas, ScannerCellRect } from "@/components/canvas/rectified-preview-canvas";
-import type { ScannerGrid, ScannerCell } from "@shared/schema";
+import { RectifiedPreviewCanvas } from "@/components/canvas/rectified-preview-canvas";
 
 const TIMEZONE = "Asia/Tokyo";
 
@@ -63,8 +62,6 @@ export default function Calibration() {
   const [isCameraLocked, setIsCameraLocked] = useState<boolean>(false);
   const [adjustedTemplates, setAdjustedTemplates] = useState<any[]>([]);
   const [hasTemplateAdjustments, setHasTemplateAdjustments] = useState<boolean>(false);
-  const [adjustedScannerCells, setAdjustedScannerCells] = useState<ScannerCellRect[]>([]);
-  const [hasScannerCellAdjustments, setHasScannerCellAdjustments] = useState<boolean>(false);
   const previousCameraIdRef = useRef<string | undefined>(undefined);
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
