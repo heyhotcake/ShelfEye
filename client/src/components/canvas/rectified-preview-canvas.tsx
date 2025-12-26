@@ -18,7 +18,7 @@ interface TemplateRect {
   autoQrId?: string;
 }
 
-export interface ScannerCellRect {
+interface ScannerCellRect {
   id: string;
   gridId: string;
   gridType: 'scanner' | 'worker_tag';

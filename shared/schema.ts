@@ -140,7 +140,7 @@ export const workers = pgTable("workers", {
 // Two grid types: 'scanner' (yellow color detection) and 'worker_tag' (ArUco badge detection)
 export const scannerGrids = pgTable("scanner_grids", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }), // Nullable - set when grid is placed on template
+  cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(), // e.g., "Scanner Grid", "Worker Tag Grid"
   gridType: text("grid_type").notNull(), // 'scanner' or 'worker_tag'
   rows: integer("rows").notNull().default(2),

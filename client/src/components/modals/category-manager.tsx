@@ -42,6 +42,7 @@ const formSchema = insertToolCategorySchema;
 type FormData = z.infer<typeof formSchema>;
 
 const scannerGridFormSchema = z.object({
+  cameraId: z.string().min(1, "Camera is required"),
   name: z.string().min(1, "Name is required"),
   gridType: z.enum(["scanner", "worker_tag"]),
   rows: z.number().min(1).max(10).default(2),
@@ -81,6 +82,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
   const scannerGridForm = useForm<ScannerGridFormData>({
     resolver: zodResolver(scannerGridFormSchema),
     defaultValues: {
+      cameraId: "",
       name: "",
       gridType: "scanner",
       rows: 2,
@@ -348,6 +350,30 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
               <Form {...scannerGridForm}>
                 <form onSubmit={scannerGridForm.handleSubmit(handleCreateScannerGrid)} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={scannerGridForm.control}
+                      name="cameraId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Camera</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-scanner-camera">
+                                <SelectValue placeholder="Select camera" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {cameras.map((camera) => (
+                                <SelectItem key={camera.id} value={camera.id}>
+                                  {camera.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={scannerGridForm.control}
                       name="gridType"
