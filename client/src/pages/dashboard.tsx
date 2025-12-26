@@ -116,7 +116,8 @@ export default function Dashboard() {
   
   // Create a map of latest detection status for each slot
   const slotStatusMap = new Map();
-  detectionLogs?.forEach((log: any) => {
+  const logsArray = Array.isArray(detectionLogs) ? detectionLogs : [];
+  logsArray.forEach((log: any) => {
     if (!slotStatusMap.has(log.slotId)) {
       slotStatusMap.set(log.slotId, {
         status: log.state,
