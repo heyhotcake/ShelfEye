@@ -1375,6 +1375,9 @@ export default function SlotDrawing() {
             label: category.label,
             widthCm: category.widthCm,
             heightCm: category.heightCm,
+            categoryType: category.categoryType || 'tool',
+            gridRows: category.gridRows,
+            gridCols: category.gridCols,
           });
         } else {
           console.log(`[LOAD] Category already exists: ${category.name} (ID: ${existingCategory.id})`);
