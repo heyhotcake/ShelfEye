@@ -481,9 +481,34 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       )}
                     />
                   </div>
-                  <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg text-sm">
-                    <span className="text-muted-foreground">Grid Preview:</span>
-                    <span className="font-medium">{scannerGridForm.watch('gridRows')} × {scannerGridForm.watch('gridCols')} = {scannerGridForm.watch('gridRows') * scannerGridForm.watch('gridCols')} cells</span>
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm text-muted-foreground">Grid Preview:</span>
+                      <span className="text-sm font-medium">{scannerGridForm.watch('gridRows')} × {scannerGridForm.watch('gridCols')} = {scannerGridForm.watch('gridRows') * scannerGridForm.watch('gridCols')} cells</span>
+                    </div>
+                    <div 
+                      className="border-2 border-yellow-500 rounded mx-auto"
+                      style={{
+                        width: Math.min(300, scannerGridForm.watch('widthCm') * 8),
+                        height: Math.min(150, scannerGridForm.watch('heightCm') * 8),
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${scannerGridForm.watch('gridCols')}, 1fr)`,
+                        gridTemplateRows: `repeat(${scannerGridForm.watch('gridRows')}, 1fr)`,
+                      }}
+                    >
+                      {Array.from({ length: scannerGridForm.watch('gridRows') * scannerGridForm.watch('gridCols') }).map((_, i) => (
+                        <div 
+                          key={i} 
+                          className="border border-yellow-500/50 flex items-center justify-center text-xs text-yellow-600 font-medium"
+                          style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)' }}
+                        >
+                          {i + 1}
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      {scannerGridForm.watch('widthCm')} × {scannerGridForm.watch('heightCm')} cm
+                    </p>
                   </div>
                   <Button
                     type="submit"
