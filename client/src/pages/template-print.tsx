@@ -284,11 +284,86 @@ export default function TemplatePrint() {
         ctx.translate(centerX, centerY);
         ctx.rotate((rect.rotation * Math.PI) / 180);
 
-        const isGridType = rect.category.categoryType === 'scanner_grid' || rect.category.categoryType === 'worker_tag_grid';
+        const isScannerGrid = rect.category.categoryType === 'scanner_grid';
+        const isWorkerTagGrid = rect.category.categoryType === 'worker_tag_grid';
         
-        if (isGridType) {
-          // Draw only 4 corner markers (L-shaped) for scanner/worker grids
-          const cornerLength = cmToPixels(1.5, true); // 1.5cm corner length
+        if (isWorkerTagGrid) {
+          // Worker tag grid: header + solid cell borders + alignment lines
+          const gridRows = rect.category.gridRows || 2;
+          const gridCols = rect.category.gridCols || 4;
+          const cellWidthCm = 4; // Fixed 4cm cell width
+          const cellHeightCm = 6.75; // Fixed 6.75cm cell height
+          const headerHeightCm = 1.5; // Header row height
+          
+          const cellWidthPx = cmToPixels(cellWidthCm, true);
+          const cellHeightPx = cmToPixels(cellHeightCm, false);
+          const headerHeightPx = cmToPixels(headerHeightCm, false);
+          const gridWidthPx = cellWidthPx * gridCols;
+          const gridHeightPx = cellHeightPx * gridRows;
+          const totalHeightPx = headerHeightPx + gridHeightPx;
+          
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 2;
+          
+          // Draw header rectangle
+          ctx.strokeRect(-gridWidthPx / 2, -totalHeightPx / 2, gridWidthPx, headerHeightPx);
+          
+          // Draw header text: "[label] タグ枠"
+          const baseLabel = rect.category.label?.replace(' (作業者タグ)', '').replace(' (Worker Tags)', '') || '';
+          const headerText = `${baseLabel} タグ枠`;
+          let headerFontPx = 48;
+          ctx.font = `bold ${headerFontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          let textWidth = ctx.measureText(headerText).width;
+          while (textWidth > gridWidthPx - 20 && headerFontPx > 18) {
+            headerFontPx -= 2;
+            ctx.font = `bold ${headerFontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+            textWidth = ctx.measureText(headerText).width;
+          }
+          
+          ctx.fillStyle = '#000000';
+          ctx.fillText(headerText, 0, -totalHeightPx / 2 + headerHeightPx / 2);
+          
+          // Draw grid cells with alignment lines
+          const gridTopY = -totalHeightPx / 2 + headerHeightPx;
+          
+          for (let row = 0; row < gridRows; row++) {
+            for (let col = 0; col < gridCols; col++) {
+              const cellX = -gridWidthPx / 2 + col * cellWidthPx;
+              const cellY = gridTopY + row * cellHeightPx;
+              
+              // Draw cell border
+              ctx.strokeStyle = '#000000';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(cellX, cellY, cellWidthPx, cellHeightPx);
+              
+              // Draw alignment guides inside each cell (4cm wide, 6.75cm apart)
+              const cellCenterX = cellX + cellWidthPx / 2;
+              const cellCenterY = cellY + cellHeightPx / 2;
+              const guideWidthPx = cmToPixels(4, true);
+              const guideSpacingPx = cmToPixels(6.75, false);
+              
+              ctx.strokeStyle = '#CCCCCC';
+              ctx.lineWidth = 1;
+              
+              // Top guide line
+              ctx.beginPath();
+              ctx.moveTo(cellCenterX - guideWidthPx / 2, cellCenterY - guideSpacingPx / 2);
+              ctx.lineTo(cellCenterX + guideWidthPx / 2, cellCenterY - guideSpacingPx / 2);
+              ctx.stroke();
+              
+              // Bottom guide line
+              ctx.beginPath();
+              ctx.moveTo(cellCenterX - guideWidthPx / 2, cellCenterY + guideSpacingPx / 2);
+              ctx.lineTo(cellCenterX + guideWidthPx / 2, cellCenterY + guideSpacingPx / 2);
+              ctx.stroke();
+            }
+          }
+        } else if (isScannerGrid) {
+          // Scanner grid: corner markers only + centered label
+          const cornerLength = cmToPixels(1.5, true);
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = 3;
           
@@ -323,7 +398,7 @@ export default function TemplatePrint() {
           ctx.lineTo(-halfW, halfH - cornerLength);
           ctx.stroke();
           
-          // Draw label in center for grid types
+          // Draw label in center
           if (rect.category.label) {
             const padding = cmToPixels(0.3, true);
             const maxFontPx = 96;
@@ -334,7 +409,6 @@ export default function TemplatePrint() {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            // Reduce font size if text is too wide
             const maxTextWidth = widthPx - 2 * padding;
             let textWidth = ctx.measureText(rect.category.label).width;
             while (textWidth > maxTextWidth && fontPx > minFontPx) {
@@ -343,12 +417,10 @@ export default function TemplatePrint() {
               textWidth = ctx.measureText(rect.category.label).width;
             }
             
-            // Draw white stroke for contrast
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 4;
             ctx.strokeText(rect.category.label, 0, 0);
             
-            // Draw black text
             ctx.fillStyle = '#000000';
             ctx.fillText(rect.category.label, 0, 0);
           }
@@ -590,10 +662,78 @@ export default function TemplatePrint() {
           pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.5);
 
-          const isGridType = rect.category.categoryType === 'scanner_grid' || rect.category.categoryType === 'worker_tag_grid';
+          const isScannerGrid = rect.category.categoryType === 'scanner_grid';
+          const isWorkerTagGrid = rect.category.categoryType === 'worker_tag_grid';
           
-          if (isGridType) {
-            // Draw only 4 corner markers for scanner/worker grids
+          if (isWorkerTagGrid) {
+            // Worker tag grid: header + solid cell borders + alignment lines
+            const gridRows = rect.category.gridRows || 2;
+            const gridCols = rect.category.gridCols || 4;
+            const cellWidthMm = 40; // Fixed 4cm cell width
+            const cellHeightMm = 67.5; // Fixed 6.75cm cell height
+            const headerHeightMm = 15; // 1.5cm header row height
+            
+            const gridWidthMm = cellWidthMm * gridCols;
+            const gridHeightMm = cellHeightMm * gridRows;
+            const totalHeightMm = headerHeightMm + gridHeightMm;
+            
+            pdf.setDrawColor(0, 0, 0);
+            pdf.setLineWidth(0.5);
+            
+            // Draw header rectangle
+            pdf.rect(localX - gridWidthMm / 2, localY - totalHeightMm / 2, gridWidthMm, headerHeightMm);
+            
+            // Draw header text: "[label] タグ枠"
+            const baseLabel = rect.category.label?.replace(' (作業者タグ)', '').replace(' (Worker Tags)', '') || '';
+            const headerText = `${baseLabel} タグ枠`;
+            let headerFontPt = 14;
+            pdf.setFont('NotoSansJP', 'bold');
+            pdf.setTextColor(0, 0, 0);
+            pdf.setFontSize(headerFontPt);
+            
+            let textWidth = pdf.getTextWidth(headerText);
+            while (textWidth > gridWidthMm - 10 && headerFontPt > 8) {
+              headerFontPt -= 1;
+              pdf.setFontSize(headerFontPt);
+              textWidth = pdf.getTextWidth(headerText);
+            }
+            
+            pdf.text(headerText, localX, localY - totalHeightMm / 2 + headerHeightMm / 2, { align: 'center', baseline: 'middle' });
+            
+            // Draw grid cells with alignment lines
+            const gridTopY = localY - totalHeightMm / 2 + headerHeightMm;
+            
+            for (let row = 0; row < gridRows; row++) {
+              for (let col = 0; col < gridCols; col++) {
+                const cellX = localX - gridWidthMm / 2 + col * cellWidthMm;
+                const cellY = gridTopY + row * cellHeightMm;
+                
+                // Draw cell border
+                pdf.setDrawColor(0, 0, 0);
+                pdf.setLineWidth(0.5);
+                pdf.rect(cellX, cellY, cellWidthMm, cellHeightMm);
+                
+                // Draw alignment guides inside each cell (4cm wide, 6.75cm apart)
+                const cellCenterX = cellX + cellWidthMm / 2;
+                const cellCenterY = cellY + cellHeightMm / 2;
+                const guideWidthMm = 40; // 4cm
+                const guideSpacingMm = 67.5; // 6.75cm
+                
+                pdf.setDrawColor(204, 204, 204); // Light grey
+                pdf.setLineWidth(0.3);
+                
+                // Top guide line
+                pdf.line(cellCenterX - guideWidthMm / 2, cellCenterY - guideSpacingMm / 2, 
+                         cellCenterX + guideWidthMm / 2, cellCenterY - guideSpacingMm / 2);
+                
+                // Bottom guide line
+                pdf.line(cellCenterX - guideWidthMm / 2, cellCenterY + guideSpacingMm / 2, 
+                         cellCenterX + guideWidthMm / 2, cellCenterY + guideSpacingMm / 2);
+              }
+            }
+            pdf.setDrawColor(0, 0, 0); // Reset to black
+          } else if (isScannerGrid) {
+            // Scanner grid: corner markers only + centered label
             const cornerLengthMm = 15; // 1.5cm corner length
             const halfW = widthMm / 2;
             const halfH = heightMm / 2;
@@ -852,10 +992,78 @@ export default function TemplatePrint() {
         pdf.setDrawColor(0, 0, 0);
         pdf.setLineWidth(0.5);
 
-        const isGridType = rect.category.categoryType === 'scanner_grid' || rect.category.categoryType === 'worker_tag_grid';
+        const isScannerGrid = rect.category.categoryType === 'scanner_grid';
+        const isWorkerTagGrid = rect.category.categoryType === 'worker_tag_grid';
         
-        if (isGridType) {
-          // Draw only 4 corner markers for scanner/worker grids
+        if (isWorkerTagGrid) {
+          // Worker tag grid: header + solid cell borders + alignment lines
+          const gridRows = rect.category.gridRows || 2;
+          const gridCols = rect.category.gridCols || 4;
+          const cellWidthMm = 40; // Fixed 4cm cell width
+          const cellHeightMm = 67.5; // Fixed 6.75cm cell height
+          const headerHeightMm = 15; // 1.5cm header row height
+          
+          const gridWidthMm = cellWidthMm * gridCols;
+          const gridHeightMm = cellHeightMm * gridRows;
+          const totalHeightMm = headerHeightMm + gridHeightMm;
+          
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.5);
+          
+          // Draw header rectangle
+          pdf.rect(xMm - gridWidthMm / 2, yMm - totalHeightMm / 2, gridWidthMm, headerHeightMm);
+          
+          // Draw header text: "[label] タグ枠"
+          const baseLabel = rect.category.label?.replace(' (作業者タグ)', '').replace(' (Worker Tags)', '') || '';
+          const headerText = `${baseLabel} タグ枠`;
+          let headerFontPt = 10;
+          pdf.setFont('NotoSansJP', 'bold');
+          pdf.setTextColor(0, 0, 0);
+          pdf.setFontSize(headerFontPt);
+          
+          let textWidth = pdf.getTextWidth(headerText);
+          while (textWidth > gridWidthMm - 6 && headerFontPt > 6) {
+            headerFontPt -= 0.5;
+            pdf.setFontSize(headerFontPt);
+            textWidth = pdf.getTextWidth(headerText);
+          }
+          
+          pdf.text(headerText, xMm, yMm - totalHeightMm / 2 + headerHeightMm / 2, { align: 'center', baseline: 'middle' });
+          
+          // Draw grid cells with alignment lines
+          const gridTopY = yMm - totalHeightMm / 2 + headerHeightMm;
+          
+          for (let row = 0; row < gridRows; row++) {
+            for (let col = 0; col < gridCols; col++) {
+              const cellX = xMm - gridWidthMm / 2 + col * cellWidthMm;
+              const cellY = gridTopY + row * cellHeightMm;
+              
+              // Draw cell border
+              pdf.setDrawColor(0, 0, 0);
+              pdf.setLineWidth(0.5);
+              pdf.rect(cellX, cellY, cellWidthMm, cellHeightMm);
+              
+              // Draw alignment guides inside each cell (4cm wide, 6.75cm apart)
+              const cellCenterX = cellX + cellWidthMm / 2;
+              const cellCenterY = cellY + cellHeightMm / 2;
+              const guideWidthMm = 40; // 4cm
+              const guideSpacingMm = 67.5; // 6.75cm
+              
+              pdf.setDrawColor(204, 204, 204); // Light grey
+              pdf.setLineWidth(0.3);
+              
+              // Top guide line
+              pdf.line(cellCenterX - guideWidthMm / 2, cellCenterY - guideSpacingMm / 2, 
+                       cellCenterX + guideWidthMm / 2, cellCenterY - guideSpacingMm / 2);
+              
+              // Bottom guide line
+              pdf.line(cellCenterX - guideWidthMm / 2, cellCenterY + guideSpacingMm / 2, 
+                       cellCenterX + guideWidthMm / 2, cellCenterY + guideSpacingMm / 2);
+            }
+          }
+          pdf.setDrawColor(0, 0, 0); // Reset to black
+        } else if (isScannerGrid) {
+          // Scanner grid: corner markers only + centered label
           const cornerLengthMm = 15; // 1.5cm corner length
           const halfW = widthMm / 2;
           const halfH = heightMm / 2;
