@@ -289,10 +289,11 @@ export default function TemplatePrint() {
         
         if (isWorkerTagGrid) {
           // Worker tag grid: header + solid cell borders + alignment lines
+          // Cell = 4cm × 6.75cm usable area + 1cm border on each side = 6cm × 8.75cm
           const gridRows = rect.category.gridRows || 2;
           const gridCols = rect.category.gridCols || 4;
-          const cellWidthCm = 4; // Fixed 4cm cell width
-          const cellHeightCm = 6.75; // Fixed 6.75cm cell height
+          const cellWidthCm = 6; // 4cm usable + 2cm borders
+          const cellHeightCm = 8.75; // 6.75cm usable + 2cm borders
           const headerHeightCm = 1.5; // Header row height
           
           const cellWidthPx = cmToPixels(cellWidthCm, true);
@@ -666,10 +667,11 @@ export default function TemplatePrint() {
           
           if (isWorkerTagGrid) {
             // Worker tag grid: header + solid cell borders + alignment lines
+            // Cell = 4cm × 6.75cm usable area + 1cm border on each side = 6cm × 8.75cm
             const gridRows = rect.category.gridRows || 2;
             const gridCols = rect.category.gridCols || 4;
-            const cellWidthMm = 40; // Fixed 4cm cell width
-            const cellHeightMm = 67.5; // Fixed 6.75cm cell height
+            const cellWidthMm = 60; // 4cm usable + 2cm borders
+            const cellHeightMm = 87.5; // 6.75cm usable + 2cm borders
             const headerHeightMm = 15; // 1.5cm header row height
             
             const gridWidthMm = cellWidthMm * gridCols;
@@ -995,10 +997,11 @@ export default function TemplatePrint() {
         
         if (isWorkerTagGrid) {
           // Worker tag grid: header + solid cell borders + alignment lines
+          // Cell = 4cm × 6.75cm usable area + 1cm border on each side = 6cm × 8.75cm
           const gridRows = rect.category.gridRows || 2;
           const gridCols = rect.category.gridCols || 4;
-          const cellWidthMm = 40; // Fixed 4cm cell width
-          const cellHeightMm = 67.5; // Fixed 6.75cm cell height
+          const cellWidthMm = 60; // 4cm usable + 2cm borders
+          const cellHeightMm = 87.5; // 6.75cm usable + 2cm borders
           const headerHeightMm = 15; // 1.5cm header row height
           
           const gridWidthMm = cellWidthMm * gridCols;

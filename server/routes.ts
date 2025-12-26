@@ -2568,9 +2568,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gridCols: cols,
       });
 
-      // Worker tag grid uses fixed cell dimensions: 4cm × 6.75cm + 1.5cm header
-      const workerTagCellWidth = 4; // 4cm per cell
-      const workerTagCellHeight = 6.75; // 6.75cm per cell
+      // Worker tag grid: 4cm × 6.75cm usable area + 1cm border on each side = 6cm × 8.75cm per cell
+      const workerTagCellWidth = 6; // 4cm usable + 2cm borders
+      const workerTagCellHeight = 8.75; // 6.75cm usable + 2cm borders
       const workerTagHeaderHeight = 1.5; // 1.5cm header
       const workerTagTotalWidth = workerTagCellWidth * cols;
       const workerTagTotalHeight = workerTagCellHeight * rows + workerTagHeaderHeight;
