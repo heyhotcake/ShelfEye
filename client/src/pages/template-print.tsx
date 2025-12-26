@@ -294,7 +294,7 @@ export default function TemplatePrint() {
           const gridCols = rect.category.gridCols || 4;
           const cellWidthCm = 6; // 4cm usable + 2cm borders
           const cellHeightCm = 8.75; // 6.75cm usable + 2cm borders
-          const headerHeightCm = 1.5; // Header row height
+          const headerHeightCm = 3; // 2cm font + 5mm margins top/bottom
           
           const cellWidthPx = cmToPixels(cellWidthCm, true);
           const cellHeightPx = cmToPixels(cellHeightCm, false);
@@ -672,7 +672,7 @@ export default function TemplatePrint() {
             const gridCols = rect.category.gridCols || 4;
             const cellWidthMm = 60; // 4cm usable + 2cm borders
             const cellHeightMm = 87.5; // 6.75cm usable + 2cm borders
-            const headerHeightMm = 15; // 1.5cm header row height
+            const headerHeightMm = 30; // 2cm font + 5mm margins top/bottom
             
             const gridWidthMm = cellWidthMm * gridCols;
             const gridHeightMm = cellHeightMm * gridRows;
@@ -1002,7 +1002,7 @@ export default function TemplatePrint() {
           const gridCols = rect.category.gridCols || 4;
           const cellWidthMm = 60; // 4cm usable + 2cm borders
           const cellHeightMm = 87.5; // 6.75cm usable + 2cm borders
-          const headerHeightMm = 15; // 1.5cm header row height
+          const headerHeightMm = 30; // 2cm font + 5mm margins top/bottom
           
           const gridWidthMm = cellWidthMm * gridCols;
           const gridHeightMm = cellHeightMm * gridRows;
