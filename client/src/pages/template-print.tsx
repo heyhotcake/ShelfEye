@@ -339,25 +339,24 @@ export default function TemplatePrint() {
               ctx.lineWidth = 2;
               ctx.strokeRect(cellX, cellY, cellWidthPx, cellHeightPx);
               
-              // Draw alignment guides inside each cell (4cm wide, 6.75cm apart)
+              // Draw alignment guides inside each cell (4cm wide, 1cm from top and bottom edges)
               const cellCenterX = cellX + cellWidthPx / 2;
-              const cellCenterY = cellY + cellHeightPx / 2;
+              const borderPx = cmToPixels(1, false); // 1cm border
               const guideWidthPx = cmToPixels(4, true);
-              const guideSpacingPx = cmToPixels(6.75, false);
               
               ctx.strokeStyle = '#CCCCCC';
               ctx.lineWidth = 1;
               
-              // Top guide line
+              // Top guide line (1cm from top of cell)
               ctx.beginPath();
-              ctx.moveTo(cellCenterX - guideWidthPx / 2, cellCenterY - guideSpacingPx / 2);
-              ctx.lineTo(cellCenterX + guideWidthPx / 2, cellCenterY - guideSpacingPx / 2);
+              ctx.moveTo(cellCenterX - guideWidthPx / 2, cellY + borderPx);
+              ctx.lineTo(cellCenterX + guideWidthPx / 2, cellY + borderPx);
               ctx.stroke();
               
-              // Bottom guide line
+              // Bottom guide line (1cm from bottom of cell)
               ctx.beginPath();
-              ctx.moveTo(cellCenterX - guideWidthPx / 2, cellCenterY + guideSpacingPx / 2);
-              ctx.lineTo(cellCenterX + guideWidthPx / 2, cellCenterY + guideSpacingPx / 2);
+              ctx.moveTo(cellCenterX - guideWidthPx / 2, cellY + cellHeightPx - borderPx);
+              ctx.lineTo(cellCenterX + guideWidthPx / 2, cellY + cellHeightPx - borderPx);
               ctx.stroke();
             }
           }
@@ -713,22 +712,21 @@ export default function TemplatePrint() {
                 pdf.setLineWidth(0.5);
                 pdf.rect(cellX, cellY, cellWidthMm, cellHeightMm);
                 
-                // Draw alignment guides inside each cell (4cm wide, 6.75cm apart)
+                // Draw alignment guides inside each cell (4cm wide, 1cm from top and bottom edges)
                 const cellCenterX = cellX + cellWidthMm / 2;
-                const cellCenterY = cellY + cellHeightMm / 2;
+                const borderMm = 10; // 1cm border
                 const guideWidthMm = 40; // 4cm
-                const guideSpacingMm = 67.5; // 6.75cm
                 
                 pdf.setDrawColor(204, 204, 204); // Light grey
                 pdf.setLineWidth(0.3);
                 
-                // Top guide line
-                pdf.line(cellCenterX - guideWidthMm / 2, cellCenterY - guideSpacingMm / 2, 
-                         cellCenterX + guideWidthMm / 2, cellCenterY - guideSpacingMm / 2);
+                // Top guide line (1cm from top of cell)
+                pdf.line(cellCenterX - guideWidthMm / 2, cellY + borderMm, 
+                         cellCenterX + guideWidthMm / 2, cellY + borderMm);
                 
-                // Bottom guide line
-                pdf.line(cellCenterX - guideWidthMm / 2, cellCenterY + guideSpacingMm / 2, 
-                         cellCenterX + guideWidthMm / 2, cellCenterY + guideSpacingMm / 2);
+                // Bottom guide line (1cm from bottom of cell)
+                pdf.line(cellCenterX - guideWidthMm / 2, cellY + cellHeightMm - borderMm, 
+                         cellCenterX + guideWidthMm / 2, cellY + cellHeightMm - borderMm);
               }
             }
             pdf.setDrawColor(0, 0, 0); // Reset to black
@@ -1043,22 +1041,21 @@ export default function TemplatePrint() {
               pdf.setLineWidth(0.5);
               pdf.rect(cellX, cellY, cellWidthMm, cellHeightMm);
               
-              // Draw alignment guides inside each cell (4cm wide, 6.75cm apart)
+              // Draw alignment guides inside each cell (4cm wide, 1cm from top and bottom edges)
               const cellCenterX = cellX + cellWidthMm / 2;
-              const cellCenterY = cellY + cellHeightMm / 2;
+              const borderMm = 10; // 1cm border
               const guideWidthMm = 40; // 4cm
-              const guideSpacingMm = 67.5; // 6.75cm
               
               pdf.setDrawColor(204, 204, 204); // Light grey
               pdf.setLineWidth(0.3);
               
-              // Top guide line
-              pdf.line(cellCenterX - guideWidthMm / 2, cellCenterY - guideSpacingMm / 2, 
-                       cellCenterX + guideWidthMm / 2, cellCenterY - guideSpacingMm / 2);
+              // Top guide line (1cm from top of cell)
+              pdf.line(cellCenterX - guideWidthMm / 2, cellY + borderMm, 
+                       cellCenterX + guideWidthMm / 2, cellY + borderMm);
               
-              // Bottom guide line
-              pdf.line(cellCenterX - guideWidthMm / 2, cellCenterY + guideSpacingMm / 2, 
-                       cellCenterX + guideWidthMm / 2, cellCenterY + guideSpacingMm / 2);
+              // Bottom guide line (1cm from bottom of cell)
+              pdf.line(cellCenterX - guideWidthMm / 2, cellY + cellHeightMm - borderMm, 
+                       cellCenterX + guideWidthMm / 2, cellY + cellHeightMm - borderMm);
             }
           }
           pdf.setDrawColor(0, 0, 0); // Reset to black
