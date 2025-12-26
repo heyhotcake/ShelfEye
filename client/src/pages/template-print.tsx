@@ -284,81 +284,143 @@ export default function TemplatePrint() {
         ctx.translate(centerX, centerY);
         ctx.rotate((rect.rotation * Math.PI) / 180);
 
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
-
-        // Draw QR code centered within the rectangle (3x3 cm)
-        const qrSizeCm = 3;
-        const qrSizePx = cmToPixels(qrSizeCm, true);
-        if (rect.autoQrId && qrImageCache[rect.autoQrId]) {
-          ctx.drawImage(qrImageCache[rect.autoQrId], -qrSizePx / 2, -qrSizePx / 2, qrSizePx, qrSizePx);
-        }
-
-        // Draw alignment guides (light grey horizontal lines for worker card placement)
-        // Two 4cm lines, 6.75cm apart vertically, centered on the ArUco marker
-        const guideWidthCm = 4;
-        const guideSpacingCm = 6.75;
-        const guideWidthPx = cmToPixels(guideWidthCm, true);
-        const guideSpacingPx = cmToPixels(guideSpacingCm, false);
+        const isGridType = rect.category.categoryType === 'scanner_grid' || rect.category.categoryType === 'worker_tag_grid';
         
-        ctx.strokeStyle = '#CCCCCC'; // Light grey
-        ctx.lineWidth = 1;
-        
-        // Top guide line
-        ctx.beginPath();
-        ctx.moveTo(-guideWidthPx / 2, -guideSpacingPx / 2);
-        ctx.lineTo(guideWidthPx / 2, -guideSpacingPx / 2);
-        ctx.stroke();
-        
-        // Bottom guide line
-        ctx.beginPath();
-        ctx.moveTo(-guideWidthPx / 2, guideSpacingPx / 2);
-        ctx.lineTo(guideWidthPx / 2, guideSpacingPx / 2);
-        ctx.stroke();
-
-        // Draw label above QR code (supports Japanese text)
-        if (rect.category.label) {
-          const padding = cmToPixels(0.3, true); // 0.3cm padding
-          const maxFontPx = 96;
-          const minFontPx = 18;
-          const minTextWidthPx = cmToPixels(4, true); // Minimum 4cm text width
-          let fontPx = Math.min(maxFontPx, Math.max(minFontPx, widthPx * 0.35));
-          
-          // Set font with Japanese support (bold)
-          ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          
-          // Increase font size if text is narrower than 3cm
-          let textWidth = ctx.measureText(rect.category.label).width;
-          while (textWidth < minTextWidthPx && fontPx < maxFontPx) {
-            fontPx += 2;
-            ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
-            textWidth = ctx.measureText(rect.category.label).width;
-          }
-          
-          // Reduce font size if text is too wide for the slot
-          const maxTextWidth = widthPx - 2 * padding;
-          while (textWidth > maxTextWidth && fontPx > minFontPx) {
-            fontPx -= 2;
-            ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
-            textWidth = ctx.measureText(rect.category.label).width;
-          }
-          
-          // Position label halfway between top of slot and top of QR code
-          const slotTop = -heightPx / 2;
-          const qrTop = -qrSizePx / 2;
-          const labelY = (slotTop + qrTop) / 2;
-          
-          // Draw white stroke for contrast
-          ctx.strokeStyle = '#ffffff';
+        if (isGridType) {
+          // Draw only 4 corner markers (L-shaped) for scanner/worker grids
+          const cornerLength = cmToPixels(1.5, true); // 1.5cm corner length
+          ctx.strokeStyle = '#000000';
           ctx.lineWidth = 3;
-          ctx.strokeText(rect.category.label, 0, labelY);
           
-          // Draw black text
-          ctx.fillStyle = '#000000';
-          ctx.fillText(rect.category.label, 0, labelY);
+          const halfW = widthPx / 2;
+          const halfH = heightPx / 2;
+          
+          // Top-left corner
+          ctx.beginPath();
+          ctx.moveTo(-halfW + cornerLength, -halfH);
+          ctx.lineTo(-halfW, -halfH);
+          ctx.lineTo(-halfW, -halfH + cornerLength);
+          ctx.stroke();
+          
+          // Top-right corner
+          ctx.beginPath();
+          ctx.moveTo(halfW - cornerLength, -halfH);
+          ctx.lineTo(halfW, -halfH);
+          ctx.lineTo(halfW, -halfH + cornerLength);
+          ctx.stroke();
+          
+          // Bottom-right corner
+          ctx.beginPath();
+          ctx.moveTo(halfW - cornerLength, halfH);
+          ctx.lineTo(halfW, halfH);
+          ctx.lineTo(halfW, halfH - cornerLength);
+          ctx.stroke();
+          
+          // Bottom-left corner
+          ctx.beginPath();
+          ctx.moveTo(-halfW + cornerLength, halfH);
+          ctx.lineTo(-halfW, halfH);
+          ctx.lineTo(-halfW, halfH - cornerLength);
+          ctx.stroke();
+          
+          // Draw label in center for grid types
+          if (rect.category.label) {
+            const padding = cmToPixels(0.3, true);
+            const maxFontPx = 96;
+            const minFontPx = 18;
+            let fontPx = Math.min(maxFontPx, Math.max(minFontPx, widthPx * 0.25));
+            
+            ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Reduce font size if text is too wide
+            const maxTextWidth = widthPx - 2 * padding;
+            let textWidth = ctx.measureText(rect.category.label).width;
+            while (textWidth > maxTextWidth && fontPx > minFontPx) {
+              fontPx -= 2;
+              ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+              textWidth = ctx.measureText(rect.category.label).width;
+            }
+            
+            // Draw white stroke for contrast
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.strokeText(rect.category.label, 0, 0);
+            
+            // Draw black text
+            ctx.fillStyle = '#000000';
+            ctx.fillText(rect.category.label, 0, 0);
+          }
+        } else {
+          // Standard tool slot rendering
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
+
+          // Draw QR code centered within the rectangle (3x3 cm)
+          const qrSizeCm = 3;
+          const qrSizePx = cmToPixels(qrSizeCm, true);
+          if (rect.autoQrId && qrImageCache[rect.autoQrId]) {
+            ctx.drawImage(qrImageCache[rect.autoQrId], -qrSizePx / 2, -qrSizePx / 2, qrSizePx, qrSizePx);
+          }
+
+          // Draw alignment guides (light grey horizontal lines for worker card placement)
+          const guideWidthCm = 4;
+          const guideSpacingCm = 6.75;
+          const guideWidthPx = cmToPixels(guideWidthCm, true);
+          const guideSpacingPx = cmToPixels(guideSpacingCm, false);
+          
+          ctx.strokeStyle = '#CCCCCC';
+          ctx.lineWidth = 1;
+          
+          ctx.beginPath();
+          ctx.moveTo(-guideWidthPx / 2, -guideSpacingPx / 2);
+          ctx.lineTo(guideWidthPx / 2, -guideSpacingPx / 2);
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.moveTo(-guideWidthPx / 2, guideSpacingPx / 2);
+          ctx.lineTo(guideWidthPx / 2, guideSpacingPx / 2);
+          ctx.stroke();
+
+          // Draw label above QR code
+          if (rect.category.label) {
+            const padding = cmToPixels(0.3, true);
+            const maxFontPx = 96;
+            const minFontPx = 18;
+            const minTextWidthPx = cmToPixels(4, true);
+            let fontPx = Math.min(maxFontPx, Math.max(minFontPx, widthPx * 0.35));
+            
+            ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            let textWidth = ctx.measureText(rect.category.label).width;
+            while (textWidth < minTextWidthPx && fontPx < maxFontPx) {
+              fontPx += 2;
+              ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+              textWidth = ctx.measureText(rect.category.label).width;
+            }
+            
+            const maxTextWidth = widthPx - 2 * padding;
+            while (textWidth > maxTextWidth && fontPx > minFontPx) {
+              fontPx -= 2;
+              ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+              textWidth = ctx.measureText(rect.category.label).width;
+            }
+            
+            const slotTop = -heightPx / 2;
+            const qrTop = -qrSizePx / 2;
+            const labelY = (slotTop + qrTop) / 2;
+            
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.strokeText(rect.category.label, 0, labelY);
+            
+            ctx.fillStyle = '#000000';
+            ctx.fillText(rect.category.label, 0, labelY);
+          }
         }
 
         ctx.restore();
@@ -528,7 +590,53 @@ export default function TemplatePrint() {
           pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.5);
 
-          if (rect.rotation !== 0) {
+          const isGridType = rect.category.categoryType === 'scanner_grid' || rect.category.categoryType === 'worker_tag_grid';
+          
+          if (isGridType) {
+            // Draw only 4 corner markers for scanner/worker grids
+            const cornerLengthMm = 15; // 1.5cm corner length
+            const halfW = widthMm / 2;
+            const halfH = heightMm / 2;
+            pdf.setLineWidth(1);
+            
+            // Top-left corner
+            pdf.line(localX - halfW, localY - halfH, localX - halfW + cornerLengthMm, localY - halfH);
+            pdf.line(localX - halfW, localY - halfH, localX - halfW, localY - halfH + cornerLengthMm);
+            
+            // Top-right corner
+            pdf.line(localX + halfW - cornerLengthMm, localY - halfH, localX + halfW, localY - halfH);
+            pdf.line(localX + halfW, localY - halfH, localX + halfW, localY - halfH + cornerLengthMm);
+            
+            // Bottom-right corner
+            pdf.line(localX + halfW - cornerLengthMm, localY + halfH, localX + halfW, localY + halfH);
+            pdf.line(localX + halfW, localY + halfH - cornerLengthMm, localX + halfW, localY + halfH);
+            
+            // Bottom-left corner
+            pdf.line(localX - halfW, localY + halfH, localX - halfW + cornerLengthMm, localY + halfH);
+            pdf.line(localX - halfW, localY + halfH - cornerLengthMm, localX - halfW, localY + halfH);
+            
+            // Draw label in center
+            if (rect.category.label) {
+              const paddingMm = 3;
+              const maxFontPt = 28;
+              const minFontPt = 10;
+              let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.8));
+              
+              pdf.setFont('NotoSansJP', 'bold');
+              pdf.setTextColor(0, 0, 0);
+              pdf.setFontSize(fontPt);
+              
+              const maxTextWidth = widthMm - 2 * paddingMm;
+              let textWidth = pdf.getTextWidth(rect.category.label);
+              while (textWidth > maxTextWidth && fontPt > minFontPt) {
+                fontPt -= 1;
+                pdf.setFontSize(fontPt);
+                textWidth = pdf.getTextWidth(rect.category.label);
+              }
+              
+              pdf.text(rect.category.label, localX, localY, { align: 'center', baseline: 'middle' });
+            }
+          } else if (rect.rotation !== 0) {
             // angleRad already calculated above for rotation-aware bounding box
             const halfW = widthMm / 2;
             const halfH = heightMm / 2;
@@ -744,7 +852,53 @@ export default function TemplatePrint() {
         pdf.setDrawColor(0, 0, 0);
         pdf.setLineWidth(0.5);
 
-        if (rect.rotation !== 0) {
+        const isGridType = rect.category.categoryType === 'scanner_grid' || rect.category.categoryType === 'worker_tag_grid';
+        
+        if (isGridType) {
+          // Draw only 4 corner markers for scanner/worker grids
+          const cornerLengthMm = 15; // 1.5cm corner length
+          const halfW = widthMm / 2;
+          const halfH = heightMm / 2;
+          pdf.setLineWidth(1);
+          
+          // Top-left corner
+          pdf.line(xMm - halfW, yMm - halfH, xMm - halfW + cornerLengthMm, yMm - halfH);
+          pdf.line(xMm - halfW, yMm - halfH, xMm - halfW, yMm - halfH + cornerLengthMm);
+          
+          // Top-right corner
+          pdf.line(xMm + halfW - cornerLengthMm, yMm - halfH, xMm + halfW, yMm - halfH);
+          pdf.line(xMm + halfW, yMm - halfH, xMm + halfW, yMm - halfH + cornerLengthMm);
+          
+          // Bottom-right corner
+          pdf.line(xMm + halfW - cornerLengthMm, yMm + halfH, xMm + halfW, yMm + halfH);
+          pdf.line(xMm + halfW, yMm + halfH - cornerLengthMm, xMm + halfW, yMm + halfH);
+          
+          // Bottom-left corner
+          pdf.line(xMm - halfW, yMm + halfH, xMm - halfW + cornerLengthMm, yMm + halfH);
+          pdf.line(xMm - halfW, yMm + halfH - cornerLengthMm, xMm - halfW, yMm + halfH);
+          
+          // Draw label in center
+          if (rect.category.label) {
+            const paddingMm = 3;
+            const maxFontPt = 16;
+            const minFontPt = 6;
+            let fontPt = Math.min(maxFontPt, Math.max(minFontPt, widthMm * 0.5));
+            
+            pdf.setFont('NotoSansJP', 'bold');
+            pdf.setTextColor(0, 0, 0);
+            pdf.setFontSize(fontPt);
+            
+            const maxTextWidth = widthMm - 2 * paddingMm;
+            let textWidth = pdf.getTextWidth(rect.category.label);
+            while (textWidth > maxTextWidth && fontPt > minFontPt) {
+              fontPt -= 0.5;
+              pdf.setFontSize(fontPt);
+              textWidth = pdf.getTextWidth(rect.category.label);
+            }
+            
+            pdf.text(rect.category.label, xMm, yMm, { align: 'center', baseline: 'middle' });
+          }
+        } else if (rect.rotation !== 0) {
           const angleRad = (rect.rotation * Math.PI) / 180;
           const halfW = widthMm / 2;
           const halfH = heightMm / 2;
