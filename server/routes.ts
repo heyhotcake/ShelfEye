@@ -2568,11 +2568,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gridCols: cols,
       });
 
+      // Worker tag grid uses fixed cell dimensions: 4cm × 6.75cm + 1.5cm header
+      const workerTagCellWidth = 4; // 4cm per cell
+      const workerTagCellHeight = 6.75; // 6.75cm per cell
+      const workerTagHeaderHeight = 1.5; // 1.5cm header
+      const workerTagTotalWidth = workerTagCellWidth * cols;
+      const workerTagTotalHeight = workerTagCellHeight * rows + workerTagHeaderHeight;
+
       const workerTagCategory = await storage.createToolCategory({
         name: `${name} (Worker Tags)`,
         label: `${label} (作業者タグ)`,
-        widthCm: totalWidthCm,
-        heightCm: totalHeightCm,
+        widthCm: workerTagTotalWidth,
+        heightCm: workerTagTotalHeight,
         categoryType: 'worker_tag_grid',
         gridRows: rows,
         gridCols: cols,
