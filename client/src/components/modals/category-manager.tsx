@@ -359,7 +359,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="widthCm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Width (cm)</FormLabel>
+                          <FormLabel>Cell Width (cm)</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -369,6 +369,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
                           </FormControl>
+                          <FormDescription>Width of each cell</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -378,7 +379,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="heightCm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Height (cm)</FormLabel>
+                          <FormLabel>Cell Height (cm)</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -388,6 +389,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
                           </FormControl>
+                          <FormDescription>Height of each cell</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -486,29 +488,42 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       <span className="text-sm text-muted-foreground">Grid Preview:</span>
                       <span className="text-sm font-medium">{scannerGridForm.watch('gridRows')} × {scannerGridForm.watch('gridCols')} = {scannerGridForm.watch('gridRows') * scannerGridForm.watch('gridCols')} cells</span>
                     </div>
-                    <div 
-                      className="border-2 border-yellow-500 rounded mx-auto"
-                      style={{
-                        width: Math.min(300, scannerGridForm.watch('widthCm') * 8),
-                        height: Math.min(150, scannerGridForm.watch('heightCm') * 8),
-                        display: 'grid',
-                        gridTemplateColumns: `repeat(${scannerGridForm.watch('gridCols')}, 1fr)`,
-                        gridTemplateRows: `repeat(${scannerGridForm.watch('gridRows')}, 1fr)`,
-                      }}
-                    >
-                      {Array.from({ length: scannerGridForm.watch('gridRows') * scannerGridForm.watch('gridCols') }).map((_, i) => (
-                        <div 
-                          key={i} 
-                          className="border border-yellow-500/50 flex items-center justify-center text-xs text-yellow-600 font-medium"
-                          style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)' }}
-                        >
-                          {i + 1}
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      {scannerGridForm.watch('widthCm')} × {scannerGridForm.watch('heightCm')} cm
-                    </p>
+                    {(() => {
+                      const cellW = scannerGridForm.watch('widthCm');
+                      const cellH = scannerGridForm.watch('heightCm');
+                      const cols = scannerGridForm.watch('gridCols');
+                      const rows = scannerGridForm.watch('gridRows');
+                      const totalW = cellW * cols;
+                      const totalH = cellH * rows;
+                      const scale = Math.min(300 / totalW, 150 / totalH, 8);
+                      return (
+                        <>
+                          <div 
+                            className="border-2 border-yellow-500 rounded mx-auto"
+                            style={{
+                              width: totalW * scale,
+                              height: totalH * scale,
+                              display: 'grid',
+                              gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                              gridTemplateRows: `repeat(${rows}, 1fr)`,
+                            }}
+                          >
+                            {Array.from({ length: rows * cols }).map((_, i) => (
+                              <div 
+                                key={i} 
+                                className="border border-yellow-500/50 flex items-center justify-center text-xs text-yellow-600 font-medium"
+                                style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)' }}
+                              >
+                                {i + 1}
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center mt-2">
+                            Total: {totalW} × {totalH} cm (cells: {cellW} × {cellH} cm each)
+                          </p>
+                        </>
+                      );
+                    })()}
                   </div>
                   <Button
                     type="submit"

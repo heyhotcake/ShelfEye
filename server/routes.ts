@@ -2553,24 +2553,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
+      const rows = gridRows || 2;
+      const cols = gridCols || 4;
+      const totalWidthCm = widthCm * cols;
+      const totalHeightCm = heightCm * rows;
+
       const scannerGridCategory = await storage.createToolCategory({
         name: `${name} (Scanner)`,
         label: `${label} (スキャナー)`,
-        widthCm: widthCm,
-        heightCm: heightCm,
+        widthCm: totalWidthCm,
+        heightCm: totalHeightCm,
         categoryType: 'scanner_grid',
-        gridRows: gridRows || 2,
-        gridCols: gridCols || 4,
+        gridRows: rows,
+        gridCols: cols,
       });
 
       const workerTagCategory = await storage.createToolCategory({
         name: `${name} (Worker Tags)`,
         label: `${label} (作業者タグ)`,
-        widthCm: widthCm,
-        heightCm: heightCm,
+        widthCm: totalWidthCm,
+        heightCm: totalHeightCm,
         categoryType: 'worker_tag_grid',
-        gridRows: gridRows || 2,
-        gridCols: gridCols || 4,
+        gridRows: rows,
+        gridCols: cols,
       });
 
       res.json({
