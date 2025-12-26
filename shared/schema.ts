@@ -18,6 +18,17 @@ export const cameras = pgTable("cameras", {
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
+// Grid cell metadata type for scanner/worker tag grids
+export type GridCellMetadata = {
+  row: number;
+  col: number;
+  xOffsetCm: number; // Offset from grid center
+  yOffsetCm: number;
+  widthCm: number;
+  heightCm: number;
+  label?: string;
+};
+
 export const slots = pgTable("slots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   slotId: text("slot_id").notNull().unique(),
@@ -35,6 +46,9 @@ export const slots = pgTable("slots", {
   allowCheckout: boolean("allow_checkout").notNull().default(true),
   graceWindow: text("grace_window").default("08:30-16:30"),
   isActive: boolean("is_active").notNull().default(true),
+  slotType: text("slot_type").notNull().default("tool"), // 'tool', 'scanner_grid', 'worker_tag_grid'
+  gridMetadata: json("grid_metadata").$type<GridCellMetadata[]>(), // For scanner/worker grids: array of cell definitions
+  linkedSlotId: varchar("linked_slot_id"), // Links scanner grid slot ↔ worker tag grid slot (reciprocal)
   createdAt: timestamp("created_at").default(sql`now()`),
 }, (table) => ({
   // Ensure each camera has unique slot numbers (1, 2, 3, etc.)
@@ -95,6 +109,9 @@ export const toolCategories = pgTable("tool_categories", {
   label: text("label").notNull(), // Display label for printing (supports Japanese)
   widthCm: real("width_cm").notNull(),
   heightCm: real("height_cm").notNull(),
+  categoryType: text("category_type").notNull().default("tool"), // 'tool', 'scanner_grid', 'worker_tag_grid'
+  gridRows: integer("grid_rows"), // For grid types: number of rows (e.g., 2)
+  gridCols: integer("grid_cols"), // For grid types: number of columns (e.g., 4)
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
@@ -134,61 +151,6 @@ export const workers = pgTable("workers", {
   qrPayload: json("qr_payload"), // Legacy field - kept for backward compatibility
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").default(sql`now()`),
-});
-
-// Scanner Grid: Color detection grids for scanner presence tracking
-// Two grid types: 'scanner' (yellow color detection) and 'worker_tag' (ArUco badge detection)
-export const scannerGrids = pgTable("scanner_grids", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  cameraId: varchar("camera_id").references(() => cameras.id, { onDelete: "cascade" }).notNull(),
-  name: text("name").notNull(), // e.g., "Scanner Grid", "Worker Tag Grid"
-  gridType: text("grid_type").notNull(), // 'scanner' or 'worker_tag'
-  rows: integer("rows").notNull().default(2),
-  cols: integer("cols").notNull().default(4),
-  cellWidthCm: real("cell_width_cm").notNull(), // Default cell width in cm
-  cellHeightCm: real("cell_height_cm").notNull(), // Default cell height in cm
-  linkedGridId: varchar("linked_grid_id"), // Links scanner grid ↔ worker tag grid (self-reference, set after creation)
-  colorHsvLower: json("color_hsv_lower").$type<[number, number, number]>().default([20, 100, 200]), // HSV lower bound for yellow
-  colorHsvUpper: json("color_hsv_upper").$type<[number, number, number]>().default([30, 255, 255]), // HSV upper bound for yellow
-  detectionThreshold: real("detection_threshold").notNull().default(0.1), // % of pixels needed to trigger detection (0.1 = 10%)
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").default(sql`now()`),
-});
-
-// Scanner Cells: Individual cells within a scanner grid (draggable on canvas)
-export const scannerCells = pgTable("scanner_cells", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  gridId: varchar("grid_id").references(() => scannerGrids.id, { onDelete: "cascade" }).notNull(),
-  cellNumber: integer("cell_number").notNull(), // 1-based position in grid (1 to rows*cols)
-  row: integer("row").notNull(), // 0-based row index
-  col: integer("col").notNull(), // 0-based column index
-  xCm: real("x_cm").notNull(), // Center X position in cm
-  yCm: real("y_cm").notNull(), // Center Y position in cm
-  widthCm: real("width_cm").notNull(), // Cell width (can override grid default)
-  heightCm: real("height_cm").notNull(), // Cell height (can override grid default)
-  regionCoords: json("region_coords").$type<number[][]>(), // Polygon coordinates in pixels (computed from cm)
-  linkedCellId: varchar("linked_cell_id"), // Links scanner cell ↔ worker tag cell
-  label: text("label"), // Optional label for display (e.g., "Scanner 1")
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").default(sql`now()`),
-}, (table) => ({
-  uniqueCellPerGrid: unique().on(table.gridId, table.cellNumber),
-}));
-
-// Scanner Detection Logs: Separate from tool detection logs for scanner tracking
-export const scannerDetectionLogs = pgTable("scanner_detection_logs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  cellId: varchar("cell_id").references(() => scannerCells.id, { onDelete: "cascade" }).notNull(),
-  timestamp: timestamp("timestamp").notNull().default(sql`now()`),
-  status: text("status").notNull(), // SCANNER_PRESENT, CHECKED_OUT, MISSING_ALERT
-  colorDetected: boolean("color_detected").notNull(), // Was yellow detected?
-  colorPixelPercent: real("color_pixel_percent"), // % of yellow pixels in ROI
-  workerId: varchar("worker_id").references(() => workers.id, { onDelete: "set null" }),
-  workerName: text("worker_name"),
-  workerArucoId: integer("worker_aruco_id"), // ArUco ID detected in worker tag cell
-  alertTriggered: boolean("alert_triggered").notNull().default(false),
-  imagePath: text("image_path"),
-  rawDetectionData: json("raw_detection_data"),
 });
 
 export const captureRuns = pgTable("capture_runs", {
@@ -265,13 +227,6 @@ export const insertWorkerSchema = createInsertSchema(workers).omit({ id: true, c
 export const insertCaptureRunSchema = createInsertSchema(captureRuns).omit({ id: true, timestamp: true });
 export const insertGoogleOAuthCredentialSchema = createInsertSchema(googleOAuthCredentials).omit({ id: true, updatedAt: true });
 
-// Scanner Grid schemas
-export const insertScannerGridSchema = createInsertSchema(scannerGrids).omit({ id: true, createdAt: true });
-export const updateScannerGridSchema = createInsertSchema(scannerGrids).omit({ id: true, createdAt: true }).partial();
-export const insertScannerCellSchema = createInsertSchema(scannerCells).omit({ id: true, createdAt: true });
-export const updateScannerCellSchema = createInsertSchema(scannerCells).omit({ id: true, createdAt: true }).partial();
-export const insertScannerDetectionLogSchema = createInsertSchema(scannerDetectionLogs).omit({ id: true });
-
 // Types
 export type InsertCamera = z.infer<typeof insertCameraSchema>;
 export type InsertSlot = z.infer<typeof insertSlotSchema>;
@@ -299,13 +254,3 @@ export type TemplateRectangle = typeof templateRectangles.$inferSelect;
 export type Worker = typeof workers.$inferSelect;
 export type CaptureRun = typeof captureRuns.$inferSelect;
 export type GoogleOAuthCredential = typeof googleOAuthCredentials.$inferSelect;
-
-// Scanner Grid types
-export type InsertScannerGrid = z.infer<typeof insertScannerGridSchema>;
-export type UpdateScannerGrid = z.infer<typeof updateScannerGridSchema>;
-export type InsertScannerCell = z.infer<typeof insertScannerCellSchema>;
-export type UpdateScannerCell = z.infer<typeof updateScannerCellSchema>;
-export type InsertScannerDetectionLog = z.infer<typeof insertScannerDetectionLogSchema>;
-export type ScannerGrid = typeof scannerGrids.$inferSelect;
-export type ScannerCell = typeof scannerCells.$inferSelect;
-export type ScannerDetectionLog = typeof scannerDetectionLogs.$inferSelect;

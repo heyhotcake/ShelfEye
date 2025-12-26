@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { insertToolCategorySchema, type ToolCategory, type ScannerGrid, type Camera } from "@shared/schema";
+import { insertToolCategorySchema, type ToolCategory } from "@shared/schema";
 import { z } from "zod";
 import {
   Dialog,
@@ -21,17 +21,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2, Edit, Save, X, Loader2, Grid3X3, Scan, Tag } from "lucide-react";
+import { Plus, Trash2, Edit, Save, X, Loader2 } from "lucide-react";
 
 interface CategoryManagerProps {
   open: boolean;
@@ -40,19 +33,6 @@ interface CategoryManagerProps {
 
 const formSchema = insertToolCategorySchema;
 type FormData = z.infer<typeof formSchema>;
-
-const scannerGridFormSchema = z.object({
-  cameraId: z.string().min(1, "Camera is required"),
-  name: z.string().min(1, "Name is required"),
-  gridType: z.enum(["scanner", "worker_tag"]),
-  rows: z.number().min(1).max(10).default(2),
-  cols: z.number().min(1).max(10).default(4),
-  cellWidthCm: z.number().min(1, "Cell width required"),
-  cellHeightCm: z.number().min(1, "Cell height required"),
-  startXCm: z.number().default(5),
-  startYCm: z.number().default(5),
-});
-type ScannerGridFormData = z.infer<typeof scannerGridFormSchema>;
 
 export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
   const { toast } = useToast();
@@ -79,31 +59,8 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     },
   });
 
-  const scannerGridForm = useForm<ScannerGridFormData>({
-    resolver: zodResolver(scannerGridFormSchema),
-    defaultValues: {
-      cameraId: "",
-      name: "",
-      gridType: "scanner",
-      rows: 2,
-      cols: 4,
-      cellWidthCm: 5,
-      cellHeightCm: 5,
-      startXCm: 5,
-      startYCm: 5,
-    },
-  });
-
   const { data: categories = [], isLoading, error } = useQuery<ToolCategory[]>({
     queryKey: ['/api/tool-categories'],
-  });
-
-  const { data: cameras = [] } = useQuery<Camera[]>({
-    queryKey: ['/api/cameras'],
-  });
-
-  const { data: scannerGrids = [], isLoading: scannerGridsLoading } = useQuery<ScannerGrid[]>({
-    queryKey: ['/api/scanner-grids'],
   });
 
   const createMutation = useMutation({
@@ -165,49 +122,6 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
       });
     },
   });
-
-  const createScannerGridMutation = useMutation({
-    mutationFn: (data: ScannerGridFormData) =>
-      apiRequest('POST', '/api/scanner-grids', data),
-    onSuccess: () => {
-      toast({
-        title: "Scanner Grid Created",
-        description: "Scanner/tag grid has been created successfully. Go to Template Editor to position it.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/scanner-grids'] });
-      scannerGridForm.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to Create Grid",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteScannerGridMutation = useMutation({
-    mutationFn: (id: string) =>
-      apiRequest('DELETE', `/api/scanner-grids/${id}`),
-    onSuccess: () => {
-      toast({
-        title: "Grid Deleted",
-        description: "Scanner grid has been deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/scanner-grids'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to Delete Grid",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleCreateScannerGrid = (data: ScannerGridFormData) => {
-    createScannerGridMutation.mutate(data);
-  };
 
   const handleCreate = (data: FormData) => {
     createMutation.mutate(data);
@@ -335,233 +249,6 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                   </Button>
                 </form>
               </Form>
-            </CardContent>
-          </Card>
-
-          <Card className="border-yellow-500/50 dark:border-yellow-500/30">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Grid3X3 className="w-5 h-5 text-yellow-600" />
-                <h3 className="text-sm font-medium">Color Detection Grids (Scanner & Worker Tag)</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create 2x4 grids for tracking handheld scanners (yellow sticker detection) and worker tags (ArUco badge detection).
-              </p>
-              <Form {...scannerGridForm}>
-                <form onSubmit={scannerGridForm.handleSubmit(handleCreateScannerGrid)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={scannerGridForm.control}
-                      name="cameraId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Camera</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-scanner-camera">
-                                <SelectValue placeholder="Select camera" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {cameras.map((camera) => (
-                                <SelectItem key={camera.id} value={camera.id}>
-                                  {camera.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={scannerGridForm.control}
-                      name="gridType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Grid Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-grid-type">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="scanner">
-                                <div className="flex items-center gap-2">
-                                  <Scan className="w-4 h-4 text-yellow-500" />
-                                  Scanner (Yellow Detection)
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="worker_tag">
-                                <div className="flex items-center gap-2">
-                                  <Tag className="w-4 h-4 text-blue-500" />
-                                  Worker Tag (ArUco ID 51-95)
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={scannerGridForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Grid Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              data-testid="input-scanner-grid-name"
-                              placeholder="e.g., Scanner Rack 1"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <FormField
-                        control={scannerGridForm.control}
-                        name="rows"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Rows</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                data-testid="input-scanner-rows"
-                                type="number"
-                                min={1}
-                                max={10}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 2)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={scannerGridForm.control}
-                        name="cols"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cols</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                data-testid="input-scanner-cols"
-                                type="number"
-                                min={1}
-                                max={10}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 4)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={scannerGridForm.control}
-                      name="cellWidthCm"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cell Width (cm)</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              data-testid="input-scanner-cell-width"
-                              type="number"
-                              step="0.5"
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 5)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={scannerGridForm.control}
-                      name="cellHeightCm"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cell Height (cm)</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              data-testid="input-scanner-cell-height"
-                              type="number"
-                              step="0.5"
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 5)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    data-testid="button-create-scanner-grid"
-                    disabled={createScannerGridMutation.isPending}
-                    className="bg-yellow-600 hover:bg-yellow-700"
-                  >
-                    {createScannerGridMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Grid
-                  </Button>
-                </form>
-              </Form>
-
-              {scannerGridsLoading ? (
-                <div className="flex items-center justify-center py-4 mt-4">
-                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : scannerGrids.length > 0 && (
-                <div className="mt-6 space-y-2">
-                  <h4 className="text-sm font-medium">Existing Grids</h4>
-                  {scannerGrids.map((grid) => {
-                    const camera = cameras.find(c => c.id === grid.cameraId);
-                    return (
-                      <Card key={grid.id} className="border-dashed">
-                        <CardContent className="p-3 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {grid.gridType === 'scanner' ? (
-                              <Scan className="w-5 h-5 text-yellow-500" />
-                            ) : (
-                              <Tag className="w-5 h-5 text-blue-500" />
-                            )}
-                            <div>
-                              <p className="font-medium text-sm">{grid.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {grid.gridType === 'scanner' ? 'Scanner' : 'Worker Tag'} |{' '}
-                                {grid.rows}x{grid.cols} |{' '}
-                                Camera: {camera?.name || 'Unknown'}
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            data-testid={`button-delete-scanner-grid-${grid.id}`}
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteScannerGridMutation.mutate(grid.id)}
-                            disabled={deleteScannerGridMutation.isPending}
-                          >
-                            {deleteScannerGridMutation.isPending ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
             </CardContent>
           </Card>
 

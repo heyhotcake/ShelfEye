@@ -1,4 +1,4 @@
-import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type ToolCategory, type TemplateRectangle, type TemplateDesign, type Worker, type CaptureRun, type GoogleOAuthCredential, type ScannerGrid, type ScannerCell, type ScannerDetectionLog, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertToolCategory, type InsertTemplateRectangle, type InsertTemplateDesign, type InsertWorker, type InsertCaptureRun, type InsertGoogleOAuthCredential, type InsertScannerGrid, type InsertScannerCell, type InsertScannerDetectionLog, type UpdateScannerGrid, type UpdateScannerCell } from "@shared/schema";
+import { type Camera, type Slot, type DetectionLog, type AlertRule, type AlertQueue, type SystemConfig, type ToolCategory, type TemplateRectangle, type TemplateDesign, type Worker, type CaptureRun, type GoogleOAuthCredential, type InsertCamera, type InsertSlot, type InsertDetectionLog, type InsertAlertRule, type InsertAlertQueue, type InsertSystemConfig, type InsertToolCategory, type InsertTemplateRectangle, type InsertTemplateDesign, type InsertWorker, type InsertCaptureRun, type InsertGoogleOAuthCredential } from "@shared/schema";
 
 export interface IStorage {
   // Camera methods
@@ -85,27 +85,6 @@ export interface IStorage {
   getCaptureRuns(limit?: number): Promise<CaptureRun[]>;
   getCaptureRun(id: string): Promise<CaptureRun | undefined>;
   createCaptureRun(run: InsertCaptureRun): Promise<CaptureRun>;
-
-  // Scanner Grid methods
-  getScannerGrids(): Promise<ScannerGrid[]>;
-  getScannerGridsByCamera(cameraId: string): Promise<ScannerGrid[]>;
-  getScannerGrid(id: string): Promise<ScannerGrid | undefined>;
-  createScannerGrid(grid: InsertScannerGrid): Promise<ScannerGrid>;
-  updateScannerGrid(id: string, updates: UpdateScannerGrid): Promise<ScannerGrid | undefined>;
-  deleteScannerGrid(id: string): Promise<boolean>;
-  createScannerGridWithCells(grid: InsertScannerGrid, startXCm: number, startYCm: number): Promise<ScannerGrid>;
-
-  // Scanner Cell methods
-  getScannerCells(gridId: string): Promise<ScannerCell[]>;
-  getScannerCell(id: string): Promise<ScannerCell | undefined>;
-  createScannerCell(cell: InsertScannerCell): Promise<ScannerCell>;
-  updateScannerCell(id: string, updates: UpdateScannerCell): Promise<ScannerCell | undefined>;
-  deleteScannerCell(id: string): Promise<boolean>;
-
-  // Scanner Detection Log methods
-  getScannerDetectionLogs(limit?: number): Promise<ScannerDetectionLog[]>;
-  getScannerDetectionLogsByCell(cellId: string, limit?: number): Promise<ScannerDetectionLog[]>;
-  createScannerDetectionLog(log: InsertScannerDetectionLog): Promise<ScannerDetectionLog>;
 }
 
 import { db } from './db';
@@ -751,128 +730,6 @@ export class DbStorage implements IStorage {
     await this.ensureInitialized();
     const result = await db.delete(schema.googleOAuthCredentials).where(eq(schema.googleOAuthCredentials.service, service));
     return result.rowCount !== null && result.rowCount > 0;
-  }
-
-  // Scanner Grid methods
-  async getScannerGrids(): Promise<ScannerGrid[]> {
-    await this.ensureInitialized();
-    return await db.select().from(schema.scannerGrids);
-  }
-
-  async getScannerGridsByCamera(cameraId: string): Promise<ScannerGrid[]> {
-    await this.ensureInitialized();
-    return await db.select().from(schema.scannerGrids).where(eq(schema.scannerGrids.cameraId, cameraId));
-  }
-
-  async getScannerGrid(id: string): Promise<ScannerGrid | undefined> {
-    await this.ensureInitialized();
-    const result = await db.select().from(schema.scannerGrids).where(eq(schema.scannerGrids.id, id));
-    return result[0];
-  }
-
-  async createScannerGrid(grid: InsertScannerGrid): Promise<ScannerGrid> {
-    await this.ensureInitialized();
-    const result = await db.insert(schema.scannerGrids).values(grid as any).returning();
-    return result[0];
-  }
-
-  async updateScannerGrid(id: string, updates: UpdateScannerGrid): Promise<ScannerGrid | undefined> {
-    await this.ensureInitialized();
-    const result = await db.update(schema.scannerGrids).set(updates as any).where(eq(schema.scannerGrids.id, id)).returning();
-    return result[0];
-  }
-
-  async deleteScannerGrid(id: string): Promise<boolean> {
-    await this.ensureInitialized();
-    const result = await db.delete(schema.scannerGrids).where(eq(schema.scannerGrids.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
-  }
-
-  async createScannerGridWithCells(grid: InsertScannerGrid, startXCm: number, startYCm: number): Promise<ScannerGrid> {
-    await this.ensureInitialized();
-    
-    // Create the grid first
-    const createdGrid = await this.createScannerGrid(grid);
-    
-    // Generate cells based on rows/cols
-    const rows = grid.rows ?? 2;
-    const cols = grid.cols ?? 4;
-    const cellWidth = grid.cellWidthCm;
-    const cellHeight = grid.cellHeightCm;
-    
-    // Create cells in a grid pattern
-    let cellNumber = 1;
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const xCm = startXCm + col * cellWidth + cellWidth / 2;
-        const yCm = startYCm + row * cellHeight + cellHeight / 2;
-        
-        await this.createScannerCell({
-          gridId: createdGrid.id,
-          cellNumber,
-          row,
-          col,
-          xCm,
-          yCm,
-          widthCm: cellWidth,
-          heightCm: cellHeight,
-          label: `${grid.gridType === 'scanner' ? 'Scanner' : 'Tag'} ${cellNumber}`,
-        });
-        
-        cellNumber++;
-      }
-    }
-    
-    return createdGrid;
-  }
-
-  // Scanner Cell methods
-  async getScannerCells(gridId: string): Promise<ScannerCell[]> {
-    await this.ensureInitialized();
-    return await db.select().from(schema.scannerCells).where(eq(schema.scannerCells.gridId, gridId)).orderBy(schema.scannerCells.cellNumber);
-  }
-
-  async getScannerCell(id: string): Promise<ScannerCell | undefined> {
-    await this.ensureInitialized();
-    const result = await db.select().from(schema.scannerCells).where(eq(schema.scannerCells.id, id));
-    return result[0];
-  }
-
-  async createScannerCell(cell: InsertScannerCell): Promise<ScannerCell> {
-    await this.ensureInitialized();
-    const result = await db.insert(schema.scannerCells).values(cell as any).returning();
-    return result[0];
-  }
-
-  async updateScannerCell(id: string, updates: UpdateScannerCell): Promise<ScannerCell | undefined> {
-    await this.ensureInitialized();
-    const result = await db.update(schema.scannerCells).set(updates as any).where(eq(schema.scannerCells.id, id)).returning();
-    return result[0];
-  }
-
-  async deleteScannerCell(id: string): Promise<boolean> {
-    await this.ensureInitialized();
-    const result = await db.delete(schema.scannerCells).where(eq(schema.scannerCells.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
-  }
-
-  // Scanner Detection Log methods
-  async getScannerDetectionLogs(limit: number = 100): Promise<ScannerDetectionLog[]> {
-    await this.ensureInitialized();
-    return await db.select().from(schema.scannerDetectionLogs).orderBy(desc(schema.scannerDetectionLogs.timestamp)).limit(limit);
-  }
-
-  async getScannerDetectionLogsByCell(cellId: string, limit: number = 100): Promise<ScannerDetectionLog[]> {
-    await this.ensureInitialized();
-    return await db.select().from(schema.scannerDetectionLogs).where(eq(schema.scannerDetectionLogs.cellId, cellId)).orderBy(desc(schema.scannerDetectionLogs.timestamp)).limit(limit);
-  }
-
-  async createScannerDetectionLog(log: InsertScannerDetectionLog): Promise<ScannerDetectionLog> {
-    await this.ensureInitialized();
-    return this.withDbRetry(async () => {
-      const result = await db.insert(schema.scannerDetectionLogs).values(log as any).returning();
-      return result[0];
-    }, 'createScannerDetectionLog');
   }
 }
 
