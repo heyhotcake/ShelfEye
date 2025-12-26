@@ -2545,6 +2545,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/tool-categories/scanner-grid", async (req, res) => {
+    try {
+      const { name, label, widthCm, heightCm, detectionColor, gridRows, gridCols } = req.body;
+      
+      if (!name || !label || !widthCm || !heightCm) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const scannerGridCategory = await storage.createToolCategory({
+        name: `${name} (Scanner)`,
+        label: `${label} (スキャナー)`,
+        widthCm: widthCm,
+        heightCm: heightCm,
+        categoryType: 'scanner_grid',
+        gridRows: gridRows || 2,
+        gridCols: gridCols || 4,
+      });
+
+      const workerTagCategory = await storage.createToolCategory({
+        name: `${name} (Worker Tags)`,
+        label: `${label} (作業者タグ)`,
+        widthCm: widthCm,
+        heightCm: heightCm,
+        categoryType: 'worker_tag_grid',
+        gridRows: gridRows || 2,
+        gridCols: gridCols || 4,
+      });
+
+      res.json({
+        scannerGrid: scannerGridCategory,
+        workerTagGrid: workerTagCategory,
+        message: "Scanner grid and worker tag grid categories created successfully"
+      });
+    } catch (error) {
+      console.error("Failed to create scanner grid:", error);
+      res.status(400).json({ message: "Failed to create scanner grid categories", error: String(error) });
+    }
+  });
+
   app.put("/api/tool-categories/:id", async (req, res) => {
     try {
       const updates = insertToolCategorySchema.partial().parse(req.body);
