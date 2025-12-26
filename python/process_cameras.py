@@ -105,6 +105,54 @@ class SlotProcessor:
             logger.error(f"ROI extraction failed: {e}")
             return None
     
+    def extract_rectified_roi(self, frame: np.ndarray, region_coords: List[List[float]], 
+                               width_cm: float, height_cm: float, 
+                               px_per_cm: float = 31.8) -> Optional[np.ndarray]:
+        """
+        Extract and rectify region of interest using perspective transform.
+        Creates a properly aligned rectangular view matching template dimensions.
+        
+        Args:
+            frame: Input frame
+            region_coords: Polygon coordinates [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+            width_cm: Expected width in centimeters
+            height_cm: Expected height in centimeters
+            px_per_cm: Output resolution in pixels per centimeter
+            
+        Returns:
+            Rectified ROI with proper dimensions or None if extraction fails
+        """
+        try:
+            if len(region_coords) != 4:
+                logger.warning(f"Rectified ROI requires exactly 4 points, got {len(region_coords)}")
+                return self.extract_roi(frame, region_coords)
+            
+            # Source points from the detected slot polygon (camera space)
+            src_pts = np.array(region_coords, dtype=np.float32)
+            
+            # Destination points for rectified output
+            out_width = int(width_cm * px_per_cm)
+            out_height = int(height_cm * px_per_cm)
+            
+            dst_pts = np.array([
+                [0, 0],
+                [out_width, 0],
+                [out_width, out_height],
+                [0, out_height]
+            ], dtype=np.float32)
+            
+            # Compute perspective transform matrix
+            M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+            
+            # Apply perspective transform to rectify the slot region
+            rectified = cv2.warpPerspective(frame, M, (out_width, out_height))
+            
+            return rectified
+            
+        except Exception as e:
+            logger.error(f"Rectified ROI extraction failed: {e}")
+            return None
+    
     def decode_qr(self, roi: np.ndarray) -> Optional[str]:
         """
         Decode QR code from ROI
@@ -186,13 +234,15 @@ class SlotProcessor:
             logger.warning(f"Unknown QR type: {qr_type}")
             return ("ITEM_PRESENT", False, None)
     
-    def process_slot(self, frame: np.ndarray, slot_data: Dict[str, Any]) -> Dict[str, Any]:
+    def process_slot(self, frame: np.ndarray, slot_data: Dict[str, Any], 
+                      linked_slots: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
-        Process a single slot using simplified QR detection
+        Process a single slot using detection based on slot type
         
         Args:
             frame: Camera frame
             slot_data: Slot configuration
+            linked_slots: Optional dict of linked slots (for scanner/worker grid pairing)
             
         Returns:
             Processing result with status and metrics
@@ -200,12 +250,15 @@ class SlotProcessor:
         slot_id = slot_data.get('id')
         slot_name = slot_data.get('slotId', slot_id)
         region_coords = slot_data.get('regionCoords', [])
+        slot_type = slot_data.get('slotType', 'tool')
+        grid_metadata = slot_data.get('gridMetadata', [])
         
-        logger.info(f"Processing slot: {slot_name}")
+        logger.info(f"Processing slot: {slot_name} (type: {slot_type})")
         
         result = {
             'slotId': slot_id,
             'slotName': slot_name,
+            'slotType': slot_type,
             'status': 'ITEM_PRESENT',  # Default
             'qrData': None,
             'workerName': None,
@@ -214,8 +267,21 @@ class SlotProcessor:
         }
         
         try:
-            # Extract ROI
-            roi = self.extract_roi(frame, region_coords)
+            # For grid slots, use rectified ROI extraction for proper coordinate alignment
+            is_grid_slot = slot_type in ('scanner_grid', 'worker_tag_grid')
+            
+            if is_grid_slot:
+                width_cm = slot_data.get('widthCm', 32)
+                height_cm = slot_data.get('heightCm', 16)
+                px_per_cm = 31.8  # Standard resolution for grid processing
+                
+                roi = self.extract_rectified_roi(frame, region_coords, width_cm, height_cm, px_per_cm)
+                if roi is None:
+                    # Fall back to regular ROI extraction
+                    roi = self.extract_roi(frame, region_coords)
+            else:
+                roi = self.extract_roi(frame, region_coords)
+            
             if roi is None:
                 result['error'] = 'Failed to extract ROI'
                 result['status'] = 'ERROR'
@@ -225,22 +291,231 @@ class SlotProcessor:
             roi_path = self.data_dir / f"{slot_name}_last.png"
             cv2.imwrite(str(roi_path), roi)
             
-            # Decode QR
-            qr_data = self.decode_qr(roi)
-            result['qrData'] = qr_data
+            # Branch based on slot type
+            if slot_type == 'scanner_grid':
+                # Use yellow color detection for scanner grids (ROI is already rectified)
+                result = self.process_scanner_grid_slot(slot_data, roi, grid_metadata, linked_slots, is_rectified=True)
+            elif slot_type == 'worker_tag_grid':
+                # Use ArUco detection for worker tag grids (ROI is already rectified)
+                result = self.process_worker_tag_grid_slot(slot_data, roi, grid_metadata, is_rectified=True)
+            else:
+                # Standard tool slot - use QR detection
+                qr_data = self.decode_qr(roi)
+                result['qrData'] = qr_data
+                
+                # Determine status using simplified logic
+                status, alert_triggered, worker_name = self.determine_status(qr_data)
+                result['status'] = status
+                result['alertTriggered'] = alert_triggered
+                result['workerName'] = worker_name
             
-            # Determine status using simplified logic
-            status, alert_triggered, worker_name = self.determine_status(qr_data)
-            result['status'] = status
-            result['alertTriggered'] = alert_triggered
-            result['workerName'] = worker_name
-            
-            logger.info(f"Slot {slot_name}: {status} (QR: {qr_data if qr_data else 'None'}, Alert: {alert_triggered})")
+            logger.info(f"Slot {slot_name}: {result.get('status')} (type: {slot_type})")
             
         except Exception as e:
             result['error'] = str(e)
             result['status'] = 'ERROR'
             logger.error(f"Slot {slot_name} processing error: {e}")
+        
+        return result
+    
+    def process_scanner_grid_slot(self, slot_data: Dict[str, Any], roi: np.ndarray, 
+                                   grid_metadata: List[Dict], 
+                                   linked_slots: Optional[Dict[str, Dict[str, Any]]] = None,
+                                   is_rectified: bool = False) -> Dict[str, Any]:
+        """
+        Process a scanner grid slot using yellow color detection
+        
+        Args:
+            slot_data: Slot configuration
+            roi: Region of interest image (rectified if is_rectified=True)
+            grid_metadata: List of cell definitions
+            linked_slots: Dict of linked slots keyed by slot ID
+            is_rectified: Whether the ROI has been perspective-corrected
+            
+        Returns:
+            Processing result with cell statuses
+        """
+        from scanner_color_detection import detect_yellow_in_cell
+        
+        slot_id = slot_data.get('id')
+        slot_name = slot_data.get('slotId', slot_id)
+        linked_slot_id = slot_data.get('linkedSlotId')
+        
+        result = {
+            'slotId': slot_id,
+            'slotName': slot_name,
+            'slotType': 'scanner_grid',
+            'status': 'OK',  # Overall grid status
+            'cellResults': [],
+            'alertTriggered': False,
+            'missingCount': 0,
+            'presentCount': 0,
+            'checkedOutCount': 0,
+            'error': None
+        }
+        
+        # Get linked worker tag grid results if available
+        worker_tag_results = None
+        if linked_slot_id and linked_slots and linked_slot_id in linked_slots:
+            worker_tag_results = linked_slots[linked_slot_id].get('cellResults', [])
+        
+        # For rectified ROI, px_per_cm matches the extraction resolution
+        width_cm = slot_data.get('widthCm', 32)
+        height_cm = slot_data.get('heightCm', 16)
+        roi_height, roi_width = roi.shape[:2]
+        
+        if is_rectified:
+            # Rectified ROI was created at 31.8 px/cm
+            px_per_cm = 31.8
+        else:
+            # Fall back to computed ratio (less accurate)
+            px_per_cm = roi_width / width_cm
+        
+        # Get grid dimensions
+        n_cols = 4  # Default 2x4 grid
+        n_rows = 2
+        if grid_metadata:
+            max_col = max(cell.get('col', 0) for cell in grid_metadata)
+            max_row = max(cell.get('row', 0) for cell in grid_metadata)
+            n_cols = max_col + 1
+            n_rows = max_row + 1
+        
+        for cell in grid_metadata:
+            cell_num = cell.get('row', 0) * n_cols + cell.get('col', 0) + 1
+            cell_width = cell.get('widthCm', width_cm / n_cols)
+            cell_height = cell.get('heightCm', height_cm / n_rows)
+            
+            # For rectified ROI, coordinates are relative to the ROI origin (0,0 is top-left)
+            # Cell center in cm from top-left of ROI
+            col = cell.get('col', 0)
+            row = cell.get('row', 0)
+            cell_center_x_cm = (col + 0.5) * cell_width
+            cell_center_y_cm = (row + 0.5) * cell_height
+            
+            cell_coords = {
+                'x_cm': cell_center_x_cm,
+                'y_cm': cell_center_y_cm,
+                'width_cm': cell_width,
+                'height_cm': cell_height,
+                'px_per_cm': px_per_cm
+            }
+            
+            detection = detect_yellow_in_cell(roi, cell_coords, debug=False)
+            detection['cell_number'] = cell_num
+            detection['label'] = cell.get('label', f'Cell {cell_num}')
+            
+            # Determine cell status
+            if detection['detected']:
+                detection['status'] = 'PRESENT'
+                result['presentCount'] += 1
+            else:
+                # Check if worker badge is present in linked cell
+                worker_badge = None
+                if worker_tag_results:
+                    for wr in worker_tag_results:
+                        if wr.get('cell_number') == cell_num:
+                            worker_badge = wr
+                            break
+                
+                if worker_badge and worker_badge.get('detected'):
+                    detection['status'] = 'CHECKED_OUT'
+                    detection['checked_out_by'] = worker_badge.get('worker_id')
+                    result['checkedOutCount'] += 1
+                else:
+                    detection['status'] = 'MISSING'
+                    result['missingCount'] += 1
+                    result['alertTriggered'] = True
+            
+            result['cellResults'].append(detection)
+        
+        # Set overall status
+        if result['missingCount'] > 0:
+            result['status'] = 'ALERT'
+        elif result['checkedOutCount'] > 0:
+            result['status'] = 'PARTIAL'
+        else:
+            result['status'] = 'OK'
+        
+        return result
+    
+    def process_worker_tag_grid_slot(self, slot_data: Dict[str, Any], roi: np.ndarray,
+                                      grid_metadata: List[Dict],
+                                      is_rectified: bool = False) -> Dict[str, Any]:
+        """
+        Process a worker tag grid slot using ArUco badge detection
+        
+        Args:
+            slot_data: Slot configuration
+            roi: Region of interest image (rectified if is_rectified=True)
+            grid_metadata: List of cell definitions
+            is_rectified: Whether the ROI has been perspective-corrected
+            
+        Returns:
+            Processing result with cell statuses
+        """
+        from scanner_color_detection import detect_worker_badge_in_cell
+        
+        slot_id = slot_data.get('id')
+        slot_name = slot_data.get('slotId', slot_id)
+        
+        result = {
+            'slotId': slot_id,
+            'slotName': slot_name,
+            'slotType': 'worker_tag_grid',
+            'status': 'OK',
+            'cellResults': [],
+            'badgesDetected': 0,
+            'error': None
+        }
+        
+        # For rectified ROI, px_per_cm matches the extraction resolution
+        width_cm = slot_data.get('widthCm', 32)
+        height_cm = slot_data.get('heightCm', 16)
+        roi_height, roi_width = roi.shape[:2]
+        
+        if is_rectified:
+            # Rectified ROI was created at 31.8 px/cm
+            px_per_cm = 31.8
+        else:
+            # Fall back to computed ratio (less accurate)
+            px_per_cm = roi_width / width_cm
+        
+        # Get grid dimensions
+        n_cols = 4  # Default 2x4 grid
+        n_rows = 2
+        if grid_metadata:
+            max_col = max(cell.get('col', 0) for cell in grid_metadata)
+            max_row = max(cell.get('row', 0) for cell in grid_metadata)
+            n_cols = max_col + 1
+            n_rows = max_row + 1
+        
+        for cell in grid_metadata:
+            cell_num = cell.get('row', 0) * n_cols + cell.get('col', 0) + 1
+            cell_width = cell.get('widthCm', width_cm / n_cols)
+            cell_height = cell.get('heightCm', height_cm / n_rows)
+            
+            # For rectified ROI, coordinates are relative to the ROI origin (0,0 is top-left)
+            col = cell.get('col', 0)
+            row = cell.get('row', 0)
+            cell_center_x_cm = (col + 0.5) * cell_width
+            cell_center_y_cm = (row + 0.5) * cell_height
+            
+            cell_coords = {
+                'x_cm': cell_center_x_cm,
+                'y_cm': cell_center_y_cm,
+                'width_cm': cell_width,
+                'height_cm': cell_height,
+                'px_per_cm': px_per_cm
+            }
+            
+            detection = detect_worker_badge_in_cell(roi, cell_coords, debug=False)
+            detection['cell_number'] = cell_num
+            detection['label'] = cell.get('label', f'Cell {cell_num}')
+            
+            if detection['detected']:
+                result['badgesDetected'] += 1
+            
+            result['cellResults'].append(detection)
         
         return result
 
@@ -317,13 +592,36 @@ class CameraProcessor:
             
             logger.info(f"Camera {camera_id}: Frame captured ({frame.shape})")
             
-            # Process each slot
-            for slot in slots:
+            # Separate slots by type for processing order
+            # Process worker tag grids first, then scanner grids (need badge results), then tools
+            worker_tag_slots = [s for s in slots if s.get('slotType') == 'worker_tag_grid']
+            scanner_grid_slots = [s for s in slots if s.get('slotType') == 'scanner_grid']
+            tool_slots = [s for s in slots if s.get('slotType', 'tool') == 'tool']
+            
+            # Track processed results for linked slot lookups
+            processed_slots: Dict[str, Dict[str, Any]] = {}
+            
+            # 1. Process worker tag grids first (no dependencies)
+            for slot in worker_tag_slots:
+                slot_result = self.slot_processor.process_slot(frame, slot)
+                result['slotResults'].append(slot_result)
+                result['slotsProcessed'] += 1
+                processed_slots[slot.get('id')] = slot_result
+            
+            # 2. Process scanner grids (may depend on worker tag results)
+            for slot in scanner_grid_slots:
+                slot_result = self.slot_processor.process_slot(frame, slot, linked_slots=processed_slots)
+                result['slotResults'].append(slot_result)
+                result['slotsProcessed'] += 1
+                processed_slots[slot.get('id')] = slot_result
+            
+            # 3. Process regular tool slots
+            for slot in tool_slots:
                 slot_result = self.slot_processor.process_slot(frame, slot)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
             
-            logger.info(f"Camera {camera_id}: Processed {result['slotsProcessed']} slots")
+            logger.info(f"Camera {camera_id}: Processed {result['slotsProcessed']} slots (workers: {len(worker_tag_slots)}, scanners: {len(scanner_grid_slots)}, tools: {len(tool_slots)})")
             
         except Exception as e:
             result['status'] = 'failed'
