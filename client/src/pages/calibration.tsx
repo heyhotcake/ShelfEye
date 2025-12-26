@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Camera, CheckCircle, Ruler, X, Download } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
-import { RectifiedPreviewCanvas } from "@/components/canvas/rectified-preview-canvas";
+import { RectifiedPreviewCanvas, ScannerCellRect } from "@/components/canvas/rectified-preview-canvas";
+import type { ScannerGrid, ScannerCell } from "@shared/schema";
 
 const TIMEZONE = "Asia/Tokyo";
 
@@ -62,6 +63,8 @@ export default function Calibration() {
   const [isCameraLocked, setIsCameraLocked] = useState<boolean>(false);
   const [adjustedTemplates, setAdjustedTemplates] = useState<any[]>([]);
   const [hasTemplateAdjustments, setHasTemplateAdjustments] = useState<boolean>(false);
+  const [adjustedScannerCells, setAdjustedScannerCells] = useState<ScannerCellRect[]>([]);
+  const [hasScannerCellAdjustments, setHasScannerCellAdjustments] = useState<boolean>(false);
   const previousCameraIdRef = useRef<string | undefined>(undefined);
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
@@ -129,6 +132,89 @@ export default function Calibration() {
       console.log('[CalibrationOverlay] DB templates loaded:', data.length, 'templates (camera-specific or shared)');
       console.log('[CalibrationOverlay] First template cameraId:', data[0]?.cameraId);
       return data;
+    },
+  });
+
+  // Fetch scanner grids (unassigned or for current camera) with their cells
+  const { data: scannerGrids = [] } = useQuery<ScannerGrid[]>({
+    queryKey: ['/api/scanner-grids'],
+  });
+
+  // Filter grids for this camera or unassigned
+  const relevantScannerGrids = scannerGrids.filter(
+    grid => !grid.cameraId || grid.cameraId === selectedCameraId
+  );
+
+  // Fetch cells for relevant grids
+  const { data: allScannerCells = [] } = useQuery<ScannerCell[]>({
+    queryKey: ['/api/scanner-grids/cells', relevantScannerGrids.map(g => g.id).join(',')],
+    enabled: relevantScannerGrids.length > 0,
+    queryFn: async () => {
+      const cellPromises = relevantScannerGrids.map(grid => 
+        fetch(`/api/scanner-grids/${grid.id}/cells`).then(r => r.json())
+      );
+      const cellArrays = await Promise.all(cellPromises);
+      return cellArrays.flat();
+    },
+  });
+
+  // Convert scanner cells to canvas format
+  const scannerCellsForCanvas: ScannerCellRect[] = allScannerCells.map(cell => {
+    const grid = relevantScannerGrids.find(g => g.id === cell.gridId);
+    return {
+      id: cell.id,
+      gridId: cell.gridId,
+      cellNumber: cell.cellNumber,
+      xCm: cell.xCm,
+      yCm: cell.yCm,
+      widthCm: cell.widthCm,
+      heightCm: cell.heightCm,
+      label: cell.label || `Cell ${cell.cellNumber}`,
+      gridType: (grid?.gridType as 'scanner' | 'worker_tag') || 'scanner',
+    };
+  });
+
+  // Mutation to save scanner cell positions and assign grid to camera
+  const saveScannerCellsMutation = useMutation({
+    mutationFn: async (cells: ScannerCellRect[]) => {
+      // Group cells by grid and update each
+      const gridIds = Array.from(new Set(cells.map(c => c.gridId)));
+      
+      for (const gridId of gridIds) {
+        // Assign grid to this camera if not already assigned
+        const grid = relevantScannerGrids.find(g => g.id === gridId);
+        if (grid && !grid.cameraId && selectedCameraId) {
+          await apiRequest('PATCH', `/api/scanner-grids/${gridId}`, { cameraId: selectedCameraId });
+        }
+        
+        // Update cell positions
+        const gridCells = cells.filter(c => c.gridId === gridId);
+        for (const cell of gridCells) {
+          await apiRequest('PATCH', `/api/scanner-grids/${gridId}/cells/${cell.id}`, {
+            xCm: cell.xCm,
+            yCm: cell.yCm,
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Scanner Cells Saved",
+        description: "Cell positions have been saved and grids linked to this camera.",
+      });
+      // Invalidate both grids and cells queries to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/scanner-grids'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scanner-grids/cells'] });
+      // Reset adjusted state so canvas syncs with fresh data
+      setAdjustedScannerCells([]);
+      setHasScannerCellAdjustments(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Save",
+        description: error.message || "Failed to save scanner cell positions.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -715,6 +801,19 @@ export default function Calibration() {
                           </Button>
                         )}
                         
+                        {/* Save Scanner Cells button - appears when scanner cell adjustments are made */}
+                        {hasScannerCellAdjustments && adjustedScannerCells.length > 0 && (
+                          <Button 
+                            variant="outline"
+                            className="w-full border-yellow-500/50 hover:bg-yellow-500/10"
+                            onClick={() => saveScannerCellsMutation.mutate(adjustedScannerCells)}
+                            disabled={saveScannerCellsMutation.isPending}
+                            data-testid="button-save-scanner-cells"
+                          >
+                            {saveScannerCellsMutation.isPending ? 'Saving...' : 'Save Scanner Grid Positions'}
+                          </Button>
+                        )}
+                        
                         <Button 
                           className="w-full"
                           onClick={async () => {
@@ -942,6 +1041,11 @@ export default function Calibration() {
                         onTemplatesAdjusted={(templates) => {
                           setAdjustedTemplates(templates);
                           setHasTemplateAdjustments(true);
+                        }}
+                        scannerCells={adjustedScannerCells.length > 0 ? adjustedScannerCells : scannerCellsForCanvas}
+                        onScannerCellsAdjusted={(cells) => {
+                          setAdjustedScannerCells(cells);
+                          setHasScannerCellAdjustments(true);
                         }}
                       />
                     ) : (
