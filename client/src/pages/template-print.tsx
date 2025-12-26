@@ -624,11 +624,34 @@ export default function TemplatePrint() {
           const sheetTopMm = sheetOffsetY;
           const sheetBottomMm = sheetOffsetY + a4HeightMm;
           
-          // Check if the slot CENTER is within this sheet (prevents duplicates on adjacent sheets)
-          const centerInSheet = xMm >= sheetLeftMm && xMm < sheetRightMm &&
-                                yMm >= sheetTopMm && yMm < sheetBottomMm;
+          const isScannerGrid = rect.category.categoryType === 'scanner_grid';
+          const isWorkerTagGrid = rect.category.categoryType === 'worker_tag_grid';
           
-          if (!centerInSheet) return; // Skip if center not in this sheet
+          // For scanner grids: check if ANY corner falls on this sheet (they can span pages)
+          // For other slots: check if center is on this sheet
+          const halfW = widthMm / 2;
+          const halfH = heightMm / 2;
+          
+          const cornerPositions = [
+            { x: xMm - halfW, y: yMm - halfH, name: 'topLeft' },
+            { x: xMm + halfW, y: yMm - halfH, name: 'topRight' },
+            { x: xMm + halfW, y: yMm + halfH, name: 'bottomRight' },
+            { x: xMm - halfW, y: yMm + halfH, name: 'bottomLeft' },
+          ];
+          
+          const isPointInSheet = (px: number, py: number) => 
+            px >= sheetLeftMm && px < sheetRightMm && py >= sheetTopMm && py < sheetBottomMm;
+          
+          const cornersInSheet = cornerPositions.filter(c => isPointInSheet(c.x, c.y));
+          const centerInSheet = isPointInSheet(xMm, yMm);
+          
+          // Scanner grids: render if ANY corner is on this sheet
+          // Other slots: render only if center is on this sheet
+          if (isScannerGrid) {
+            if (cornersInSheet.length === 0) return; // No corners on this sheet
+          } else {
+            if (!centerInSheet) return; // Skip if center not in this sheet
+          }
 
           // CLAMP rectangle center to stay within sheet's safe zone
           // Safe zone is 10mm from all edges of the sheet
@@ -661,9 +684,6 @@ export default function TemplatePrint() {
           pdf.saveGraphicsState();
           pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.5);
-
-          const isScannerGrid = rect.category.categoryType === 'scanner_grid';
-          const isWorkerTagGrid = rect.category.categoryType === 'worker_tag_grid';
           
           if (isWorkerTagGrid) {
             // Worker tag grid: header + solid cell borders + alignment lines
@@ -734,29 +754,33 @@ export default function TemplatePrint() {
             pdf.setDrawColor(0, 0, 0); // Reset to black
           } else if (isScannerGrid) {
             // Scanner grid: corner markers only + centered label
+            // Only draw corners that fall on this sheet
             const cornerLengthMm = 15; // 1.5cm corner length
-            const halfW = widthMm / 2;
-            const halfH = heightMm / 2;
             pdf.setLineWidth(1);
             
-            // Top-left corner
-            pdf.line(localX - halfW, localY - halfH, localX - halfW + cornerLengthMm, localY - halfH);
-            pdf.line(localX - halfW, localY - halfH, localX - halfW, localY - halfH + cornerLengthMm);
+            // For each corner, check if it's on this sheet and draw it
+            cornersInSheet.forEach(corner => {
+              // Convert global corner position to local sheet coordinates
+              const cornerLocalX = corner.x - sheetOffsetX;
+              const cornerLocalY = corner.y - sheetOffsetY;
+              
+              if (corner.name === 'topLeft') {
+                pdf.line(cornerLocalX, cornerLocalY, cornerLocalX + cornerLengthMm, cornerLocalY);
+                pdf.line(cornerLocalX, cornerLocalY, cornerLocalX, cornerLocalY + cornerLengthMm);
+              } else if (corner.name === 'topRight') {
+                pdf.line(cornerLocalX - cornerLengthMm, cornerLocalY, cornerLocalX, cornerLocalY);
+                pdf.line(cornerLocalX, cornerLocalY, cornerLocalX, cornerLocalY + cornerLengthMm);
+              } else if (corner.name === 'bottomRight') {
+                pdf.line(cornerLocalX - cornerLengthMm, cornerLocalY, cornerLocalX, cornerLocalY);
+                pdf.line(cornerLocalX, cornerLocalY - cornerLengthMm, cornerLocalX, cornerLocalY);
+              } else if (corner.name === 'bottomLeft') {
+                pdf.line(cornerLocalX, cornerLocalY, cornerLocalX + cornerLengthMm, cornerLocalY);
+                pdf.line(cornerLocalX, cornerLocalY - cornerLengthMm, cornerLocalX, cornerLocalY);
+              }
+            });
             
-            // Top-right corner
-            pdf.line(localX + halfW - cornerLengthMm, localY - halfH, localX + halfW, localY - halfH);
-            pdf.line(localX + halfW, localY - halfH, localX + halfW, localY - halfH + cornerLengthMm);
-            
-            // Bottom-right corner
-            pdf.line(localX + halfW - cornerLengthMm, localY + halfH, localX + halfW, localY + halfH);
-            pdf.line(localX + halfW, localY + halfH - cornerLengthMm, localX + halfW, localY + halfH);
-            
-            // Bottom-left corner
-            pdf.line(localX - halfW, localY + halfH, localX - halfW + cornerLengthMm, localY + halfH);
-            pdf.line(localX - halfW, localY + halfH - cornerLengthMm, localX - halfW, localY + halfH);
-            
-            // Draw label in center
-            if (rect.category.label) {
+            // Draw label in center only if center is on this sheet
+            if (centerInSheet && rect.category.label) {
               const paddingMm = 3;
               const maxFontPt = 28;
               const minFontPt = 10;
