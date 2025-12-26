@@ -359,6 +359,14 @@ export default function TemplatePrint() {
               ctx.moveTo(cellCenterX - guideWidthPx / 2, cellY + cellHeightPx - borderPx);
               ctx.lineTo(cellCenterX + guideWidthPx / 2, cellY + cellHeightPx - borderPx);
               ctx.stroke();
+              
+              // Draw slot number (1-indexed, top-left to bottom-right)
+              const slotNumber = row * gridCols + col + 1;
+              ctx.fillStyle = '#000000';
+              ctx.font = `bold ${headerFontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(slotNumber.toString(), cellCenterX, cellY + cellHeightPx / 2);
             }
           }
         } else if (isScannerGrid) {
@@ -749,6 +757,13 @@ export default function TemplatePrint() {
                 // Bottom guide line (1cm from bottom of cell)
                 pdf.line(cellCenterX - guideWidthMm / 2, cellY + cellHeightMm - borderMm, 
                          cellCenterX + guideWidthMm / 2, cellY + cellHeightMm - borderMm);
+                
+                // Draw slot number (1-indexed, top-left to bottom-right)
+                const slotNumber = row * gridCols + col + 1;
+                pdf.setFont('NotoSansJP', 'bold');
+                pdf.setFontSize(headerFontPt);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text(slotNumber.toString(), cellCenterX, cellY + cellHeightMm / 2, { align: 'center', baseline: 'middle' });
               }
             }
             pdf.setDrawColor(0, 0, 0); // Reset to black
@@ -1083,6 +1098,13 @@ export default function TemplatePrint() {
               // Bottom guide line (1cm from bottom of cell)
               pdf.line(cellCenterX - guideWidthMm / 2, cellY + cellHeightMm - borderMm, 
                        cellCenterX + guideWidthMm / 2, cellY + cellHeightMm - borderMm);
+              
+              // Draw slot number (1-indexed, top-left to bottom-right)
+              const slotNumber = row * gridCols + col + 1;
+              pdf.setFont('NotoSansJP', 'bold');
+              pdf.setFontSize(headerFontPt);
+              pdf.setTextColor(0, 0, 0);
+              pdf.text(slotNumber.toString(), cellCenterX, cellY + cellHeightMm / 2, { align: 'center', baseline: 'middle' });
             }
           }
           pdf.setDrawColor(0, 0, 0); // Reset to black
