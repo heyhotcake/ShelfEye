@@ -2571,7 +2571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Worker tag grid: 4cm × 6.75cm usable area + 1cm border on each side = 6cm × 8.75cm per cell
       const workerTagCellWidth = 5; // 4cm usable + 0.5cm borders each side
       const workerTagCellHeight = 7.75; // 6.75cm usable + 0.5cm borders each side
-      const workerTagHeaderHeight = 2; // 1cm text + 0.5cm margins each side
+      const workerTagHeaderHeight = 2; // 2cm header, no margins
       const workerTagTotalWidth = workerTagCellWidth * cols;
       const workerTagTotalHeight = workerTagCellHeight * rows + workerTagHeaderHeight;
 

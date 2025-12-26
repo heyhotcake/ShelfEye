@@ -294,7 +294,7 @@ export default function TemplatePrint() {
           const gridCols = rect.category.gridCols || 4;
           const cellWidthCm = 5; // 4cm usable + 0.5cm borders each side
           const cellHeightCm = 7.75; // 6.75cm usable + 0.5cm borders each side
-          const headerHeightCm = 2; // 1cm text + 0.5cm margins each side
+          const headerHeightCm = 2; // 2cm header, no margins
           
           const cellWidthPx = cmToPixels(cellWidthCm, true);
           const cellHeightPx = cmToPixels(cellHeightCm, false);
@@ -692,7 +692,7 @@ export default function TemplatePrint() {
             const gridCols = rect.category.gridCols || 4;
             const cellWidthMm = 50; // 4cm usable + 0.5cm borders each side
             const cellHeightMm = 77.5; // 6.75cm usable + 0.5cm borders each side
-            const headerHeightMm = 20; // 1cm text + 0.5cm margins each side
+            const headerHeightMm = 20; // 2cm header, no margins
             
             const gridWidthMm = cellWidthMm * gridCols;
             const gridHeightMm = cellHeightMm * gridRows;
@@ -707,14 +707,14 @@ export default function TemplatePrint() {
             // Draw header text: "[label] タグ枠"
             const baseLabel = rect.category.label?.replace(' (作業者タグ)', '').replace(' (Worker Tags)', '') || '';
             const headerText = `${baseLabel} タグ枠`;
-            let headerFontPt = 14;
+            let headerFontPt = 40; // ~2cm height (20mm * 2pt/mm = 40pt)
             pdf.setFont('NotoSansJP', 'bold');
             pdf.setTextColor(0, 0, 0);
             pdf.setFontSize(headerFontPt);
             
             let textWidth = pdf.getTextWidth(headerText);
-            while (textWidth > gridWidthMm - 10 && headerFontPt > 8) {
-              headerFontPt -= 1;
+            while (textWidth > gridWidthMm - 10 && headerFontPt > 12) {
+              headerFontPt -= 2;
               pdf.setFontSize(headerFontPt);
               textWidth = pdf.getTextWidth(headerText);
             }
@@ -1026,7 +1026,7 @@ export default function TemplatePrint() {
           const gridCols = rect.category.gridCols || 4;
           const cellWidthMm = 50; // 4cm usable + 0.5cm borders each side
           const cellHeightMm = 77.5; // 6.75cm usable + 0.5cm borders each side
-          const headerHeightMm = 20; // 1cm text + 0.5cm margins each side
+          const headerHeightMm = 20; // 2cm header, no margins
           
           const gridWidthMm = cellWidthMm * gridCols;
           const gridHeightMm = cellHeightMm * gridRows;
@@ -1041,14 +1041,14 @@ export default function TemplatePrint() {
           // Draw header text: "[label] タグ枠"
           const baseLabel = rect.category.label?.replace(' (作業者タグ)', '').replace(' (Worker Tags)', '') || '';
           const headerText = `${baseLabel} タグ枠`;
-          let headerFontPt = 10;
+          let headerFontPt = 40; // ~2cm height (20mm * 2pt/mm = 40pt)
           pdf.setFont('NotoSansJP', 'bold');
           pdf.setTextColor(0, 0, 0);
           pdf.setFontSize(headerFontPt);
           
           let textWidth = pdf.getTextWidth(headerText);
-          while (textWidth > gridWidthMm - 6 && headerFontPt > 6) {
-            headerFontPt -= 0.5;
+          while (textWidth > gridWidthMm - 10 && headerFontPt > 12) {
+            headerFontPt -= 2;
             pdf.setFontSize(headerFontPt);
             textWidth = pdf.getTextWidth(headerText);
           }
