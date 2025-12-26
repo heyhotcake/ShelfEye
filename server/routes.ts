@@ -2569,9 +2569,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Worker tag grid: 4cm × 6.75cm usable area + 1cm border on each side = 6cm × 8.75cm per cell
-      const workerTagCellWidth = 6; // 4cm usable + 2cm borders
-      const workerTagCellHeight = 8.75; // 6.75cm usable + 2cm borders
-      const workerTagHeaderHeight = 3; // 2cm font + 5mm margins top/bottom
+      const workerTagCellWidth = 5; // 4cm usable + 0.5cm borders each side
+      const workerTagCellHeight = 7.75; // 6.75cm usable + 0.5cm borders each side
+      const workerTagHeaderHeight = 2; // 1cm text + 0.5cm margins each side
       const workerTagTotalWidth = workerTagCellWidth * cols;
       const workerTagTotalHeight = workerTagCellHeight * rows + workerTagHeaderHeight;
 

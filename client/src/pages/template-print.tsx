@@ -292,9 +292,9 @@ export default function TemplatePrint() {
           // Cell = 4cm × 6.75cm usable area + 1cm border on each side = 6cm × 8.75cm
           const gridRows = rect.category.gridRows || 2;
           const gridCols = rect.category.gridCols || 4;
-          const cellWidthCm = 6; // 4cm usable + 2cm borders
-          const cellHeightCm = 8.75; // 6.75cm usable + 2cm borders
-          const headerHeightCm = 3; // 2cm font + 5mm margins top/bottom
+          const cellWidthCm = 5; // 4cm usable + 0.5cm borders each side
+          const cellHeightCm = 7.75; // 6.75cm usable + 0.5cm borders each side
+          const headerHeightCm = 2; // 1cm text + 0.5cm margins each side
           
           const cellWidthPx = cmToPixels(cellWidthCm, true);
           const cellHeightPx = cmToPixels(cellHeightCm, false);
@@ -340,9 +340,9 @@ export default function TemplatePrint() {
               ctx.lineWidth = 2;
               ctx.strokeRect(cellX, cellY, cellWidthPx, cellHeightPx);
               
-              // Draw alignment guides inside each cell (4cm wide, 1cm from top and bottom edges)
+              // Draw alignment guides inside each cell (4cm wide, 0.5cm from top and bottom edges)
               const cellCenterX = cellX + cellWidthPx / 2;
-              const borderPx = cmToPixels(1, false); // 1cm border
+              const borderPx = cmToPixels(0.5, false); // 0.5cm border
               const guideWidthPx = cmToPixels(4, true);
               
               ctx.strokeStyle = '#CCCCCC';
@@ -670,9 +670,9 @@ export default function TemplatePrint() {
             // Cell = 4cm × 6.75cm usable area + 1cm border on each side = 6cm × 8.75cm
             const gridRows = rect.category.gridRows || 2;
             const gridCols = rect.category.gridCols || 4;
-            const cellWidthMm = 60; // 4cm usable + 2cm borders
-            const cellHeightMm = 87.5; // 6.75cm usable + 2cm borders
-            const headerHeightMm = 30; // 2cm font + 5mm margins top/bottom
+            const cellWidthMm = 50; // 4cm usable + 0.5cm borders each side
+            const cellHeightMm = 77.5; // 6.75cm usable + 0.5cm borders each side
+            const headerHeightMm = 20; // 1cm text + 0.5cm margins each side
             
             const gridWidthMm = cellWidthMm * gridCols;
             const gridHeightMm = cellHeightMm * gridRows;
@@ -714,9 +714,9 @@ export default function TemplatePrint() {
                 pdf.setLineWidth(0.5);
                 pdf.rect(cellX, cellY, cellWidthMm, cellHeightMm);
                 
-                // Draw alignment guides inside each cell (4cm wide, 1cm from top and bottom edges)
+                // Draw alignment guides inside each cell (4cm wide, 0.5cm from top and bottom edges)
                 const cellCenterX = cellX + cellWidthMm / 2;
-                const borderMm = 10; // 1cm border
+                const borderMm = 5; // 0.5cm border
                 const guideWidthMm = 40; // 4cm
                 
                 pdf.setDrawColor(204, 204, 204); // Light grey
@@ -1000,9 +1000,9 @@ export default function TemplatePrint() {
           // Cell = 4cm × 6.75cm usable area + 1cm border on each side = 6cm × 8.75cm
           const gridRows = rect.category.gridRows || 2;
           const gridCols = rect.category.gridCols || 4;
-          const cellWidthMm = 60; // 4cm usable + 2cm borders
-          const cellHeightMm = 87.5; // 6.75cm usable + 2cm borders
-          const headerHeightMm = 30; // 2cm font + 5mm margins top/bottom
+          const cellWidthMm = 50; // 4cm usable + 0.5cm borders each side
+          const cellHeightMm = 77.5; // 6.75cm usable + 0.5cm borders each side
+          const headerHeightMm = 20; // 1cm text + 0.5cm margins each side
           
           const gridWidthMm = cellWidthMm * gridCols;
           const gridHeightMm = cellHeightMm * gridRows;
@@ -1044,9 +1044,9 @@ export default function TemplatePrint() {
               pdf.setLineWidth(0.5);
               pdf.rect(cellX, cellY, cellWidthMm, cellHeightMm);
               
-              // Draw alignment guides inside each cell (4cm wide, 1cm from top and bottom edges)
+              // Draw alignment guides inside each cell (4cm wide, 0.5cm from top and bottom edges)
               const cellCenterX = cellX + cellWidthMm / 2;
-              const borderMm = 10; // 1cm border
+              const borderMm = 5; // 0.5cm border
               const guideWidthMm = 40; // 4cm
               
               pdf.setDrawColor(204, 204, 204); // Light grey
