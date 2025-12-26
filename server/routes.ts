@@ -679,6 +679,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               const { transformTemplateToPixels } = await import('./utils/coordinate-transform.js');
 
+              // Track scanner and worker tag grids for linking
+              const scannerGridSlots: Map<string, any> = new Map(); // templateId -> slot
+              const workerTagGridSlots: Map<string, any> = new Map(); // templateId -> slot
+
               for (const template of templateRectangles) {
                 try {
                   const category = await storage.getToolCategory(template.categoryId);
@@ -700,6 +704,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const cameraShortId = camera.name.replace(/\s+/g, '').toLowerCase().slice(0, 4);
                   const cameraSpecificSlotId = `${cameraShortId}_${template.autoQrId || template.id.slice(0, 4)}`;
                   
+                  // Determine slot type and generate grid metadata for scanner/worker grids
+                  const slotType = (category as any).categoryType || 'tool';
+                  let gridMetadata = null;
+                  
+                  if (slotType === 'scanner_grid' || slotType === 'worker_tag_grid') {
+                    const rows = (category as any).gridRows || 2;
+                    const cols = (category as any).gridCols || 4;
+                    const cellWidth = category.widthCm / cols;
+                    const cellHeight = category.heightCm / rows;
+                    
+                    // Generate cell metadata for each cell in the grid
+                    gridMetadata = [];
+                    for (let r = 0; r < rows; r++) {
+                      for (let c = 0; c < cols; c++) {
+                        const xOffset = (c - (cols - 1) / 2) * cellWidth;
+                        const yOffset = (r - (rows - 1) / 2) * cellHeight;
+                        gridMetadata.push({
+                          row: r,
+                          col: c,
+                          xOffsetCm: xOffset,
+                          yOffsetCm: yOffset,
+                          widthCm: cellWidth,
+                          heightCm: cellHeight,
+                          label: `Cell ${r * cols + c + 1}`,
+                        });
+                      }
+                    }
+                    console.log(`[Calibration] Created ${rows}x${cols} grid metadata for ${slotType}`);
+                  }
+                  
                   const slot = await storage.createSlot({
                     slotId: cameraSpecificSlotId,
                     cameraId: cameraId,
@@ -714,7 +748,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     rotationDeg: template.rotation,
                     allowCheckout: true,
                     graceWindow: '08:00-17:00',
+                    slotType: slotType,
+                    gridMetadata: gridMetadata,
                   });
+                  
+                  // Track grid slots for later linking
+                  if (slotType === 'scanner_grid') {
+                    scannerGridSlots.set(template.id, slot);
+                  } else if (slotType === 'worker_tag_grid') {
+                    workerTagGridSlots.set(template.id, slot);
+                  }
 
                   // Update template rectangle with slot ID, QR code, and camera ID
                   // This makes the coordinates camera-specific from first calibration
@@ -727,6 +770,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   createdSlots.push(slot);
                 } catch (slotError) {
                   console.warn(`Failed to create slot for template ${template.id}:`, slotError);
+                }
+              }
+
+              // Link scanner grid slots to worker tag grid slots (by matching positions)
+              // This allows the detection pipeline to correlate scanner presence with worker badges
+              if (scannerGridSlots.size > 0 && workerTagGridSlots.size > 0) {
+                // Simple pairing: if there's one of each, link them
+                // For multiple grids, could extend to match by position proximity
+                const scannerSlots = Array.from(scannerGridSlots.values());
+                const workerSlots = Array.from(workerTagGridSlots.values());
+                
+                for (let i = 0; i < Math.min(scannerSlots.length, workerSlots.length); i++) {
+                  try {
+                    await storage.updateSlot(scannerSlots[i].id, { linkedSlotId: workerSlots[i].id });
+                    await storage.updateSlot(workerSlots[i].id, { linkedSlotId: scannerSlots[i].id });
+                    console.log(`[Calibration] Linked scanner grid ${scannerSlots[i].id} <-> worker tag grid ${workerSlots[i].id}`);
+                  } catch (linkError) {
+                    console.warn(`[Calibration] Failed to link grids:`, linkError);
+                  }
                 }
               }
 
