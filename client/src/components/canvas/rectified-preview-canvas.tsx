@@ -16,6 +16,9 @@ interface TemplateRect {
   heightCm: number;
   rotation: number;
   autoQrId?: string;
+  categoryType?: 'tool' | 'scanner_grid' | 'worker_tag_grid';
+  gridRows?: number;
+  gridCols?: number;
 }
 
 interface RectifiedPreviewCanvasProps {
@@ -105,14 +108,86 @@ export function RectifiedPreviewCanvas({
 
       const isHovered = hoveredTemplate === template.id;
       const isDragged = draggedTemplate === template.id;
+      const isGridType = template.categoryType === 'scanner_grid' || template.categoryType === 'worker_tag_grid';
       
-      ctx.strokeStyle = isDragged ? 'rgb(147, 51, 234)' : isHovered ? 'rgb(236, 72, 153)' : 'rgb(217, 70, 239)';
+      // Choose colors based on category type
+      let strokeColor = isDragged ? 'rgb(147, 51, 234)' : isHovered ? 'rgb(236, 72, 153)' : 'rgb(217, 70, 239)';
+      let fillColor = 'rgba(217, 70, 239, 0.1)';
+      
+      if (isGridType) {
+        if (template.categoryType === 'scanner_grid') {
+          strokeColor = isDragged ? 'rgb(234, 179, 8)' : isHovered ? 'rgb(250, 204, 21)' : 'rgb(234, 179, 8)';
+          fillColor = 'rgba(234, 179, 8, 0.15)';
+        } else if (template.categoryType === 'worker_tag_grid') {
+          strokeColor = isDragged ? 'rgb(59, 130, 246)' : isHovered ? 'rgb(96, 165, 250)' : 'rgb(59, 130, 246)';
+          fillColor = 'rgba(59, 130, 246, 0.15)';
+        }
+      }
+      
+      ctx.strokeStyle = strokeColor;
       ctx.lineWidth = isDragged ? 2 : isHovered ? 1.5 : 1;
       ctx.strokeRect(-width / 2, -height / 2, width, height);
 
       if (isHovered || isDragged) {
-        ctx.fillStyle = 'rgba(217, 70, 239, 0.1)';
+        ctx.fillStyle = fillColor;
         ctx.fillRect(-width / 2, -height / 2, width, height);
+      }
+      
+      // Draw grid cells for scanner/worker grids
+      if (isGridType) {
+        const rows = template.gridRows || 2;
+        const cols = template.gridCols || 4;
+        const cellWidth = width / cols;
+        const cellHeight = height / rows;
+        
+        ctx.fillStyle = fillColor;
+        ctx.fillRect(-width / 2, -height / 2, width, height);
+        
+        // Draw grid lines
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 0.5;
+        ctx.setLineDash([2, 2]);
+        
+        // Vertical lines
+        for (let c = 1; c < cols; c++) {
+          const x = -width / 2 + c * cellWidth;
+          ctx.beginPath();
+          ctx.moveTo(x, -height / 2);
+          ctx.lineTo(x, height / 2);
+          ctx.stroke();
+        }
+        
+        // Horizontal lines
+        for (let r = 1; r < rows; r++) {
+          const y = -height / 2 + r * cellHeight;
+          ctx.beginPath();
+          ctx.moveTo(-width / 2, y);
+          ctx.lineTo(width / 2, y);
+          ctx.stroke();
+        }
+        
+        ctx.setLineDash([]);
+        
+        // Draw cell numbers
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const cellNum = r * cols + c + 1;
+            const cellCenterX = -width / 2 + (c + 0.5) * cellWidth;
+            const cellCenterY = -height / 2 + (r + 0.5) * cellHeight;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.arc(cellCenterX, cellCenterY, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'white';
+            ctx.fillText(cellNum.toString(), cellCenterX, cellCenterY);
+          }
+        }
       }
 
       ctx.fillStyle = 'white';
@@ -125,11 +200,14 @@ export function RectifiedPreviewCanvas({
       const labelWidth = metrics.width + 8;
       const labelHeight = 20;
       
+      // Position label at top of rectangle for grids
+      const labelY = isGridType ? -height / 2 - 12 : 0;
+      
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(-labelWidth / 2, -labelHeight / 2, labelWidth, labelHeight);
+      ctx.fillRect(-labelWidth / 2, labelY - labelHeight / 2, labelWidth, labelHeight);
       
       ctx.fillStyle = 'white';
-      ctx.fillText(labelText, 0, 0);
+      ctx.fillText(labelText, 0, labelY);
 
       ctx.restore();
     });

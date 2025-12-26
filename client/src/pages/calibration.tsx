@@ -902,6 +902,9 @@ export default function Calibration() {
                   heightCm: category?.heightCm || 0,
                   rotation: rect.rotation || 0,
                   autoQrId: rect.autoQrId,
+                  categoryType: category?.categoryType || 'tool',
+                  gridRows: category?.gridRows,
+                  gridCols: category?.gridCols,
                 };
               });
               
