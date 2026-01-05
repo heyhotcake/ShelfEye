@@ -292,6 +292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cameras", async (req, res) => {
     try {
       const cameraData = insertCameraSchema.parse(req.body);
+      // Always strip deviceIndex - it will be auto-assigned by storage
+      delete (cameraData as any).deviceIndex;
       const camera = await storage.createCamera(cameraData);
       res.json(camera);
     } catch (error) {
