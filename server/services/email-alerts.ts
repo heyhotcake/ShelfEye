@@ -63,6 +63,9 @@ export async function sendAlertEmail(alertData: AlertEmailData): Promise<boolean
 
     // Get Gmail client (uses OAuth2 with auto token refresh)
     const gmail = await getGmailClient();
+    
+    // RFC 2047 encode subject for proper UTF-8/emoji support in email headers
+    const encodedSubject = `=?UTF-8?B?${Buffer.from(subject, 'utf-8').toString('base64')}?=`;
 
     // Send to each recipient
     for (const recipient of recipients) {
@@ -70,7 +73,7 @@ export async function sendAlertEmail(alertData: AlertEmailData): Promise<boolean
         `To: ${recipient}`,
         'Content-Type: text/html; charset=utf-8',
         'MIME-Version: 1.0',
-        `Subject: ${subject}`,
+        `Subject: ${encodedSubject}`,
         '',
         htmlBody
       ].join('\n');
