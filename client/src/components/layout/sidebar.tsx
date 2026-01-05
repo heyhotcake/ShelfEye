@@ -91,12 +91,11 @@ export function Sidebar() {
             data-testid="img-app-logo"
           />
           <div>
-            <h1 className="text-lg font-bold text-foreground" data-testid="text-app-title">Tool Tracker</h1>
+            <h1 className="text-lg font-bold text-foreground" data-testid="text-app-title">TanaCheck</h1>
             <p className="text-xs text-muted-foreground">v2.1.0</p>
           </div>
         </div>
       </div>
-
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {navigation.map((item) => {
