@@ -1,0 +1,27 @@
+ sudo systemctl status shelfeye
+● shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; enabled; preset: enabled)
+     Active: active (running) since Mon 2026-01-05 10:52:49 JST; 5min ago
+ Invocation: f71fcd5e27d94bbbb808202b84229e5b
+   Main PID: 186361 (pi-startup.sh)
+      Tasks: 45 (limit: 1579)
+        CPU: 1min 10.276s
+     CGroup: /system.slice/shelfeye.service
+             ├─186361 /bin/bash /home/naniwa/ShelfEye/pi-startup.sh
+             ├─186674 "npm run dev"
+             ├─186675 tee -a /home/naniwa/ShelfEye/logs/startup.log
+             ├─186687 sh -c "NODE_ENV=development tsx server/index.ts"
+             ├─186688 node /home/naniwa/ShelfEye/node_modules/.bin/tsx server/index.ts
+             ├─186699 /usr/bin/node --require /home/naniwa/ShelfEye/node_modules/tsx/dist/preflight.cjs --import file:///home/naniwa/ShelfEye/node_modules/>
+             └─186711 /home/naniwa/ShelfEye/node_modules/@esbuild/linux-arm64/bin/esbuild --service=0.25.9 --ping
+
+Jan 05 10:54:11 NaniwaTanaCheck sudo[186747]: pam_unix(sudo:session): session closed for user root
+Jan 05 10:54:11 NaniwaTanaCheck pi-startup.sh[186675]: [SubprocessManager] Process PID 186747 exited after 205ms (code: 1, signal: null)
+Jan 05 10:54:11 NaniwaTanaCheck pi-startup.sh[186675]: [LED] startRedFlash failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broke>
+Jan 05 10:54:11 NaniwaTanaCheck pi-startup.sh[186675]: [LED] Failed to start flash: undefined
+Jan 05 10:54:11 NaniwaTanaCheck pi-startup.sh[186675]: 10:54:11 AM [express] serving on port 5000
+Jan 05 10:54:13 NaniwaTanaCheck pi-startup.sh[186675]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 05 10:55:13 NaniwaTanaCheck pi-startup.sh[186675]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 05 10:56:13 NaniwaTanaCheck pi-startup.sh[186675]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 05 10:57:13 NaniwaTanaCheck pi-startup.sh[186675]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 05 10:58:13 NaniwaTanaCheck pi-startup.sh[186675]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
