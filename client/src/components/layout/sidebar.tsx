@@ -11,11 +11,11 @@ import {
   Bell, 
   TrendingUp, 
   Database,
-  Bolt,
   User,
   Printer,
   Cloud
 } from "lucide-react";
+import logoPath from "@assets/Naniwa_AI_Logo_Circle_1767655416965.png";
 
 const navigation = [
   {
@@ -84,9 +84,12 @@ export function Sidebar() {
       {/* Header */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <Bolt className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img 
+            src={logoPath} 
+            alt="Naniwa AI Logo" 
+            className="w-10 h-10 rounded-lg"
+            data-testid="img-app-logo"
+          />
           <div>
             <h1 className="text-lg font-bold text-foreground" data-testid="text-app-title">Tool Tracker</h1>
             <p className="text-xs text-muted-foreground">v2.1.0</p>
