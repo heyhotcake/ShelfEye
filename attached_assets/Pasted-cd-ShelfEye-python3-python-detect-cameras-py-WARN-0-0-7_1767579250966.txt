@@ -1,0 +1,47 @@
+cd ~/ShelfEye && python3 python/detect_cameras.py
+[ WARN:0@0.756] global cap_v4l.cpp:1844 getProperty VIDEOIO(V4L2:/dev/video14): Unable to get camera FPS
+[ WARN:0@10.769] global cap_v4l.cpp:1049 tryIoctl VIDEOIO(V4L2:/dev/video14): select() timeout.
+[ WARN:0@10.777] global cap_v4l.cpp:1844 getProperty VIDEOIO(V4L2:/dev/video15): Unable to get camera FPS
+[ WARN:0@20.791] global cap_v4l.cpp:1049 tryIoctl VIDEOIO(V4L2:/dev/video15): select() timeout.
+[ WARN:0@20.803] global cap_v4l.cpp:1844 getProperty VIDEOIO(V4L2:/dev/video21): Unable to get camera FPS
+[ WARN:0@30.817] global cap_v4l.cpp:1049 tryIoctl VIDEOIO(V4L2:/dev/video21): select() timeout.
+[ WARN:0@30.825] global cap_v4l.cpp:1844 getProperty VIDEOIO(V4L2:/dev/video22): Unable to get camera FPS
+^CTraceback (most recent call last):
+  File "/home/naniwa/ShelfEye/python/detect_cameras.py", line 119, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/naniwa/ShelfEye/python/detect_cameras.py", line 98, in main
+    cameras = detect_cameras(args.max_index)
+  File "/home/naniwa/ShelfEye/python/detect_cameras.py", line 40, in detect_cameras
+    ret, _ = cap.read()
+             ~~~~~~~~^^
+KeyboardInterrupt
+
+naniwa@NaniwaTanaCheck:~/ShelfEye $ for i in 0 10 11 12 13 14; do
+  echo "Testing /dev/video$i..."
+  python3 -c "import cv2; cap = cv2.VideoCapture($i); print('OK' if cap.isOpened() and cap.read()[0] else 'FAIL'); cap.release()"
+done
+Testing /dev/video0...
+[ WARN:0@0.050] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video0): can't open camera by index
+[ERROR:0@0.053] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+FAIL
+Testing /dev/video10...
+[ WARN:0@0.050] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video10): can't open camera by index
+[ERROR:0@0.053] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+FAIL
+Testing /dev/video11...
+[ WARN:0@0.061] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video11): can't open camera by index
+[ERROR:0@0.065] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+FAIL
+Testing /dev/video12...
+[ WARN:0@0.059] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video12): can't open camera by index
+[ERROR:0@0.064] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+FAIL
+Testing /dev/video13...
+[ WARN:0@0.100] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video13): can't open camera by index
+[ERROR:0@0.104] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+FAIL
+Testing /dev/video14...
+[ WARN:0@10.063] global cap_v4l.cpp:1049 tryIoctl VIDEOIO(V4L2:/dev/video14): select() timeout.
+FAIL
+naniwa@NaniwaTanaCheck:~/ShelfEye $
