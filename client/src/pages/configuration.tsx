@@ -493,40 +493,17 @@ export default function Configuration() {
                 {/* Add New Camera */}
                 <div className="border-t pt-4">
                   <h4 className="text-sm font-semibold mb-3">Add New Camera</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="camera-name">Camera Name</Label>
-                      <Input
-                        id="camera-name"
-                        placeholder="e.g., Camera Station A"
-                        value={newCameraName}
-                        onChange={(e) => setNewCameraName(e.target.value)}
-                        data-testid="input-camera-name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="device-index">Device Index</Label>
-                      <Input
-                        id="device-index"
-                        type="number"
-                        placeholder="0"
-                        value={newCameraDevice}
-                        onChange={(e) => setNewCameraDevice(e.target.value)}
-                        data-testid="input-device-index"
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <Label htmlFor="device-path">Device Path (Optional - Raspberry Pi)</Label>
+                  <div>
+                    <Label htmlFor="camera-name">Camera Name</Label>
                     <Input
-                      id="device-path"
-                      placeholder="e.g., /dev/video0"
-                      value={newCameraDevicePath}
-                      onChange={(e) => setNewCameraDevicePath(e.target.value)}
-                      data-testid="input-device-path"
+                      id="camera-name"
+                      placeholder="e.g., Camera Station A"
+                      value={newCameraName}
+                      onChange={(e) => setNewCameraName(e.target.value)}
+                      data-testid="input-camera-name"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      For Raspberry Pi: Use /dev/video0, /dev/video1, etc. Leave empty to use Device Index instead.
+                      Device index will be assigned automatically. Use "Detect Available Cameras" to select a specific device.
                     </p>
                   </div>
                   <Button
@@ -534,17 +511,9 @@ export default function Configuration() {
                     onClick={() => {
                       const cameraData: any = { name: newCameraName };
                       
-                      // Include device path if provided
+                      // Include device path if provided (from detected cameras)
                       if (newCameraDevicePath) {
                         cameraData.devicePath = newCameraDevicePath;
-                      }
-                      
-                      // Include device index only if no path or if explicitly set
-                      if (!newCameraDevicePath && newCameraDevice) {
-                        cameraData.deviceIndex = parseInt(newCameraDevice);
-                      } else if (newCameraDevicePath && newCameraDevice !== "0") {
-                        // Include index as fallback if user explicitly changed it
-                        cameraData.deviceIndex = parseInt(newCameraDevice);
                       }
                       
                       createCameraMutation.mutate(cameraData);
