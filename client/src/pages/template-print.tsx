@@ -1313,7 +1313,7 @@ export default function TemplatePrint() {
       </div>
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-card border-b border-border px-6 py-4 print:hidden">
+        <header className="bg-card px-6 py-4 print:hidden">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="template-print-title">

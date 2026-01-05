@@ -103,7 +103,7 @@ export default function DetectionLogs() {
       <Sidebar />
       
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-card border-b border-border px-6 py-4">
+        <header className="bg-card px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="detection-logs-title">
