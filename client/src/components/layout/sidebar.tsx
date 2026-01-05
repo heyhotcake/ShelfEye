@@ -92,7 +92,6 @@ export function Sidebar() {
           />
           <div>
             <h1 className="text-lg font-bold text-foreground" data-testid="text-app-title">TanaCheck</h1>
-            <p className="text-xs text-muted-foreground">v2.1.0</p>
           </div>
         </div>
       </div>
