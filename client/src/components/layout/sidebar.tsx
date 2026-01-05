@@ -15,7 +15,7 @@ import {
   Printer,
   Cloud
 } from "lucide-react";
-import logoPath from "@assets/Naniwa_AI_Logo_Circle_1767655416965.png";
+import logoPath from "@assets/Blue_and_white_bogo_1767655508883.jpg";
 
 const navigation = [
   {
@@ -83,16 +83,14 @@ export function Sidebar() {
     <aside className="w-64 bg-card border-r border-border flex flex-col">
       {/* Header */}
       <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center gap-2">
           <img 
             src={logoPath} 
-            alt="Naniwa AI Logo" 
-            className="w-10 h-10 rounded-lg"
+            alt="Fashion Service Naniwa" 
+            className="h-8 object-contain"
             data-testid="img-app-logo"
           />
-          <div>
-            <h1 className="text-lg font-bold text-foreground" data-testid="text-app-title">TanaCheck</h1>
-          </div>
+          <h1 className="text-lg font-bold text-foreground" data-testid="text-app-title">TanaCheck</h1>
         </div>
       </div>
       {/* Navigation */}
