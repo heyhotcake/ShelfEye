@@ -100,6 +100,22 @@ export default function Dashboard() {
     refetchInterval: 30000,
   });
 
+  // Fetch recent alerts from alert queue
+  const { data: alertQueue } = useQuery<any[]>({
+    queryKey: ['/api/alert-queue'],
+    refetchInterval: 30000,
+  });
+
+  // Fetch recent capture runs (includes diagnostic failures)
+  const { data: recentCaptureRuns } = useQuery<CaptureRun[]>({
+    queryKey: ['/api/capture-runs', { limit: 10 }],
+    queryFn: async () => {
+      const response = await fetch('/api/capture-runs?limit=10');
+      return response.json();
+    },
+    refetchInterval: 30000,
+  });
+
   // Get calibration config for active camera card
   const { data: calibrationConfig } = useQuery<any>({
     queryKey: ['/api/config/calibration-info'],
@@ -536,42 +552,145 @@ export default function Dashboard() {
               </CardHeader>
               
               <CardContent className="space-y-3">
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-destructive/20 flex items-center justify-center flex-shrink-0">
-                      <AlertTriangle className="w-4 h-4 text-destructive" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-destructive" data-testid="alert-title-A3">Tool Missing: Slot A3</p>
-                        <span className="text-xs font-mono text-muted-foreground">14:15</span>
+                {(() => {
+                  // Combine alerts from alert queue and diagnostic failures from capture runs
+                  const combinedAlerts: Array<{
+                    id: string;
+                    type: 'alert' | 'diagnostic' | 'capture';
+                    alertType: string;
+                    message: string;
+                    status: string;
+                    timestamp: Date;
+                  }> = [];
+
+                  // Add alerts from alert queue
+                  if (alertQueue && Array.isArray(alertQueue)) {
+                    alertQueue.slice(0, 5).forEach(alert => {
+                      combinedAlerts.push({
+                        id: alert.id,
+                        type: 'alert',
+                        alertType: alert.alertType,
+                        message: alert.message,
+                        status: alert.status,
+                        timestamp: new Date(alert.scheduledAt || alert.createdAt),
+                      });
+                    });
+                  }
+
+                  // Add diagnostic/capture failures from recent runs
+                  if (recentCaptureRuns && Array.isArray(recentCaptureRuns)) {
+                    recentCaptureRuns
+                      .filter(run => run.status === 'failure' || run.status === 'partial_failure')
+                      .slice(0, 5)
+                      .forEach(run => {
+                        combinedAlerts.push({
+                          id: run.id,
+                          type: run.triggerType === 'diagnostic' ? 'diagnostic' : 'capture',
+                          alertType: run.triggerType === 'diagnostic' ? 'Diagnostic Failure' : 'Capture Failure',
+                          message: run.errorMessages?.join(', ') || `${run.triggerType} failed with ${run.failureCount} errors`,
+                          status: run.status,
+                          timestamp: new Date(run.timestamp),
+                        });
+                      });
+                  }
+
+                  // Sort by timestamp descending and take top 5
+                  combinedAlerts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+                  const displayAlerts = combinedAlerts.slice(0, 5);
+
+                  if (displayAlerts.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
+                        <p className="font-medium">No Recent Alerts</p>
+                        <p className="text-sm">All systems are operating normally</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">Pliers detected empty for 5+ minutes</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge className="text-xs px-2 py-1 bg-destructive/20 text-destructive">Email sent</Badge>
-                        <Badge className="text-xs px-2 py-1 bg-destructive/20 text-destructive">Alert active</Badge>
+                    );
+                  }
+
+                  return displayAlerts.map((alert) => {
+                    const isFailure = alert.status === 'failure' || alert.type === 'diagnostic' || alert.type === 'capture';
+                    const isWarning = alert.status === 'partial_failure' || alert.status === 'pending';
+                    const colorClass = isFailure ? 'destructive' : isWarning ? 'amber-500' : 'blue-500';
+                    
+                    const formatTime = (date: Date) => {
+                      try {
+                        const zonedDate = toZonedTime(date, TIMEZONE);
+                        return format(zonedDate, 'MM/dd HH:mm', { timeZone: TIMEZONE });
+                      } catch {
+                        return 'Unknown';
+                      }
+                    };
+
+                    // Truncate long messages
+                    const truncatedMessage = alert.message.length > 100 
+                      ? alert.message.substring(0, 100) + '...' 
+                      : alert.message;
+
+                    return (
+                      <div 
+                        key={alert.id} 
+                        className={`bg-${colorClass}/10 border border-${colorClass}/20 rounded-lg p-4`}
+                        style={{
+                          backgroundColor: isFailure ? 'hsl(0 84% 60% / 0.1)' : isWarning ? 'hsl(45 93% 47% / 0.1)' : 'hsl(217 91% 60% / 0.1)',
+                          borderColor: isFailure ? 'hsl(0 84% 60% / 0.2)' : isWarning ? 'hsl(45 93% 47% / 0.2)' : 'hsl(217 91% 60% / 0.2)',
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style={{
+                              backgroundColor: isFailure ? 'hsl(0 84% 60% / 0.2)' : isWarning ? 'hsl(45 93% 47% / 0.2)' : 'hsl(217 91% 60% / 0.2)',
+                            }}
+                          >
+                            {isFailure ? (
+                              <AlertTriangle className="w-4 h-4" style={{ color: 'hsl(0 84% 60%)' }} />
+                            ) : (
+                              <HelpCircle className="w-4 h-4" style={{ color: isWarning ? 'hsl(45 93% 47%)' : 'hsl(217 91% 60%)' }} />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1 gap-2">
+                              <p 
+                                className="font-medium truncate" 
+                                style={{ color: isFailure ? 'hsl(0 84% 60%)' : isWarning ? 'hsl(45 93% 47%)' : 'hsl(217 91% 60%)' }}
+                                data-testid={`alert-title-${alert.id}`}
+                              >
+                                {alert.alertType}
+                              </p>
+                              <span className="text-xs font-mono text-muted-foreground flex-shrink-0">
+                                {formatTime(alert.timestamp)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground break-words">{truncatedMessage}</p>
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <Badge 
+                                className="text-xs px-2 py-1"
+                                style={{
+                                  backgroundColor: isFailure ? 'hsl(0 84% 60% / 0.2)' : isWarning ? 'hsl(45 93% 47% / 0.2)' : 'hsl(217 91% 60% / 0.2)',
+                                  color: isFailure ? 'hsl(0 84% 60%)' : isWarning ? 'hsl(45 93% 47%)' : 'hsl(217 91% 60%)',
+                                }}
+                              >
+                                {alert.status === 'sent' ? 'Email sent' : alert.status}
+                              </Badge>
+                              {alert.type === 'diagnostic' && (
+                                <Badge 
+                                  className="text-xs px-2 py-1"
+                                  style={{
+                                    backgroundColor: 'hsl(0 84% 60% / 0.2)',
+                                    color: 'hsl(0 84% 60%)',
+                                  }}
+                                >
+                                  Calibration Check
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                      <HelpCircle className="w-4 h-4 text-amber-500" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-amber-500" data-testid="alert-title-A6">QR Not Detected: Slot A6</p>
-                        <span className="text-xs font-mono text-muted-foreground">13:45</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Utility Knife occupied but QR unreadable</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge className="text-xs px-2 py-1 bg-amber-500/20 text-amber-500">Needs check</Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    );
+                  });
+                })()}
               </CardContent>
             </Card>
             
