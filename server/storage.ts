@@ -240,6 +240,17 @@ export class DbStorage implements IStorage {
 
   async createCamera(camera: InsertCamera): Promise<Camera> {
     await this.ensureInitialized();
+    
+    // Auto-assign deviceIndex if not provided
+    if (camera.deviceIndex === undefined || camera.deviceIndex === null) {
+      const allCameras = await db.select().from(schema.cameras);
+      const maxIndex = allCameras.reduce((max, cam) => {
+        const idx = cam.deviceIndex ?? -1;
+        return idx > max ? idx : max;
+      }, -1);
+      camera.deviceIndex = maxIndex + 1;
+    }
+    
     const result = await db.insert(schema.cameras).values(camera as any).returning();
     return result[0];
   }

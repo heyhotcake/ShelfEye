@@ -90,7 +90,7 @@ export function Sidebar() {
             className="h-8 object-contain"
             data-testid="img-app-logo"
           />
-          <h1 className="text-lg font-bold text-foreground" data-testid="text-app-title">TanaCheck</h1>
+          <h1 className="font-bold text-foreground text-[20px]" data-testid="text-app-title">TanaCheck</h1>
         </div>
       </div>
       {/* Navigation */}
