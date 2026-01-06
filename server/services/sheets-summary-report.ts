@@ -30,6 +30,7 @@ interface ToolRowMapping {
   toolName: string;
   returnRow: number;    // Row for 返却数
   checkoutRow: number;  // Row for 貸出数
+  totalCount: number | null;  // 定数 from Column B in Template
 }
 
 export class SheetsSummaryReport {
@@ -93,7 +94,7 @@ export class SheetsSummaryReport {
     try {
       const sheets = await getSheetsClient();
       
-      // Read columns A and C from Template tab (rows 1-30 should cover all tools)
+      // Read columns A, B, and C from Template tab (rows 1-30 should cover all tools)
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
         range: `'Template'!A1:C30`,
@@ -104,10 +105,12 @@ export class SheetsSummaryReport {
       
       let currentToolName: string | null = null;
       let currentToolReturnRow: number = -1;
+      let currentToolTotalCount: number | null = null;
 
       for (let i = 0; i < rows.length; i++) {
         const rowNum = i + 1; // 1-indexed row number
         const colA = rows[i]?.[0]?.toString().trim() || '';
+        const colB = rows[i]?.[1]?.toString().trim() || '';
         const colC = rows[i]?.[2]?.toString().trim() || '';
 
         // Skip rows that should be ignored
@@ -118,6 +121,11 @@ export class SheetsSummaryReport {
         // Check if column A has a tool name (non-empty and not a header)
         if (colA && colA !== '備品名' && colA !== '確認者') {
           currentToolName = colA;
+          
+          // Parse Column B as totalCount (定数)
+          // Handle numeric values and special text like "各自2点"
+          const numericValue = parseInt(colB, 10);
+          currentToolTotalCount = !isNaN(numericValue) ? numericValue : null;
           
           // Check if column C indicates this is 返却数 row
           if (colC === '返却数') {
@@ -131,12 +139,14 @@ export class SheetsSummaryReport {
             toolName: currentToolName,
             returnRow: currentToolReturnRow,
             checkoutRow: rowNum,
+            totalCount: currentToolTotalCount,
           });
-          console.log(`[SheetsSummaryReport] Mapped tool "${currentToolName}": 返却数=row ${currentToolReturnRow}, 貸出数=row ${rowNum}`);
+          console.log(`[SheetsSummaryReport] Mapped tool "${currentToolName}": 返却数=row ${currentToolReturnRow}, 貸出数=row ${rowNum}, 定数=${currentToolTotalCount ?? 'N/A'}`);
           
           // Reset for next tool
           currentToolName = null;
           currentToolReturnRow = -1;
+          currentToolTotalCount = null;
         }
       }
 
@@ -159,6 +169,15 @@ export class SheetsSummaryReport {
       return -1;
     }
     return rowType === '返却数' ? mapping.returnRow : mapping.checkoutRow;
+  }
+
+  /**
+   * Get totalCount (定数) for a tool from the Template tab.
+   * Returns null if not found or not a numeric value.
+   */
+  private getTemplateTotalCount(toolName: string): number | null {
+    const mapping = this.templateRowMapping.find(m => m.toolName === toolName);
+    return mapping?.totalCount ?? null;
   }
 
   async setToolConfig(config: Array<{ name: string; totalCount: number; isCheckType: boolean }>) {
@@ -499,14 +518,18 @@ export class SheetsSummaryReport {
       const slots = slotsByTool[toolConfig.name] || [];
       let presentCount = 0;
 
+      // Use Template's totalCount (定数) as primary source, fall back to toolConfig
+      const templateTotal = this.getTemplateTotalCount(toolConfig.name);
+      const baseTotalCount = templateTotal ?? toolConfig.totalCount;
+
       // If no slots match this tool name, we can't detect - mark as unknown/missing
       if (slots.length === 0) {
         console.warn(`[SheetsSummaryReport] Warning: Tool "${toolConfig.name}" has no matching slots configured. Cannot detect inventory.`);
         summaries.push({
           toolName: toolConfig.name,
-          totalCount: toolConfig.totalCount,
+          totalCount: baseTotalCount,
           presentCount: 0, // Can't confirm any present without slots
-          missingCount: toolConfig.totalCount, // Treat as all missing until slots configured
+          missingCount: baseTotalCount, // Treat as all missing until slots configured
           isCheckType: toolConfig.isCheckType,
           cameraFailed: false,
         });
@@ -521,7 +544,7 @@ export class SheetsSummaryReport {
         console.log(`[SheetsSummaryReport] Tool "${toolConfig.name}" - all ${slots.length} slots on failed camera(s)`);
         summaries.push({
           toolName: toolConfig.name,
-          totalCount: toolConfig.totalCount,
+          totalCount: baseTotalCount,
           presentCount: 0,
           missingCount: 0,
           isCheckType: toolConfig.isCheckType,
@@ -560,10 +583,9 @@ export class SheetsSummaryReport {
 
       // Adjust totalCount to exclude slots on failed cameras
       // This prevents inflating the missing count when some cameras fail
-      const configuredTotal = toolConfig.totalCount || slots.length;
       const adjustedTotal = failedSlotCount > 0 
-        ? Math.max(0, configuredTotal - failedSlotCount)
-        : configuredTotal;
+        ? Math.max(0, baseTotalCount - failedSlotCount)
+        : baseTotalCount;
       const missingCount = Math.max(0, adjustedTotal - presentCount);
 
       summaries.push({
