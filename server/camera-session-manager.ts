@@ -1,9 +1,11 @@
 type LockType = 'preview' | 'exclusive';
+type ExclusiveReason = 'calibration' | 'capture' | 'diagnostic' | 'validation';
 
 interface CameraLock {
   cameraId: string;
   type: LockType;
   timestamp: number;
+  reason?: ExclusiveReason;
 }
 
 class CameraSessionManager {
@@ -13,6 +15,10 @@ class CameraSessionManager {
   // Global calibration lock - ensures only one camera can calibrate at a time (2GB RAM constraint)
   private globalCalibrationLock: { cameraId: string; timestamp: number } | null = null;
   private readonly CALIBRATION_TIMEOUT = 300000; // 5 minutes max for calibration
+  
+  // Global capture lock - ensures only one capture run at a time
+  private globalCaptureLock: { timestamp: number; reason: string } | null = null;
+  private readonly CAPTURE_TIMEOUT = 660000; // 11 minutes max for capture (slightly more than scheduler timeout)
 
   /**
    * Attempt to acquire a lock for camera preview (shared, short-lived)
@@ -42,18 +48,19 @@ class CameraSessionManager {
   }
 
   /**
-   * Acquire an exclusive lock for calibration/validation
+   * Acquire an exclusive lock for calibration/validation/capture
    * This will block all preview requests until released
    * Returns a promise that resolves after a brief delay to ensure camera is released at OS level
    */
-  async acquireExclusiveLock(cameraId: string): Promise<void> {
+  async acquireExclusiveLock(cameraId: string, reason: ExclusiveReason = 'calibration'): Promise<void> {
     // Set exclusive lock immediately to block NEW preview requests
     this.locks.set(cameraId, {
       cameraId,
       type: 'exclusive',
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      reason
     });
-    console.log(`[CameraSessionManager] Exclusive lock set for camera ${cameraId} - blocking new previews`);
+    console.log(`[CameraSessionManager] Exclusive lock (${reason}) set for camera ${cameraId} - blocking new previews`);
     
     // Wait 10 seconds to ensure any IN-FLIGHT Python preview process has fully released the camera
     // Preview operations take 4-5 seconds, and we need to wait for camera to be fully released at OS level
@@ -61,7 +68,7 @@ class CameraSessionManager {
     console.log(`[CameraSessionManager] Waiting for in-flight previews to complete...`);
     await new Promise(resolve => setTimeout(resolve, 10000));
     
-    console.log(`[CameraSessionManager] Camera ${cameraId} should now be available for exclusive use`);
+    console.log(`[CameraSessionManager] Camera ${cameraId} should now be available for exclusive use (${reason})`);
   }
 
   /**
@@ -94,10 +101,17 @@ class CameraSessionManager {
     }
 
     if (lock.type === 'exclusive') {
+      // Map reason to user-friendly message
+      const reasonMap: Record<ExclusiveReason, string> = {
+        calibration: 'calibration_in_progress',
+        capture: 'capture_in_progress',
+        diagnostic: 'diagnostic_in_progress',
+        validation: 'validation_in_progress'
+      };
       return { 
         locked: true, 
         type: 'exclusive', 
-        reason: 'calibration_in_progress' 
+        reason: lock.reason ? reasonMap[lock.reason] : 'calibration_in_progress'
       };
     }
 
@@ -157,6 +171,79 @@ class CameraSessionManager {
       }
     }
     return { inProgress: false };
+  }
+
+  /**
+   * Acquire global capture lock - ensures only ONE capture run at a time
+   * Returns true if lock acquired, false if capture/calibration is already in progress
+   */
+  acquireGlobalCaptureLock(reason: string = 'scheduled'): boolean {
+    // Check if calibration is in progress - don't interrupt calibration
+    const calibrationStatus = this.isAnyCalibrationInProgress();
+    if (calibrationStatus.inProgress) {
+      console.log(`[CameraSessionManager] Cannot acquire capture lock - calibration in progress for camera ${calibrationStatus.cameraId}`);
+      return false;
+    }
+    
+    // Check if capture lock exists and isn't expired
+    if (this.globalCaptureLock) {
+      const elapsed = Date.now() - this.globalCaptureLock.timestamp;
+      
+      // If lock is expired (capture took too long), release it
+      if (elapsed > this.CAPTURE_TIMEOUT) {
+        console.log(`[CameraSessionManager] Global capture lock expired after ${elapsed}ms, releasing`);
+        this.globalCaptureLock = null;
+      } else {
+        // Another capture is in progress
+        console.log(`[CameraSessionManager] Cannot acquire capture lock - another capture is already in progress (${this.globalCaptureLock.reason})`);
+        return false;
+      }
+    }
+    
+    // Acquire the global lock
+    this.globalCaptureLock = {
+      timestamp: Date.now(),
+      reason
+    };
+    console.log(`[CameraSessionManager] Global capture lock acquired (${reason})`);
+    return true;
+  }
+
+  /**
+   * Release the global capture lock
+   */
+  releaseGlobalCaptureLock(): void {
+    if (this.globalCaptureLock) {
+      console.log(`[CameraSessionManager] Global capture lock released`);
+      this.globalCaptureLock = null;
+    }
+  }
+
+  /**
+   * Check if scheduled capture is in progress
+   */
+  isScheduledCaptureInProgress(): { inProgress: boolean; reason?: string } {
+    if (this.globalCaptureLock) {
+      const elapsed = Date.now() - this.globalCaptureLock.timestamp;
+      if (elapsed <= this.CAPTURE_TIMEOUT) {
+        return { 
+          inProgress: true, 
+          reason: this.globalCaptureLock.reason
+        };
+      }
+    }
+    return { inProgress: false };
+  }
+
+  /**
+   * Release all locks for a camera (cleanup on failure/timeout)
+   */
+  releaseAllLocksForCamera(cameraId: string): void {
+    const lock = this.locks.get(cameraId);
+    if (lock) {
+      console.log(`[CameraSessionManager] Force-releasing all locks for camera ${cameraId}`);
+      this.locks.delete(cameraId);
+    }
   }
 }
 

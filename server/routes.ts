@@ -444,6 +444,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Camera not found" });
       }
       
+      // Check if scheduled capture is in progress - don't interrupt captures
+      const captureStatus = cameraSessionManager.isScheduledCaptureInProgress();
+      if (captureStatus.inProgress) {
+        console.log(`[Calibration] Scheduled capture in progress (${captureStatus.reason}) - rejecting calibration for camera ${cameraId}`);
+        return res.status(409).json({ 
+          message: `A ${captureStatus.reason} capture is currently running. Please wait for it to complete before calibrating.`,
+          reason: 'capture_in_progress'
+        });
+      }
+      
       // Check global calibration lock - ensures only ONE camera calibrates at a time (2GB RAM constraint)
       const globalLockStatus = cameraSessionManager.isAnyCalibrationInProgress();
       if (globalLockStatus.inProgress && globalLockStatus.cameraId !== cameraId) {

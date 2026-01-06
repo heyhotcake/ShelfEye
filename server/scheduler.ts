@@ -287,6 +287,36 @@ export class CaptureScheduler {
    */
   private async executeCapture(triggerType: 'scheduled' | 'manual', captureTime?: string): Promise<any> {
     const startTime = Date.now();
+    const lockedCameraIds: string[] = [];
+
+    // Try to acquire global capture lock first
+    const lockAcquired = cameraSessionManager.acquireGlobalCaptureLock(triggerType);
+    if (!lockAcquired) {
+      const calibrationStatus = cameraSessionManager.isAnyCalibrationInProgress();
+      const captureStatus = cameraSessionManager.isScheduledCaptureInProgress();
+      
+      let reason = 'Unknown conflict';
+      if (calibrationStatus.inProgress) {
+        reason = `Calibration in progress for camera ${calibrationStatus.cameraId}`;
+      } else if (captureStatus.inProgress) {
+        reason = `Another capture already in progress (${captureStatus.reason})`;
+      }
+      
+      console.log(`[Scheduler] Skipping ${triggerType} capture: ${reason}`);
+      
+      // Log this as a skipped capture
+      await this.storage.createCaptureRun({
+        triggerType,
+        camerasCaptured: 0,
+        slotsProcessed: 0,
+        failureCount: 0,
+        status: 'skipped',
+        errorMessages: [reason],
+        executionTimeMs: Date.now() - startTime,
+      });
+      
+      return { status: 'skipped', reason };
+    }
 
     try {
       console.log(`[Scheduler] Starting ${triggerType} capture...`);
@@ -294,6 +324,15 @@ export class CaptureScheduler {
       // Get all active cameras
       const allCameras = await this.storage.getCameras();
       const activeCameras = allCameras.filter(c => c.isActive);
+
+      // Acquire exclusive locks on ALL cameras before starting capture
+      // This blocks frontend preview requests during capture
+      console.log(`[Scheduler] Acquiring exclusive locks on ${activeCameras.length} cameras...`);
+      for (const camera of activeCameras) {
+        await cameraSessionManager.acquireExclusiveLock(camera.id, 'capture');
+        lockedCameraIds.push(camera.id);
+      }
+      console.log(`[Scheduler] All camera locks acquired, proceeding with capture`);
 
       // Get all slots grouped by camera
       const allSlots = await this.storage.getSlots();
@@ -429,6 +468,16 @@ export class CaptureScheduler {
       await this.sendAlert('capture_failure', `Capture failed: ${error.message}`);
 
       throw error;
+    } finally {
+      // CRITICAL: Always release all camera locks, even on error/timeout
+      console.log(`[Scheduler] Releasing ${lockedCameraIds.length} camera locks...`);
+      for (const cameraId of lockedCameraIds) {
+        cameraSessionManager.releaseLock(cameraId);
+      }
+      
+      // Always release global capture lock
+      cameraSessionManager.releaseGlobalCaptureLock();
+      console.log(`[Scheduler] All locks released`);
     }
   }
 
