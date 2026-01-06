@@ -675,12 +675,15 @@ export default function SlotDrawing() {
       const otherBottom = other.yCm + otherHalfHeight;
       
       // X-axis snapping: check distance from current edge to target edge
+      // OVERLAP constant: tiny overlap (0.02cm = 0.2mm) to merge border lines visually
+      const OVERLAP = 0.02;
       const leftToLeft = Math.abs(currentLeft - otherLeft);
       const leftToRight = Math.abs(currentLeft - otherRight);
       const rightToRight = Math.abs(currentRight - otherRight);
       const rightToLeft = Math.abs(currentRight - otherLeft);
       const centerXDist = Math.abs(xCm - other.xCm);
       
+      // Same-side snaps (left-to-left, right-to-right): align exactly
       if (leftToLeft < closestXDist) {
         closestXDist = leftToLeft;
         snappedX = otherLeft + halfWidth;
@@ -691,14 +694,15 @@ export default function SlotDrawing() {
         snappedX = otherRight - halfWidth;
         xSnappedToRect = other;
       }
+      // Adjacent snaps (left-to-right, right-to-left): overlap slightly to merge borders
       if (leftToRight < closestXDist) {
         closestXDist = leftToRight;
-        snappedX = otherRight + halfWidth;
+        snappedX = otherRight + halfWidth - OVERLAP;  // Move left edge INTO other's right
         xSnappedToRect = other;
       }
       if (rightToLeft < closestXDist) {
         closestXDist = rightToLeft;
-        snappedX = otherLeft - halfWidth;
+        snappedX = otherLeft - halfWidth + OVERLAP;  // Move right edge INTO other's left
         xSnappedToRect = other;
       }
       if (centerXDist < closestXDist) {
@@ -714,6 +718,7 @@ export default function SlotDrawing() {
       const bottomToTop = Math.abs(currentBottom - otherTop);
       const centerYDist = Math.abs(yCm - other.yCm);
       
+      // Same-side snaps: align exactly
       if (topToTop < closestYDist) {
         closestYDist = topToTop;
         snappedY = otherTop + halfHeight;
@@ -724,14 +729,15 @@ export default function SlotDrawing() {
         snappedY = otherBottom - halfHeight;
         ySnappedToRect = other;
       }
+      // Adjacent snaps: overlap slightly to merge borders
       if (topToBottom < closestYDist) {
         closestYDist = topToBottom;
-        snappedY = otherBottom + halfHeight;
+        snappedY = otherBottom + halfHeight - OVERLAP;  // Move top edge INTO other's bottom
         ySnappedToRect = other;
       }
       if (bottomToTop < closestYDist) {
         closestYDist = bottomToTop;
-        snappedY = otherTop - halfHeight;
+        snappedY = otherTop - halfHeight + OVERLAP;  // Move bottom edge INTO other's top
         ySnappedToRect = other;
       }
       if (centerYDist < closestYDist) {
@@ -743,6 +749,7 @@ export default function SlotDrawing() {
     
     // "Full edge snap": When X snaps to a rect, also try to snap Y to that same rect
     // This creates a clean corner-to-corner alignment
+    const OVERLAP = 0.02;  // Same overlap for merged borders
     if (xSnappedToRect && !ySnappedToRect) {
       const other = xSnappedToRect;
       const otherHalfHeight = other.heightCm / 2;
@@ -758,10 +765,12 @@ export default function SlotDrawing() {
       const centerYDist = Math.abs(yCm - other.yCm);
       
       let bestDist = SECONDARY_THRESHOLD;
+      // Same-side: align exactly
       if (topToTop < bestDist) { bestDist = topToTop; snappedY = otherTop + halfHeight; }
       if (bottomToBottom < bestDist) { bestDist = bottomToBottom; snappedY = otherBottom - halfHeight; }
-      if (topToBottom < bestDist) { bestDist = topToBottom; snappedY = otherBottom + halfHeight; }
-      if (bottomToTop < bestDist) { bestDist = bottomToTop; snappedY = otherTop - halfHeight; }
+      // Adjacent: overlap to merge borders
+      if (topToBottom < bestDist) { bestDist = topToBottom; snappedY = otherBottom + halfHeight - OVERLAP; }
+      if (bottomToTop < bestDist) { bestDist = bottomToTop; snappedY = otherTop - halfHeight + OVERLAP; }
       if (centerYDist < bestDist) { bestDist = centerYDist; snappedY = other.yCm; }
     }
     
@@ -780,12 +789,18 @@ export default function SlotDrawing() {
       const centerXDist = Math.abs(xCm - other.xCm);
       
       let bestDist = SECONDARY_THRESHOLD;
+      // Same-side: align exactly
       if (leftToLeft < bestDist) { bestDist = leftToLeft; snappedX = otherLeft + halfWidth; }
       if (rightToRight < bestDist) { bestDist = rightToRight; snappedX = otherRight - halfWidth; }
-      if (leftToRight < bestDist) { bestDist = leftToRight; snappedX = otherRight + halfWidth; }
-      if (rightToLeft < bestDist) { bestDist = rightToLeft; snappedX = otherLeft - halfWidth; }
+      // Adjacent: overlap to merge borders
+      if (leftToRight < bestDist) { bestDist = leftToRight; snappedX = otherRight + halfWidth - OVERLAP; }
+      if (rightToLeft < bestDist) { bestDist = rightToLeft; snappedX = otherLeft - halfWidth + OVERLAP; }
       if (centerXDist < bestDist) { bestDist = centerXDist; snappedX = other.xCm; }
     }
+    
+    // Round to 2 decimal places (0.01cm = 0.1mm precision) to avoid floating-point gaps
+    snappedX = Math.round(snappedX * 100) / 100;
+    snappedY = Math.round(snappedY * 100) / 100;
     
     return { x: snappedX, y: snappedY };
   };
