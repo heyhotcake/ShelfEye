@@ -7,13 +7,11 @@ import {
   SquareFunction, 
   Settings, 
   Clock,
-  QrCode, 
   Bell, 
   TrendingUp, 
   Database,
   User,
-  Printer,
-  Cloud
+  Printer
 } from "lucide-react";
 import logoPath from "@assets/Blue_and_white_bogo_1767655508883.jpg";
 
@@ -42,11 +40,6 @@ const navigation = [
     name: "Configuration",
     href: "/configuration",
     icon: Settings,
-  },
-  {
-    name: "Google OAuth",
-    href: "/google-oauth",
-    icon: Cloud,
   },
   {
     name: "Scheduler",
