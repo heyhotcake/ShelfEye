@@ -396,7 +396,12 @@ export class CaptureScheduler {
       // Sync to Google Sheets summary report (if configured)
       if (captureTime && triggerType === 'scheduled') {
         try {
-          await this.summaryReport.syncAfterCapture(captureTime);
+          // Extract failed camera IDs to mark their slots with ❌ in the sheet
+          const failedCameraIds = result.results
+            ?.filter((r: any) => r.status === 'failed')
+            .map((r: any) => r.cameraId) || [];
+          
+          await this.summaryReport.syncAfterCapture(captureTime, failedCameraIds);
         } catch (syncError) {
           console.error('[Scheduler] Failed to sync summary report:', syncError);
           // Don't fail the entire capture if sync fails

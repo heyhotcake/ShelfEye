@@ -11,6 +11,7 @@ interface ToolSummary {
   presentCount: number;
   missingCount: number;
   isCheckType: boolean; // true = ✔点 (just check mark), false = 返却数/貸出数
+  cameraFailed: boolean; // true if all slots for this tool are on failed cameras
 }
 
 interface CaptureTimeSummary {
@@ -320,7 +321,7 @@ export class SheetsSummaryReport {
     return -1; // Tool not found
   }
 
-  async syncAfterCapture(captureTime: string): Promise<void> {
+  async syncAfterCapture(captureTime: string, failedCameraIds: string[] = []): Promise<void> {
     if (!this.spreadsheetId) {
       console.log('[SheetsSummaryReport] No spreadsheet configured, skipping sync');
       return;
@@ -353,14 +354,39 @@ export class SheetsSummaryReport {
         return;
       }
 
+      if (failedCameraIds.length > 0) {
+        console.log(`[SheetsSummaryReport] Cameras with failures: ${failedCameraIds.join(', ')}`);
+      }
+
       // Get today's detection logs for this capture time
-      const summary = await this.calculateToolSummary(now, captureTime);
+      const summary = await this.calculateToolSummary(now, captureTime, failedCameraIds);
 
       // Prepare batch update values
       const updates: { range: string; values: any[][] }[] = [];
       const column = this.getColumnForCaptureTime(mondayBasedDay, captureTimeIndex);
 
       for (const tool of summary) {
+        // If camera failed for this tool, show ❌ instead of numbers
+        if (tool.cameraFailed) {
+          const returnRow = this.getTemplateRowForTool(tool.toolName, '返却数');
+          const checkoutRow = this.getTemplateRowForTool(tool.toolName, '貸出数');
+          
+          if (returnRow > 0 && !SKIP_ROWS.includes(returnRow)) {
+            updates.push({
+              range: `'${sheetName}'!${column}${returnRow}`,
+              values: [['❌']]
+            });
+          }
+          if (!tool.isCheckType && checkoutRow > 0 && !SKIP_ROWS.includes(checkoutRow)) {
+            updates.push({
+              range: `'${sheetName}'!${column}${checkoutRow}`,
+              values: [['❌']]
+            });
+          }
+          console.log(`[SheetsSummaryReport] Marked tool "${tool.toolName}" with ❌ due to camera failure`);
+          continue;
+        }
+
         if (tool.isCheckType) {
           // ✔点 type - just check or X (use template mapping or fallback)
           const row = this.getTemplateRowForTool(tool.toolName, '返却数');
@@ -452,7 +478,7 @@ export class SheetsSummaryReport {
     }
   }
 
-  private async calculateToolSummary(date: Date, captureTime: string): Promise<ToolSummary[]> {
+  private async calculateToolSummary(date: Date, captureTime: string, failedCameraIds: string[] = []): Promise<ToolSummary[]> {
     const summaries: ToolSummary[] = [];
 
     // Get all slots grouped by tool name
@@ -482,11 +508,37 @@ export class SheetsSummaryReport {
           presentCount: 0, // Can't confirm any present without slots
           missingCount: toolConfig.totalCount, // Treat as all missing until slots configured
           isCheckType: toolConfig.isCheckType,
+          cameraFailed: false,
         });
         continue;
       }
 
-      for (const slot of slots) {
+      // Check if ALL slots for this tool are on failed cameras
+      // A tool is marked as camera failed only if every slot belongs to a failed camera
+      const allSlotsOnFailedCameras = slots.length > 0 && slots.every(slot => failedCameraIds.includes(slot.cameraId));
+      
+      if (allSlotsOnFailedCameras) {
+        console.log(`[SheetsSummaryReport] Tool "${toolConfig.name}" - all ${slots.length} slots on failed camera(s)`);
+        summaries.push({
+          toolName: toolConfig.name,
+          totalCount: toolConfig.totalCount,
+          presentCount: 0,
+          missingCount: 0,
+          isCheckType: toolConfig.isCheckType,
+          cameraFailed: true,
+        });
+        continue;
+      }
+
+      // Filter out slots on failed cameras for counting
+      const workingSlots = slots.filter(slot => !failedCameraIds.includes(slot.cameraId));
+      const failedSlotCount = slots.length - workingSlots.length;
+
+      if (failedSlotCount > 0) {
+        console.log(`[SheetsSummaryReport] Tool "${toolConfig.name}" - ${failedSlotCount} of ${slots.length} slots on failed camera(s), counting ${workingSlots.length} working slots`);
+      }
+
+      for (const slot of workingSlots) {
         // Get the latest detection log for this slot
         const logs = await this.storage.getDetectionLogsBySlot(slot.id);
         const recentLog = logs.find(log => new Date(log.timestamp) >= oneHourAgo);
@@ -506,16 +558,21 @@ export class SheetsSummaryReport {
         }
       }
 
-      // Use configured totalCount if provided, otherwise use actual slot count
-      const totalCount = toolConfig.totalCount || slots.length;
-      const missingCount = Math.max(0, totalCount - presentCount);
+      // Adjust totalCount to exclude slots on failed cameras
+      // This prevents inflating the missing count when some cameras fail
+      const configuredTotal = toolConfig.totalCount || slots.length;
+      const adjustedTotal = failedSlotCount > 0 
+        ? Math.max(0, configuredTotal - failedSlotCount)
+        : configuredTotal;
+      const missingCount = Math.max(0, adjustedTotal - presentCount);
 
       summaries.push({
         toolName: toolConfig.name,
-        totalCount,
+        totalCount: adjustedTotal,
         presentCount,
         missingCount,
         isCheckType: toolConfig.isCheckType,
+        cameraFailed: false,
       });
     }
 
