@@ -47,6 +47,9 @@ export default function Configuration() {
   const [editCameraName, setEditCameraName] = useState("");
   const [editResolutionWidth, setEditResolutionWidth] = useState("");
   const [editResolutionHeight, setEditResolutionHeight] = useState("");
+  
+  // Email input state
+  const [newEmailInput, setNewEmailInput] = useState("");
 
   const detectCamerasMutation = useMutation({
     mutationFn: async () => {
@@ -314,7 +317,7 @@ export default function Configuration() {
 
   const configSections = {
     'BUSINESS_HOURS': { label: 'Business Hours', type: 'text' },
-    'EMAIL_RECIPIENTS': { label: 'Email Recipients', type: 'json' },
+    'EMAIL_RECIPIENTS': { label: 'Email Recipients', type: 'email_list' },
     'GOOGLE_SHEETS_ID': { label: 'Google Sheets ID', type: 'text' },
     'SMTP_CONFIG': { label: 'SMTP Configuration', type: 'json' },
     'CAPTURE_SCHEDULE': { label: 'Capture Schedule', type: 'json' },
@@ -637,7 +640,80 @@ export default function Configuration() {
                         <p className="text-xs text-muted-foreground">{setting.description}</p>
                       )}
                       
-                      {section.type === 'json' ? (
+                      {section.type === 'email_list' ? (
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap gap-2">
+                            {(Array.isArray(setting.value) ? setting.value : []).map((email: string, idx: number) => (
+                              <Badge 
+                                key={idx} 
+                                variant="secondary" 
+                                className="px-3 py-1.5 text-sm flex items-center gap-2"
+                                data-testid={`badge-email-${idx}`}
+                              >
+                                {email}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newList = (setting.value as string[]).filter((_, i) => i !== idx);
+                                    updateConfigMutation.mutate({
+                                      key: setting.key,
+                                      value: newList,
+                                      description: setting.description || undefined,
+                                    });
+                                  }}
+                                  className="ml-1 hover:text-destructive"
+                                  data-testid={`button-remove-email-${idx}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              type="email"
+                              placeholder="Enter email address"
+                              value={newEmailInput}
+                              onChange={(e) => setNewEmailInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newEmailInput.trim()) {
+                                  e.preventDefault();
+                                  const currentList = Array.isArray(setting.value) ? setting.value : [];
+                                  if (!currentList.includes(newEmailInput.trim())) {
+                                    updateConfigMutation.mutate({
+                                      key: setting.key,
+                                      value: [...currentList, newEmailInput.trim()],
+                                      description: setting.description || undefined,
+                                    });
+                                    setNewEmailInput("");
+                                  }
+                                }
+                              }}
+                              data-testid="input-add-email"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                if (newEmailInput.trim()) {
+                                  const currentList = Array.isArray(setting.value) ? setting.value : [];
+                                  if (!currentList.includes(newEmailInput.trim())) {
+                                    updateConfigMutation.mutate({
+                                      key: setting.key,
+                                      value: [...currentList, newEmailInput.trim()],
+                                      description: setting.description || undefined,
+                                    });
+                                    setNewEmailInput("");
+                                  }
+                                }
+                              }}
+                              data-testid="button-add-email"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : section.type === 'json' ? (
                         <Textarea
                           id={setting.key}
                           value={JSON.stringify(setting.value, null, 2)}
