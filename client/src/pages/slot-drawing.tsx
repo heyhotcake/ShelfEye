@@ -552,12 +552,22 @@ export default function SlotDrawing() {
       setSelectedTemplateRect(null);
       queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
     },
-    onError: (error) => {
-      toast({
-        title: "Failed to Delete Template",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error, id) => {
+      // If 404, the template is already gone from backend (orphaned) - remove from local state anyway
+      if (error.message.includes('404')) {
+        setTemplateRectangles(prev => prev.filter(r => r.id !== id));
+        setSelectedTemplateRect(null);
+        toast({
+          title: "Orphaned Template Removed",
+          description: "Template rectangle cleaned up from canvas",
+        });
+      } else {
+        toast({
+          title: "Failed to Delete Template",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     },
   });
 
