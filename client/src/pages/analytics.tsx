@@ -69,19 +69,19 @@ export default function Analytics() {
   })) || [];
 
   const statusDistribution = [
-    { name: 'Present', value: summary?.statusCounts.present || 0, color: 'hsl(142, 76%, 45%)' },
-    { name: 'Empty', value: summary?.statusCounts.empty || 0, color: 'hsl(0, 84%, 60%)' },
-    { name: 'Checked Out', value: summary?.statusCounts.checkedOut || 0, color: 'hsl(217, 91%, 60%)' },
-    { name: 'Occupied', value: summary?.statusCounts.occupied || 0, color: 'hsl(215, 20%, 45%)' },
-    { name: 'Error', value: summary?.statusCounts.error || 0, color: 'hsl(280, 89%, 65%)' },
+    { name: 'Present', value: summary?.statusCounts?.present ?? 0, color: 'hsl(142, 76%, 45%)' },
+    { name: 'Empty', value: summary?.statusCounts?.empty ?? 0, color: 'hsl(0, 84%, 60%)' },
+    { name: 'Checked Out', value: summary?.statusCounts?.checkedOut ?? 0, color: 'hsl(217, 91%, 60%)' },
+    { name: 'Occupied', value: summary?.statusCounts?.occupied ?? 0, color: 'hsl(215, 20%, 45%)' },
+    { name: 'Error', value: summary?.statusCounts?.error ?? 0, color: 'hsl(280, 89%, 65%)' },
   ].filter(item => item.value > 0);
 
   // Use real alert trends or empty array
   const alertTrends = extended?.alertTrends || [];
 
   // Calculate availability rate safely
-  const availabilityRate = summary && summary.activeSlots > 0 
-    ? Math.round((summary.statusCounts.present / summary.activeSlots) * 100) 
+  const availabilityRate = summary?.activeSlots && summary.activeSlots > 0 
+    ? Math.round(((summary.statusCounts?.present ?? 0) / summary.activeSlots) * 100) 
     : 0;
 
   // Calculate capture success rate from real data
@@ -151,7 +151,7 @@ export default function Analytics() {
                   <div className="flex items-center gap-1 mt-2">
                     <Database className="w-3 h-3 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
-                      {summary?.statusCounts.present || 0} / {summary?.activeSlots || 0} slots available
+                      {summary?.statusCounts?.present ?? 0} / {summary?.activeSlots ?? 0} slots available
                     </span>
                   </div>
                 </CardContent>
@@ -221,17 +221,17 @@ export default function Analytics() {
                     <div>
                       <p className="text-sm text-muted-foreground">Pending Alerts</p>
                       <p className="text-2xl font-bold text-foreground" data-testid="text-critical-alerts">
-                        {summary?.alertCounts.pending || 0}
+                        {summary?.alertCounts?.pending ?? 0}
                       </p>
                     </div>
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${(summary?.alertCounts.pending || 0) > 0 ? 'bg-red-500/20' : 'bg-green-500/20'}`}>
-                      <AlertTriangle className={`w-6 h-6 ${(summary?.alertCounts.pending || 0) > 0 ? 'text-red-500' : 'text-green-500'}`} />
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${(summary?.alertCounts?.pending ?? 0) > 0 ? 'bg-red-500/20' : 'bg-green-500/20'}`}>
+                      <AlertTriangle className={`w-6 h-6 ${(summary?.alertCounts?.pending ?? 0) > 0 ? 'text-red-500' : 'text-green-500'}`} />
                     </div>
                   </div>
                   <div className="flex items-center gap-1 mt-2">
                     <Database className="w-3 h-3 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
-                      {summary?.alertCounts.failed || 0} failed
+                      {summary?.alertCounts?.failed ?? 0} failed
                     </span>
                   </div>
                 </CardContent>
