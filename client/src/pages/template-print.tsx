@@ -197,6 +197,62 @@ export default function TemplatePrint() {
     const canvasSize = isWidth ? canvasDimensions.width : canvasDimensions.height;
     return (cm * 10 / realSize) * canvasSize;
   };
+  
+  // Circled numbers for tool numbering (1-50)
+  const CIRCLED_NUMBERS = [
+    '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩',
+    '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳',
+    '㉑', '㉒', '㉓', '㉔', '㉕', '㉖', '㉗', '㉘', '㉙', '㉚',
+    '㉛', '㉜', '㉝', '㉞', '㉟', '㊱', '㊲', '㊳', '㊴', '㊵',
+    '㊶', '㊷', '㊸', '㊹', '㊺', '㊻', '㊼', '㊽', '㊾', '㊿'
+  ];
+  
+  // Build a map of rect.id -> numbered label (e.g., "OPPテープ①")
+  // Group by category label, sort by global Y (with tolerance) then X, assign numbers
+  const buildNumberedLabelMap = (): Map<string, string> => {
+    const labelMap = new Map<string, string>();
+    
+    // Group rectangles by category label (excluding scanner_grid and worker_tag_grid)
+    const toolRects = templatesWithCategories.filter(
+      r => r.category.categoryType !== 'scanner_grid' && r.category.categoryType !== 'worker_tag_grid'
+    );
+    
+    // Group by category label
+    const byCategory = new Map<string, typeof toolRects>();
+    for (const rect of toolRects) {
+      const label = rect.category.label || '';
+      if (!byCategory.has(label)) {
+        byCategory.set(label, []);
+      }
+      byCategory.get(label)!.push(rect);
+    }
+    
+    // For each category, sort by global position and assign numbers
+    // Global position uses xCm and yCm directly (already in global coordinates)
+    // Sort by Y first (with 5mm = 0.5cm tolerance for "same row"), then X
+    const ROW_TOLERANCE_CM = 0.5;
+    
+    Array.from(byCategory.entries()).forEach(([categoryLabel, rects]) => {
+      // Sort: group by row (Y with tolerance), then by X within row
+      const sorted = [...rects].sort((a, b) => {
+        // If Y values are within tolerance, consider them same row
+        if (Math.abs(a.yCm - b.yCm) <= ROW_TOLERANCE_CM) {
+          return a.xCm - b.xCm; // Same row: sort by X (left to right)
+        }
+        return a.yCm - b.yCm; // Different rows: sort by Y (top to bottom)
+      });
+      
+      // Assign numbered labels
+      sorted.forEach((rect, index) => {
+        const number = CIRCLED_NUMBERS[index] || `(${index + 1})`;
+        labelMap.set(rect.id, `${categoryLabel}${number}`);
+      });
+    });
+    
+    return labelMap;
+  };
+  
+  const numberedLabelMap = buildNumberedLabelMap();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -464,8 +520,9 @@ export default function TemplatePrint() {
           ctx.lineTo(guideWidthPx / 2, guideSpacingPx / 2);
           ctx.stroke();
 
-          // Draw label above QR code
-          if (rect.category.label) {
+          // Draw label above QR code (use numbered label for consistency with PDF)
+          const displayLabel = numberedLabelMap.get(rect.id) || rect.category.label;
+          if (displayLabel) {
             const padding = cmToPixels(0.3, true);
             const maxFontPx = 96;
             const minFontPx = 18;
@@ -476,18 +533,18 @@ export default function TemplatePrint() {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            let textWidth = ctx.measureText(rect.category.label).width;
+            let textWidth = ctx.measureText(displayLabel).width;
             while (textWidth < minTextWidthPx && fontPx < maxFontPx) {
               fontPx += 2;
               ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
-              textWidth = ctx.measureText(rect.category.label).width;
+              textWidth = ctx.measureText(displayLabel).width;
             }
             
             const maxTextWidth = widthPx - 2 * padding;
             while (textWidth > maxTextWidth && fontPx > minFontPx) {
               fontPx -= 2;
               ctx.font = `bold ${fontPx}px "Noto Sans JP", "Hiragino Sans", "Meiryo", sans-serif`;
-              textWidth = ctx.measureText(rect.category.label).width;
+              textWidth = ctx.measureText(displayLabel).width;
             }
             
             const slotTop = -heightPx / 2;
@@ -496,10 +553,10 @@ export default function TemplatePrint() {
             
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 3;
-            ctx.strokeText(rect.category.label, 0, labelY);
+            ctx.strokeText(displayLabel, 0, labelY);
             
             ctx.fillStyle = '#000000';
-            ctx.fillText(rect.category.label, 0, labelY);
+            ctx.fillText(displayLabel, 0, labelY);
           }
         }
 
@@ -508,7 +565,7 @@ export default function TemplatePrint() {
     };
 
     renderCanvas();
-  }, [templatesWithCategories, qrCodes, arucoMarkers, canvasDimensions, paperSize]);
+  }, [templatesWithCategories, qrCodes, arucoMarkers, canvasDimensions, paperSize, numberedLabelMap]);
 
   const handlePrint = () => {
     window.print();
@@ -527,6 +584,8 @@ export default function TemplatePrint() {
       pdf.addFont("NotoSansJP.ttf", "NotoSansJP", "normal");
       pdf.addFont("NotoSansJP.ttf", "NotoSansJP", "bold");
     };
+    
+    // numberedLabelMap is already computed at component level
 
     const isMultiPage = paperSize === '6-page-3x2' || paperSize === '8-page-4x2';
     const is6Page = paperSize === '6-page-3x2';
@@ -876,7 +935,8 @@ export default function TemplatePrint() {
             
             // Add label above QR code (rotated)
             // Use coordinate transform to avoid jsPDF's align/baseline drift with rotation
-            if (rect.category.label) {
+            const displayLabel = numberedLabelMap.get(rect.id) || rect.category.label;
+            if (displayLabel) {
               const paddingMm = 3;
               const maxFontPt = 28;
               const minFontPt = 10;
@@ -888,11 +948,11 @@ export default function TemplatePrint() {
               pdf.setFontSize(fontPt);
               
               // Increase font size if text is narrower than 3cm
-              let textWidth = pdf.getTextWidth(rect.category.label);
+              let textWidth = pdf.getTextWidth(displayLabel);
               while (textWidth < minTextWidthMm && fontPt < maxFontPt) {
                 fontPt += 1;
                 pdf.setFontSize(fontPt);
-                textWidth = pdf.getTextWidth(rect.category.label);
+                textWidth = pdf.getTextWidth(displayLabel);
               }
               
               // Reduce font size if text is too wide for the slot
@@ -900,7 +960,7 @@ export default function TemplatePrint() {
               while (textWidth > maxTextWidth && fontPt > minFontPt) {
                 fontPt -= 1;
                 pdf.setFontSize(fontPt);
-                textWidth = pdf.getTextWidth(rect.category.label);
+                textWidth = pdf.getTextWidth(displayLabel);
               }
               
               // Position label between slot top and top guide line (above the guide line)
@@ -921,14 +981,14 @@ export default function TemplatePrint() {
               const labelY = localY - labelOffset * Math.cos(angleRad);
               
               // Now center the text at this point
-              const textWidthMm = pdf.getTextWidth(rect.category.label);
+              const textWidthMm = pdf.getTextWidth(displayLabel);
               
               // Text starts at (labelX, labelY) and extends in the rotated direction
               // To center: offset by -textWidth/2 along the rotated X axis
               const startX = labelX - (textWidthMm / 2) * Math.cos(angleRad);
               const startY = labelY + (textWidthMm / 2) * Math.sin(angleRad);
               
-              pdf.text(rect.category.label, startX, startY, { angle: rect.rotation });
+              pdf.text(displayLabel, startX, startY, { angle: rect.rotation });
             }
           } else {
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -950,7 +1010,8 @@ export default function TemplatePrint() {
             pdf.setDrawColor(0, 0, 0); // Reset to black
             
             // Add label above the top guide line (not cutting through it)
-            if (rect.category.label) {
+            const displayLabel2 = numberedLabelMap.get(rect.id) || rect.category.label;
+            if (displayLabel2) {
               const paddingMm = 3;
               const maxFontPt = 28;
               const minFontPt = 10;
@@ -962,11 +1023,11 @@ export default function TemplatePrint() {
               pdf.setFontSize(fontPt);
               
               // Increase font size if text is narrower than 3cm
-              let textWidth = pdf.getTextWidth(rect.category.label);
+              let textWidth = pdf.getTextWidth(displayLabel2);
               while (textWidth < minTextWidthMm && fontPt < maxFontPt) {
                 fontPt += 1;
                 pdf.setFontSize(fontPt);
-                textWidth = pdf.getTextWidth(rect.category.label);
+                textWidth = pdf.getTextWidth(displayLabel2);
               }
               
               // Reduce font size if text is too wide for the slot
@@ -974,7 +1035,7 @@ export default function TemplatePrint() {
               while (textWidth > maxTextWidth && fontPt > minFontPt) {
                 fontPt -= 1;
                 pdf.setFontSize(fontPt);
-                textWidth = pdf.getTextWidth(rect.category.label);
+                textWidth = pdf.getTextWidth(displayLabel2);
               }
               
               // Position label between slot top and top guide line (above the guide line)
@@ -984,7 +1045,7 @@ export default function TemplatePrint() {
               const guideLineY = localY - guideSpacingMm / 2;
               // Label goes halfway between slot top and guide line
               const labelY = (slotTop + guideLineY) / 2;
-              pdf.text(rect.category.label, localX, labelY, { align: 'center', baseline: 'middle' });
+              pdf.text(displayLabel2, localX, labelY, { align: 'center', baseline: 'middle' });
             }
           }
 
@@ -1213,7 +1274,8 @@ export default function TemplatePrint() {
           
           // Add label above the top guide line (rotated)
           // Use coordinate transform to avoid jsPDF's align/baseline drift with rotation
-          if (rect.category.label) {
+          const displayLabelRotated = numberedLabelMap.get(rect.id) || rect.category.label;
+          if (displayLabelRotated) {
             const paddingMm = 3;
             const maxFontPt = 16;
             const minFontPt = 6;
@@ -1222,12 +1284,12 @@ export default function TemplatePrint() {
             pdf.setFont('NotoSansJP', 'bold');
             pdf.setTextColor(0, 0, 0); // Black text
             pdf.setFontSize(fontPt);
-            let textWidth = pdf.getTextWidth(rect.category.label);
+            let textWidth = pdf.getTextWidth(displayLabelRotated);
             const maxTextWidth = widthMm - 2 * paddingMm;
             while (textWidth > maxTextWidth && fontPt > minFontPt) {
               fontPt -= 0.5;
               pdf.setFontSize(fontPt);
-              textWidth = pdf.getTextWidth(rect.category.label);
+              textWidth = pdf.getTextWidth(displayLabelRotated);
             }
             
             // Position label between slot top and top guide line (above the guide line)
@@ -1248,11 +1310,11 @@ export default function TemplatePrint() {
             const labelY = yMm - labelOffset * Math.cos(angleRad);
             
             // Center the text at this point
-            const textWidthMm = pdf.getTextWidth(rect.category.label);
+            const textWidthMm = pdf.getTextWidth(displayLabelRotated);
             const startX = labelX - (textWidthMm / 2) * Math.cos(angleRad);
             const startY = labelY + (textWidthMm / 2) * Math.sin(angleRad);
             
-            pdf.text(rect.category.label, startX, startY, { angle: rect.rotation });
+            pdf.text(displayLabelRotated, startX, startY, { angle: rect.rotation });
           }
         } else {
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
@@ -1274,7 +1336,8 @@ export default function TemplatePrint() {
           pdf.setDrawColor(0, 0, 0); // Reset to black
           
           // Add label above the top guide line (not cutting through it)
-          if (rect.category.label) {
+          const displayLabelNonRotated = numberedLabelMap.get(rect.id) || rect.category.label;
+          if (displayLabelNonRotated) {
             const paddingMm = 3;
             const maxFontPt = 16;
             const minFontPt = 6;
@@ -1283,19 +1346,19 @@ export default function TemplatePrint() {
             pdf.setFont('NotoSansJP', 'bold');
             pdf.setTextColor(0, 0, 0); // Black text
             pdf.setFontSize(fontPt);
-            let textWidth = pdf.getTextWidth(rect.category.label);
+            let textWidth = pdf.getTextWidth(displayLabelNonRotated);
             const maxTextWidth = widthMm - 2 * paddingMm;
             while (textWidth > maxTextWidth && fontPt > minFontPt) {
               fontPt -= 0.5;
               pdf.setFontSize(fontPt);
-              textWidth = pdf.getTextWidth(rect.category.label);
+              textWidth = pdf.getTextWidth(displayLabelNonRotated);
             }
             
             // Position label between slot top and top guide line (above the guide line)
             const slotTop = yMm - heightMm / 2;
             const guideLineY = yMm - guideSpacingMm / 2;
             const labelY = (slotTop + guideLineY) / 2;
-            pdf.text(rect.category.label, xMm, labelY, { align: 'center', baseline: 'middle' });
+            pdf.text(displayLabelNonRotated, xMm, labelY, { align: 'center', baseline: 'middle' });
           }
         }
 
