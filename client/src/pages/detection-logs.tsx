@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { downloadFile } from "@/lib/api";
+import { downloadFile, apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Download, ChevronLeft, ChevronRight, Eye, Filter } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, Eye, Filter, Settings2 } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 
 const TIMEZONE = "Asia/Tokyo";
@@ -30,6 +32,7 @@ interface DetectionLog {
 
 export default function DetectionLogs() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     slotId: 'all',
@@ -48,8 +51,37 @@ export default function DetectionLogs() {
     }],
   });
 
-  const { data: slots } = useQuery({
+  const { data: slots } = useQuery<any[]>({
     queryKey: ['/api/slots'],
+  });
+
+  const { data: sheetsFormattingConfig } = useQuery<{ value: any }>({
+    queryKey: ['/api/config/SHEETS_FORMATTING'],
+  });
+
+  const sheetsFormatting = sheetsFormattingConfig?.value || {
+    tabCreation: 'monthly',
+    tabNamePattern: 'Alerts-{YYYY-MM}',
+    columnOrder: ['timestamp', 'alertType', 'status', 'cameraId', 'slotId', 'errorMessage', 'details']
+  };
+
+  const updateConfigMutation = useMutation({
+    mutationFn: ({ key, value }: { key: string; value: any }) =>
+      apiRequest('POST', '/api/config', { key, value }),
+    onSuccess: () => {
+      toast({
+        title: "Configuration Updated",
+        description: "Settings saved successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/config'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const exportLogs = async () => {
@@ -343,6 +375,95 @@ export default function DetectionLogs() {
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Google Sheets Formatting Configuration */}
+            <Card className="mt-6">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-5 h-5 text-primary" />
+                  <CardTitle>Google Sheets Formatting</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="tab-creation">Tab Creation Rule</Label>
+                  <Select
+                    value={sheetsFormatting.tabCreation || 'monthly'}
+                    onValueChange={(value) => {
+                      const updated = { ...sheetsFormatting, tabCreation: value };
+                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
+                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
+                      });
+                    }}
+                  >
+                    <SelectTrigger id="tab-creation" data-testid="select-tab-creation">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single">Single Sheet (All in one tab)</SelectItem>
+                      <SelectItem value="monthly">Monthly Tabs (One per month)</SelectItem>
+                      <SelectItem value="weekly">Weekly Tabs (One per week)</SelectItem>
+                      <SelectItem value="daily">Daily Tabs (One per day)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Controls when new tabs are created in the spreadsheet
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="tab-pattern">Tab Name Pattern</Label>
+                  <Input
+                    id="tab-pattern"
+                    value={sheetsFormatting.tabNamePattern || 'Alerts-{YYYY-MM}'}
+                    onChange={(e) => {
+                      const updated = { ...sheetsFormatting, tabNamePattern: e.target.value };
+                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
+                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
+                      });
+                    }}
+                    data-testid="input-tab-pattern"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Use: <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{YYYY}'}</code> for year, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{MM}'}</code> for month, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{DD}'}</code> for day, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{WW}'}</code> for week
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Include Headers</Label>
+                    <p className="text-xs text-muted-foreground">Add column headers to new tabs</p>
+                  </div>
+                  <Switch
+                    checked={sheetsFormatting.includeHeaders !== false}
+                    onCheckedChange={(checked) => {
+                      const updated = { ...sheetsFormatting, includeHeaders: checked };
+                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
+                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
+                      });
+                    }}
+                    data-testid="switch-include-headers"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Freeze Header Row</Label>
+                    <p className="text-xs text-muted-foreground">Keep headers visible when scrolling</p>
+                  </div>
+                  <Switch
+                    checked={sheetsFormatting.freezeHeaderRow !== false}
+                    onCheckedChange={(checked) => {
+                      const updated = { ...sheetsFormatting, freezeHeaderRow: checked };
+                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
+                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
+                      });
+                    }}
+                    data-testid="switch-freeze-headers"
+                  />
                 </div>
               </CardContent>
             </Card>

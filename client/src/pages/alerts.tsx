@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Table, Volume2, X, TestTube, MessageSquare, Settings2 } from "lucide-react";
+import { Table, Volume2, X, TestTube, MessageSquare } from "lucide-react";
 
 interface AlertRule {
   id: string;
@@ -38,7 +38,6 @@ interface AlertQueue {
 export default function Alerts() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [newRecipient, setNewRecipient] = useState('');
 
   const { data: alertRules } = useQuery<AlertRule[]>({
     queryKey: ['/api/alert-rules'],
@@ -46,10 +45,6 @@ export default function Alerts() {
 
   const { data: alertQueue } = useQuery<AlertQueue[]>({
     queryKey: ['/api/alert-queue'],
-  });
-
-  const { data: emailConfig } = useQuery<{ value: string[] }>({
-    queryKey: ['/api/config/EMAIL_RECIPIENTS'],
   });
 
   const { data: sheetsUrlData } = useQuery<{ url: string | null }>({
@@ -60,18 +55,8 @@ export default function Alerts() {
     queryKey: ['/api/config/ALERT_TEMPLATES'],
   });
 
-  const { data: sheetsFormattingConfig } = useQuery<{ value: any }>({
-    queryKey: ['/api/config/SHEETS_FORMATTING'],
-  });
-
-  const emailRecipients = (emailConfig?.value || []) as string[];
   const sheetsUrl = sheetsUrlData?.url || null;
   const alertTemplates = alertTemplatesConfig?.value || {};
-  const sheetsFormatting = sheetsFormattingConfig?.value || {
-    tabCreation: 'monthly',
-    tabNamePattern: 'Alerts-{YYYY-MM}',
-    columnOrder: ['timestamp', 'alertType', 'status', 'cameraId', 'slotId', 'errorMessage', 'details']
-  };
 
   const updateRuleMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<AlertRule> }) =>
@@ -127,27 +112,6 @@ export default function Alerts() {
       });
     },
   });
-
-  const addEmailRecipient = () => {
-    if (newRecipient && !emailRecipients.includes(newRecipient)) {
-      const updated = [...emailRecipients, newRecipient];
-      setNewRecipient('');
-      updateConfigMutation.mutate({ key: 'EMAIL_RECIPIENTS', value: updated }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['/api/config/EMAIL_RECIPIENTS'] });
-        }
-      });
-    }
-  };
-
-  const removeEmailRecipient = (email: string) => {
-    const updated = emailRecipients.filter(e => e !== email);
-    updateConfigMutation.mutate({ key: 'EMAIL_RECIPIENTS', value: updated }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/config/EMAIL_RECIPIENTS'] });
-      }
-    });
-  };
 
   const getRuleIcon = (ruleType: string) => {
     switch (ruleType) {
@@ -265,77 +229,6 @@ export default function Alerts() {
               {/* Notification Channels */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-foreground">Notification Channels</h3>
-                
-                {/* Email Alerts */}
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-5 h-5 text-primary" />
-                        <p className="font-medium text-foreground">Email Alerts</p>
-                      </div>
-                      <Switch defaultChecked data-testid="switch-email-alerts" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      {emailRecipients.map((email, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <Input
-                            value={email}
-                            readOnly
-                            className="text-sm"
-                            data-testid={`input-email-${index}`}
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeEmailRecipient(email)}
-                            data-testid={`button-remove-email-${index}`}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      ))}
-                      
-                      <div className="flex items-center gap-2">
-                        <Input
-                          placeholder="Add recipient email"
-                          value={newRecipient}
-                          onChange={(e) => setNewRecipient(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && addEmailRecipient()}
-                          className="text-sm"
-                          data-testid="input-new-email"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={addEmailRecipient}
-                          data-testid="button-add-email"
-                        >
-                          +
-                        </Button>
-                      </div>
-                      
-                      <div className="mt-3 pt-3 border-t border-border">
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => testAlertMutation.mutate()}
-                          disabled={testAlertMutation.isPending || emailRecipients.length === 0}
-                          data-testid="button-test-email"
-                        >
-                          <TestTube className="w-4 h-4 mr-2" />
-                          {testAlertMutation.isPending ? 'Sending Test Email...' : 'Send Test Email'}
-                        </Button>
-                        {emailRecipients.length === 0 && (
-                          <p className="text-xs text-muted-foreground mt-2 text-center">
-                            Add at least one recipient to test
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
                 
                 {/* Google Sheets */}
                 <Card>
@@ -494,95 +387,6 @@ export default function Alerts() {
                     </TabsContent>
                   ))}
                 </Tabs>
-              </CardContent>
-            </Card>
-
-            {/* Google Sheets Formatting Configuration */}
-            <Card className="mt-6">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Settings2 className="w-5 h-5 text-primary" />
-                  <CardTitle>Google Sheets Formatting</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="tab-creation">Tab Creation Rule</Label>
-                  <Select
-                    value={sheetsFormatting.tabCreation || 'monthly'}
-                    onValueChange={(value) => {
-                      const updated = { ...sheetsFormatting, tabCreation: value };
-                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
-                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
-                      });
-                    }}
-                  >
-                    <SelectTrigger id="tab-creation" data-testid="select-tab-creation">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="single">Single Sheet (All in one tab)</SelectItem>
-                      <SelectItem value="monthly">Monthly Tabs (One per month)</SelectItem>
-                      <SelectItem value="weekly">Weekly Tabs (One per week)</SelectItem>
-                      <SelectItem value="daily">Daily Tabs (One per day)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Controls when new tabs are created in the spreadsheet
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="tab-pattern">Tab Name Pattern</Label>
-                  <Input
-                    id="tab-pattern"
-                    value={sheetsFormatting.tabNamePattern || 'Alerts-{YYYY-MM}'}
-                    onChange={(e) => {
-                      const updated = { ...sheetsFormatting, tabNamePattern: e.target.value };
-                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
-                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
-                      });
-                    }}
-                    data-testid="input-tab-pattern"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Use: <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{YYYY}'}</code> for year, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{MM}'}</code> for month, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{DD}'}</code> for day, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{WW}'}</code> for week
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Include Headers</Label>
-                    <p className="text-xs text-muted-foreground">Add column headers to new tabs</p>
-                  </div>
-                  <Switch
-                    checked={sheetsFormatting.includeHeaders !== false}
-                    onCheckedChange={(checked) => {
-                      const updated = { ...sheetsFormatting, includeHeaders: checked };
-                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
-                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
-                      });
-                    }}
-                    data-testid="switch-include-headers"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Freeze Header Row</Label>
-                    <p className="text-xs text-muted-foreground">Keep headers visible when scrolling</p>
-                  </div>
-                  <Switch
-                    checked={sheetsFormatting.freezeHeaderRow !== false}
-                    onCheckedChange={(checked) => {
-                      const updated = { ...sheetsFormatting, freezeHeaderRow: checked };
-                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
-                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
-                      });
-                    }}
-                    data-testid="switch-freeze-headers"
-                  />
-                </div>
               </CardContent>
             </Card>
 

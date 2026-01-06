@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { X, Plus, Camera, Trash, Power, Lightbulb, Search, Edit } from "lucide-react";
+import { X, Plus, Camera, Trash, Power, Lightbulb, Search, Edit, Mail, TestTube } from "lucide-react";
 
 interface SystemConfig {
   key: string;
@@ -34,6 +34,12 @@ export default function Configuration() {
   const { data: cameras } = useQuery<any[]>({
     queryKey: ['/api/cameras'],
   });
+
+  const { data: emailConfig } = useQuery<{ value: string[] }>({
+    queryKey: ['/api/config/EMAIL_RECIPIENTS'],
+  });
+
+  const emailRecipients = (emailConfig?.value || []) as string[];
 
   const [newCameraName, setNewCameraName] = useState("");
   const [newCameraDevice, setNewCameraDevice] = useState("0");
@@ -251,9 +257,46 @@ export default function Configuration() {
     },
   });
 
+  const testAlertMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/alerts/test'),
+    onSuccess: () => {
+      toast({
+        title: "Test Alert Sent",
+        description: "Check your email and other notification channels",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Test Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const addEmailRecipient = () => {
+    if (newEmailInput && !emailRecipients.includes(newEmailInput)) {
+      const updated = [...emailRecipients, newEmailInput];
+      setNewEmailInput('');
+      updateConfigMutation.mutate({ key: 'EMAIL_RECIPIENTS', value: updated }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['/api/config/EMAIL_RECIPIENTS'] });
+        }
+      });
+    }
+  };
+
+  const removeEmailRecipient = (email: string) => {
+    const updated = emailRecipients.filter(e => e !== email);
+    updateConfigMutation.mutate({ key: 'EMAIL_RECIPIENTS', value: updated }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/config/EMAIL_RECIPIENTS'] });
+      }
+    });
+  };
+
   const configSections = {
     'BUSINESS_HOURS': { label: 'Business Hours', type: 'text' },
-    'EMAIL_RECIPIENTS': { label: 'Email Recipients', type: 'email_list' },
     'GOOGLE_SHEETS_ID': { label: 'Google Sheets ID', type: 'text' },
     'SMTP_CONFIG': { label: 'SMTP Configuration', type: 'json' },
     'CAPTURE_SCHEDULE': { label: 'Capture Schedule', type: 'json' },
@@ -559,6 +602,75 @@ export default function Configuration() {
               </CardContent>
             </Card>
 
+            {/* Email Alerts */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-primary" />
+                  Email Alerts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {emailRecipients.map((email, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input
+                        value={email}
+                        readOnly
+                        className="text-sm"
+                        data-testid={`input-email-${index}`}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeEmailRecipient(email)}
+                        data-testid={`button-remove-email-${index}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Add recipient email"
+                      value={newEmailInput}
+                      onChange={(e) => setNewEmailInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addEmailRecipient()}
+                      className="text-sm"
+                      data-testid="input-new-email"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={addEmailRecipient}
+                      data-testid="button-add-email"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => testAlertMutation.mutate()}
+                      disabled={testAlertMutation.isPending || emailRecipients.length === 0}
+                      data-testid="button-test-email"
+                    >
+                      <TestTube className="w-4 h-4 mr-2" />
+                      {testAlertMutation.isPending ? 'Sending Test Email...' : 'Send Test Email'}
+                    </Button>
+                    {emailRecipients.length === 0 && (
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        Add at least one recipient to test
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Configuration Settings */}
             <Card>
               <CardHeader>
@@ -576,80 +688,7 @@ export default function Configuration() {
                         <p className="text-xs text-muted-foreground">{setting.description}</p>
                       )}
                       
-                      {section.type === 'email_list' ? (
-                        <div className="space-y-3">
-                          <div className="flex flex-wrap gap-2">
-                            {(Array.isArray(setting.value) ? setting.value : []).map((email: string, idx: number) => (
-                              <Badge 
-                                key={idx} 
-                                variant="secondary" 
-                                className="px-3 py-1.5 text-sm flex items-center gap-2"
-                                data-testid={`badge-email-${idx}`}
-                              >
-                                {email}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newList = (setting.value as string[]).filter((_, i) => i !== idx);
-                                    updateConfigMutation.mutate({
-                                      key: setting.key,
-                                      value: newList,
-                                      description: setting.description || undefined,
-                                    });
-                                  }}
-                                  className="ml-1 hover:text-destructive"
-                                  data-testid={`button-remove-email-${idx}`}
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </Badge>
-                            ))}
-                          </div>
-                          <div className="flex gap-2">
-                            <Input
-                              type="email"
-                              placeholder="Enter email address"
-                              value={newEmailInput}
-                              onChange={(e) => setNewEmailInput(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && newEmailInput.trim()) {
-                                  e.preventDefault();
-                                  const currentList = Array.isArray(setting.value) ? setting.value : [];
-                                  if (!currentList.includes(newEmailInput.trim())) {
-                                    updateConfigMutation.mutate({
-                                      key: setting.key,
-                                      value: [...currentList, newEmailInput.trim()],
-                                      description: setting.description || undefined,
-                                    });
-                                    setNewEmailInput("");
-                                  }
-                                }
-                              }}
-                              data-testid="input-add-email"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => {
-                                if (newEmailInput.trim()) {
-                                  const currentList = Array.isArray(setting.value) ? setting.value : [];
-                                  if (!currentList.includes(newEmailInput.trim())) {
-                                    updateConfigMutation.mutate({
-                                      key: setting.key,
-                                      value: [...currentList, newEmailInput.trim()],
-                                      description: setting.description || undefined,
-                                    });
-                                    setNewEmailInput("");
-                                  }
-                                }
-                              }}
-                              data-testid="button-add-email"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ) : section.type === 'json' ? (
+                      {section.type === 'json' ? (
                         <Textarea
                           id={setting.key}
                           value={JSON.stringify(setting.value, null, 2)}
