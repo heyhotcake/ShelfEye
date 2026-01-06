@@ -249,7 +249,9 @@ export class SheetsSummaryReport {
     const templateSheetId = templateSheet.properties.sheetId;
 
     // Duplicate the Template tab with the new name
-    console.log(`[SheetsSummaryReport] Duplicating Template tab as: ${tabName}`);
+    // Insert at index 1 (right after Template) so newest week is always near the left
+    const templateIndex = templateSheet.properties?.index ?? 0;
+    console.log(`[SheetsSummaryReport] Duplicating Template tab as: ${tabName} (inserting at index ${templateIndex + 1})`);
 
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: this.spreadsheetId,
@@ -258,7 +260,7 @@ export class SheetsSummaryReport {
           duplicateSheet: {
             sourceSheetId: templateSheetId,
             newSheetName: tabName,
-            insertSheetIndex: spreadsheet.data.sheets?.length || 1, // Add at the end
+            insertSheetIndex: templateIndex + 1, // Insert right after Template
           }
         }]
       }
