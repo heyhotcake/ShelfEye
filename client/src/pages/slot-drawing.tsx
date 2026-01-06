@@ -64,8 +64,7 @@ export default function SlotDrawing() {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const [snapEnabled, setSnapEnabled] = useState(true); // Toggle snapping on/off
-  const [gridSize, setGridSize] = useState(0.5); // Adjustable grid size (0.5cm default)
+  const [snapToSlotEnabled, setSnapToSlotEnabled] = useState(true); // Snap to existing tool slots
   
   // Slot version management
   const [showVersions, setShowVersions] = useState(false);
@@ -634,9 +633,109 @@ export default function SlotDrawing() {
     return pixels / pxPerMm / 10; // pixels to mm, then to cm
   };
 
-  const snapToGrid = (cm: number, enableSnap: boolean = snapEnabled): number => {
-    if (!enableSnap) return cm; // Skip snapping if disabled
-    return Math.round(cm / gridSize) * gridSize;
+  // Snap to existing tool slot edges
+  const SNAP_THRESHOLD_CM = 0.5; // Snap within 0.5cm of an edge
+  
+  const snapToSlot = (
+    xCm: number, 
+    yCm: number, 
+    rectWidthCm: number, 
+    rectHeightCm: number,
+    currentRectId: string,
+    enableSnap: boolean = snapToSlotEnabled
+  ): { x: number; y: number } => {
+    if (!enableSnap || templateRectangles.length <= 1) {
+      return { x: xCm, y: yCm };
+    }
+    
+    // Calculate current rect's edges (center-based coordinates)
+    const halfWidth = rectWidthCm / 2;
+    const halfHeight = rectHeightCm / 2;
+    const currentLeft = xCm - halfWidth;
+    const currentRight = xCm + halfWidth;
+    const currentTop = yCm - halfHeight;
+    const currentBottom = yCm + halfHeight;
+    
+    let snappedX = xCm;
+    let snappedY = yCm;
+    let closestXDist = SNAP_THRESHOLD_CM;
+    let closestYDist = SNAP_THRESHOLD_CM;
+    
+    // Check against all other rectangles
+    for (const other of templateRectangles) {
+      if (other.id === currentRectId) continue;
+      
+      const otherHalfWidth = other.widthCm / 2;
+      const otherHalfHeight = other.heightCm / 2;
+      const otherLeft = other.xCm - otherHalfWidth;
+      const otherRight = other.xCm + otherHalfWidth;
+      const otherTop = other.yCm - otherHalfHeight;
+      const otherBottom = other.yCm + otherHalfHeight;
+      
+      // X-axis snapping: check distance from current edge to target edge
+      // Left edge snaps
+      const leftToLeft = Math.abs(currentLeft - otherLeft);
+      const leftToRight = Math.abs(currentLeft - otherRight);
+      // Right edge snaps
+      const rightToRight = Math.abs(currentRight - otherRight);
+      const rightToLeft = Math.abs(currentRight - otherLeft);
+      // Center snap
+      const centerXDist = Math.abs(xCm - other.xCm);
+      
+      if (leftToLeft < closestXDist) {
+        closestXDist = leftToLeft;
+        snappedX = otherLeft + halfWidth;
+      }
+      if (rightToRight < closestXDist) {
+        closestXDist = rightToRight;
+        snappedX = otherRight - halfWidth;
+      }
+      if (leftToRight < closestXDist) {
+        closestXDist = leftToRight;
+        snappedX = otherRight + halfWidth;
+      }
+      if (rightToLeft < closestXDist) {
+        closestXDist = rightToLeft;
+        snappedX = otherLeft - halfWidth;
+      }
+      if (centerXDist < closestXDist) {
+        closestXDist = centerXDist;
+        snappedX = other.xCm;
+      }
+      
+      // Y-axis snapping: check distance from current edge to target edge
+      // Top edge snaps
+      const topToTop = Math.abs(currentTop - otherTop);
+      const topToBottom = Math.abs(currentTop - otherBottom);
+      // Bottom edge snaps  
+      const bottomToBottom = Math.abs(currentBottom - otherBottom);
+      const bottomToTop = Math.abs(currentBottom - otherTop);
+      // Center snap
+      const centerYDist = Math.abs(yCm - other.yCm);
+      
+      if (topToTop < closestYDist) {
+        closestYDist = topToTop;
+        snappedY = otherTop + halfHeight;
+      }
+      if (bottomToBottom < closestYDist) {
+        closestYDist = bottomToBottom;
+        snappedY = otherBottom - halfHeight;
+      }
+      if (topToBottom < closestYDist) {
+        closestYDist = topToBottom;
+        snappedY = otherBottom + halfHeight;
+      }
+      if (bottomToTop < closestYDist) {
+        closestYDist = bottomToTop;
+        snappedY = otherTop - halfHeight;
+      }
+      if (centerYDist < closestYDist) {
+        closestYDist = centerYDist;
+        snappedY = other.yCm;
+      }
+    }
+    
+    return { x: snappedX, y: snappedY };
   };
 
   // Helper function to get sheet boundaries for 6-page format
@@ -1187,10 +1286,17 @@ export default function SlotDrawing() {
       const newXPixels = canvasMargin + cmToPixels(rect.xCm, true) + deltaX;
       const newYPixels = canvasMargin + cmToPixels(rect.yCm, false) + deltaY;
 
+      // Convert to cm first
+      let newXCm = pixelsToCm(newXPixels - canvasMargin, true);
+      let newYCm = pixelsToCm(newYPixels - canvasMargin, false);
+      
       // Hold Ctrl or Alt to disable snapping for precise positioning
-      const shouldSnap = snapEnabled && !event.ctrlKey && !event.altKey;
-      let newXCm = snapToGrid(pixelsToCm(newXPixels - canvasMargin, true), shouldSnap);
-      let newYCm = snapToGrid(pixelsToCm(newYPixels - canvasMargin, false), shouldSnap);
+      const shouldSnap = snapToSlotEnabled && !event.ctrlKey && !event.altKey;
+      
+      // Apply snap-to-slot logic
+      const snapped = snapToSlot(newXCm, newYCm, rect.widthCm, rect.heightCm, rect.id, shouldSnap);
+      newXCm = snapped.x;
+      newYCm = snapped.y;
 
       // Simple bounds: just keep within overall canvas (no per-sheet locking)
       const bounds = PAPER_BOUNDS[paperSize];
@@ -1719,8 +1825,8 @@ export default function SlotDrawing() {
       const centerXPixels = paperWidth / 2;
       const centerYPixels = paperHeight / 2;
       
-      const centerXCm = snapToGrid(pixelsToCm(centerXPixels, true));
-      const centerYCm = snapToGrid(pixelsToCm(centerYPixels, false));
+      const centerXCm = pixelsToCm(centerXPixels, true);
+      const centerYCm = pixelsToCm(centerYPixels, false);
 
       createTemplateRectMutation.mutate({
         categoryId: categoryId,
@@ -1923,32 +2029,102 @@ export default function SlotDrawing() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="snap-enabled" 
-                      checked={snapEnabled}
-                      onCheckedChange={(checked) => setSnapEnabled(checked === true)}
-                      data-testid="checkbox-snap-enabled"
-                    />
-                    <Label htmlFor="snap-enabled" className="text-sm cursor-pointer">
-                      Snap to Grid ({gridSize}cm)
-                    </Label>
-                  </div>
-                  
-                  <Select value={gridSize.toString()} onValueChange={(v) => setGridSize(parseFloat(v))}>
-                    <SelectTrigger className="w-28" data-testid="select-grid-size">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0.25">0.25cm</SelectItem>
-                      <SelectItem value="0.5">0.5cm</SelectItem>
-                      <SelectItem value="1">1cm</SelectItem>
-                      <SelectItem value="2">2cm</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="snap-to-slot" 
+                    checked={snapToSlotEnabled}
+                    onCheckedChange={(checked) => setSnapToSlotEnabled(checked === true)}
+                    data-testid="checkbox-snap-to-slot"
+                  />
+                  <Label htmlFor="snap-to-slot" className="text-sm cursor-pointer">
+                    Snap to Tool Slot
+                  </Label>
                 </div>
               </div>
+              
+              {/* Selected Template Rectangle Info - Below Canvas */}
+              {selectedTemplateRect && (
+                <div className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-blue-500">Selected: {selectedTemplateRect.categoryName}</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {selectedTemplateRect.widthCm}×{selectedTemplateRect.heightCm} cm • ({selectedTemplateRect.xCm.toFixed(1)}, {selectedTemplateRect.yCm.toFixed(1)}) • {selectedTemplateRect.rotation || 0}°
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={deleteSelectedTemplateRect}
+                        disabled={deleteTemplateRectMutation.isPending}
+                        data-testid="button-delete-template"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <label className="text-xs font-medium text-blue-500 block mb-1">
+                        Expected QR ID
+                      </label>
+                      <Input
+                        placeholder="e.g., pen-004, tool-001"
+                        value={selectedTemplateRect.autoQrId || ''}
+                        onChange={(e) => {
+                          const newQrId = e.target.value;
+                          setTemplateRectangles(prev => prev.map(r => 
+                            r.id === selectedTemplateRect.id ? { ...r, autoQrId: newQrId } : r
+                          ));
+                          setSelectedTemplateRect({ ...selectedTemplateRect, autoQrId: newQrId });
+                        }}
+                        onBlur={() => {
+                          updateTemplateRectMutation.mutate({
+                            id: selectedTemplateRect.id,
+                            data: {
+                              categoryId: selectedTemplateRect.categoryId,
+                              paperSize: paperSize,
+                              xCm: selectedTemplateRect.xCm,
+                              yCm: selectedTemplateRect.yCm,
+                              rotation: selectedTemplateRect.rotation || 0,
+                              autoQrId: selectedTemplateRect.autoQrId,
+                            }
+                          });
+                        }}
+                        className="text-sm"
+                        data-testid="input-expected-qr-id"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={rotateTemplateLeft}
+                        disabled={updateTemplateRectMutation.isPending}
+                        data-testid="button-rotate-left"
+                      >
+                        <RotateCcw className="w-4 h-4 mr-1" />
+                        Left
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={rotateTemplateRight}
+                        disabled={updateTemplateRectMutation.isPending}
+                        data-testid="button-rotate-right"
+                      >
+                        <RotateCw className="w-4 h-4 mr-1" />
+                        Right
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground mt-2 italic">
+                    Drag to reposition{snapToSlotEnabled ? ' (snaps to nearby tools, hold Ctrl/Alt to disable)' : ' (snapping disabled)'}
+                  </p>
+                </div>
+              )}
 
                 {/* Template Rectangles */}
                 <Card>
@@ -1998,102 +2174,6 @@ export default function SlotDrawing() {
                         >
                           Manage Categories
                         </Button>
-                      </div>
-                    )}
-
-                    {/* Selected Template Rectangle Info */}
-                    {selectedTemplateRect && (
-                      <div className="border-t pt-3 mt-3">
-                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-blue-500">Selected Template</h4>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={deleteSelectedTemplateRect}
-                              disabled={deleteTemplateRectMutation.isPending}
-                              data-testid="button-delete-template"
-                            >
-                              <Trash className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          <div className="space-y-1 text-xs text-muted-foreground">
-                            <p><span className="font-medium">Category:</span> {selectedTemplateRect.categoryName}</p>
-                            <p><span className="font-medium">Size:</span> {selectedTemplateRect.widthCm}×{selectedTemplateRect.heightCm} cm</p>
-                            <p><span className="font-medium">Position:</span> ({selectedTemplateRect.xCm.toFixed(1)}, {selectedTemplateRect.yCm.toFixed(1)}) cm</p>
-                            <p><span className="font-medium">Rotation:</span> {selectedTemplateRect.rotation || 0}°</p>
-                          </div>
-                          
-                          <div className="mt-3 pt-3 border-t border-blue-500/20">
-                            <label className="text-xs font-medium text-blue-500 block mb-1">
-                              Expected QR ID
-                            </label>
-                            <Input
-                              placeholder="e.g., pen-004, tool-001"
-                              value={selectedTemplateRect.autoQrId || ''}
-                              onChange={(e) => {
-                                const newQrId = e.target.value;
-                                setTemplateRectangles(prev => prev.map(r => 
-                                  r.id === selectedTemplateRect.id ? { ...r, autoQrId: newQrId } : r
-                                ));
-                                setSelectedTemplateRect({ ...selectedTemplateRect, autoQrId: newQrId });
-                              }}
-                              onBlur={() => {
-                                // Save to database when user leaves the field
-                                updateTemplateRectMutation.mutate({
-                                  id: selectedTemplateRect.id,
-                                  data: {
-                                    categoryId: selectedTemplateRect.categoryId,
-                                    paperSize: paperSize,
-                                    xCm: selectedTemplateRect.xCm,
-                                    yCm: selectedTemplateRect.yCm,
-                                    rotation: selectedTemplateRect.rotation || 0,
-                                    autoQrId: selectedTemplateRect.autoQrId,
-                                  }
-                                });
-                              }}
-                              className="text-sm"
-                              data-testid="input-expected-qr-id"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1 italic">
-                              QR code ID that should be detected in this slot
-                            </p>
-                          </div>
-                          
-                          <div className="mt-3 pt-3 border-t border-blue-500/20">
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={rotateTemplateLeft}
-                                disabled={updateTemplateRectMutation.isPending}
-                                data-testid="button-rotate-left"
-                                className="flex-1"
-                              >
-                                <RotateCcw className="w-4 h-4 mr-1" />
-                                Rotate Left
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={rotateTemplateRight}
-                                disabled={updateTemplateRectMutation.isPending}
-                                data-testid="button-rotate-right"
-                                className="flex-1"
-                              >
-                                <RotateCw className="w-4 h-4 mr-1" />
-                                Rotate Right
-                              </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground text-center mt-2">
-                              Rotate by 45° increments
-                            </p>
-                          </div>
-                          
-                          <p className="text-xs text-muted-foreground mt-2 italic">
-                            Drag to reposition{snapEnabled ? ` (snaps to ${gridSize}cm grid, hold Ctrl/Alt to disable)` : ' (snapping disabled)'}
-                          </p>
-                        </div>
                       </div>
                     )}
 
