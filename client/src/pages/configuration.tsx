@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -293,13 +292,6 @@ export default function Configuration() {
         queryClient.invalidateQueries({ queryKey: ['/api/config/EMAIL_RECIPIENTS'] });
       }
     });
-  };
-
-  const configSections = {
-    'BUSINESS_HOURS': { label: 'Business Hours', type: 'text' },
-    'GOOGLE_SHEETS_ID': { label: 'Google Sheets ID', type: 'text' },
-    'SMTP_CONFIG': { label: 'SMTP Configuration', type: 'json' },
-    'CAPTURE_SCHEDULE': { label: 'Capture Schedule', type: 'json' },
   };
 
   if (isLoading) {
@@ -671,61 +663,6 @@ export default function Configuration() {
               </CardContent>
             </Card>
 
-            {/* Configuration Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Configuration Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {config?.map((setting) => {
-                  const section = configSections[setting.key as keyof typeof configSections];
-                  if (!section) return null;
-                  
-                  return (
-                    <div key={setting.key} className="space-y-2">
-                      <Label htmlFor={setting.key}>{section.label}</Label>
-                      {setting.description && (
-                        <p className="text-xs text-muted-foreground">{setting.description}</p>
-                      )}
-                      
-                      {section.type === 'json' ? (
-                        <Textarea
-                          id={setting.key}
-                          value={JSON.stringify(setting.value, null, 2)}
-                          onChange={(e) => {
-                            try {
-                              const parsed = JSON.parse(e.target.value);
-                              updateConfigMutation.mutate({
-                                key: setting.key,
-                                value: parsed,
-                                description: setting.description || undefined,
-                              });
-                            } catch (error) {
-                              // Invalid JSON, don't update yet
-                            }
-                          }}
-                          className="font-mono text-sm"
-                          rows={4}
-                          data-testid={`textarea-${setting.key.toLowerCase().replace(/_/g, '-')}`}
-                        />
-                      ) : (
-                        <Input
-                          id={setting.key}
-                          value={typeof setting.value === 'string' ? setting.value : JSON.stringify(setting.value)}
-                          onChange={(e) => updateConfigMutation.mutate({
-                            key: setting.key,
-                            value: e.target.value,
-                            description: setting.description || undefined,
-                          })}
-                          data-testid={`input-${setting.key.toLowerCase().replace(/_/g, '-')}`}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-            
           </div>
         </div>
       </main>
