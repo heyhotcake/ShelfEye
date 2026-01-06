@@ -660,6 +660,8 @@ export default function SlotDrawing() {
     let snappedY = yCm;
     let closestXDist = SNAP_THRESHOLD_CM;
     let closestYDist = SNAP_THRESHOLD_CM;
+    let xSnappedToRect: typeof templateRectangles[0] | null = null;
+    let ySnappedToRect: typeof templateRectangles[0] | null = null;
     
     // Check against all other rectangles
     for (const other of templateRectangles) {
@@ -673,66 +675,116 @@ export default function SlotDrawing() {
       const otherBottom = other.yCm + otherHalfHeight;
       
       // X-axis snapping: check distance from current edge to target edge
-      // Left edge snaps
       const leftToLeft = Math.abs(currentLeft - otherLeft);
       const leftToRight = Math.abs(currentLeft - otherRight);
-      // Right edge snaps
       const rightToRight = Math.abs(currentRight - otherRight);
       const rightToLeft = Math.abs(currentRight - otherLeft);
-      // Center snap
       const centerXDist = Math.abs(xCm - other.xCm);
       
       if (leftToLeft < closestXDist) {
         closestXDist = leftToLeft;
         snappedX = otherLeft + halfWidth;
+        xSnappedToRect = other;
       }
       if (rightToRight < closestXDist) {
         closestXDist = rightToRight;
         snappedX = otherRight - halfWidth;
+        xSnappedToRect = other;
       }
       if (leftToRight < closestXDist) {
         closestXDist = leftToRight;
         snappedX = otherRight + halfWidth;
+        xSnappedToRect = other;
       }
       if (rightToLeft < closestXDist) {
         closestXDist = rightToLeft;
         snappedX = otherLeft - halfWidth;
+        xSnappedToRect = other;
       }
       if (centerXDist < closestXDist) {
         closestXDist = centerXDist;
         snappedX = other.xCm;
+        xSnappedToRect = other;
       }
       
       // Y-axis snapping: check distance from current edge to target edge
-      // Top edge snaps
       const topToTop = Math.abs(currentTop - otherTop);
       const topToBottom = Math.abs(currentTop - otherBottom);
-      // Bottom edge snaps  
       const bottomToBottom = Math.abs(currentBottom - otherBottom);
       const bottomToTop = Math.abs(currentBottom - otherTop);
-      // Center snap
       const centerYDist = Math.abs(yCm - other.yCm);
       
       if (topToTop < closestYDist) {
         closestYDist = topToTop;
         snappedY = otherTop + halfHeight;
+        ySnappedToRect = other;
       }
       if (bottomToBottom < closestYDist) {
         closestYDist = bottomToBottom;
         snappedY = otherBottom - halfHeight;
+        ySnappedToRect = other;
       }
       if (topToBottom < closestYDist) {
         closestYDist = topToBottom;
         snappedY = otherBottom + halfHeight;
+        ySnappedToRect = other;
       }
       if (bottomToTop < closestYDist) {
         closestYDist = bottomToTop;
         snappedY = otherTop - halfHeight;
+        ySnappedToRect = other;
       }
       if (centerYDist < closestYDist) {
         closestYDist = centerYDist;
         snappedY = other.yCm;
+        ySnappedToRect = other;
       }
+    }
+    
+    // "Full edge snap": When X snaps to a rect, also try to snap Y to that same rect
+    // This creates a clean corner-to-corner alignment
+    if (xSnappedToRect && !ySnappedToRect) {
+      const other = xSnappedToRect;
+      const otherHalfHeight = other.heightCm / 2;
+      const otherTop = other.yCm - otherHalfHeight;
+      const otherBottom = other.yCm + otherHalfHeight;
+      
+      // Use a slightly larger threshold for the secondary axis (1cm)
+      const SECONDARY_THRESHOLD = 1.0;
+      const topToTop = Math.abs(currentTop - otherTop);
+      const topToBottom = Math.abs(currentTop - otherBottom);
+      const bottomToBottom = Math.abs(currentBottom - otherBottom);
+      const bottomToTop = Math.abs(currentBottom - otherTop);
+      const centerYDist = Math.abs(yCm - other.yCm);
+      
+      let bestDist = SECONDARY_THRESHOLD;
+      if (topToTop < bestDist) { bestDist = topToTop; snappedY = otherTop + halfHeight; }
+      if (bottomToBottom < bestDist) { bestDist = bottomToBottom; snappedY = otherBottom - halfHeight; }
+      if (topToBottom < bestDist) { bestDist = topToBottom; snappedY = otherBottom + halfHeight; }
+      if (bottomToTop < bestDist) { bestDist = bottomToTop; snappedY = otherTop - halfHeight; }
+      if (centerYDist < bestDist) { bestDist = centerYDist; snappedY = other.yCm; }
+    }
+    
+    // Similarly, when Y snaps to a rect, also try to snap X to that same rect
+    if (ySnappedToRect && !xSnappedToRect) {
+      const other = ySnappedToRect;
+      const otherHalfWidth = other.widthCm / 2;
+      const otherLeft = other.xCm - otherHalfWidth;
+      const otherRight = other.xCm + otherHalfWidth;
+      
+      const SECONDARY_THRESHOLD = 1.0;
+      const leftToLeft = Math.abs(currentLeft - otherLeft);
+      const leftToRight = Math.abs(currentLeft - otherRight);
+      const rightToRight = Math.abs(currentRight - otherRight);
+      const rightToLeft = Math.abs(currentRight - otherLeft);
+      const centerXDist = Math.abs(xCm - other.xCm);
+      
+      let bestDist = SECONDARY_THRESHOLD;
+      if (leftToLeft < bestDist) { bestDist = leftToLeft; snappedX = otherLeft + halfWidth; }
+      if (rightToRight < bestDist) { bestDist = rightToRight; snappedX = otherRight - halfWidth; }
+      if (leftToRight < bestDist) { bestDist = leftToRight; snappedX = otherRight + halfWidth; }
+      if (rightToLeft < bestDist) { bestDist = rightToLeft; snappedX = otherLeft - halfWidth; }
+      if (centerXDist < bestDist) { bestDist = centerXDist; snappedX = other.xCm; }
     }
     
     return { x: snappedX, y: snappedY };
