@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest, apiCall, downloadFile, uploadFile } from "@/lib/api";
+import { apiRequest, apiCall } from "@/lib/api";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Download, FileCode, FileText, RotateCcw, X, Plus, Camera, Trash, Power, Lightbulb, Search, Edit } from "lucide-react";
+import { X, Plus, Camera, Trash, Power, Lightbulb, Search, Edit } from "lucide-react";
 
 interface SystemConfig {
   key: string;
@@ -22,7 +22,6 @@ interface SystemConfig {
 export default function Configuration() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [dragActive, setDragActive] = useState(false);
 
   const { data: config, isLoading } = useQuery<SystemConfig[]>({
     queryKey: ['/api/config'],
@@ -251,69 +250,6 @@ export default function Configuration() {
       });
     },
   });
-
-  const exportConfig = async (format: 'yaml' | 'json') => {
-    try {
-      const response = await apiRequest('GET', `/api/config/export?format=${format}`);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `tool-tracker-config.${format}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Export Successful",
-        description: `Configuration exported as ${format.toUpperCase()}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleFileUpload = async (file: File) => {
-    try {
-      await uploadFile('/api/config/import', file);
-      toast({
-        title: "Import Successful",
-        description: "Configuration imported successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/config'] });
-    } catch (error) {
-      toast({
-        title: "Import Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files[0]);
-    }
-  };
 
   const configSections = {
     'BUSINESS_HOURS': { label: 'Business Hours', type: 'text' },
@@ -751,148 +687,6 @@ export default function Configuration() {
               </CardContent>
             </Card>
             
-            {/* Export Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Export Configuration</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Button 
-                    className="flex-1"
-                    onClick={() => exportConfig('yaml')}
-                    data-testid="button-export-yaml"
-                  >
-                    <FileCode className="w-4 h-4 mr-2" />
-                    Export as YAML
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => exportConfig('json')}
-                    data-testid="button-export-json"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Export as JSON
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Includes slots, cameras, schedules, and alert settings
-                </p>
-              </CardContent>
-            </Card>
-            
-            {/* Import Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Import Configuration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                    dragActive ? 'border-primary bg-primary/10' : 'border-border'
-                  }`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                  data-testid="drop-zone-import"
-                >
-                  <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-foreground mb-2">Drop YAML or JSON file here</p>
-                  <p className="text-xs text-muted-foreground mb-4">or click to browse</p>
-                  <Button 
-                    variant="outline"
-                    onClick={() => document.getElementById('file-input')?.click()}
-                    data-testid="button-choose-file"
-                  >
-                    Choose File
-                  </Button>
-                  <input
-                    id="file-input"
-                    type="file"
-                    accept=".yaml,.yml,.json"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleFileUpload(file);
-                    }}
-                  />
-                </div>
-                
-                <div className="mt-3 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-                  <p className="text-sm text-amber-500">
-                    ⚠️ Importing will override current configuration. Create a backup first.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Backup History */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Backups</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileCode className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">config_2025-01-09.yaml</p>
-                      <p className="text-xs text-muted-foreground">5.2 KB • 2 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      data-testid="button-restore-latest"
-                    >
-                      <RotateCcw className="w-3 h-3 mr-1" />
-                      Restore
-                    </Button>
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      className="text-primary"
-                      data-testid="button-download-latest"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileCode className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">config_2025-01-08.yaml</p>
-                      <p className="text-xs text-muted-foreground">5.1 KB • 1 day ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      data-testid="button-restore-previous"
-                    >
-                      <RotateCcw className="w-3 h-3 mr-1" />
-                      Restore
-                    </Button>
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      className="text-primary"
-                      data-testid="button-download-previous"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </main>
