@@ -3454,6 +3454,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Extended analytics endpoint with time series and trends
+  app.get("/api/analytics/extended", async (_req, res) => {
+    try {
+      const slots = await storage.getSlots();
+      const recentLogs = await storage.getDetectionLogs(5000);
+      const captureRuns = await storage.getCaptureRuns(100);
+      const allAlerts = await storage.getAlertQueue();
+
+      // Calculate time series data from detection logs (group by hour)
+      const timeSeriesMap = new Map<string, { present: number; empty: number; checkedOut: number; total: number }>();
+      for (const log of recentLogs) {
+        const logTime = log.timestamp instanceof Date ? log.timestamp : new Date(log.timestamp);
+        const hour = logTime.toISOString().substring(0, 13) + ':00';
+        const existing = timeSeriesMap.get(hour) || { present: 0, empty: 0, checkedOut: 0, total: 0 };
+        existing.total++;
+        if (log.status === 'ITEM_PRESENT') existing.present++;
+        else if (log.status === 'EMPTY') existing.empty++;
+        else if (log.status === 'CHECKED_OUT') existing.checkedOut++;
+        timeSeriesMap.set(hour, existing);
+      }
+      const timeSeries = Array.from(timeSeriesMap.entries())
+        .map(([time, data]) => ({ time, ...data }))
+        .sort((a, b) => a.time.localeCompare(b.time))
+        .slice(-24);
+
+      // Calculate alert trends (group by day and type)
+      const alertTrendsMap = new Map<string, { toolMissing: number; qrFailure: number; cameraHealth: number }>();
+      for (const alert of allAlerts) {
+        if (!alert.createdAt) continue;
+        const day = new Date(alert.createdAt).toISOString().substring(0, 10);
+        const existing = alertTrendsMap.get(day) || { toolMissing: 0, qrFailure: 0, cameraHealth: 0 };
+        if (alert.alertType === 'TOOL_MISSING') existing.toolMissing++;
+        else if (alert.alertType === 'QR_FAILURE') existing.qrFailure++;
+        else if (alert.alertType === 'CAMERA_HEALTH') existing.cameraHealth++;
+        alertTrendsMap.set(day, existing);
+      }
+      const alertTrends = Array.from(alertTrendsMap.entries())
+        .map(([date, data]) => ({ date, ...data }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(-7);
+
+      // Calculate capture run stats
+      const successfulCaptures = captureRuns.filter(r => r.status === 'completed').length;
+      const totalCaptures = captureRuns.length;
+      const successRate = totalCaptures > 0 ? Math.round((successfulCaptures / totalCaptures) * 100 * 10) / 10 : 0;
+
+      // Calculate tool activity from detection logs
+      const toolActivity = new Map<string, { checkouts: number; lastSeen: Date; status: string; toolName: string; slotId: string }>();
+      for (const log of recentLogs) {
+        const logTime = log.timestamp instanceof Date ? log.timestamp : new Date(log.timestamp);
+        const existing = toolActivity.get(log.slotId) || { 
+          checkouts: 0, 
+          lastSeen: logTime, 
+          status: log.status,
+          toolName: '',
+          slotId: log.slotId
+        };
+        if (log.status === 'CHECKED_OUT' || log.status === 'EMPTY') {
+          existing.checkouts++;
+        }
+        if (logTime > existing.lastSeen) {
+          existing.lastSeen = logTime;
+          existing.status = log.status;
+        }
+        toolActivity.set(log.slotId, existing);
+      }
+
+      // Enrich tool activity with slot names
+      for (const slot of slots) {
+        const activity = toolActivity.get(slot.slotId);
+        if (activity) {
+          activity.toolName = slot.toolName || slot.slotId;
+        }
+      }
+
+      const topTools = Array.from(toolActivity.values())
+        .filter(t => t.toolName)
+        .sort((a, b) => b.checkouts - a.checkouts)
+        .slice(0, 5)
+        .map(t => ({
+          tool: t.toolName,
+          slotId: t.slotId,
+          checkouts: t.checkouts,
+          status: t.status === 'ITEM_PRESENT' ? 'present' : 
+                  t.status === 'CHECKED_OUT' ? 'checked-out' : 
+                  t.status === 'EMPTY' ? 'empty' : 'unknown'
+        }));
+
+      res.json({
+        timeSeries,
+        alertTrends,
+        captureStats: {
+          total: totalCaptures,
+          successful: successfulCaptures,
+          successRate
+        },
+        topTools,
+        totalSlots: slots.length,
+        activeSlots: slots.filter(s => s.isActive).length
+      });
+    } catch (error) {
+      console.error('Extended analytics error:', error);
+      res.status(500).json({ message: "Failed to fetch extended analytics", error });
+    }
+  });
+
   // Camera device detection endpoint
   app.get("/api/cameras/detect", async (_req, res) => {
     try {
