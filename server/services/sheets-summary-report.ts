@@ -24,7 +24,7 @@ interface CaptureTimeSummary {
 const SKIP_ROWS = [10, 11, 17, 18, 20, 21];
 
 // Row where the N circle stamp exists in column D
-const STAMP_ROW = 22;
+const STAMP_ROW = 23;
 
 interface ToolRowMapping {
   toolName: string;
