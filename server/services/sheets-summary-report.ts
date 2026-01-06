@@ -94,10 +94,19 @@ export class SheetsSummaryReport {
     try {
       const sheets = await getSheetsClient();
       
+      // Find the template tab name (supports both "Template" and "ひな形")
+      const spreadsheet = await sheets.spreadsheets.get({
+        spreadsheetId: this.spreadsheetId,
+      });
+      const templateSheet = spreadsheet.data.sheets?.find(
+        s => s.properties?.title?.toLowerCase() === 'template' || s.properties?.title === 'ひな形'
+      );
+      const templateTabName = templateSheet?.properties?.title || 'Template';
+      
       // Read columns A, B, and C from Template tab (rows 1-30 should cover all tools)
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: `'Template'!A1:C30`,
+        range: `'${templateTabName}'!A1:C30`,
       });
 
       const rows = response.data.values || [];
@@ -234,9 +243,9 @@ export class SheetsSummaryReport {
       return tabName;
     }
 
-    // Find the Template tab to duplicate (case-insensitive search)
+    // Find the Template tab to duplicate (supports both "Template" and "ひな形")
     const templateSheet = spreadsheet.data.sheets?.find(
-      s => s.properties?.title?.toLowerCase() === 'template'
+      s => s.properties?.title?.toLowerCase() === 'template' || s.properties?.title === 'ひな形'
     );
 
     const existingTabs = spreadsheet.data.sheets?.map(s => `${s.properties?.title}(id:${s.properties?.sheetId})`).join(', ') || 'none';
