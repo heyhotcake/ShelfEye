@@ -32,7 +32,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2, Edit, Save, X, Loader2, Grid3X3 } from "lucide-react";
+import { Plus, Trash2, Edit, Save, X, Loader2, Grid3X3, Palette } from "lucide-react";
+
+// Professional pastel color spectrum for label backgrounds
+const LABEL_COLOR_PRESETS = [
+  { color: "#FFFFFF", name: "White" },
+  { color: "#FEE2E2", name: "Rose" },
+  { color: "#FFEDD5", name: "Peach" },
+  { color: "#FEF3C7", name: "Amber" },
+  { color: "#FEF9C3", name: "Yellow" },
+  { color: "#ECFCCB", name: "Lime" },
+  { color: "#D1FAE5", name: "Emerald" },
+  { color: "#CCFBF1", name: "Teal" },
+  { color: "#CFFAFE", name: "Cyan" },
+  { color: "#DBEAFE", name: "Sky" },
+  { color: "#E0E7FF", name: "Indigo" },
+  { color: "#EDE9FE", name: "Violet" },
+  { color: "#F3E8FF", name: "Purple" },
+  { color: "#FCE7F3", name: "Pink" },
+  { color: "#F5F5F4", name: "Stone" },
+  { color: "#E5E7EB", name: "Gray" },
+];
 
 interface CategoryManagerProps {
   open: boolean;
@@ -65,6 +85,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
       label: "",
       widthCm: 0,
       heightCm: 0,
+      labelColor: "#FFFFFF",
     },
   });
 
@@ -75,6 +96,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
       label: "",
       widthCm: 0,
       heightCm: 0,
+      labelColor: "#FFFFFF",
     },
   });
 
@@ -190,6 +212,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
       label: category.label,
       widthCm: category.widthCm,
       heightCm: category.heightCm,
+      labelColor: category.labelColor || "#FFFFFF",
     });
   };
 
@@ -294,6 +317,38 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       )}
                     />
                   </div>
+                  <FormField
+                    control={form.control}
+                    name="labelColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Palette className="w-4 h-4" />
+                          Label Background Color
+                        </FormLabel>
+                        <FormControl>
+                          <div className="flex flex-wrap gap-2">
+                            {LABEL_COLOR_PRESETS.map((preset) => (
+                              <button
+                                key={preset.color}
+                                type="button"
+                                data-testid={`color-${preset.name.toLowerCase()}`}
+                                title={preset.name}
+                                className={`w-8 h-8 rounded-md border-2 transition-all ${
+                                  field.value === preset.color
+                                    ? 'border-primary ring-2 ring-primary/30 scale-110'
+                                    : 'border-gray-300 hover:border-gray-400'
+                                }`}
+                                style={{ backgroundColor: preset.color }}
+                                onClick={() => field.onChange(preset.color)}
+                              />
+                            ))}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <Button
                     type="submit"
                     data-testid="button-create-category"
@@ -623,6 +678,38 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                   )}
                                 />
                               </div>
+                              <FormField
+                                control={editForm.control}
+                                name="labelColor"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="flex items-center gap-2">
+                                      <Palette className="w-4 h-4" />
+                                      Label Background Color
+                                    </FormLabel>
+                                    <FormControl>
+                                      <div className="flex flex-wrap gap-2">
+                                        {LABEL_COLOR_PRESETS.map((preset) => (
+                                          <button
+                                            key={preset.color}
+                                            type="button"
+                                            data-testid={`edit-color-${preset.name.toLowerCase()}`}
+                                            title={preset.name}
+                                            className={`w-6 h-6 rounded-md border-2 transition-all ${
+                                              field.value === preset.color
+                                                ? 'border-primary ring-2 ring-primary/30 scale-110'
+                                                : 'border-gray-300 hover:border-gray-400'
+                                            }`}
+                                            style={{ backgroundColor: preset.color }}
+                                            onClick={() => field.onChange(preset.color)}
+                                          />
+                                        ))}
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
                               <div className="flex gap-2">
                                 <Button
                                   type="submit"
@@ -647,11 +734,20 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                           </Form>
                         ) : (
                           <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-medium">{category.name}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                Label: {category.label} | Dimensions: {category.widthCm} × {category.heightCm} cm
-                              </p>
+                            <div className="flex items-center gap-3">
+                              {category.labelColor && category.labelColor !== "#FFFFFF" && (
+                                <div
+                                  className="w-6 h-6 rounded-md border border-gray-300 shrink-0"
+                                  style={{ backgroundColor: category.labelColor }}
+                                  title="Label color"
+                                />
+                              )}
+                              <div>
+                                <h4 className="font-medium">{category.name}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  Label: {category.label} | Dimensions: {category.widthCm} × {category.heightCm} cm
+                                </p>
+                              </div>
                             </div>
                             <div className="flex gap-2">
                               <Button

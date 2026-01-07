@@ -112,6 +112,7 @@ export const toolCategories = pgTable("tool_categories", {
   categoryType: text("category_type").notNull().default("tool"), // 'tool', 'scanner_grid', 'worker_tag_grid'
   gridRows: integer("grid_rows"), // For grid types: number of rows (e.g., 2)
   gridCols: integer("grid_cols"), // For grid types: number of columns (e.g., 4)
+  labelColor: text("label_color").default("#FFFFFF"), // Background color for printed labels (hex)
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
