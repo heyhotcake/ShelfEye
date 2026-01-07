@@ -490,6 +490,17 @@ export default function TemplatePrint() {
           }
         } else {
           // Standard tool slot rendering
+          
+          // Draw colored border if category has a label color set (0.5cm = 5mm border)
+          const borderColor = rect.category.labelColor || "#FFFFFF";
+          if (borderColor && borderColor !== "#FFFFFF") {
+            const borderWidthPx = cmToPixels(0.5, true);
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = borderWidthPx;
+            ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
+          }
+          
+          // Draw black outline on top
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = 2;
           ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
@@ -906,6 +917,29 @@ export default function TemplatePrint() {
               y: localY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
             }));
 
+            // Draw colored border if category has a label color set (5mm = 0.5cm border)
+            const borderColor = rect.category.labelColor || "#FFFFFF";
+            if (borderColor && borderColor !== "#FFFFFF") {
+              const r = parseInt(borderColor.slice(1, 3), 16);
+              const g = parseInt(borderColor.slice(3, 5), 16);
+              const b = parseInt(borderColor.slice(5, 7), 16);
+              pdf.setDrawColor(r, g, b);
+              pdf.setLineWidth(5); // 5mm border
+              pdf.lines(
+                rotatedCorners.map((c, i) => [
+                  rotatedCorners[(i + 1) % 4].x - c.x,
+                  rotatedCorners[(i + 1) % 4].y - c.y,
+                ]),
+                rotatedCorners[0].x,
+                rotatedCorners[0].y,
+                [1, 1],
+                'S'
+              );
+            }
+
+            // Draw black outline on top
+            pdf.setDrawColor(0, 0, 0);
+            pdf.setLineWidth(0.5);
             pdf.lines(
               rotatedCorners.map((c, i) => [
                 rotatedCorners[(i + 1) % 4].x - c.x,
@@ -1046,6 +1080,20 @@ export default function TemplatePrint() {
               pdf.text(displayLabel, startX, startY, { angle: rect.rotation });
             }
           } else {
+            // Draw colored border if category has a label color set (5mm = 0.5cm border)
+            const borderColor = rect.category.labelColor || "#FFFFFF";
+            if (borderColor && borderColor !== "#FFFFFF") {
+              const r = parseInt(borderColor.slice(1, 3), 16);
+              const g = parseInt(borderColor.slice(3, 5), 16);
+              const b = parseInt(borderColor.slice(5, 7), 16);
+              pdf.setDrawColor(r, g, b);
+              pdf.setLineWidth(5); // 5mm border
+              pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm, 'S');
+            }
+            
+            // Draw black outline on top
+            pdf.setDrawColor(0, 0, 0);
+            pdf.setLineWidth(0.5);
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
 
             const qrSizeMm = 30;
@@ -1304,6 +1352,29 @@ export default function TemplatePrint() {
             y: yMm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
           }));
 
+          // Draw colored border if category has a label color set (5mm = 0.5cm border)
+          const borderColor = rect.category.labelColor || "#FFFFFF";
+          if (borderColor && borderColor !== "#FFFFFF") {
+            const r = parseInt(borderColor.slice(1, 3), 16);
+            const g = parseInt(borderColor.slice(3, 5), 16);
+            const b = parseInt(borderColor.slice(5, 7), 16);
+            pdf.setDrawColor(r, g, b);
+            pdf.setLineWidth(5); // 5mm border
+            pdf.lines(
+              rotatedCorners.map((c, i) => [
+                rotatedCorners[(i + 1) % 4].x - c.x,
+                rotatedCorners[(i + 1) % 4].y - c.y,
+              ]),
+              rotatedCorners[0].x,
+              rotatedCorners[0].y,
+              [1, 1],
+              'S'
+            );
+          }
+
+          // Draw black outline on top
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.5);
           pdf.lines(
             rotatedCorners.map((c, i) => [
               rotatedCorners[(i + 1) % 4].x - c.x,
@@ -1425,6 +1496,20 @@ export default function TemplatePrint() {
             pdf.text(displayLabelRotated, startX, startY, { angle: rect.rotation });
           }
         } else {
+          // Draw colored border if category has a label color set (5mm = 0.5cm border)
+          const borderColor = rect.category.labelColor || "#FFFFFF";
+          if (borderColor && borderColor !== "#FFFFFF") {
+            const r = parseInt(borderColor.slice(1, 3), 16);
+            const g = parseInt(borderColor.slice(3, 5), 16);
+            const b = parseInt(borderColor.slice(5, 7), 16);
+            pdf.setDrawColor(r, g, b);
+            pdf.setLineWidth(5); // 5mm border
+            pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm, 'S');
+          }
+          
+          // Draw black outline on top
+          pdf.setDrawColor(0, 0, 0);
+          pdf.setLineWidth(0.5);
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
 
           const qrSizeMm = 30;
