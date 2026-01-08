@@ -19,6 +19,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertWorkerSchema, insertCaptureRunSchema } from "@shared/schema";
 import { setWhiteLight, turnOffLED } from "./utils/led-control";
+import { readDHT20 } from "./utils/dht20-sensor";
 
 // Helper function to get camera device source (path or index)
 function getCameraDeviceSource(camera: { devicePath?: string | null; deviceIndex?: number | null }): string {
@@ -236,6 +237,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Health check failed", error });
+    }
+  });
+
+  // Environment sensor (DHT20 temperature/humidity)
+  app.get("/api/environment", async (_req, res) => {
+    try {
+      const reading = await readDHT20();
+      res.json(reading);
+    } catch (error) {
+      res.status(500).json({ ok: false, error: "Failed to read environment sensor" });
     }
   });
 

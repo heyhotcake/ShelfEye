@@ -59,15 +59,21 @@ Cameras must be forced to MJPEG format for optimal performance (7-10fps at 4K, 1
 
 ### GPIO Pin Mapping (Raspberry Pi)
 
-| Physical Pin | Function | Connection |
-|-------------|----------|------------|
-| PP 2 | 5V Power | LED strip power (+) |
-| PP 4 | 5V Power | Fan case power |
-| PP 6 | Ground | Fan case ground |
-| PP 9 | Ground | LED strip ground (-) |
-| PP 12 | BCM GPIO 18 | LED strip data (PWM) |
+| Physical Pin | BCM GPIO | Function | Connection |
+|-------------|----------|----------|------------|
+| PP 1 | - | 3.3V Power | DHT20 sensor power |
+| PP 2 | - | 5V Power | LED strip power (+) |
+| PP 3 | GPIO 2 | I2C SDA | DHT20 data |
+| PP 4 | - | 5V Power | Fan case power |
+| PP 5 | GPIO 3 | I2C SCL | DHT20 clock |
+| PP 6 | - | Ground | Fan case ground |
+| PP 9 | - | Ground | LED strip ground (-) |
+| PP 12 | GPIO 18 | PWM | LED strip data |
+| PP 14 | - | Ground | DHT20 ground |
+| PP 17 | - | 3.3V Power | Buzzer power (Ario 2401) |
+| PP 20 | - | Ground | Buzzer ground |
 
-**Notes**: Only the LED strip is connected for GPIO control. Buzzer and separate alert LED pins are not wired. Visual alerts use the LED strip (red flash mode).
+**Notes**: Visual alerts use the LED strip (red flash mode). The DHT20 uses I2C for temperature/humidity readings. The Ario 2401 buzzer is power-only (no GPIO control).
 
 **Architecture**: Daemon-based client-server model that eliminates DMA channel conflicts:
 - **LED Manager Daemon** (`python/led_manager_service.py`): Long-running systemd service with exclusive DMA hardware access. Runs as root, starts automatically on boot.
