@@ -57,6 +57,18 @@ Cameras must be forced to MJPEG format for optimal performance (7-10fps at 4K, 1
 
 **Hardware**: WS2812B LED strip (99 LEDs default) on GPIO 18, DMA channel 10, controlled via rpi_ws281x library.
 
+### GPIO Pin Mapping (Raspberry Pi)
+
+| Physical Pin | Function | Connection |
+|-------------|----------|------------|
+| PP 2 | 5V Power | LED strip power (+) |
+| PP 4 | 5V Power | Fan case power |
+| PP 6 | Ground | Fan case ground |
+| PP 9 | Ground | LED strip ground (-) |
+| PP 12 | BCM GPIO 18 | LED strip data (PWM) |
+
+**Notes**: Only the LED strip is connected for GPIO control. Buzzer and separate alert LED pins are not wired. Visual alerts use the LED strip (red flash mode).
+
 **Architecture**: Daemon-based client-server model that eliminates DMA channel conflicts:
 - **LED Manager Daemon** (`python/led_manager_service.py`): Long-running systemd service with exclusive DMA hardware access. Runs as root, starts automatically on boot.
 - **LED Control Client** (`python/led_control_client.py`): CLI tool called by Node.js backend via sudo. Communicates with daemon via named pipes (IPC).
