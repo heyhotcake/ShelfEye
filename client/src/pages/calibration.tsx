@@ -494,38 +494,6 @@ export default function Calibration() {
                   </div>
                 </div>
                 
-                <div className="mt-4 space-y-2">
-                  <Card>
-                    <CardContent className="flex items-center justify-between p-3">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                        <span className="text-sm text-foreground">Markers Detected</span>
-                      </div>
-                      <span className="text-sm font-mono text-foreground" data-testid="text-markers-detected">
-                        {calibrationResult ? `${calibrationResult.markersDetected}/4` : '-'}
-                      </span>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="flex items-center justify-between p-3">
-                      <div className="flex items-center gap-2">
-                        <Ruler className="w-5 h-5 text-primary" />
-                        <span className="text-sm text-foreground">Reprojection Error</span>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-sm font-mono text-foreground" data-testid="text-reprojection-error">
-                          {calibrationResult ? `${calibrationResult.reprojectionError.toFixed(2)} px` : '-'}
-                        </span>
-                        {calibrationResult && calibrationResult.reprojectionError < 0.01 && (
-                          <span className="text-xs text-muted-foreground">
-                            (perfect fit with 4 points)
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
               </div>
               
               {/* Configuration */}
