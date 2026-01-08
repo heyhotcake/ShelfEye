@@ -26,6 +26,152 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Paper size dimensions lookup (matches server/utils/paper-size.ts)
+PAPER_DIMENSIONS = {
+    'A5-landscape': (21.0, 14.8),
+    'A4-landscape': (29.7, 21.0),
+    'A3-landscape': (42.0, 29.7),
+    '2xA5-landscape': (42.0, 14.8),
+    '3xA5-landscape': (63.0, 14.8),
+    '6-page-3x2': (89.1, 42.0),
+    '8-page-4x2': (118.8, 42.0),
+}
+
+def get_paper_dimensions(paper_size: str) -> Tuple[float, float]:
+    """
+    Get paper dimensions in cm for a given paper size format.
+    
+    Args:
+        paper_size: Paper size format string (e.g., 'A4-landscape', '6-page-3x2')
+        
+    Returns:
+        Tuple of (width_cm, height_cm)
+    """
+    if paper_size in PAPER_DIMENSIONS:
+        return PAPER_DIMENSIONS[paper_size]
+    else:
+        logger.warning(f"Unknown paper size: {paper_size}, defaulting to A4 landscape")
+        return (29.7, 21.0)
+
+
+def detect_corner_markers(frame: np.ndarray) -> Tuple[Dict[int, np.ndarray], int]:
+    """
+    Detect the 4 corner ArUco markers (IDs 96-99) in the frame.
+    
+    Args:
+        frame: Input frame (BGR)
+        
+    Returns:
+        marker_centers: Dictionary mapping marker ID to center point (x, y)
+        num_detected: Number of corner markers detected
+    """
+    corner_ids = [96, 97, 98, 99]
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+    aruco_params = cv2.aruco.DetectorParameters()
+    aruco_params.perspectiveRemovePixelPerCell = 16
+    
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if len(frame.shape) == 3 else frame
+    corners, ids, _ = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
+    
+    if ids is None or len(corners) == 0:
+        return {}, 0
+    
+    marker_centers = {}
+    for i, marker_id in enumerate(ids.flatten()):
+        if marker_id in corner_ids:
+            corner_points = corners[i][0]
+            center_x = np.mean(corner_points[:, 0])
+            center_y = np.mean(corner_points[:, 1])
+            marker_centers[int(marker_id)] = np.array([center_x, center_y], dtype=np.float32)
+    
+    return marker_centers, len(marker_centers)
+
+
+def calculate_homography_from_corners(marker_centers: Dict[int, np.ndarray], 
+                                       paper_size_cm: Tuple[float, float]) -> Optional[np.ndarray]:
+    """
+    Calculate homography matrix from 4 corner markers.
+    Maps real-world paper coordinates (cm) to camera pixels.
+    
+    Args:
+        marker_centers: Dictionary of marker ID -> center point (pixels)
+        paper_size_cm: (width_cm, height_cm) of the paper
+        
+    Returns:
+        3x3 homography matrix or None if calculation fails
+    """
+    if len(marker_centers) != 4:
+        return None
+    
+    required_ids = [96, 97, 98, 99]
+    if not all(id in marker_centers for id in required_ids):
+        return None
+    
+    paper_width_cm, paper_height_cm = paper_size_cm
+    marker_size_cm = 5.0
+    marker_center_offset = marker_size_cm / 2.0  # 2.5cm from edge
+    
+    # Destination points: detected marker centers in pixels
+    # A (96) = top-left, B (97) = top-right, C (98) = bottom-right, D (99) = bottom-left
+    dst_points = np.array([
+        marker_centers[96],
+        marker_centers[97],
+        marker_centers[98],
+        marker_centers[99],
+    ], dtype=np.float32)
+    
+    # Source points: paper corners in cm (marker centers are 2.5cm from edges)
+    src_points = np.array([
+        [marker_center_offset, marker_center_offset],  # A: top-left
+        [paper_width_cm - marker_center_offset, marker_center_offset],  # B: top-right
+        [paper_width_cm - marker_center_offset, paper_height_cm - marker_center_offset],  # C: bottom-right
+        [marker_center_offset, paper_height_cm - marker_center_offset],  # D: bottom-left
+    ], dtype=np.float32)
+    
+    homography, _ = cv2.findHomography(src_points, dst_points, cv2.RANSAC, 5.0)
+    return homography
+
+
+def rectify_frame(frame: np.ndarray, homography: np.ndarray, 
+                  paper_size_cm: Tuple[float, float], px_per_cm: float = 31.8) -> np.ndarray:
+    """
+    Rectify a camera frame to a top-down view using the homography.
+    
+    Args:
+        frame: Input camera frame
+        homography: 3x3 homography matrix (maps cm -> pixels)
+        paper_size_cm: (width_cm, height_cm) of the paper
+        px_per_cm: Output resolution in pixels per centimeter
+        
+    Returns:
+        Rectified image with proper dimensions
+    """
+    paper_width_cm, paper_height_cm = paper_size_cm
+    output_width = int(paper_width_cm * px_per_cm)
+    output_height = int(paper_height_cm * px_per_cm)
+    output_size = (output_width, output_height)
+    
+    # Scaling matrix: cm -> output pixels
+    scale_x = output_width / paper_width_cm
+    scale_y = output_height / paper_height_cm
+    S = np.array([
+        [scale_x, 0, 0],
+        [0, scale_y, 0],
+        [0, 0, 1]
+    ], dtype=np.float32)
+    
+    # Invert homography: camera pixels -> cm
+    H_inv = np.linalg.inv(homography)
+    
+    # Combined warp: camera_pixel -> cm -> output_pixel
+    M = S @ H_inv
+    
+    # CRITICAL: Use INTER_NEAREST to preserve sharp ArUco marker edges
+    rectified = cv2.warpPerspective(frame, M, output_size, flags=cv2.INTER_NEAREST)
+    
+    return rectified
+
+
 # GPIO Light Control Functions
 def control_light(pin: int, state: str):
     """
@@ -541,7 +687,8 @@ class CameraProcessor:
         device_path = camera_data.get('devicePath')
         device_index = camera_data.get('deviceIndex', 0)
         resolution = camera_data.get('resolution', [2560, 1440])
-        homography = camera_data.get('homographyMatrix')
+        stored_homography = camera_data.get('homographyMatrix')
+        paper_size = camera_data.get('paperSize', 'A4-landscape')
         
         # Convert device path to index if needed
         if device_path and device_path.startswith('/dev/video'):
@@ -557,12 +704,16 @@ class CameraProcessor:
             'errors': []
         }
         
-        # Check if calibrated
-        if not homography:
+        # Check if calibrated (stored homography indicates camera was calibrated)
+        if not stored_homography:
             result['status'] = 'failed'
             result['errors'].append('Camera not calibrated (missing homography matrix)')
             logger.error(f"Camera {camera_id}: Not calibrated")
             return result
+        
+        # Get paper dimensions for this camera's template format
+        paper_size_cm = get_paper_dimensions(paper_size)
+        logger.info(f"Camera {camera_id}: Using paper size {paper_size} ({paper_size_cm[0]}x{paper_size_cm[1]} cm)")
         
         picam2 = None
         try:
@@ -592,38 +743,59 @@ class CameraProcessor:
             
             logger.info(f"Camera {camera_id}: Frame captured ({frame.shape})")
             
-            # Validate 4 corner ArUco markers (96, 97, 98, 99) are visible
-            # This ensures the template sheets are in place and camera position is correct
-            # Same approach as camera_diagnostic.py for consistency
+            # Detect 4 corner ArUco markers (96, 97, 98, 99) and get their centers
+            # This ensures template sheets are in place AND allows us to calculate fresh homography
             try:
-                corner_marker_ids = [96, 97, 98, 99]
-                aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
-                aruco_params = cv2.aruco.DetectorParameters()
-                detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
+                marker_centers, num_detected = detect_corner_markers(frame)
                 
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                corners, ids, _ = detector.detectMarkers(gray)
-                
-                detected_corner_ids = []
-                if ids is not None:
-                    detected_corner_ids = [int(id[0]) for id in ids if int(id[0]) in corner_marker_ids]
-                
-                if len(detected_corner_ids) < 4:
-                    missing_ids = [id for id in corner_marker_ids if id not in detected_corner_ids]
+                if num_detected < 4:
+                    corner_marker_ids = [96, 97, 98, 99]
+                    detected_ids = list(marker_centers.keys())
+                    missing_ids = [id for id in corner_marker_ids if id not in detected_ids]
                     result['status'] = 'failed'
                     result['errors'].append(
-                        f'Corner marker validation failed: Only {len(detected_corner_ids)}/4 markers detected. '
+                        f'Corner marker validation failed: Only {num_detected}/4 markers detected. '
                         f'Missing: {missing_ids}. Template sheets may not be in place or camera position changed.'
                     )
-                    logger.error(f"Camera {camera_id}: Corner marker validation failed - only {len(detected_corner_ids)}/4 detected, missing {missing_ids}")
+                    logger.error(f"Camera {camera_id}: Corner marker validation failed - only {num_detected}/4 detected, missing {missing_ids}")
                     return result
                 
-                logger.info(f"Camera {camera_id}: All 4 corner markers detected, proceeding with slot analysis")
+                logger.info(f"Camera {camera_id}: All 4 corner markers detected at positions: {[(id, list(pos)) for id, pos in marker_centers.items()]}")
                 
             except Exception as aruco_err:
                 result['status'] = 'failed'
                 result['errors'].append(f'Corner marker detection exception: {str(aruco_err)}')
                 logger.error(f"Camera {camera_id}: ArUco detection error: {aruco_err}")
+                return result
+            
+            # Calculate fresh homography from detected corner positions
+            # This automatically adjusts for any camera/template movement since calibration
+            try:
+                homography = calculate_homography_from_corners(marker_centers, paper_size_cm)
+                if homography is None:
+                    result['status'] = 'failed'
+                    result['errors'].append('Failed to calculate homography from corner markers')
+                    logger.error(f"Camera {camera_id}: Homography calculation failed")
+                    return result
+                
+                logger.info(f"Camera {camera_id}: Fresh homography calculated from current corner positions")
+                
+            except Exception as homo_err:
+                result['status'] = 'failed'
+                result['errors'].append(f'Homography calculation exception: {str(homo_err)}')
+                logger.error(f"Camera {camera_id}: Homography error: {homo_err}")
+                return result
+            
+            # Rectify the frame to top-down view using the calculated homography
+            # Slot coordinates are defined in this rectified space
+            try:
+                rectified_frame = rectify_frame(frame, homography, paper_size_cm)
+                logger.info(f"Camera {camera_id}: Frame rectified to {rectified_frame.shape[1]}x{rectified_frame.shape[0]} pixels")
+                
+            except Exception as rect_err:
+                result['status'] = 'failed'
+                result['errors'].append(f'Frame rectification exception: {str(rect_err)}')
+                logger.error(f"Camera {camera_id}: Rectification error: {rect_err}")
                 return result
             
             # Separate slots by type for processing order
@@ -635,27 +807,28 @@ class CameraProcessor:
             # Track processed results for linked slot lookups
             processed_slots: Dict[str, Dict[str, Any]] = {}
             
+            # Process slots on the RECTIFIED frame (coordinates are in rectified space)
             # 1. Process worker tag grids first (no dependencies)
             for slot in worker_tag_slots:
-                slot_result = self.slot_processor.process_slot(frame, slot)
+                slot_result = self.slot_processor.process_slot(rectified_frame, slot)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
                 processed_slots[slot.get('id')] = slot_result
             
             # 2. Process scanner grids (may depend on worker tag results)
             for slot in scanner_grid_slots:
-                slot_result = self.slot_processor.process_slot(frame, slot, linked_slots=processed_slots)
+                slot_result = self.slot_processor.process_slot(rectified_frame, slot, linked_slots=processed_slots)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
                 processed_slots[slot.get('id')] = slot_result
             
             # 3. Process regular tool slots
             for slot in tool_slots:
-                slot_result = self.slot_processor.process_slot(frame, slot)
+                slot_result = self.slot_processor.process_slot(rectified_frame, slot)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
             
-            logger.info(f"Camera {camera_id}: Processed {result['slotsProcessed']} slots (workers: {len(worker_tag_slots)}, scanners: {len(scanner_grid_slots)}, tools: {len(tool_slots)})")
+            logger.info(f"Camera {camera_id}: Processed {result['slotsProcessed']} slots on rectified frame (workers: {len(worker_tag_slots)}, scanners: {len(scanner_grid_slots)}, tools: {len(tool_slots)})")
             
         except Exception as e:
             result['status'] = 'failed'

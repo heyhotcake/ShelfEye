@@ -31,6 +31,10 @@ export function getPaperDimensions(paperSize: string): PaperDimensions {
       // 3×2 A4 landscape sheets = 89.1cm × 42.0cm
       return { widthCm: 89.1, heightCm: 42.0 };
     
+    case '8-page-4x2':
+      // 4×2 A4 landscape sheets = 118.8cm × 42.0cm
+      return { widthCm: 118.8, heightCm: 42.0 };
+    
     default:
       // Default to A4 landscape
       console.warn(`Unknown paper size: ${paperSize}, defaulting to A4 landscape`);
