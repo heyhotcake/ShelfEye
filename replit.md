@@ -37,6 +37,12 @@ The UI/UX for calibration uses paper-size formats (e.g., "A4-landscape") with a 
 
 ArUco marker IDs are allocated as: 1-50 for tool slots, 51-95 for worker identification (max 45 workers), and 96-99 for corner calibration, all using the DICT_4X4_100 dictionary. Slot ROIs are scanned for optimal accuracy.
 
+**Real-Time Homography Adjustment (Implemented Jan 2026)**: During each scheduled capture, the system detects corner ArUco markers (96-99) and calculates a fresh homography matrix from the current marker positions. This compensates for minor camera/template movement between calibration and capture, ensuring slots remain properly aligned. The raw camera frame is rectified to a top-down view using this homography, and slot coordinates are calculated in rectified space from stored cm values (xCm, yCm, widthCm, heightCm). Key functions in `process_cameras.py`:
+- `detect_corner_markers()`: Finds ArUco markers 96-99, returns their centers
+- `calculate_homography_from_corners()`: Builds cm→pixel mapping using 2.5cm corner offset
+- `rectify_frame()`: Warps camera frame to top-down view at 31.8 px/cm
+- `calculate_rectified_region_coords()`: Converts slot cm values to rectified pixel coordinates
+
 **Diagnostic & Capture Checks**: Corner ArUco markers (IDs 96-99) are validated at multiple points:
 1. **Startup Validation**: On system boot, ALL calibrated cameras are validated sequentially; red LED flash triggers if ANY camera fails.
 2. **Pre-Capture Diagnostics**: 30 minutes before each scheduled capture, corner markers are validated.
