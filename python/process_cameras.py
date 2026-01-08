@@ -592,6 +592,40 @@ class CameraProcessor:
             
             logger.info(f"Camera {camera_id}: Frame captured ({frame.shape})")
             
+            # Validate 4 corner ArUco markers (96, 97, 98, 99) are visible
+            # This ensures the template sheets are in place and camera position is correct
+            # Same approach as camera_diagnostic.py for consistency
+            try:
+                corner_marker_ids = [96, 97, 98, 99]
+                aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+                aruco_params = cv2.aruco.DetectorParameters()
+                detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
+                
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                corners, ids, _ = detector.detectMarkers(gray)
+                
+                detected_corner_ids = []
+                if ids is not None:
+                    detected_corner_ids = [int(id[0]) for id in ids if int(id[0]) in corner_marker_ids]
+                
+                if len(detected_corner_ids) < 4:
+                    missing_ids = [id for id in corner_marker_ids if id not in detected_corner_ids]
+                    result['status'] = 'failed'
+                    result['errors'].append(
+                        f'Corner marker validation failed: Only {len(detected_corner_ids)}/4 markers detected. '
+                        f'Missing: {missing_ids}. Template sheets may not be in place or camera position changed.'
+                    )
+                    logger.error(f"Camera {camera_id}: Corner marker validation failed - only {len(detected_corner_ids)}/4 detected, missing {missing_ids}")
+                    return result
+                
+                logger.info(f"Camera {camera_id}: All 4 corner markers detected, proceeding with slot analysis")
+                
+            except Exception as aruco_err:
+                result['status'] = 'failed'
+                result['errors'].append(f'Corner marker detection exception: {str(aruco_err)}')
+                logger.error(f"Camera {camera_id}: ArUco detection error: {aruco_err}")
+                return result
+            
             # Separate slots by type for processing order
             # Process worker tag grids first, then scanner grids (need badge results), then tools
             worker_tag_slots = [s for s in slots if s.get('slotType') == 'worker_tag_grid']
