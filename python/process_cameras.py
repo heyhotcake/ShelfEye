@@ -87,6 +87,49 @@ def detect_corner_markers(frame: np.ndarray) -> Tuple[Dict[int, np.ndarray], int
     return marker_centers, len(marker_centers)
 
 
+def validate_homography(homography: np.ndarray) -> bool:
+    """
+    Validate that a homography matrix is well-conditioned and usable.
+    
+    Checks for:
+    - NaN or Inf values
+    - Extreme condition number (near-singular matrix)
+    - Reasonable determinant (no extreme scaling)
+    
+    Args:
+        homography: 3x3 homography matrix
+        
+    Returns:
+        True if homography is valid, False otherwise
+    """
+    if homography is None:
+        return False
+    
+    # Check for NaN or Inf
+    if np.any(np.isnan(homography)) or np.any(np.isinf(homography)):
+        logger.warning("Homography contains NaN or Inf values")
+        return False
+    
+    # Check condition number (ratio of largest to smallest singular value)
+    # High condition number means near-singular matrix
+    try:
+        cond = np.linalg.cond(homography)
+        if cond > 1e6:  # Threshold for ill-conditioned matrix
+            logger.warning(f"Homography is ill-conditioned (cond={cond:.2e})")
+            return False
+    except np.linalg.LinAlgError:
+        logger.warning("Failed to compute condition number")
+        return False
+    
+    # Check determinant (should be non-zero and not extreme)
+    det = np.linalg.det(homography)
+    if abs(det) < 1e-10 or abs(det) > 1e10:
+        logger.warning(f"Homography determinant is extreme (det={det:.2e})")
+        return False
+    
+    return True
+
+
 def calculate_homography_from_corners(marker_centers: Dict[int, np.ndarray], 
                                        paper_size_cm: Tuple[float, float]) -> Optional[np.ndarray]:
     """
@@ -120,6 +163,50 @@ def calculate_homography_from_corners(marker_centers: Dict[int, np.ndarray],
         marker_centers[99],
     ], dtype=np.float32)
     
+    # Validate marker ordering: verify all 4 markers form a proper quadrilateral
+    # Expected positions: 96=TL, 97=TR, 98=BR, 99=BL
+    m96, m97, m98, m99 = marker_centers[96], marker_centers[97], marker_centers[98], marker_centers[99]
+    
+    ordering_valid = True
+    ordering_errors = []
+    
+    # 96 (TL) should be in top-left: smallest x among left markers, smallest y among top markers
+    if not (m96[0] < m97[0] and m96[0] < m98[0]):
+        ordering_errors.append("96 (TL) not left of 97/98")
+        ordering_valid = False
+    if not (m96[1] < m99[1] and m96[1] < m98[1]):
+        ordering_errors.append("96 (TL) not above 99/98")
+        ordering_valid = False
+    
+    # 97 (TR) should be in top-right: largest x among right markers, smaller y than bottom markers
+    if not (m97[0] > m96[0] and m97[0] > m99[0]):
+        ordering_errors.append("97 (TR) not right of 96/99")
+        ordering_valid = False
+    if not (m97[1] < m98[1] and m97[1] < m99[1]):
+        ordering_errors.append("97 (TR) not above 98/99")
+        ordering_valid = False
+    
+    # 98 (BR) should be in bottom-right: largest x, largest y
+    if not (m98[0] > m96[0] and m98[0] > m99[0]):
+        ordering_errors.append("98 (BR) not right of 96/99")
+        ordering_valid = False
+    if not (m98[1] > m96[1] and m98[1] > m97[1]):
+        ordering_errors.append("98 (BR) not below 96/97")
+        ordering_valid = False
+    
+    # 99 (BL) should be in bottom-left: smaller x than right markers, larger y than top markers
+    if not (m99[0] < m97[0] and m99[0] < m98[0]):
+        ordering_errors.append("99 (BL) not left of 97/98")
+        ordering_valid = False
+    if not (m99[1] > m96[1] and m99[1] > m97[1]):
+        ordering_errors.append("99 (BL) not below 96/97")
+        ordering_valid = False
+    
+    if not ordering_valid:
+        logger.error(f"Corner marker positions invalid: {', '.join(ordering_errors)}")
+        logger.error(f"Marker positions: 96={list(m96)}, 97={list(m97)}, 98={list(m98)}, 99={list(m99)}")
+        return None  # Reject homography calculation if markers are in wrong positions
+    
     # Source points: paper corners in cm (marker centers are 2.5cm from edges)
     src_points = np.array([
         [marker_center_offset, marker_center_offset],  # A: top-left
@@ -129,6 +216,12 @@ def calculate_homography_from_corners(marker_centers: Dict[int, np.ndarray],
     ], dtype=np.float32)
     
     homography, _ = cv2.findHomography(src_points, dst_points, cv2.RANSAC, 5.0)
+    
+    # Validate the computed homography
+    if not validate_homography(homography):
+        logger.error("Computed homography failed validation")
+        return None
+    
     return homography
 
 
@@ -172,7 +265,48 @@ def rectify_frame(frame: np.ndarray, homography: np.ndarray,
     return rectified
 
 
-def calculate_rectified_region_coords(slot_data: Dict[str, Any], px_per_cm: float = 31.8) -> List[List[float]]:
+def has_cm_values(slot_data: Dict[str, Any]) -> bool:
+    """
+    Check if a slot has valid cm-based coordinate values.
+    
+    Returns True only if xCm, yCm, widthCm, and heightCm are all present and valid.
+    """
+    required_fields = ['xCm', 'yCm', 'widthCm', 'heightCm']
+    for field in required_fields:
+        value = slot_data.get(field)
+        if value is None or (isinstance(value, (int, float)) and value <= 0 and field in ['widthCm', 'heightCm']):
+            return False
+    return True
+
+
+def get_optimal_px_per_cm(paper_size_cm: Tuple[float, float], max_pixels: int = 4000000) -> float:
+    """
+    Calculate optimal px_per_cm to keep rectified frame under memory limit.
+    
+    Args:
+        paper_size_cm: (width_cm, height_cm)
+        max_pixels: Maximum total pixels allowed (default 4MP = ~12MB BGR)
+        
+    Returns:
+        Optimal pixels per centimeter (capped at 31.8)
+    """
+    paper_width_cm, paper_height_cm = paper_size_cm
+    area_cm2 = paper_width_cm * paper_height_cm
+    
+    # Calculate max px_per_cm that keeps us under the limit
+    # area_px = area_cm2 * px_per_cm^2
+    max_px_per_cm = np.sqrt(max_pixels / area_cm2)
+    
+    # Cap at standard resolution (31.8) but allow lower for large templates
+    optimal = min(31.8, max_px_per_cm)
+    
+    # Don't go below 15 px/cm (minimum for ArUco detection)
+    optimal = max(15.0, optimal)
+    
+    return optimal
+
+
+def calculate_rectified_region_coords(slot_data: Dict[str, Any], px_per_cm: float = 31.8) -> Optional[List[List[float]]]:
     """
     Calculate region coordinates in rectified pixel space from cm values.
     
@@ -184,8 +318,12 @@ def calculate_rectified_region_coords(slot_data: Dict[str, Any], px_per_cm: floa
         px_per_cm: Pixels per centimeter in the rectified image
         
     Returns:
-        List of 4 corner points [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
+        List of 4 corner points [[x1,y1], [x2,y2], [x3,y3], [x4,y4]], or None if cm values missing
     """
+    # Check if slot has valid cm values
+    if not has_cm_values(slot_data):
+        return None
+    
     x_cm = slot_data.get('xCm', 0)
     y_cm = slot_data.get('yCm', 0)
     width_cm = slot_data.get('widthCm', 10)
@@ -436,7 +574,8 @@ class SlotProcessor:
     
     def process_slot(self, frame: np.ndarray, slot_data: Dict[str, Any], 
                       linked_slots: Optional[Dict[str, Dict[str, Any]]] = None,
-                      use_rectified_coords: bool = False) -> Dict[str, Any]:
+                      use_rectified_coords: bool = False,
+                      px_per_cm: float = 31.8) -> Dict[str, Any]:
         """
         Process a single slot using detection based on slot type
         
@@ -445,6 +584,7 @@ class SlotProcessor:
             slot_data: Slot configuration
             linked_slots: Optional dict of linked slots (for scanner/worker grid pairing)
             use_rectified_coords: If True, calculate coords from cm values for rectified frame
+            px_per_cm: Pixels per cm for rectified coordinate calculation
             
         Returns:
             Processing result with status and metrics
@@ -456,10 +596,25 @@ class SlotProcessor:
         
         # Use cm-based coordinates for rectified frames, or stored regionCoords for raw frames
         if use_rectified_coords:
-            region_coords = calculate_rectified_region_coords(slot_data, px_per_cm=31.8)
-            logger.debug(f"Slot {slot_name}: Using rectified coords calculated from cm values")
+            region_coords = calculate_rectified_region_coords(slot_data, px_per_cm=px_per_cm)
+            if region_coords is None:
+                # This shouldn't happen - legacy slots should be filtered at camera level
+                # Log error and skip this slot
+                logger.error(f"Slot {slot_name}: Missing cm values but use_rectified_coords=True - this slot should have been processed on raw frame")
+                return {
+                    'slotId': slot_id,
+                    'slotName': slot_name,
+                    'slotType': slot_type,
+                    'status': 'ERROR',
+                    'error': 'Missing cm values for rectified processing',
+                    'qrData': None,
+                    'workerName': None,
+                    'alertTriggered': False
+                }
+            logger.debug(f"Slot {slot_name}: Using rectified coords at {px_per_cm:.1f} px/cm")
         else:
             region_coords = slot_data.get('regionCoords', [])
+            logger.debug(f"Slot {slot_name}: Using stored regionCoords on raw frame")
         
         logger.info(f"Processing slot: {slot_name} (type: {slot_type})")
         
@@ -848,11 +1003,16 @@ class CameraProcessor:
                 logger.error(f"Camera {camera_id}: Homography error: {homo_err}")
                 return result
             
+            # Calculate optimal resolution based on paper size (memory optimization for large templates)
+            # Standard is 31.8 px/cm but large templates (8-page) are reduced to fit in memory
+            px_per_cm = get_optimal_px_per_cm(paper_size_cm)
+            logger.info(f"Camera {camera_id}: Using {px_per_cm:.1f} px/cm for paper {paper_size_cm[0]:.1f}x{paper_size_cm[1]:.1f} cm")
+            
             # Rectify the frame to top-down view using the calculated homography
             # Slot coordinates are defined in this rectified space
             try:
-                rectified_frame = rectify_frame(frame, homography, paper_size_cm)
-                logger.info(f"Camera {camera_id}: Frame rectified to {rectified_frame.shape[1]}x{rectified_frame.shape[0]} pixels")
+                rectified_frame = rectify_frame(frame, homography, paper_size_cm, px_per_cm=px_per_cm)
+                logger.info(f"Camera {camera_id}: Frame rectified to {rectified_frame.shape[1]}x{rectified_frame.shape[0]} pixels (~{rectified_frame.nbytes / 1024 / 1024:.1f} MB)")
                 
             except Exception as rect_err:
                 result['status'] = 'failed'
@@ -866,6 +1026,15 @@ class CameraProcessor:
             scanner_grid_slots = [s for s in slots if s.get('slotType') == 'scanner_grid']
             tool_slots = [s for s in slots if s.get('slotType', 'tool') == 'tool']
             
+            # Separate slots with cm values from legacy slots (no cm values)
+            # Slots with cm values are processed on the rectified frame
+            # Legacy slots are processed on the raw frame with stored regionCoords
+            slots_with_cm = [s for s in tool_slots if has_cm_values(s)]
+            legacy_slots = [s for s in tool_slots if not has_cm_values(s)]
+            
+            if legacy_slots:
+                logger.warning(f"Camera {camera_id}: Found {len(legacy_slots)} legacy slots without cm values - processing on raw frame")
+            
             # Track processed results for linked slot lookups
             processed_slots: Dict[str, Dict[str, Any]] = {}
             
@@ -873,7 +1042,8 @@ class CameraProcessor:
             # Coordinates are calculated from cm values (not stored regionCoords in camera pixel space)
             # 1. Process worker tag grids first (no dependencies)
             for slot in worker_tag_slots:
-                slot_result = self.slot_processor.process_slot(rectified_frame, slot, use_rectified_coords=True)
+                slot_result = self.slot_processor.process_slot(
+                    rectified_frame, slot, use_rectified_coords=True, px_per_cm=px_per_cm)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
                 slot_id_key = slot.get('id') or slot.get('slotId', 'unknown')
@@ -881,19 +1051,31 @@ class CameraProcessor:
             
             # 2. Process scanner grids (may depend on worker tag results)
             for slot in scanner_grid_slots:
-                slot_result = self.slot_processor.process_slot(rectified_frame, slot, linked_slots=processed_slots, use_rectified_coords=True)
+                slot_result = self.slot_processor.process_slot(
+                    rectified_frame, slot, linked_slots=processed_slots, 
+                    use_rectified_coords=True, px_per_cm=px_per_cm)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
                 slot_id_key = slot.get('id') or slot.get('slotId', 'unknown')
                 processed_slots[slot_id_key] = slot_result
             
-            # 3. Process regular tool slots
-            for slot in tool_slots:
-                slot_result = self.slot_processor.process_slot(rectified_frame, slot, use_rectified_coords=True)
+            # 3. Process regular tool slots WITH cm values on RECTIFIED frame
+            for slot in slots_with_cm:
+                slot_result = self.slot_processor.process_slot(
+                    rectified_frame, slot, use_rectified_coords=True, px_per_cm=px_per_cm)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
             
-            logger.info(f"Camera {camera_id}: Processed {result['slotsProcessed']} slots on rectified frame (workers: {len(worker_tag_slots)}, scanners: {len(scanner_grid_slots)}, tools: {len(tool_slots)})")
+            # 4. Process LEGACY tool slots on RAW frame with stored regionCoords
+            for slot in legacy_slots:
+                slot_result = self.slot_processor.process_slot(
+                    frame, slot, use_rectified_coords=False)  # Use raw frame with stored coords
+                result['slotResults'].append(slot_result)
+                result['slotsProcessed'] += 1
+            
+            logger.info(f"Camera {camera_id}: Processed {result['slotsProcessed']} slots "
+                       f"(workers: {len(worker_tag_slots)}, scanners: {len(scanner_grid_slots)}, "
+                       f"tools_cm: {len(slots_with_cm)}, tools_legacy: {len(legacy_slots)})")
             
         except Exception as e:
             result['status'] = 'failed'
