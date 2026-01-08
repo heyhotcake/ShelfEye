@@ -2,8 +2,13 @@ import { getSheetsClient } from './sheets-client-oauth.js';
 import type { IStorage } from '../storage';
 import { format, toZonedTime } from 'date-fns-tz';
 import { startOfWeek, addDays } from 'date-fns';
+import { readDHT20 } from '../utils/dht20-sensor.js';
 
 const TIMEZONE = 'Asia/Tokyo';
+
+// Environment sensor rows
+const TEMPERATURE_ROW = 19;
+const HUMIDITY_ROW = 20;
 
 interface ToolSummary {
   toolName: string;
@@ -480,7 +485,40 @@ export class SheetsSummaryReport {
         }
       }
 
-      // Execute batch update for quantities
+      // Read environment sensor (DHT20) for temperature and humidity
+      const envReading = await readDHT20();
+      
+      if (envReading.ok && envReading.temperature_c !== undefined && envReading.humidity !== undefined) {
+        // Write temperature to row 19 (format: e.g., "23.5°C")
+        updates.push({
+          range: `'${sheetName}'!${column}${TEMPERATURE_ROW}`,
+          values: [[`${envReading.temperature_c.toFixed(1)}°C`]]
+        });
+        
+        // Write humidity to row 20 (format: e.g., "65%")
+        updates.push({
+          range: `'${sheetName}'!${column}${HUMIDITY_ROW}`,
+          values: [[`${envReading.humidity.toFixed(0)}%`]]
+        });
+        
+        console.log(`[SheetsSummaryReport] Environment: ${envReading.temperature_c.toFixed(1)}°C, ${envReading.humidity.toFixed(0)}%`);
+      } else {
+        // Sensor failed - show ✕ with red formatting
+        updates.push({
+          range: `'${sheetName}'!${column}${TEMPERATURE_ROW}`,
+          values: [['✕']]
+        });
+        updates.push({
+          range: `'${sheetName}'!${column}${HUMIDITY_ROW}`,
+          values: [['✕']]
+        });
+        failureCells.push({ column, row: TEMPERATURE_ROW });
+        failureCells.push({ column, row: HUMIDITY_ROW });
+        
+        console.log(`[SheetsSummaryReport] Environment sensor failed: ${envReading.error || 'unknown error'}`);
+      }
+
+      // Execute batch update for quantities and environment data
       if (updates.length > 0) {
         await sheets.spreadsheets.values.batchUpdate({
           spreadsheetId: this.spreadsheetId,
@@ -493,7 +531,7 @@ export class SheetsSummaryReport {
         console.log(`[SheetsSummaryReport] Synced ${updates.length} cells for ${captureTime} on ${this.dayLabels[mondayBasedDay]} to tab '${sheetName}'`);
       }
 
-      // Apply red text formatting to failure cells
+      // Apply red text formatting to failure cells (camera failures + sensor failures)
       if (failureCells.length > 0) {
         await this.applyRedTextFormatting(sheetName, failureCells);
       }
