@@ -467,6 +467,20 @@ export class CaptureScheduler {
 
       await this.sendAlert('capture_failure', `Capture failed: ${error.message}`);
 
+      // Sync to Google Sheets even on complete failure - mark all cameras as failed
+      if (captureTime && triggerType === 'scheduled') {
+        try {
+          // Get all camera IDs to mark them all as failed
+          const allCameras = await this.storage.getCameras();
+          const allCameraIds = allCameras.filter(c => c.isActive).map(c => c.id);
+          
+          await this.summaryReport.syncAfterCapture(captureTime, allCameraIds);
+          console.log('[Scheduler] Synced failure status (✕) to Google Sheets');
+        } catch (syncError) {
+          console.error('[Scheduler] Failed to sync failure status to summary report:', syncError);
+        }
+      }
+
       throw error;
     } finally {
       // CRITICAL: Always release all camera locks, even on error/timeout
