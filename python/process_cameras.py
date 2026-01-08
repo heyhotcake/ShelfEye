@@ -172,6 +172,60 @@ def rectify_frame(frame: np.ndarray, homography: np.ndarray,
     return rectified
 
 
+def calculate_rectified_region_coords(slot_data: Dict[str, Any], px_per_cm: float = 31.8) -> List[List[float]]:
+    """
+    Calculate region coordinates in rectified pixel space from cm values.
+    
+    In the rectified image, coordinates are simply cm * px_per_cm.
+    This replaces the stored regionCoords which were in raw camera pixel space.
+    
+    Args:
+        slot_data: Slot configuration with xCm, yCm, widthCm, heightCm, rotationDeg
+        px_per_cm: Pixels per centimeter in the rectified image
+        
+    Returns:
+        List of 4 corner points [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
+    """
+    x_cm = slot_data.get('xCm', 0)
+    y_cm = slot_data.get('yCm', 0)
+    width_cm = slot_data.get('widthCm', 10)
+    height_cm = slot_data.get('heightCm', 5)
+    rotation_deg = slot_data.get('rotationDeg', 0)
+    
+    # Calculate half dimensions
+    half_w = width_cm / 2
+    half_h = height_cm / 2
+    
+    # Define corners relative to center (before rotation)
+    corners = [
+        [-half_w, -half_h],  # top-left
+        [half_w, -half_h],   # top-right
+        [half_w, half_h],    # bottom-right
+        [-half_w, half_h],   # bottom-left
+    ]
+    
+    # Apply rotation if needed
+    if rotation_deg != 0:
+        angle_rad = np.deg2rad(rotation_deg)
+        cos_a = np.cos(angle_rad)
+        sin_a = np.sin(angle_rad)
+        rotated_corners = []
+        for cx, cy in corners:
+            rx = cx * cos_a - cy * sin_a
+            ry = cx * sin_a + cy * cos_a
+            rotated_corners.append([rx, ry])
+        corners = rotated_corners
+    
+    # Translate to center position and convert to pixels
+    pixel_coords = []
+    for cx, cy in corners:
+        px = (x_cm + cx) * px_per_cm
+        py = (y_cm + cy) * px_per_cm
+        pixel_coords.append([px, py])
+    
+    return pixel_coords
+
+
 # GPIO Light Control Functions
 def control_light(pin: int, state: str):
     """
@@ -381,23 +435,31 @@ class SlotProcessor:
             return ("ITEM_PRESENT", False, None)
     
     def process_slot(self, frame: np.ndarray, slot_data: Dict[str, Any], 
-                      linked_slots: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
+                      linked_slots: Optional[Dict[str, Dict[str, Any]]] = None,
+                      use_rectified_coords: bool = False) -> Dict[str, Any]:
         """
         Process a single slot using detection based on slot type
         
         Args:
-            frame: Camera frame
+            frame: Camera frame (raw or rectified)
             slot_data: Slot configuration
             linked_slots: Optional dict of linked slots (for scanner/worker grid pairing)
+            use_rectified_coords: If True, calculate coords from cm values for rectified frame
             
         Returns:
             Processing result with status and metrics
         """
         slot_id = slot_data.get('id')
         slot_name = slot_data.get('slotId', slot_id)
-        region_coords = slot_data.get('regionCoords', [])
         slot_type = slot_data.get('slotType', 'tool')
         grid_metadata = slot_data.get('gridMetadata', [])
+        
+        # Use cm-based coordinates for rectified frames, or stored regionCoords for raw frames
+        if use_rectified_coords:
+            region_coords = calculate_rectified_region_coords(slot_data, px_per_cm=31.8)
+            logger.debug(f"Slot {slot_name}: Using rectified coords calculated from cm values")
+        else:
+            region_coords = slot_data.get('regionCoords', [])
         
         logger.info(f"Processing slot: {slot_name} (type: {slot_type})")
         
@@ -807,24 +869,27 @@ class CameraProcessor:
             # Track processed results for linked slot lookups
             processed_slots: Dict[str, Dict[str, Any]] = {}
             
-            # Process slots on the RECTIFIED frame (coordinates are in rectified space)
+            # Process slots on the RECTIFIED frame
+            # Coordinates are calculated from cm values (not stored regionCoords in camera pixel space)
             # 1. Process worker tag grids first (no dependencies)
             for slot in worker_tag_slots:
-                slot_result = self.slot_processor.process_slot(rectified_frame, slot)
+                slot_result = self.slot_processor.process_slot(rectified_frame, slot, use_rectified_coords=True)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
-                processed_slots[slot.get('id')] = slot_result
+                slot_id_key = slot.get('id') or slot.get('slotId', 'unknown')
+                processed_slots[slot_id_key] = slot_result
             
             # 2. Process scanner grids (may depend on worker tag results)
             for slot in scanner_grid_slots:
-                slot_result = self.slot_processor.process_slot(rectified_frame, slot, linked_slots=processed_slots)
+                slot_result = self.slot_processor.process_slot(rectified_frame, slot, linked_slots=processed_slots, use_rectified_coords=True)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
-                processed_slots[slot.get('id')] = slot_result
+                slot_id_key = slot.get('id') or slot.get('slotId', 'unknown')
+                processed_slots[slot_id_key] = slot_result
             
             # 3. Process regular tool slots
             for slot in tool_slots:
-                slot_result = self.slot_processor.process_slot(rectified_frame, slot)
+                slot_result = self.slot_processor.process_slot(rectified_frame, slot, use_rectified_coords=True)
                 result['slotResults'].append(slot_result)
                 result['slotsProcessed'] += 1
             
