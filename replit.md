@@ -37,7 +37,12 @@ The UI/UX for calibration uses paper-size formats (e.g., "A4-landscape") with a 
 
 ArUco marker IDs are allocated as: 1-50 for tool slots, 51-95 for worker identification (max 45 workers), and 96-99 for corner calibration, all using the DICT_4X4_100 dictionary. Slot ROIs are scanned for optimal accuracy.
 
-**Diagnostic & Startup Checks**: Both the startup calibration (on system boot) and scheduled diagnostic checks (30 minutes before each capture) validate ONLY the 4 corner ArUco markers (IDs 96-99). Slot markers (IDs 1-50) are NOT checked since they are normally covered by tools. This ensures the camera position is stable without requiring tools to be removed. On startup, ALL calibrated cameras are validated sequentially; red LED flash triggers if ANY camera fails validation.
+**Diagnostic & Capture Checks**: Corner ArUco markers (IDs 96-99) are validated at multiple points:
+1. **Startup Validation**: On system boot, ALL calibrated cameras are validated sequentially; red LED flash triggers if ANY camera fails.
+2. **Pre-Capture Diagnostics**: 30 minutes before each scheduled capture, corner markers are validated.
+3. **During Capture**: Each scheduled capture validates all 4 corner markers BEFORE processing slots. If fewer than 4 markers are detected, the camera is marked as "failed" and Google Sheets shows ❌ instead of numbers. This differentiates between "template sheets not in place" vs "all tools checked out".
+
+Slot markers (IDs 1-50) are NOT checked since they are normally covered by tools.
 
 ### Camera Configuration (CRITICAL)
 Cameras must be forced to MJPEG format for optimal performance (7-10fps at 4K, 15-60fps at 1080p), preventing YUYV throttling. A dual-resolution strategy is employed: 1920x1080 for previews and 3840x2160 for high-accuracy calibration/validation (single frame). Default camera settings are configured for bright, natural images with auto-exposure and auto-focus. A 10-second warmup period is implemented for auto-exposure convergence. The post-processing pipeline includes multi-frame sharpness selection, auto brightness/contrast, gamma correction, and sharpening. Memory is optimized with a buffer size of 1 and immediate grayscale conversion. All Python scripts must explicitly force MJPEG.
