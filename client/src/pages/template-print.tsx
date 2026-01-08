@@ -562,22 +562,6 @@ export default function TemplatePrint() {
             const qrTop = -qrSizePx / 2;
             const labelY = (slotTop + qrTop) / 2;
             
-            // Draw colored background behind label if category has a color set
-            const labelColor = rect.category.labelColor || "#FFFFFF";
-            if (labelColor && labelColor !== "#FFFFFF") {
-              const bgPadding = cmToPixels(0.2, true);
-              const bgHeight = fontPx * 1.4;
-              const bgWidth = textWidth + bgPadding * 2;
-              
-              ctx.fillStyle = labelColor;
-              ctx.fillRect(-bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight);
-              
-              // Add subtle border
-              ctx.strokeStyle = '#00000020';
-              ctx.lineWidth = 1;
-              ctx.strokeRect(-bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight);
-            }
-            
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 3;
             ctx.strokeText(displayLabel, 0, labelY);
@@ -1032,45 +1016,6 @@ export default function TemplatePrint() {
               
               // Now center the text at this point
               const textWidthMm = pdf.getTextWidth(displayLabel);
-              const fontHeightMm = fontPt * 0.3528; // Convert pt to mm
-              const bgPadding = 2; // mm padding around text
-              
-              // Draw colored background behind label if category has a color set
-              const labelColor = rect.category.labelColor || "#FFFFFF";
-              if (labelColor && labelColor !== "#FFFFFF") {
-                // Parse hex color to RGB
-                const r = parseInt(labelColor.slice(1, 3), 16);
-                const g = parseInt(labelColor.slice(3, 5), 16);
-                const b = parseInt(labelColor.slice(5, 7), 16);
-                
-                pdf.saveGraphicsState();
-                pdf.setFillColor(r, g, b);
-                
-                // Calculate rotated rectangle corners for background
-                const bgWidth = textWidthMm + bgPadding * 2;
-                const bgHeight = fontHeightMm * 1.4;
-                
-                // For rotated background, draw at label position
-                const bgCenterX = labelX;
-                const bgCenterY = labelY;
-                
-                // Draw rotated rectangle using path
-                const hw = bgWidth / 2;
-                const hh = bgHeight / 2;
-                const corners = [
-                  rotatePoint(bgCenterX - hw, bgCenterY - hh, bgCenterX, bgCenterY, angleRad),
-                  rotatePoint(bgCenterX + hw, bgCenterY - hh, bgCenterX, bgCenterY, angleRad),
-                  rotatePoint(bgCenterX + hw, bgCenterY + hh, bgCenterX, bgCenterY, angleRad),
-                  rotatePoint(bgCenterX - hw, bgCenterY + hh, bgCenterX, bgCenterY, angleRad),
-                ];
-                
-                pdf.moveTo(corners[0].x, corners[0].y);
-                pdf.lineTo(corners[1].x, corners[1].y);
-                pdf.lineTo(corners[2].x, corners[2].y);
-                pdf.lineTo(corners[3].x, corners[3].y);
-                pdf.fill();
-                pdf.restoreGraphicsState();
-              }
               
               // Text starts at (labelX, labelY) and extends in the rotated direction
               // To center: offset by -textWidth/2 along the rotated X axis
@@ -1148,25 +1093,6 @@ export default function TemplatePrint() {
               const guideLineY = localY - guideSpacingMm / 2;
               // Label goes halfway between slot top and guide line
               const labelY = (slotTop + guideLineY) / 2;
-              
-              // Draw colored background behind label if category has a color set
-              const labelColor = rect.category.labelColor || "#FFFFFF";
-              if (labelColor && labelColor !== "#FFFFFF") {
-                // Parse hex color to RGB
-                const r = parseInt(labelColor.slice(1, 3), 16);
-                const g = parseInt(labelColor.slice(3, 5), 16);
-                const b = parseInt(labelColor.slice(5, 7), 16);
-                
-                const fontHeightMm = fontPt * 0.3528;
-                const bgPadding = 2;
-                const bgWidth = textWidth + bgPadding * 2;
-                const bgHeight = fontHeightMm * 1.4;
-                
-                pdf.saveGraphicsState();
-                pdf.setFillColor(r, g, b);
-                pdf.rect(localX - bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight, 'F');
-                pdf.restoreGraphicsState();
-              }
               
               pdf.text(displayLabel2, localX, labelY, { align: 'center', baseline: 'middle' });
             }
@@ -1457,38 +1383,6 @@ export default function TemplatePrint() {
             
             // Center the text at this point
             const textWidthMm = pdf.getTextWidth(displayLabelRotated);
-            const fontHeightMm = fontPt * 0.3528;
-            const bgPadding = 2;
-            
-            // Draw colored background behind label if category has a color set
-            const labelColor = rect.category.labelColor || "#FFFFFF";
-            if (labelColor && labelColor !== "#FFFFFF") {
-              const r = parseInt(labelColor.slice(1, 3), 16);
-              const g = parseInt(labelColor.slice(3, 5), 16);
-              const b = parseInt(labelColor.slice(5, 7), 16);
-              
-              pdf.saveGraphicsState();
-              pdf.setFillColor(r, g, b);
-              
-              const bgWidth = textWidthMm + bgPadding * 2;
-              const bgHeight = fontHeightMm * 1.4;
-              const hw = bgWidth / 2;
-              const hh = bgHeight / 2;
-              
-              const bgCorners = [
-                rotatePoint(labelX - hw, labelYPos - hh, labelX, labelYPos, labelAngleRad),
-                rotatePoint(labelX + hw, labelYPos - hh, labelX, labelYPos, labelAngleRad),
-                rotatePoint(labelX + hw, labelYPos + hh, labelX, labelYPos, labelAngleRad),
-                rotatePoint(labelX - hw, labelYPos + hh, labelX, labelYPos, labelAngleRad),
-              ];
-              
-              pdf.moveTo(bgCorners[0].x, bgCorners[0].y);
-              pdf.lineTo(bgCorners[1].x, bgCorners[1].y);
-              pdf.lineTo(bgCorners[2].x, bgCorners[2].y);
-              pdf.lineTo(bgCorners[3].x, bgCorners[3].y);
-              pdf.fill();
-              pdf.restoreGraphicsState();
-            }
             
             const startX = labelX - (textWidthMm / 2) * Math.cos(labelAngleRad);
             const startY = labelYPos + (textWidthMm / 2) * Math.sin(labelAngleRad);
@@ -1551,24 +1445,6 @@ export default function TemplatePrint() {
             const slotTop = yMm - heightMm / 2;
             const guideLineY = yMm - guideSpacingMm / 2;
             const labelY = (slotTop + guideLineY) / 2;
-            
-            // Draw colored background behind label if category has a color set
-            const labelColor = rect.category.labelColor || "#FFFFFF";
-            if (labelColor && labelColor !== "#FFFFFF") {
-              const r = parseInt(labelColor.slice(1, 3), 16);
-              const g = parseInt(labelColor.slice(3, 5), 16);
-              const b = parseInt(labelColor.slice(5, 7), 16);
-              
-              const fontHeightMm = fontPt * 0.3528;
-              const bgPadding = 2;
-              const bgWidth = textWidth + bgPadding * 2;
-              const bgHeight = fontHeightMm * 1.4;
-              
-              pdf.saveGraphicsState();
-              pdf.setFillColor(r, g, b);
-              pdf.rect(xMm - bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight, 'F');
-              pdf.restoreGraphicsState();
-            }
             
             pdf.text(displayLabelNonRotated, xMm, labelY, { align: 'center', baseline: 'middle' });
           }
