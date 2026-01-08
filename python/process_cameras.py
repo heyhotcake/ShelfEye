@@ -279,31 +279,9 @@ def has_cm_values(slot_data: Dict[str, Any]) -> bool:
     return True
 
 
-def get_optimal_px_per_cm(paper_size_cm: Tuple[float, float], max_pixels: int = 4000000) -> float:
-    """
-    Calculate optimal px_per_cm to keep rectified frame under memory limit.
-    
-    Args:
-        paper_size_cm: (width_cm, height_cm)
-        max_pixels: Maximum total pixels allowed (default 4MP = ~12MB BGR)
-        
-    Returns:
-        Optimal pixels per centimeter (capped at 31.8)
-    """
-    paper_width_cm, paper_height_cm = paper_size_cm
-    area_cm2 = paper_width_cm * paper_height_cm
-    
-    # Calculate max px_per_cm that keeps us under the limit
-    # area_px = area_cm2 * px_per_cm^2
-    max_px_per_cm = np.sqrt(max_pixels / area_cm2)
-    
-    # Cap at standard resolution (31.8) but allow lower for large templates
-    optimal = min(31.8, max_px_per_cm)
-    
-    # Don't go below 15 px/cm (minimum for ArUco detection)
-    optimal = max(15.0, optimal)
-    
-    return optimal
+# Fixed resolution for rectified frames - always use full resolution for reliable ArUco detection
+# 31.8 px/cm ensures 3cm ArUco markers have ~95 pixels per side (~16 pixels per module)
+RECTIFIED_PX_PER_CM = 31.8
 
 
 def calculate_rectified_region_coords(slot_data: Dict[str, Any], px_per_cm: float = 31.8) -> Optional[List[List[float]]]:
@@ -1003,10 +981,10 @@ class CameraProcessor:
                 logger.error(f"Camera {camera_id}: Homography error: {homo_err}")
                 return result
             
-            # Calculate optimal resolution based on paper size (memory optimization for large templates)
-            # Standard is 31.8 px/cm but large templates (8-page) are reduced to fit in memory
-            px_per_cm = get_optimal_px_per_cm(paper_size_cm)
-            logger.info(f"Camera {camera_id}: Using {px_per_cm:.1f} px/cm for paper {paper_size_cm[0]:.1f}x{paper_size_cm[1]:.1f} cm")
+            # Use fixed full resolution for reliable ArUco detection on all template sizes
+            # 31.8 px/cm ensures 3cm markers have ~95 pixels (adequate for detection)
+            px_per_cm = RECTIFIED_PX_PER_CM
+            logger.info(f"Camera {camera_id}: Using fixed {px_per_cm:.1f} px/cm for paper {paper_size_cm[0]:.1f}x{paper_size_cm[1]:.1f} cm")
             
             # Rectify the frame to top-down view using the calculated homography
             # Slot coordinates are defined in this rectified space
