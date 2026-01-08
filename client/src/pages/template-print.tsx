@@ -491,13 +491,17 @@ export default function TemplatePrint() {
         } else {
           // Standard tool slot rendering
           
-          // Draw colored border if category has a label color set (0.5cm = 5mm border)
+          // Draw colored border if category has a label color set (0.5cm = 5mm border, fully inside slot)
           const borderColor = rect.category.labelColor || "#FFFFFF";
           if (borderColor && borderColor !== "#FFFFFF") {
             const borderWidthPx = cmToPixels(0.5, true);
-            ctx.strokeStyle = borderColor;
-            ctx.lineWidth = borderWidthPx;
-            ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
+            const insetPx = borderWidthPx / 2; // Inset by half line width to keep border fully inside
+            // Only draw if slot is large enough
+            if (widthPx > borderWidthPx && heightPx > borderWidthPx) {
+              ctx.strokeStyle = borderColor;
+              ctx.lineWidth = borderWidthPx;
+              ctx.strokeRect(-widthPx / 2 + insetPx, -heightPx / 2 + insetPx, widthPx - borderWidthPx, heightPx - borderWidthPx);
+            }
           }
           
           // Draw black outline on top
@@ -901,27 +905,44 @@ export default function TemplatePrint() {
               y: localY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
             }));
 
-            // Draw colored border if category has a label color set (5mm = 0.5cm border)
+            // Draw colored border if category has a label color set (5mm = 0.5cm border, fully inside slot)
             const borderColor = rect.category.labelColor || "#FFFFFF";
-            if (borderColor && borderColor !== "#FFFFFF") {
+            const borderWidthMm = 5;
+            const insetMm = borderWidthMm / 2; // Inset by half line width to keep border fully inside
+            if (borderColor && borderColor !== "#FFFFFF" && widthMm > borderWidthMm && heightMm > borderWidthMm) {
               const r = parseInt(borderColor.slice(1, 3), 16);
               const g = parseInt(borderColor.slice(3, 5), 16);
               const b = parseInt(borderColor.slice(5, 7), 16);
               pdf.setDrawColor(r, g, b);
-              pdf.setLineWidth(5); // 5mm border
+              pdf.setLineWidth(borderWidthMm);
+              
+              // Calculate inset corners for colored border
+              const insetHalfW = halfW - insetMm;
+              const insetHalfH = halfH - insetMm;
+              const insetCorners = [
+                { x: -insetHalfW, y: -insetHalfH },
+                { x: insetHalfW, y: -insetHalfH },
+                { x: insetHalfW, y: insetHalfH },
+                { x: -insetHalfW, y: insetHalfH },
+              ];
+              const rotatedInsetCorners = insetCorners.map(c => ({
+                x: localX + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
+                y: localY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
+              }));
+              
               pdf.lines(
-                rotatedCorners.map((c, i) => [
-                  rotatedCorners[(i + 1) % 4].x - c.x,
-                  rotatedCorners[(i + 1) % 4].y - c.y,
+                rotatedInsetCorners.map((c, i) => [
+                  rotatedInsetCorners[(i + 1) % 4].x - c.x,
+                  rotatedInsetCorners[(i + 1) % 4].y - c.y,
                 ]),
-                rotatedCorners[0].x,
-                rotatedCorners[0].y,
+                rotatedInsetCorners[0].x,
+                rotatedInsetCorners[0].y,
                 [1, 1],
                 'S'
               );
             }
 
-            // Draw black outline on top
+            // Draw black outline on top (at original slot boundary)
             pdf.setDrawColor(0, 0, 0);
             pdf.setLineWidth(0.5);
             pdf.lines(
@@ -1025,18 +1046,20 @@ export default function TemplatePrint() {
               pdf.text(displayLabel, startX, startY, { angle: rect.rotation });
             }
           } else {
-            // Draw colored border if category has a label color set (5mm = 0.5cm border)
+            // Draw colored border if category has a label color set (5mm = 0.5cm border, fully inside slot)
             const borderColor = rect.category.labelColor || "#FFFFFF";
-            if (borderColor && borderColor !== "#FFFFFF") {
+            const borderWidthMm = 5;
+            const insetMm = borderWidthMm / 2; // Inset by half line width to keep border fully inside
+            if (borderColor && borderColor !== "#FFFFFF" && widthMm > borderWidthMm && heightMm > borderWidthMm) {
               const r = parseInt(borderColor.slice(1, 3), 16);
               const g = parseInt(borderColor.slice(3, 5), 16);
               const b = parseInt(borderColor.slice(5, 7), 16);
               pdf.setDrawColor(r, g, b);
-              pdf.setLineWidth(5); // 5mm border
-              pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm, 'S');
+              pdf.setLineWidth(borderWidthMm);
+              pdf.rect(localX - widthMm / 2 + insetMm, localY - heightMm / 2 + insetMm, widthMm - borderWidthMm, heightMm - borderWidthMm, 'S');
             }
             
-            // Draw black outline on top
+            // Draw black outline on top (at original slot boundary)
             pdf.setDrawColor(0, 0, 0);
             pdf.setLineWidth(0.5);
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
@@ -1278,27 +1301,44 @@ export default function TemplatePrint() {
             y: yMm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
           }));
 
-          // Draw colored border if category has a label color set (5mm = 0.5cm border)
+          // Draw colored border if category has a label color set (5mm = 0.5cm border, fully inside slot)
           const borderColor = rect.category.labelColor || "#FFFFFF";
-          if (borderColor && borderColor !== "#FFFFFF") {
+          const borderWidthMm = 5;
+          const insetMm = borderWidthMm / 2; // Inset by half line width to keep border fully inside
+          if (borderColor && borderColor !== "#FFFFFF" && widthMm > borderWidthMm && heightMm > borderWidthMm) {
             const r = parseInt(borderColor.slice(1, 3), 16);
             const g = parseInt(borderColor.slice(3, 5), 16);
             const b = parseInt(borderColor.slice(5, 7), 16);
             pdf.setDrawColor(r, g, b);
-            pdf.setLineWidth(5); // 5mm border
+            pdf.setLineWidth(borderWidthMm);
+            
+            // Calculate inset corners for colored border
+            const insetHalfW = halfW - insetMm;
+            const insetHalfH = halfH - insetMm;
+            const insetCorners = [
+              { x: -insetHalfW, y: -insetHalfH },
+              { x: insetHalfW, y: -insetHalfH },
+              { x: insetHalfW, y: insetHalfH },
+              { x: -insetHalfW, y: insetHalfH },
+            ];
+            const rotatedInsetCorners = insetCorners.map(c => ({
+              x: xMm + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
+              y: yMm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
+            }));
+            
             pdf.lines(
-              rotatedCorners.map((c, i) => [
-                rotatedCorners[(i + 1) % 4].x - c.x,
-                rotatedCorners[(i + 1) % 4].y - c.y,
+              rotatedInsetCorners.map((c, i) => [
+                rotatedInsetCorners[(i + 1) % 4].x - c.x,
+                rotatedInsetCorners[(i + 1) % 4].y - c.y,
               ]),
-              rotatedCorners[0].x,
-              rotatedCorners[0].y,
+              rotatedInsetCorners[0].x,
+              rotatedInsetCorners[0].y,
               [1, 1],
               'S'
             );
           }
 
-          // Draw black outline on top
+          // Draw black outline on top (at original slot boundary)
           pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.5);
           pdf.lines(
@@ -1390,18 +1430,20 @@ export default function TemplatePrint() {
             pdf.text(displayLabelRotated, startX, startY, { angle: rect.rotation });
           }
         } else {
-          // Draw colored border if category has a label color set (5mm = 0.5cm border)
+          // Draw colored border if category has a label color set (5mm = 0.5cm border, fully inside slot)
           const borderColor = rect.category.labelColor || "#FFFFFF";
-          if (borderColor && borderColor !== "#FFFFFF") {
+          const borderWidthMm = 5;
+          const insetMm = borderWidthMm / 2; // Inset by half line width to keep border fully inside
+          if (borderColor && borderColor !== "#FFFFFF" && widthMm > borderWidthMm && heightMm > borderWidthMm) {
             const r = parseInt(borderColor.slice(1, 3), 16);
             const g = parseInt(borderColor.slice(3, 5), 16);
             const b = parseInt(borderColor.slice(5, 7), 16);
             pdf.setDrawColor(r, g, b);
-            pdf.setLineWidth(5); // 5mm border
-            pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm, 'S');
+            pdf.setLineWidth(borderWidthMm);
+            pdf.rect(xMm - widthMm / 2 + insetMm, yMm - heightMm / 2 + insetMm, widthMm - borderWidthMm, heightMm - borderWidthMm, 'S');
           }
           
-          // Draw black outline on top
+          // Draw black outline on top (at original slot boundary)
           pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.5);
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
