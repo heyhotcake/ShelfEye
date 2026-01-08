@@ -33,9 +33,10 @@ const STAMP_ROW = 22;
 
 interface ToolRowMapping {
   toolName: string;
-  returnRow: number;    // Row for 返却数
-  checkoutRow: number;  // Row for 貸出数
+  returnRow: number;    // Row for 返却数 (or 確認✔点 row for checkType tools)
+  checkoutRow: number;  // Row for 貸出数 (-1 for checkType tools)
   totalCount: number | null;  // 定数 from Column B in Template
+  isCheckType: boolean; // true if this is a 確認✔点 type tool
 }
 
 export class SheetsSummaryReport {
@@ -145,15 +146,33 @@ export class SheetsSummaryReport {
           if (colC === '返却数') {
             currentToolReturnRow = rowNum;
           }
+          
+          // Check if this is a checkType tool (確認✔点 or 確認✓点)
+          if (colC.includes('確認') && (colC.includes('✔') || colC.includes('✓') || colC.includes('点'))) {
+            this.templateRowMapping.push({
+              toolName: currentToolName,
+              returnRow: rowNum,  // Use this row for checkType
+              checkoutRow: -1,    // No checkout row for checkType
+              totalCount: currentToolTotalCount,
+              isCheckType: true,
+            });
+            console.log(`[SheetsSummaryReport] Mapped checkType tool "${currentToolName}": 確認✔点=row ${rowNum}, 定数=${currentToolTotalCount ?? 'N/A'}`);
+            
+            // Reset for next tool
+            currentToolName = null;
+            currentToolReturnRow = -1;
+            currentToolTotalCount = null;
+          }
         }
 
-        // Check if this row is 貸出数 for the current tool
+        // Check if this row is 貸出数 for the current tool (regular non-checkType tool)
         if (currentToolName && colC === '貸出数' && currentToolReturnRow > 0) {
           this.templateRowMapping.push({
             toolName: currentToolName,
             returnRow: currentToolReturnRow,
             checkoutRow: rowNum,
             totalCount: currentToolTotalCount,
+            isCheckType: false,
           });
           console.log(`[SheetsSummaryReport] Mapped tool "${currentToolName}": 返却数=row ${currentToolReturnRow}, 貸出数=row ${rowNum}, 定数=${currentToolTotalCount ?? 'N/A'}`);
           
