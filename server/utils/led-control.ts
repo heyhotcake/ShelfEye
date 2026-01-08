@@ -3,6 +3,7 @@ import path from 'path';
 import { storage } from '../storage';
 import { promisify } from 'util';
 import { spawnTracked } from '../subprocess-manager';
+import { alertBuzzer } from './buzzer-control.js';
 
 const execAsync = promisify(exec);
 
@@ -221,6 +222,12 @@ export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow')
 
     if (response.success || response.status === 'success') {
       console.log('[LED] RED FLASH started');
+      
+      // Trigger buzzer alert alongside red flash
+      alertBuzzer().catch(err => {
+        console.error('[LED] Buzzer alert failed:', err);
+      });
+      
       return true;
     } else {
       console.error('[LED] Failed to start flash:', response.message);
