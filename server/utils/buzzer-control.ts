@@ -1,8 +1,11 @@
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 
 const PYTHON_SCRIPT = path.join(process.cwd(), 'python', 'buzzer_control.py');
 const TIMEOUT_MS = 10000;
+
+// Track the alert process so we can kill it when needed
+let alertProcess: ChildProcess | null = null;
 
 interface BuzzerResult {
   ok: boolean;
@@ -89,6 +92,60 @@ export async function buzzerBeep(durationMs = 500, count = 3, intervalMs = 200):
   return result.ok;
 }
 
+/**
+ * Start continuous alert buzzer (0.5s beep every 10 seconds)
+ * Runs until stopAlertBuzzer() is called
+ */
+export function startAlertBuzzer(): boolean {
+  // Kill any existing alert process
+  stopAlertBuzzer();
+  
+  try {
+    alertProcess = spawn('sudo', [
+      'python3', PYTHON_SCRIPT, 'alert',
+      '--duration', '500',
+      '--pause', '10'
+    ], { stdio: 'ignore' });
+    
+    alertProcess.on('error', (err) => {
+      console.error('[Buzzer] Alert process error:', err.message);
+      alertProcess = null;
+    });
+    
+    alertProcess.on('exit', () => {
+      alertProcess = null;
+    });
+    
+    console.log('[Buzzer] Alert started (0.5s beep every 10s)');
+    return true;
+  } catch (err) {
+    console.error('[Buzzer] Failed to start alert:', err);
+    return false;
+  }
+}
+
+/**
+ * Stop the continuous alert buzzer
+ */
+export function stopAlertBuzzer(): boolean {
+  if (alertProcess) {
+    try {
+      alertProcess.kill('SIGTERM');
+      alertProcess = null;
+      console.log('[Buzzer] Alert stopped');
+      return true;
+    } catch (err) {
+      console.error('[Buzzer] Failed to stop alert:', err);
+      return false;
+    }
+  }
+  return true; // Already stopped
+}
+
+/**
+ * Legacy: single burst alert (deprecated, use startAlertBuzzer for continuous)
+ */
 export async function alertBuzzer(): Promise<boolean> {
-  return buzzerBeep(500, 5, 300);
+  startAlertBuzzer();
+  return true;
 }

@@ -3,7 +3,7 @@ import path from 'path';
 import { storage } from '../storage';
 import { promisify } from 'util';
 import { spawnTracked } from '../subprocess-manager';
-import { alertBuzzer } from './buzzer-control.js';
+import { alertBuzzer, stopAlertBuzzer } from './buzzer-control.js';
 
 const execAsync = promisify(exec);
 
@@ -255,6 +255,10 @@ export async function stopRedFlash(): Promise<boolean> {
 
     if (response.success || response.status === 'success') {
       console.log('[LED] RED FLASH stopped');
+      
+      // Stop buzzer alert when red flash stops
+      stopAlertBuzzer();
+      
       return true;
     } else {
       console.error('[LED] Failed to stop flash:', response.message);

@@ -61,6 +61,20 @@ def buzzer_beep(duration_ms=500, count=3, interval_ms=200):
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+def buzzer_alert(beep_duration_ms=500, pause_duration_s=10):
+    """Continuous alert: beep for duration, pause, repeat until killed."""
+    if not GPIO_AVAILABLE:
+        return {"ok": False, "error": "RPi.GPIO not available"}
+    try:
+        print(json.dumps({"ok": True, "mode": "alert", "beep_ms": beep_duration_ms, "pause_s": pause_duration_s}), flush=True)
+        while True:
+            GPIO.output(BUZZER_GPIO, GPIO.HIGH)
+            time.sleep(beep_duration_ms / 1000.0)
+            GPIO.output(BUZZER_GPIO, GPIO.LOW)
+            time.sleep(pause_duration_s)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 def cleanup():
     if GPIO_AVAILABLE:
         try:
@@ -71,7 +85,7 @@ def cleanup():
 
 def main():
     parser = argparse.ArgumentParser(description='Buzzer control via GPIO 17')
-    parser.add_argument('command', choices=['on', 'off', 'beep', 'status'],
+    parser.add_argument('command', choices=['on', 'off', 'beep', 'alert', 'status'],
                         help='Command to execute')
     parser.add_argument('--duration', type=int, default=500,
                         help='Beep duration in ms (default: 500)')
@@ -79,6 +93,8 @@ def main():
                         help='Number of beeps (default: 3)')
     parser.add_argument('--interval', type=int, default=200,
                         help='Interval between beeps in ms (default: 200)')
+    parser.add_argument('--pause', type=int, default=10,
+                        help='Pause between alert beeps in seconds (default: 10)')
     parser.add_argument('--json', action='store_true',
                         help='Output as JSON')
     
@@ -98,6 +114,9 @@ def main():
             result = buzzer_off()
         elif args.command == 'beep':
             result = buzzer_beep(args.duration, args.count, args.interval)
+        elif args.command == 'alert':
+            buzzer_alert(args.duration, args.pause)
+            result = {"ok": True}  # Won't reach here normally
         elif args.command == 'status':
             result = {"ok": True, "gpio": BUZZER_GPIO, "available": GPIO_AVAILABLE}
         
