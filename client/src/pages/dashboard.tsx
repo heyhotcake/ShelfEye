@@ -526,9 +526,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            <Card>
+          <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Recent Alerts</CardTitle>
@@ -693,60 +691,6 @@ export default function Dashboard() {
                 })()}
               </CardContent>
             </Card>
-            
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Camera Preview</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <span className="text-sm text-muted-foreground">Live</span>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="canvas-container">
-                  <div className="relative aspect-[4/3] bg-muted rounded overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                      <div className="text-center">
-                        <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Camera feed will appear here</p>
-                      </div>
-                    </div>
-                    
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 600">
-                      <rect x="50" y="50" width="700" height="500" fill="none" stroke="hsl(217, 91%, 60%)" strokeWidth="2" strokeDasharray="5,5"/>
-                      
-                      <rect x="70" y="70" width="110" height="110" fill="none" stroke="hsl(142, 76%, 45%)" strokeWidth="2"/>
-                      <text x="75" y="90" fill="hsl(142, 76%, 45%)" fontSize="12" fontFamily="monospace">A1</text>
-                      
-                      <rect x="200" y="70" width="110" height="110" fill="none" stroke="hsl(142, 76%, 45%)" strokeWidth="2"/>
-                      <text x="205" y="90" fill="hsl(142, 76%, 45%)" fontSize="12" fontFamily="monospace">A2</text>
-                      
-                      <rect x="330" y="70" width="110" height="110" fill="none" stroke="hsl(0, 84%, 60%)" strokeWidth="2"/>
-                      <text x="335" y="90" fill="hsl(0, 84%, 60%)" fontSize="12" fontFamily="monospace">A3 - EMPTY</text>
-                    </svg>
-                  </div>
-                </div>
-                
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <Card>
-                    <CardContent className="p-3">
-                      <p className="text-xs text-muted-foreground mb-1">Homography Error</p>
-                      <p className="text-sm font-mono font-medium text-foreground" data-testid="text-homography-error">0.82 px</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-3">
-                      <p className="text-xs text-muted-foreground mb-1">Detection Yield</p>
-                      <p className="text-sm font-mono font-medium text-foreground" data-testid="text-detection-yield">98.3%</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </main>
 
