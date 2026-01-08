@@ -290,7 +290,16 @@ export class SheetsSummaryReport {
     const weekRange = this.getWeekDateRange(now);
     const year = format(now, 'yyyy', { timeZone: TIMEZONE });
 
-    // Update the date range in row 2 (replacing placeholder "20XX年 X月 X日 ～ X月 X日")
+    // Generate formatted day labels with dates: e.g., "5日(月)", "6日(火)", etc.
+    const formattedDayLabels = this.getFormattedDayLabels(weekRange.start);
+
+    // Build row 4 values: empty for columns A, B, C, then day labels spanning 4 columns each
+    const row4Values: string[] = ['', '', ''];
+    for (const dayLabel of formattedDayLabels) {
+      row4Values.push(dayLabel, '', '', '');
+    }
+
+    // Update the date range in row 2 and weekday labels in row 4
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: this.spreadsheetId,
       requestBody: {
@@ -299,12 +308,32 @@ export class SheetsSummaryReport {
           {
             range: `'${tabName}'!A2`,
             values: [[`${year}年 ${weekRange.startStr} ～ ${weekRange.endStr}`]]
+          },
+          {
+            range: `'${tabName}'!A4`,
+            values: [row4Values]
           }
         ],
       },
     });
 
-    console.log(`[SheetsSummaryReport] Updated date range in row 2 for tab: ${tabName}`);
+    console.log(`[SheetsSummaryReport] Updated date range in row 2 and weekday labels in row 4 for tab: ${tabName}`);
+  }
+
+  /**
+   * Generate formatted day labels with dates: e.g., "5日(月)", "6日(火)", etc.
+   * @param weekStart The Monday date of the week
+   * @returns Array of 5 formatted labels for Monday through Friday
+   */
+  private getFormattedDayLabels(weekStart: Date): string[] {
+    const labels: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const dayDate = addDays(weekStart, i);
+      const dayNumber = format(dayDate, 'd', { timeZone: TIMEZONE });
+      const dayLabel = this.dayLabels[i]; // 月, 火, 水, 木, 金
+      labels.push(`${dayNumber}日(${dayLabel})`);
+    }
+    return labels;
   }
 
   private getColumnForCaptureTime(dayOfWeek: number, captureTimeIndex: number): string {
@@ -634,15 +663,18 @@ export class SheetsSummaryReport {
     const weekRange = this.getWeekDateRange(now);
     const year = format(now, 'yyyy', { timeZone: TIMEZONE });
 
+    // Generate formatted day labels with dates: e.g., "5日(月)", "6日(火)", etc.
+    const formattedDayLabels = this.getFormattedDayLabels(weekRange.start);
+
     // Build header rows
     const headerRow1 = [
       `東京４回物流部１部　しまむら班　備品貸出チェック表 ${year}年 ${weekRange.startStr} ～ ${weekRange.endStr}`,
       '', '', // 定数, 確認
     ];
 
-    // Add day labels with merged cells concept (we'll just repeat for now)
-    for (const day of this.dayLabels) {
-      headerRow1.push(day, '', '', '');
+    // Add formatted day labels with dates
+    for (const dayLabel of formattedDayLabels) {
+      headerRow1.push(dayLabel, '', '', '');
     }
     headerRow1.push(`更新日：${format(now, 'yyyy-MM-dd', { timeZone: TIMEZONE })}`);
 
