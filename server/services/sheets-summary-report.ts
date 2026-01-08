@@ -424,8 +424,10 @@ export class SheetsSummaryReport {
       const updates: { range: string; values: any[][] }[] = [];
       const column = this.getColumnForCaptureTime(mondayBasedDay, captureTimeIndex);
 
+      const failureCells: { column: string; row: number }[] = [];
+
       for (const tool of summary) {
-        // If camera failed for this tool, show ❌ instead of numbers
+        // If camera failed for this tool, show ✕ (plain X) instead of numbers
         if (tool.cameraFailed) {
           const returnRow = this.getTemplateRowForTool(tool.toolName, '返却数');
           const checkoutRow = this.getTemplateRowForTool(tool.toolName, '貸出数');
@@ -433,16 +435,18 @@ export class SheetsSummaryReport {
           if (returnRow > 0 && !SKIP_ROWS.includes(returnRow)) {
             updates.push({
               range: `'${sheetName}'!${column}${returnRow}`,
-              values: [['❌']]
+              values: [['✕']]
             });
+            failureCells.push({ column, row: returnRow });
           }
           if (!tool.isCheckType && checkoutRow > 0 && !SKIP_ROWS.includes(checkoutRow)) {
             updates.push({
               range: `'${sheetName}'!${column}${checkoutRow}`,
-              values: [['❌']]
+              values: [['✕']]
             });
+            failureCells.push({ column, row: checkoutRow });
           }
-          console.log(`[SheetsSummaryReport] Marked tool "${tool.toolName}" with ❌ due to camera failure`);
+          console.log(`[SheetsSummaryReport] Marked tool "${tool.toolName}" with ✕ due to camera failure`);
           continue;
         }
 
@@ -489,7 +493,12 @@ export class SheetsSummaryReport {
         console.log(`[SheetsSummaryReport] Synced ${updates.length} cells for ${captureTime} on ${this.dayLabels[mondayBasedDay]} to tab '${sheetName}'`);
       }
 
-      // Copy N circle stamp from D23 to the time column row 23
+      // Apply red text formatting to failure cells
+      if (failureCells.length > 0) {
+        await this.applyRedTextFormatting(sheetName, failureCells);
+      }
+
+      // Copy N circle stamp from D22 to the time column row 22
       await this.copyStampToColumn(sheetName, column);
 
     } catch (error) {
@@ -499,24 +508,48 @@ export class SheetsSummaryReport {
   }
 
   /**
-   * Copy the N circle stamp from D23 to the specified column row 23
+   * Copy the N circle stamp from D22 to the specified column row 22
+   * First tries the weekly tab, then falls back to Template tab if not found
    */
   private async copyStampToColumn(sheetName: string, column: string): Promise<void> {
     if (!this.spreadsheetId) return;
 
     try {
       const sheets = await getSheetsClient();
+      let stampValue = '';
 
-      // Read the stamp value from D23
+      // First, try to read from the weekly tab's D22
       const stampResponse = await sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
         range: `'${sheetName}'!D${STAMP_ROW}`,
       });
+      stampValue = stampResponse.data.values?.[0]?.[0] || '';
 
-      const stampValue = stampResponse.data.values?.[0]?.[0] || '';
+      // If not found, try to read from Template tab
+      if (!stampValue) {
+        console.log(`[SheetsSummaryReport] No stamp in weekly tab D${STAMP_ROW}, checking Template...`);
+        
+        // Find Template tab name
+        const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: this.spreadsheetId });
+        const templateSheet = spreadsheet.data.sheets?.find(
+          s => s.properties?.title?.toLowerCase() === 'template' || s.properties?.title === 'ひな形'
+        );
+        
+        if (templateSheet?.properties?.title) {
+          const templateResponse = await sheets.spreadsheets.values.get({
+            spreadsheetId: this.spreadsheetId,
+            range: `'${templateSheet.properties.title}'!D${STAMP_ROW}`,
+          });
+          stampValue = templateResponse.data.values?.[0]?.[0] || '';
+          
+          if (stampValue) {
+            console.log(`[SheetsSummaryReport] Found stamp in Template tab D${STAMP_ROW}: "${stampValue}"`);
+          }
+        }
+      }
 
       if (stampValue) {
-        // Write the stamp to the time column row 23
+        // Write the stamp to the time column row 22 (STAMP_ROW)
         await sheets.spreadsheets.values.update({
           spreadsheetId: this.spreadsheetId,
           range: `'${sheetName}'!${column}${STAMP_ROW}`,
@@ -526,15 +559,81 @@ export class SheetsSummaryReport {
           }
         });
 
-        console.log(`[SheetsSummaryReport] Copied N stamp from D${STAMP_ROW} to ${column}${STAMP_ROW}`);
+        console.log(`[SheetsSummaryReport] Copied stamp "${stampValue}" to ${column}${STAMP_ROW}`);
       } else {
-        console.log(`[SheetsSummaryReport] No stamp found at D${STAMP_ROW}, skipping stamp copy`);
+        console.log(`[SheetsSummaryReport] No stamp found at D${STAMP_ROW} in weekly or Template tab, skipping stamp copy`);
       }
 
     } catch (error) {
       console.error('[SheetsSummaryReport] Failed to copy stamp:', error);
       // Don't throw - stamp copy is not critical
     }
+  }
+
+  /**
+   * Apply red text formatting to failure cells
+   */
+  private async applyRedTextFormatting(sheetName: string, cells: { column: string; row: number }[]): Promise<void> {
+    if (!this.spreadsheetId || cells.length === 0) return;
+
+    try {
+      const sheets = await getSheetsClient();
+
+      // Get the sheet ID
+      const spreadsheet = await sheets.spreadsheets.get({
+        spreadsheetId: this.spreadsheetId,
+      });
+      const sheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
+      const sheetId = sheet?.properties?.sheetId;
+
+      if (sheetId === undefined) {
+        console.warn(`[SheetsSummaryReport] Could not find sheetId for "${sheetName}", skipping red formatting`);
+        return;
+      }
+
+      // Build formatting requests for each cell
+      const requests = cells.map(cell => ({
+        repeatCell: {
+          range: {
+            sheetId,
+            startRowIndex: cell.row - 1, // 0-indexed
+            endRowIndex: cell.row,
+            startColumnIndex: this.columnLetterToIndex(cell.column),
+            endColumnIndex: this.columnLetterToIndex(cell.column) + 1,
+          },
+          cell: {
+            userEnteredFormat: {
+              textFormat: {
+                foregroundColor: { red: 1, green: 0, blue: 0 }, // Red color
+                bold: true,
+              },
+            },
+          },
+          fields: 'userEnteredFormat.textFormat',
+        },
+      }));
+
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: this.spreadsheetId,
+        requestBody: { requests },
+      });
+
+      console.log(`[SheetsSummaryReport] Applied red text formatting to ${cells.length} failure cells`);
+    } catch (error) {
+      console.error('[SheetsSummaryReport] Failed to apply red formatting:', error);
+      // Don't throw - formatting is not critical
+    }
+  }
+
+  /**
+   * Convert column letter (A, B, ..., Z, AA, AB, ...) to 0-indexed column number
+   */
+  private columnLetterToIndex(column: string): number {
+    let result = 0;
+    for (let i = 0; i < column.length; i++) {
+      result = result * 26 + (column.charCodeAt(i) - 64);
+    }
+    return result - 1; // Convert to 0-indexed
   }
 
   private async calculateToolSummary(date: Date, captureTime: string, failedCameraIds: string[] = []): Promise<ToolSummary[]> {
