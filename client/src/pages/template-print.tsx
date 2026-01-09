@@ -439,7 +439,7 @@ export default function TemplatePrint() {
               const borderPx = cmToPixels(0.5, false); // 0.5cm border
               const guideWidthPx = cmToPixels(3.45, true);
               
-              ctx.strokeStyle = '#CCCCCC';
+              ctx.strokeStyle = '#000000';
               ctx.lineWidth = 1;
               
               // Top guide line (1cm from top of cell)
@@ -563,7 +563,7 @@ export default function TemplatePrint() {
           const guideWidthPx = cmToPixels(guideWidthCm, true);
           const guideSpacingPx = cmToPixels(guideSpacingCm, false);
           
-          ctx.strokeStyle = '#CCCCCC';
+          ctx.strokeStyle = '#000000';
           ctx.lineWidth = 1;
           
           ctx.beginPath();
@@ -862,7 +862,7 @@ export default function TemplatePrint() {
                 const borderMm = 5; // 0.5cm border
                 const guideWidthMm = 34.5; // 3.45cm
                 
-                pdf.setDrawColor(204, 204, 204); // Light grey
+                pdf.setDrawColor(0, 0, 0); // Black
                 pdf.setLineWidth(0.3);
                 
                 // Top guide line (1cm from top of cell)
@@ -1026,7 +1026,7 @@ export default function TemplatePrint() {
             // Draw alignment guides (rotated with shape)
             const guideWidthMm = 34.5; // 3.45cm
             const guideSpacingMm = 67.5; // 6.75cm
-            pdf.setDrawColor(204, 204, 204); // Light grey
+            pdf.setDrawColor(0, 0, 0); // Black
             pdf.setLineWidth(0.3);
             
             // Top guide line (rotated)
@@ -1129,7 +1129,7 @@ export default function TemplatePrint() {
             // Draw alignment guides (light grey horizontal lines for worker card placement)
             const guideWidthMm = 34.5; // 3.45cm
             const guideSpacingMm = 67.5; // 6.75cm
-            pdf.setDrawColor(204, 204, 204); // Light grey
+            pdf.setDrawColor(0, 0, 0); // Black
             pdf.setLineWidth(0.3);
             // Top guide line
             pdf.line(localX - guideWidthMm / 2, localY - guideSpacingMm / 2, localX + guideWidthMm / 2, localY - guideSpacingMm / 2);
@@ -1278,7 +1278,7 @@ export default function TemplatePrint() {
               const borderMm = 5; // 0.5cm border
               const guideWidthMm = 34.5; // 3.45cm
               
-              pdf.setDrawColor(204, 204, 204); // Light grey
+              pdf.setDrawColor(0, 0, 0); // Black
               pdf.setLineWidth(0.3);
               
               // Top guide line (1cm from top of cell)
@@ -1438,7 +1438,7 @@ export default function TemplatePrint() {
           // Draw alignment guides (rotated with shape)
           const guideWidthMm = 34.5; // 3.45cm
           const guideSpacingMm = 67.5; // 6.75cm
-          pdf.setDrawColor(204, 204, 204); // Light grey
+          pdf.setDrawColor(0, 0, 0); // Black
           pdf.setLineWidth(0.3);
           
           // Top guide line (rotated)
@@ -1529,7 +1529,7 @@ export default function TemplatePrint() {
           // Draw alignment guides (light grey horizontal lines for worker card placement)
           const guideWidthMm = 34.5; // 3.45cm
           const guideSpacingMm = 67.5; // 6.75cm
-          pdf.setDrawColor(204, 204, 204); // Light grey
+          pdf.setDrawColor(0, 0, 0); // Black
           pdf.setLineWidth(0.3);
           // Top guide line
           pdf.line(xMm - guideWidthMm / 2, yMm - guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm - guideSpacingMm / 2);
