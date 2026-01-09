@@ -243,13 +243,40 @@ export default function TemplatePrint() {
     const ROW_TOLERANCE_CM = 0.5;
     
     Array.from(byCategory.entries()).forEach(([categoryLabel, rects]) => {
+      // Compute visual bounding box edges for each rect (accounting for rotation)
+      const rectsWithEdges = rects.map(rect => {
+        const rotation = rect.rotation || 0;
+        const angleRad = (rotation * Math.PI) / 180;
+        const w = rect.category.widthCm || 0;
+        const h = rect.category.heightCm || 0;
+        
+        // For rotated rectangles, compute the actual leftmost and topmost points
+        const halfW = w / 2;
+        const halfH = h / 2;
+        const corners = [
+          { x: -halfW, y: -halfH },
+          { x: halfW, y: -halfH },
+          { x: halfW, y: halfH },
+          { x: -halfW, y: halfH },
+        ];
+        const rotatedCorners = corners.map(c => ({
+          x: rect.xCm + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
+          y: rect.yCm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
+        }));
+        
+        const left = Math.min(...rotatedCorners.map(c => c.x));
+        const top = Math.min(...rotatedCorners.map(c => c.y));
+        
+        return { ...rect, visualLeft: left, visualTop: top };
+      });
+      
       // Sort: group by row (Y with tolerance), then by X within row
-      const sorted = [...rects].sort((a, b) => {
+      const sorted = rectsWithEdges.sort((a, b) => {
         // If Y values are within tolerance, consider them same row
-        if (Math.abs(a.yCm - b.yCm) <= ROW_TOLERANCE_CM) {
-          return a.xCm - b.xCm; // Same row: sort by X (left to right)
+        if (Math.abs(a.visualTop - b.visualTop) <= ROW_TOLERANCE_CM) {
+          return a.visualLeft - b.visualLeft; // Same row: sort by X (left to right)
         }
-        return a.yCm - b.yCm; // Different rows: sort by Y (top to bottom)
+        return a.visualTop - b.visualTop; // Different rows: sort by Y (top to bottom)
       });
       
       // Assign numbered labels (use each rect's actual label, not the group name)
