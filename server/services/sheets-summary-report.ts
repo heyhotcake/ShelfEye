@@ -16,7 +16,7 @@ interface ToolSummary {
   presentCount: number;
   missingCount: number;
   isCheckType: boolean; // true = ✔点 (just check mark), false = 返却数/貸出数
-  cameraFailed: boolean; // true if all slots for this tool are on failed cameras
+  cameraFailed: boolean; // true if detection unavailable (no slots configured OR all slots on failed cameras)
 }
 
 interface CaptureTimeSummary {
@@ -470,7 +470,7 @@ export class SheetsSummaryReport {
             });
             failureCells.push({ column, row: checkoutRow });
           }
-          console.log(`[SheetsSummaryReport] Marked tool "${tool.toolName}" with ✕ due to camera failure`);
+          console.log(`[SheetsSummaryReport] Marked tool "${tool.toolName}" with ✕ (detection unavailable)`);
           continue;
         }
 
@@ -718,16 +718,16 @@ export class SheetsSummaryReport {
       const templateTotal = this.getTemplateTotalCount(toolConfig.name);
       const baseTotalCount = templateTotal ?? toolConfig.totalCount;
 
-      // If no slots match this tool name, we can't detect - mark as unknown/missing
+      // If no slots match this tool name, we can't detect - mark with ✕ (same as camera failure)
       if (slots.length === 0) {
-        console.warn(`[SheetsSummaryReport] Warning: Tool "${toolConfig.name}" has no matching slots configured. Cannot detect inventory.`);
+        console.warn(`[SheetsSummaryReport] Warning: Tool "${toolConfig.name}" has no matching slots configured. Marking with ✕.`);
         summaries.push({
           toolName: toolConfig.name,
           totalCount: baseTotalCount,
-          presentCount: 0, // Can't confirm any present without slots
-          missingCount: baseTotalCount, // Treat as all missing until slots configured
+          presentCount: 0,
+          missingCount: 0,
           isCheckType: toolConfig.isCheckType,
-          cameraFailed: false,
+          cameraFailed: true, // Show ✕ when no slots configured (can't detect inventory)
         });
         continue;
       }
