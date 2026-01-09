@@ -491,11 +491,11 @@ export default function TemplatePrint() {
         } else {
           // Standard tool slot rendering
           
-          // Fill entire slot with category color, leaving 2cm safezone around QR code
+          // Fill entire slot with category color, leaving 1cm safezone around QR code
           const fillColor = rect.category.labelColor || "#FFFFFF";
           const qrSizeCm = 3;
-          const safezoneMarginCm = 2; // 2cm safezone around QR code
-          const clearAreaSizeCm = qrSizeCm + safezoneMarginCm * 2; // 7cm total clear area
+          const safezoneMarginCm = 1; // 1cm safezone around QR code
+          const clearAreaSizeCm = qrSizeCm + safezoneMarginCm * 2; // 5cm total clear area
           const clearAreaSizePx = cmToPixels(clearAreaSizeCm, true);
           
           if (fillColor && fillColor !== "#FFFFFF") {
@@ -908,7 +908,7 @@ export default function TemplatePrint() {
               y: localY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
             }));
 
-            // Fill entire slot with category color, leaving 2cm safezone around QR code
+            // Fill entire slot with category color, leaving 1cm safezone around QR code
             const fillColor = rect.category.labelColor || "#FFFFFF";
             const qrSizeMm = 30;
             const safezoneMarginMm = 20; // 2cm safezone around QR code
@@ -1060,7 +1060,7 @@ export default function TemplatePrint() {
               pdf.text(displayLabel, startX, startY, { angle: rect.rotation });
             }
           } else {
-            // Fill entire slot with category color, leaving 2cm safezone around QR code
+            // Fill entire slot with category color, leaving 1cm safezone around QR code
             const fillColor = rect.category.labelColor || "#FFFFFF";
             const qrSizeMm = 30;
             const safezoneMarginMm = 20; // 2cm safezone around QR code
@@ -1320,11 +1320,11 @@ export default function TemplatePrint() {
             y: yMm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
           }));
 
-          // Fill entire slot with category color, leaving 2cm safezone around QR code
+          // Fill entire slot with category color, leaving 1cm safezone around QR code
           const fillColor = rect.category.labelColor || "#FFFFFF";
           const qrSizeMm = 30;
-          const safezoneMarginMm = 20; // 2cm safezone around QR code
-          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+          const safezoneMarginMm = 10; // 1cm safezone around QR code
+          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 50mm total clear area
           
           if (fillColor && fillColor !== "#FFFFFF") {
             const r = parseInt(fillColor.slice(1, 3), 16);
@@ -1460,11 +1460,11 @@ export default function TemplatePrint() {
             pdf.text(displayLabelRotated, startX, startY, { angle: rect.rotation });
           }
         } else {
-          // Fill entire slot with category color, leaving 2cm safezone around QR code
+          // Fill entire slot with category color, leaving 1cm safezone around QR code
           const fillColor = rect.category.labelColor || "#FFFFFF";
           const qrSizeMm = 30;
-          const safezoneMarginMm = 20; // 2cm safezone around QR code
-          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+          const safezoneMarginMm = 10; // 1cm safezone around QR code
+          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 50mm total clear area
           
           if (fillColor && fillColor !== "#FFFFFF") {
             const r = parseInt(fillColor.slice(1, 3), 16);
