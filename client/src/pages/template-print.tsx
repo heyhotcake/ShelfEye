@@ -491,17 +491,21 @@ export default function TemplatePrint() {
         } else {
           // Standard tool slot rendering
           
-          // Draw colored border if category has a label color set (0.5cm = 5mm border, fully inside slot)
-          const borderColor = rect.category.labelColor || "#FFFFFF";
-          if (borderColor && borderColor !== "#FFFFFF") {
-            const borderWidthPx = cmToPixels(0.5, true);
-            const insetPx = borderWidthPx / 2; // Inset by half line width to keep border fully inside
-            // Only draw if slot is large enough
-            if (widthPx > borderWidthPx && heightPx > borderWidthPx) {
-              ctx.strokeStyle = borderColor;
-              ctx.lineWidth = borderWidthPx;
-              ctx.strokeRect(-widthPx / 2 + insetPx, -heightPx / 2 + insetPx, widthPx - borderWidthPx, heightPx - borderWidthPx);
-            }
+          // Fill entire slot with category color, leaving 2cm safezone around QR code
+          const fillColor = rect.category.labelColor || "#FFFFFF";
+          const qrSizeCm = 3;
+          const safezoneMarginCm = 2; // 2cm safezone around QR code
+          const clearAreaSizeCm = qrSizeCm + safezoneMarginCm * 2; // 7cm total clear area
+          const clearAreaSizePx = cmToPixels(clearAreaSizeCm, true);
+          
+          if (fillColor && fillColor !== "#FFFFFF") {
+            // Fill entire slot with color
+            ctx.fillStyle = fillColor;
+            ctx.fillRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
+            
+            // Draw white rectangle in center for QR code safezone
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(-clearAreaSizePx / 2, -clearAreaSizePx / 2, clearAreaSizePx, clearAreaSizePx);
           }
           
           // Draw black outline on top
@@ -510,7 +514,6 @@ export default function TemplatePrint() {
           ctx.strokeRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
 
           // Draw QR code centered within the rectangle (3x3 cm)
-          const qrSizeCm = 3;
           const qrSizePx = cmToPixels(qrSizeCm, true);
           if (rect.autoQrId && qrImageCache[rect.autoQrId]) {
             ctx.drawImage(qrImageCache[rect.autoQrId], -qrSizePx / 2, -qrSizePx / 2, qrSizePx, qrSizePx);
