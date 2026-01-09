@@ -100,7 +100,7 @@ export default function WorkerTags() {
     const pageWidth = 210;
     const pageHeight = 297;
     const margin = 10; // 1cm
-    const tagWidth = 40; // 4cm
+    const tagWidth = 34.5; // 3.45cm
     const tagHeight = 67.5; // 6.75cm
     
     // Calculate tags per page (4x4 grid centered on page)
@@ -190,7 +190,7 @@ export default function WorkerTags() {
   const pageWidth = 210; // A4 width in mm
   const pageHeight = 297; // A4 height in mm
   const margin = 10; // 1cm in mm
-  const tagWidth = 40; // 4cm in mm
+  const tagWidth = 34.5; // 3.45cm in mm
   const tagHeight = 67.5; // 6.75cm in mm
   
   const tagsPerRow = 4; // 4 tags horizontally
