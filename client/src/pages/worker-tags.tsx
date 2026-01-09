@@ -279,11 +279,11 @@ export default function WorkerTags() {
                     padding: 0,
                   }}
                 >
-                  {/* Worker Name - at top with 5mm borders, auto-sized to fit */}
+                  {/* Worker Name - at top, centered horizontally */}
                   <div className="absolute text-center font-bold whitespace-nowrap overflow-hidden" style={{ 
                     fontSize: worker.name.length > 8 ? '10pt' : worker.name.length > 6 ? '12pt' : worker.name.length > 4 ? '14pt' : '16pt',
-                    left: '2mm',
-                    right: '2mm',
+                    left: 0,
+                    right: 0,
                     top: '5mm',
                   }}>
                     {worker.name}
@@ -292,8 +292,8 @@ export default function WorkerTags() {
                   {/* ArUco Marker - perfectly centered in entire card */}
                   {arucoImages[worker.arucoId] ? (
                     <div className="absolute" style={{
-                      left: '5mm',
-                      top: '18.75mm',
+                      left: `${(tagWidth - 30) / 2}mm`,
+                      top: `${(tagHeight - 30) / 2}mm`,
                       width: '30mm',
                       height: '30mm',
                     }}>
@@ -305,8 +305,8 @@ export default function WorkerTags() {
                     </div>
                   ) : (
                     <div className="absolute" style={{
-                      left: '5mm',
-                      top: '18.75mm',
+                      left: `${(tagWidth - 30) / 2}mm`,
+                      top: `${(tagHeight - 30) / 2}mm`,
                       width: '30mm',
                       height: '30mm',
                       border: '1px dashed #ccc',
