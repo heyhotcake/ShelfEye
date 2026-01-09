@@ -434,10 +434,10 @@ export default function TemplatePrint() {
               ctx.lineWidth = 2;
               ctx.strokeRect(cellX, cellY, cellWidthPx, cellHeightPx);
               
-              // Draw alignment guides inside each cell (4cm wide, 0.5cm from top and bottom edges)
+              // Draw alignment guides inside each cell (3.45cm wide, 0.5cm from top and bottom edges)
               const cellCenterX = cellX + cellWidthPx / 2;
               const borderPx = cmToPixels(0.5, false); // 0.5cm border
-              const guideWidthPx = cmToPixels(4, true);
+              const guideWidthPx = cmToPixels(3.45, true);
               
               ctx.strokeStyle = '#CCCCCC';
               ctx.lineWidth = 1;
@@ -558,7 +558,7 @@ export default function TemplatePrint() {
           }
 
           // Draw alignment guides (light grey horizontal lines for worker card placement)
-          const guideWidthCm = 4;
+          const guideWidthCm = 3.45;
           const guideSpacingCm = 6.75;
           const guideWidthPx = cmToPixels(guideWidthCm, true);
           const guideSpacingPx = cmToPixels(guideSpacingCm, false);
@@ -857,10 +857,10 @@ export default function TemplatePrint() {
                 pdf.setLineWidth(0.5);
                 pdf.rect(cellX, cellY, cellWidthMm, cellHeightMm);
                 
-                // Draw alignment guides inside each cell (4cm wide, 0.5cm from top and bottom edges)
+                // Draw alignment guides inside each cell (3.45cm wide, 0.5cm from top and bottom edges)
                 const cellCenterX = cellX + cellWidthMm / 2;
                 const borderMm = 5; // 0.5cm border
-                const guideWidthMm = 40; // 4cm
+                const guideWidthMm = 34.5; // 3.45cm
                 
                 pdf.setDrawColor(204, 204, 204); // Light grey
                 pdf.setLineWidth(0.3);
@@ -1024,7 +1024,7 @@ export default function TemplatePrint() {
             };
             
             // Draw alignment guides (rotated with shape)
-            const guideWidthMm = 40; // 4cm
+            const guideWidthMm = 34.5; // 3.45cm
             const guideSpacingMm = 67.5; // 6.75cm
             pdf.setDrawColor(204, 204, 204); // Light grey
             pdf.setLineWidth(0.3);
@@ -1127,7 +1127,7 @@ export default function TemplatePrint() {
             }
             
             // Draw alignment guides (light grey horizontal lines for worker card placement)
-            const guideWidthMm = 40; // 4cm
+            const guideWidthMm = 34.5; // 3.45cm
             const guideSpacingMm = 67.5; // 6.75cm
             pdf.setDrawColor(204, 204, 204); // Light grey
             pdf.setLineWidth(0.3);
@@ -1273,10 +1273,10 @@ export default function TemplatePrint() {
               pdf.setLineWidth(0.5);
               pdf.rect(cellX, cellY, cellWidthMm, cellHeightMm);
               
-              // Draw alignment guides inside each cell (4cm wide, 0.5cm from top and bottom edges)
+              // Draw alignment guides inside each cell (3.45cm wide, 0.5cm from top and bottom edges)
               const cellCenterX = cellX + cellWidthMm / 2;
               const borderMm = 5; // 0.5cm border
-              const guideWidthMm = 40; // 4cm
+              const guideWidthMm = 34.5; // 3.45cm
               
               pdf.setDrawColor(204, 204, 204); // Light grey
               pdf.setLineWidth(0.3);
@@ -1436,7 +1436,7 @@ export default function TemplatePrint() {
           };
           
           // Draw alignment guides (rotated with shape)
-          const guideWidthMm = 40; // 4cm
+          const guideWidthMm = 34.5; // 3.45cm
           const guideSpacingMm = 67.5; // 6.75cm
           pdf.setDrawColor(204, 204, 204); // Light grey
           pdf.setLineWidth(0.3);
@@ -1527,7 +1527,7 @@ export default function TemplatePrint() {
           }
           
           // Draw alignment guides (light grey horizontal lines for worker card placement)
-          const guideWidthMm = 40; // 4cm
+          const guideWidthMm = 34.5; // 3.45cm
           const guideSpacingMm = 67.5; // 6.75cm
           pdf.setDrawColor(204, 204, 204); // Light grey
           pdf.setLineWidth(0.3);
