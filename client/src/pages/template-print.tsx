@@ -905,40 +905,53 @@ export default function TemplatePrint() {
               y: localY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
             }));
 
-            // Draw colored border if category has a label color set (5mm = 0.5cm border, fully inside slot)
-            const borderColor = rect.category.labelColor || "#FFFFFF";
-            const borderWidthMm = 5;
-            const insetMm = borderWidthMm / 2; // Inset by half line width to keep border fully inside
-            if (borderColor && borderColor !== "#FFFFFF" && widthMm > borderWidthMm && heightMm > borderWidthMm) {
-              const r = parseInt(borderColor.slice(1, 3), 16);
-              const g = parseInt(borderColor.slice(3, 5), 16);
-              const b = parseInt(borderColor.slice(5, 7), 16);
-              pdf.setDrawColor(r, g, b);
-              pdf.setLineWidth(borderWidthMm);
+            // Fill entire slot with category color, leaving 2cm safezone around QR code
+            const fillColor = rect.category.labelColor || "#FFFFFF";
+            const qrSizeMm = 30;
+            const safezoneMarginMm = 20; // 2cm safezone around QR code
+            const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+            
+            if (fillColor && fillColor !== "#FFFFFF") {
+              const r = parseInt(fillColor.slice(1, 3), 16);
+              const g = parseInt(fillColor.slice(3, 5), 16);
+              const b = parseInt(fillColor.slice(5, 7), 16);
               
-              // Calculate inset corners for colored border
-              const insetHalfW = halfW - insetMm;
-              const insetHalfH = halfH - insetMm;
-              const insetCorners = [
-                { x: -insetHalfW, y: -insetHalfH },
-                { x: insetHalfW, y: -insetHalfH },
-                { x: insetHalfW, y: insetHalfH },
-                { x: -insetHalfW, y: insetHalfH },
+              // Fill entire slot with color (rotated polygon)
+              pdf.setFillColor(r, g, b);
+              pdf.lines(
+                rotatedCorners.map((c, i) => [
+                  rotatedCorners[(i + 1) % 4].x - c.x,
+                  rotatedCorners[(i + 1) % 4].y - c.y,
+                ]),
+                rotatedCorners[0].x,
+                rotatedCorners[0].y,
+                [1, 1],
+                'F'
+              );
+              
+              // Draw white rectangle in center for QR code safezone (rotated)
+              const clearHalf = clearAreaSizeMm / 2;
+              const clearCorners = [
+                { x: -clearHalf, y: -clearHalf },
+                { x: clearHalf, y: -clearHalf },
+                { x: clearHalf, y: clearHalf },
+                { x: -clearHalf, y: clearHalf },
               ];
-              const rotatedInsetCorners = insetCorners.map(c => ({
+              const rotatedClearCorners = clearCorners.map(c => ({
                 x: localX + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
                 y: localY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
               }));
               
+              pdf.setFillColor(255, 255, 255);
               pdf.lines(
-                rotatedInsetCorners.map((c, i) => [
-                  rotatedInsetCorners[(i + 1) % 4].x - c.x,
-                  rotatedInsetCorners[(i + 1) % 4].y - c.y,
+                rotatedClearCorners.map((c, i) => [
+                  rotatedClearCorners[(i + 1) % 4].x - c.x,
+                  rotatedClearCorners[(i + 1) % 4].y - c.y,
                 ]),
-                rotatedInsetCorners[0].x,
-                rotatedInsetCorners[0].y,
+                rotatedClearCorners[0].x,
+                rotatedClearCorners[0].y,
                 [1, 1],
-                'S'
+                'F'
               );
             }
 
@@ -955,8 +968,6 @@ export default function TemplatePrint() {
               [1, 1],
               'S'
             );
-
-            const qrSizeMm = 30;
             if (rect.autoQrId && qrCodes[rect.autoQrId]) {
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
@@ -1046,25 +1057,30 @@ export default function TemplatePrint() {
               pdf.text(displayLabel, startX, startY, { angle: rect.rotation });
             }
           } else {
-            // Draw colored border if category has a label color set (5mm = 0.5cm border, fully inside slot)
-            const borderColor = rect.category.labelColor || "#FFFFFF";
-            const borderWidthMm = 5;
-            const insetMm = borderWidthMm / 2; // Inset by half line width to keep border fully inside
-            if (borderColor && borderColor !== "#FFFFFF" && widthMm > borderWidthMm && heightMm > borderWidthMm) {
-              const r = parseInt(borderColor.slice(1, 3), 16);
-              const g = parseInt(borderColor.slice(3, 5), 16);
-              const b = parseInt(borderColor.slice(5, 7), 16);
-              pdf.setDrawColor(r, g, b);
-              pdf.setLineWidth(borderWidthMm);
-              pdf.rect(localX - widthMm / 2 + insetMm, localY - heightMm / 2 + insetMm, widthMm - borderWidthMm, heightMm - borderWidthMm, 'S');
+            // Fill entire slot with category color, leaving 2cm safezone around QR code
+            const fillColor = rect.category.labelColor || "#FFFFFF";
+            const qrSizeMm = 30;
+            const safezoneMarginMm = 20; // 2cm safezone around QR code
+            const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+            
+            if (fillColor && fillColor !== "#FFFFFF") {
+              const r = parseInt(fillColor.slice(1, 3), 16);
+              const g = parseInt(fillColor.slice(3, 5), 16);
+              const b = parseInt(fillColor.slice(5, 7), 16);
+              
+              // Fill entire slot with color
+              pdf.setFillColor(r, g, b);
+              pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm, 'F');
+              
+              // Draw white rectangle in center for QR code safezone
+              pdf.setFillColor(255, 255, 255);
+              pdf.rect(localX - clearAreaSizeMm / 2, localY - clearAreaSizeMm / 2, clearAreaSizeMm, clearAreaSizeMm, 'F');
             }
             
             // Draw black outline on top (at original slot boundary)
             pdf.setDrawColor(0, 0, 0);
             pdf.setLineWidth(0.5);
             pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm);
-
-            const qrSizeMm = 30;
             if (rect.autoQrId && qrCodes[rect.autoQrId]) {
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
@@ -1301,40 +1317,53 @@ export default function TemplatePrint() {
             y: yMm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
           }));
 
-          // Draw colored border if category has a label color set (5mm = 0.5cm border, fully inside slot)
-          const borderColor = rect.category.labelColor || "#FFFFFF";
-          const borderWidthMm = 5;
-          const insetMm = borderWidthMm / 2; // Inset by half line width to keep border fully inside
-          if (borderColor && borderColor !== "#FFFFFF" && widthMm > borderWidthMm && heightMm > borderWidthMm) {
-            const r = parseInt(borderColor.slice(1, 3), 16);
-            const g = parseInt(borderColor.slice(3, 5), 16);
-            const b = parseInt(borderColor.slice(5, 7), 16);
-            pdf.setDrawColor(r, g, b);
-            pdf.setLineWidth(borderWidthMm);
+          // Fill entire slot with category color, leaving 2cm safezone around QR code
+          const fillColor = rect.category.labelColor || "#FFFFFF";
+          const qrSizeMm = 30;
+          const safezoneMarginMm = 20; // 2cm safezone around QR code
+          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+          
+          if (fillColor && fillColor !== "#FFFFFF") {
+            const r = parseInt(fillColor.slice(1, 3), 16);
+            const g = parseInt(fillColor.slice(3, 5), 16);
+            const b = parseInt(fillColor.slice(5, 7), 16);
             
-            // Calculate inset corners for colored border
-            const insetHalfW = halfW - insetMm;
-            const insetHalfH = halfH - insetMm;
-            const insetCorners = [
-              { x: -insetHalfW, y: -insetHalfH },
-              { x: insetHalfW, y: -insetHalfH },
-              { x: insetHalfW, y: insetHalfH },
-              { x: -insetHalfW, y: insetHalfH },
+            // Fill entire slot with color (rotated polygon)
+            pdf.setFillColor(r, g, b);
+            pdf.lines(
+              rotatedCorners.map((c, i) => [
+                rotatedCorners[(i + 1) % 4].x - c.x,
+                rotatedCorners[(i + 1) % 4].y - c.y,
+              ]),
+              rotatedCorners[0].x,
+              rotatedCorners[0].y,
+              [1, 1],
+              'F'
+            );
+            
+            // Draw white rectangle in center for QR code safezone (rotated)
+            const clearHalf = clearAreaSizeMm / 2;
+            const clearCorners = [
+              { x: -clearHalf, y: -clearHalf },
+              { x: clearHalf, y: -clearHalf },
+              { x: clearHalf, y: clearHalf },
+              { x: -clearHalf, y: clearHalf },
             ];
-            const rotatedInsetCorners = insetCorners.map(c => ({
+            const rotatedClearCorners = clearCorners.map(c => ({
               x: xMm + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
               y: yMm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
             }));
             
+            pdf.setFillColor(255, 255, 255);
             pdf.lines(
-              rotatedInsetCorners.map((c, i) => [
-                rotatedInsetCorners[(i + 1) % 4].x - c.x,
-                rotatedInsetCorners[(i + 1) % 4].y - c.y,
+              rotatedClearCorners.map((c, i) => [
+                rotatedClearCorners[(i + 1) % 4].x - c.x,
+                rotatedClearCorners[(i + 1) % 4].y - c.y,
               ]),
-              rotatedInsetCorners[0].x,
-              rotatedInsetCorners[0].y,
+              rotatedClearCorners[0].x,
+              rotatedClearCorners[0].y,
               [1, 1],
-              'S'
+              'F'
             );
           }
 
@@ -1351,8 +1380,6 @@ export default function TemplatePrint() {
             [1, 1],
             'S'
           );
-
-          const qrSizeMm = 30;
           if (rect.autoQrId && qrCodes[rect.autoQrId]) {
             pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
           }
@@ -1430,25 +1457,30 @@ export default function TemplatePrint() {
             pdf.text(displayLabelRotated, startX, startY, { angle: rect.rotation });
           }
         } else {
-          // Draw colored border if category has a label color set (5mm = 0.5cm border, fully inside slot)
-          const borderColor = rect.category.labelColor || "#FFFFFF";
-          const borderWidthMm = 5;
-          const insetMm = borderWidthMm / 2; // Inset by half line width to keep border fully inside
-          if (borderColor && borderColor !== "#FFFFFF" && widthMm > borderWidthMm && heightMm > borderWidthMm) {
-            const r = parseInt(borderColor.slice(1, 3), 16);
-            const g = parseInt(borderColor.slice(3, 5), 16);
-            const b = parseInt(borderColor.slice(5, 7), 16);
-            pdf.setDrawColor(r, g, b);
-            pdf.setLineWidth(borderWidthMm);
-            pdf.rect(xMm - widthMm / 2 + insetMm, yMm - heightMm / 2 + insetMm, widthMm - borderWidthMm, heightMm - borderWidthMm, 'S');
+          // Fill entire slot with category color, leaving 2cm safezone around QR code
+          const fillColor = rect.category.labelColor || "#FFFFFF";
+          const qrSizeMm = 30;
+          const safezoneMarginMm = 20; // 2cm safezone around QR code
+          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+          
+          if (fillColor && fillColor !== "#FFFFFF") {
+            const r = parseInt(fillColor.slice(1, 3), 16);
+            const g = parseInt(fillColor.slice(3, 5), 16);
+            const b = parseInt(fillColor.slice(5, 7), 16);
+            
+            // Fill entire slot with color
+            pdf.setFillColor(r, g, b);
+            pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm, 'F');
+            
+            // Draw white rectangle in center for QR code safezone
+            pdf.setFillColor(255, 255, 255);
+            pdf.rect(xMm - clearAreaSizeMm / 2, yMm - clearAreaSizeMm / 2, clearAreaSizeMm, clearAreaSizeMm, 'F');
           }
           
           // Draw black outline on top (at original slot boundary)
           pdf.setDrawColor(0, 0, 0);
           pdf.setLineWidth(0.5);
           pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm);
-
-          const qrSizeMm = 30;
           if (rect.autoQrId && qrCodes[rect.autoQrId]) {
             pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
           }
