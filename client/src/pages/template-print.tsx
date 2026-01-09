@@ -217,14 +217,24 @@ export default function TemplatePrint() {
       r => r.category.categoryType !== 'scanner_grid' && r.category.categoryType !== 'worker_tag_grid'
     );
     
-    // Group by category label
+    // Define category groups that share numbering (e.g., both calculator types share same sequence)
+    const getCategoryGroup = (label: string): string => {
+      // Treat 電卓 and 電卓（小）as same group for numbering
+      if (label === '電卓' || label === '電卓（小）') {
+        return '電卓_group';
+      }
+      return label;
+    };
+    
+    // Group by category group (not individual label)
     const byCategory = new Map<string, typeof toolRects>();
     for (const rect of toolRects) {
       const label = rect.category.label || '';
-      if (!byCategory.has(label)) {
-        byCategory.set(label, []);
+      const group = getCategoryGroup(label);
+      if (!byCategory.has(group)) {
+        byCategory.set(group, []);
       }
-      byCategory.get(label)!.push(rect);
+      byCategory.get(group)!.push(rect);
     }
     
     // For each category, sort by global position and assign numbers
@@ -242,10 +252,11 @@ export default function TemplatePrint() {
         return a.yCm - b.yCm; // Different rows: sort by Y (top to bottom)
       });
       
-      // Assign numbered labels
+      // Assign numbered labels (use each rect's actual label, not the group name)
       sorted.forEach((rect, index) => {
         const number = CIRCLED_NUMBERS[index] || `(${index + 1})`;
-        labelMap.set(rect.id, `${categoryLabel}${number}`);
+        const actualLabel = rect.category.label || '';
+        labelMap.set(rect.id, `${actualLabel}${number}`);
       });
     });
     
