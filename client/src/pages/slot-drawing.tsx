@@ -2049,14 +2049,6 @@ export default function SlotDrawing() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => setShowSlotImportExport(true)}
-                    data-testid="button-slot-import-export"
-                  >
-                    <FileJson className="w-4 h-4 mr-2" />
-                    Import/Export Slots
-                  </Button>
-                  <Button
-                    variant="outline"
                     onClick={() => setLocation('/template-print')}
                     data-testid="button-print-preview"
                     disabled={templateRectangles.length === 0}
@@ -2296,37 +2288,6 @@ export default function SlotDrawing() {
                         </Button>
                       </div>
                       
-                      {/* Import Option */}
-                      <Button 
-                        onClick={importTemplateVersion} 
-                        variant="outline"
-                        className="w-full"
-                        data-testid="button-import-template"
-                        title="Import template from file"
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Import File
-                      </Button>
-                      
-                      {/* Validate & Fix Button */}
-                      <Button 
-                        onClick={() => validateAndFixMutation.mutate(paperSize)} 
-                        variant="outline"
-                        className="w-full"
-                        disabled={validateAndFixMutation.isPending}
-                        data-testid="button-validate-fix"
-                        title="Check and fix rectangles outside safe zones"
-                      >
-                        {validateAndFixMutation.isPending ? (
-                          <>Validating...</>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Validate & Fix Safe Zones
-                          </>
-                        )}
-                      </Button>
-
                       {/* Saved Template Designs List */}
                       {savedTemplateVersions.length > 0 && (
                         <div className="border rounded-lg p-3 space-y-2">
