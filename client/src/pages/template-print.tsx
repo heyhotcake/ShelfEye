@@ -359,10 +359,18 @@ export default function TemplatePrint() {
             const yPx = cmToPixels(pos.yCm, false);
             const sizePx = cmToPixels(markerSizeCm, true);
             
-            // Draw white border around corner marker (1 pixel)
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(xPx - 0.5, yPx - 0.5, sizePx + 1, sizePx + 1);
+            // Draw white border around corner marker (1 ArUco module width)
+            // DICT_4X4_100 markers are 6x6 modules (4x4 data + 1 module border each side)
+            const moduleWidthPx = sizePx / 6;
+            ctx.fillStyle = '#ffffff';
+            // Top border
+            ctx.fillRect(xPx - moduleWidthPx, yPx - moduleWidthPx, sizePx + moduleWidthPx * 2, moduleWidthPx);
+            // Bottom border
+            ctx.fillRect(xPx - moduleWidthPx, yPx + sizePx, sizePx + moduleWidthPx * 2, moduleWidthPx);
+            // Left border
+            ctx.fillRect(xPx - moduleWidthPx, yPx, moduleWidthPx, sizePx);
+            // Right border
+            ctx.fillRect(xPx + sizePx, yPx, moduleWidthPx, sizePx);
             
             ctx.drawImage(arucoImageCache[marker.id], xPx, yPx, sizePx, sizePx);
           }
@@ -737,10 +745,18 @@ export default function TemplatePrint() {
           }
 
           if (marker && marker.image) {
-            // Draw white border around corner marker (0.5mm)
-            pdf.setDrawColor(255, 255, 255);
-            pdf.setLineWidth(0.5);
-            pdf.rect(markerX - 0.25, markerY - 0.25, markerSizeMm + 0.5, markerSizeMm + 0.5);
+            // Draw white border around corner marker (1 ArUco module width)
+            // DICT_4X4_100 markers are 6x6 modules (4x4 data + 1 module border each side)
+            const moduleWidthMm = markerSizeMm / 6;
+            pdf.setFillColor(255, 255, 255);
+            // Top border
+            pdf.rect(markerX - moduleWidthMm, markerY - moduleWidthMm, markerSizeMm + moduleWidthMm * 2, moduleWidthMm, 'F');
+            // Bottom border
+            pdf.rect(markerX - moduleWidthMm, markerY + markerSizeMm, markerSizeMm + moduleWidthMm * 2, moduleWidthMm, 'F');
+            // Left border
+            pdf.rect(markerX - moduleWidthMm, markerY, moduleWidthMm, markerSizeMm, 'F');
+            // Right border
+            pdf.rect(markerX + markerSizeMm, markerY, moduleWidthMm, markerSizeMm, 'F');
             
             pdf.addImage(marker.image, 'PNG', markerX, markerY, markerSizeMm, markerSizeMm);
           }
@@ -1248,13 +1264,22 @@ export default function TemplatePrint() {
         { x: 0, y: realHeightMm - markerSizeMm },
       ];
 
+      // DICT_4X4_100 markers are 6x6 modules (4x4 data + 1 module border each side)
+      const moduleWidthMm = markerSizeMm / 6;
+      
       arucoMarkers.markers.forEach((marker: any, index: number) => {
         const pos = cornerPositions[index];
         if (marker.image) {
-          // Draw white border around corner marker (0.5mm)
-          pdf.setDrawColor(255, 255, 255);
-          pdf.setLineWidth(0.5);
-          pdf.rect(pos.x - 0.25, pos.y - 0.25, markerSizeMm + 0.5, markerSizeMm + 0.5);
+          // Draw white border around corner marker (1 ArUco module width)
+          pdf.setFillColor(255, 255, 255);
+          // Top border
+          pdf.rect(pos.x - moduleWidthMm, pos.y - moduleWidthMm, markerSizeMm + moduleWidthMm * 2, moduleWidthMm, 'F');
+          // Bottom border
+          pdf.rect(pos.x - moduleWidthMm, pos.y + markerSizeMm, markerSizeMm + moduleWidthMm * 2, moduleWidthMm, 'F');
+          // Left border
+          pdf.rect(pos.x - moduleWidthMm, pos.y, moduleWidthMm, markerSizeMm, 'F');
+          // Right border
+          pdf.rect(pos.x + markerSizeMm, pos.y, moduleWidthMm, markerSizeMm, 'F');
           
           pdf.addImage(marker.image, 'PNG', pos.x, pos.y, markerSizeMm, markerSizeMm);
         }
