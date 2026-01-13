@@ -566,33 +566,42 @@ export class SheetsSummaryReport {
 
   /**
    * Copy the N circle stamp from D22 to the specified column row 22
-   * First tries the weekly tab, then falls back to Template tab if not found
+   * Uses copyPaste to preserve both value AND formatting (font size, etc.)
+   * First tries the weekly tab's D22, then falls back to Template tab if not found
    */
   private async copyStampToColumn(sheetName: string, column: string): Promise<void> {
     if (!this.spreadsheetId) return;
 
     try {
       const sheets = await getSheetsClient();
-      let stampValue = '';
-
-      // First, try to read from the weekly tab's D22
+      
+      // Get sheet info to find sheet IDs
+      const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: this.spreadsheetId });
+      const currentSheet = spreadsheet.data.sheets?.find(s => s.properties?.title === sheetName);
+      const currentSheetId = currentSheet?.properties?.sheetId;
+      
+      if (currentSheetId === undefined) {
+        console.warn(`[SheetsSummaryReport] Could not find sheetId for "${sheetName}", skipping stamp copy`);
+        return;
+      }
+      
+      // First check if D22 has a value in the current weekly tab
       const stampResponse = await sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
         range: `'${sheetName}'!D${STAMP_ROW}`,
       });
-      stampValue = stampResponse.data.values?.[0]?.[0] || '';
-
-      // If not found, try to read from Template tab
+      let stampValue = stampResponse.data.values?.[0]?.[0] || '';
+      let sourceSheetId = currentSheetId;
+      
+      // If not found in weekly tab, check Template tab
       if (!stampValue) {
         console.log(`[SheetsSummaryReport] No stamp in weekly tab D${STAMP_ROW}, checking Template...`);
         
-        // Find Template tab name
-        const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: this.spreadsheetId });
         const templateSheet = spreadsheet.data.sheets?.find(
           s => s.properties?.title?.toLowerCase() === 'template' || s.properties?.title === 'ひな形'
         );
         
-        if (templateSheet?.properties?.title) {
+        if (templateSheet?.properties?.title && templateSheet?.properties?.sheetId !== undefined) {
           const templateResponse = await sheets.spreadsheets.values.get({
             spreadsheetId: this.spreadsheetId,
             range: `'${templateSheet.properties.title}'!D${STAMP_ROW}`,
@@ -600,26 +609,46 @@ export class SheetsSummaryReport {
           stampValue = templateResponse.data.values?.[0]?.[0] || '';
           
           if (stampValue) {
+            sourceSheetId = templateSheet.properties.sheetId;
             console.log(`[SheetsSummaryReport] Found stamp in Template tab D${STAMP_ROW}: "${stampValue}"`);
           }
         }
       }
 
-      if (stampValue) {
-        // Write the stamp to the time column row 22 (STAMP_ROW)
-        await sheets.spreadsheets.values.update({
-          spreadsheetId: this.spreadsheetId,
-          range: `'${sheetName}'!${column}${STAMP_ROW}`,
-          valueInputOption: 'RAW',
-          requestBody: {
-            values: [[stampValue]]
-          }
-        });
-
-        console.log(`[SheetsSummaryReport] Copied stamp "${stampValue}" to ${column}${STAMP_ROW}`);
-      } else {
+      if (!stampValue) {
         console.log(`[SheetsSummaryReport] No stamp found at D${STAMP_ROW} in weekly or Template tab, skipping stamp copy`);
+        return;
       }
+
+      // Use copyPaste to copy both value AND formatting from source D22 to destination column
+      const destColumnIndex = this.columnLetterToIndex(column);
+      
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: this.spreadsheetId,
+        requestBody: {
+          requests: [{
+            copyPaste: {
+              source: {
+                sheetId: sourceSheetId,
+                startRowIndex: STAMP_ROW - 1,
+                endRowIndex: STAMP_ROW,
+                startColumnIndex: 3, // Column D (0-indexed)
+                endColumnIndex: 4,
+              },
+              destination: {
+                sheetId: currentSheetId,
+                startRowIndex: STAMP_ROW - 1,
+                endRowIndex: STAMP_ROW,
+                startColumnIndex: destColumnIndex,
+                endColumnIndex: destColumnIndex + 1,
+              },
+              pasteType: 'PASTE_NORMAL', // Copy value + formatting
+            }
+          }]
+        }
+      });
+
+      console.log(`[SheetsSummaryReport] Copied stamp with formatting from D${STAMP_ROW} to ${column}${STAMP_ROW}`);
 
     } catch (error) {
       console.error('[SheetsSummaryReport] Failed to copy stamp:', error);
