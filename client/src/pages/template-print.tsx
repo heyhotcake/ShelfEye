@@ -529,11 +529,15 @@ export default function TemplatePrint() {
         } else {
           // Standard tool slot rendering
           
-          // Fill entire slot with category color, leaving 2cm safezone around QR code
+          // Fill entire slot with category color, leaving safezone around QR code
           const fillColor = rect.category.labelColor || "#FFFFFF";
-          const qrSizeCm = 3;
-          const safezoneMarginCm = 2; // 2cm safezone around QR code
-          const clearAreaSizeCm = qrSizeCm + safezoneMarginCm * 2; // 7cm total clear area
+          // Scale QR size to fit within slot - max 3cm, min 1.5cm, must fit in smaller dimension
+          const maxQrCm = 3;
+          const minQrCm = 1.5;
+          const slotMinDim = Math.min(rect.category.widthCm, rect.category.heightCm);
+          const qrSizeCm = Math.max(minQrCm, Math.min(maxQrCm, slotMinDim * 0.8)); // 80% of slot min dimension
+          const safezoneMarginCm = Math.max(0, Math.min(2, (slotMinDim - qrSizeCm) / 2 * 0.8)); // Scale safezone proportionally, never negative
+          const clearAreaSizeCm = qrSizeCm + safezoneMarginCm * 2;
           const clearAreaSizePx = cmToPixels(clearAreaSizeCm, true);
           
           if (fillColor && fillColor !== "#FFFFFF") {
@@ -946,11 +950,13 @@ export default function TemplatePrint() {
               y: localY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
             }));
 
-            // Fill entire slot with category color, leaving 2cm safezone around QR code
+            // Fill entire slot with category color, leaving safezone around QR code
             const fillColor = rect.category.labelColor || "#FFFFFF";
-            const qrSizeMm = 30;
-            const safezoneMarginMm = 20; // 2cm safezone around QR code
-            const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+            // Scale QR size to fit within slot - max 30mm, min 15mm, must fit in smaller dimension
+            const slotMinDimMm = Math.min(widthMm, heightMm);
+            const qrSizeMm = Math.max(15, Math.min(30, slotMinDimMm * 0.8)); // 80% of slot min dimension
+            const safezoneMarginMm = Math.max(0, Math.min(20, (slotMinDimMm - qrSizeMm) / 2 * 0.8)); // Scale safezone proportionally, never negative
+            const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2;
             
             if (fillColor && fillColor !== "#FFFFFF") {
               const r = parseInt(fillColor.slice(1, 3), 16);
@@ -1098,11 +1104,13 @@ export default function TemplatePrint() {
               pdf.text(displayLabel, startX, startY, { angle: rect.rotation });
             }
           } else {
-            // Fill entire slot with category color, leaving 2cm safezone around QR code
+            // Fill entire slot with category color, leaving safezone around QR code
             const fillColor = rect.category.labelColor || "#FFFFFF";
-            const qrSizeMm = 30;
-            const safezoneMarginMm = 20; // 2cm safezone around QR code
-            const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+            // Scale QR size to fit within slot - max 30mm, min 15mm, must fit in smaller dimension
+            const slotMinDimMm2 = Math.min(widthMm, heightMm);
+            const qrSizeMm = Math.max(15, Math.min(30, slotMinDimMm2 * 0.8)); // 80% of slot min dimension
+            const safezoneMarginMm = Math.max(0, Math.min(20, (slotMinDimMm2 - qrSizeMm) / 2 * 0.8)); // Scale safezone proportionally, never negative
+            const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2;
             
             if (fillColor && fillColor !== "#FFFFFF") {
               const r = parseInt(fillColor.slice(1, 3), 16);
@@ -1358,11 +1366,13 @@ export default function TemplatePrint() {
             y: yMm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
           }));
 
-          // Fill entire slot with category color, leaving 2cm safezone around QR code
+          // Fill entire slot with category color, leaving safezone around QR code
           const fillColor = rect.category.labelColor || "#FFFFFF";
-          const qrSizeMm = 30;
-          const safezoneMarginMm = 20; // 2cm safezone around QR code
-          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+          // Scale QR size to fit within slot - max 30mm, min 15mm, must fit in smaller dimension
+          const slotMinDimMm = Math.min(widthMm, heightMm);
+          const qrSizeMm = Math.max(15, Math.min(30, slotMinDimMm * 0.8)); // 80% of slot min dimension
+          const safezoneMarginMm = Math.max(0, Math.min(20, (slotMinDimMm - qrSizeMm) / 2 * 0.8)); // Scale safezone proportionally, never negative
+          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2;
           
           if (fillColor && fillColor !== "#FFFFFF") {
             const r = parseInt(fillColor.slice(1, 3), 16);
@@ -1498,11 +1508,13 @@ export default function TemplatePrint() {
             pdf.text(displayLabelRotated, startX, startY, { angle: rect.rotation });
           }
         } else {
-          // Fill entire slot with category color, leaving 2cm safezone around QR code
+          // Fill entire slot with category color, leaving safezone around QR code
           const fillColor = rect.category.labelColor || "#FFFFFF";
-          const qrSizeMm = 30;
-          const safezoneMarginMm = 20; // 2cm safezone around QR code
-          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2; // 70mm total clear area
+          // Scale QR size to fit within slot - max 30mm, min 15mm, must fit in smaller dimension
+          const slotMinDimMm3 = Math.min(widthMm, heightMm);
+          const qrSizeMm = Math.max(15, Math.min(30, slotMinDimMm3 * 0.8)); // 80% of slot min dimension
+          const safezoneMarginMm = Math.max(0, Math.min(20, (slotMinDimMm3 - qrSizeMm) / 2 * 0.8)); // Scale safezone proportionally, never negative
+          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2;
           
           if (fillColor && fillColor !== "#FFFFFF") {
             const r = parseInt(fillColor.slice(1, 3), 16);
