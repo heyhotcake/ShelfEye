@@ -68,17 +68,17 @@ Cameras must be forced to MJPEG format for optimal performance (7-10fps at 4K, 1
 |-------------|----------|----------|------------|
 | PP 1 | - | 3.3V Power | DHT20 sensor power |
 | PP 2 | - | 5V Power | LED strip power (+) |
-| PP 3 | GPIO 2 | I2C SDA | DHT20 data |
 | PP 4 | - | 5V Power | Fan case power |
-| PP 5 | GPIO 3 | I2C SCL | DHT20 clock |
 | PP 6 | - | Ground | Fan case ground |
+| PP 7 | GPIO 4 | I2C3 SDA | DHT20 data |
 | PP 9 | - | Ground | LED strip ground (-) |
 | PP 11 | GPIO 17 | Output | Buzzer signal (Ario 2401) |
 | PP 12 | GPIO 18 | PWM | LED strip data |
 | PP 14 | - | Ground | DHT20 ground |
 | PP 20 | - | Ground | Buzzer ground |
+| PP 29 | GPIO 5 | I2C3 SCL | DHT20 clock |
 
-**Notes**: Visual alerts use the LED strip (red flash mode). The DHT20 uses I2C for temperature/humidity readings. The Ario 2401 buzzer is GPIO-controlled via `python/buzzer_control.py` and triggers automatically with red flash alerts.
+**Notes**: Visual alerts use the LED strip (red flash mode). The DHT20 uses I2C bus 3 (GPIO 4/5) for temperature/humidity readings - requires `dtoverlay=i2c3,pins_4_5` in `/boot/config.txt`. The Ario 2401 buzzer is GPIO-controlled via `python/buzzer_control.py` and triggers automatically with red flash alerts.
 
 **Architecture**: Daemon-based client-server model that eliminates DMA channel conflicts:
 - **LED Manager Daemon** (`python/led_manager_service.py`): Long-running systemd service with exclusive DMA hardware access. Runs as root, starts automatically on boot.
