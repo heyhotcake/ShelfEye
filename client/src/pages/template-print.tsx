@@ -609,9 +609,13 @@ export default function TemplatePrint() {
             const qrTop = -qrSizePx / 2;
             const labelY = (slotTop + qrTop) / 2;
             
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 3;
-            ctx.strokeText(displayLabel, 0, labelY);
+            // Draw white background rectangle behind label
+            const textMetrics = ctx.measureText(displayLabel);
+            const bgPadding = cmToPixels(0.15, true);
+            const bgWidth = textWidth + bgPadding * 2;
+            const bgHeight = fontPx * 1.2 + bgPadding * 2;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight);
             
             ctx.fillStyle = '#000000';
             ctx.fillText(displayLabel, 0, labelY);
@@ -1099,6 +1103,31 @@ export default function TemplatePrint() {
               const startX = labelX - (textWidthMm / 2) * Math.cos(angleRad);
               const startY = labelY + (textWidthMm / 2) * Math.sin(angleRad);
               
+              // Draw white background rectangle behind label (rotated)
+              const bgPaddingMm = 1.5;
+              const textHeightMm = fontPt * 0.35;
+              const bgWidth = textWidthMm + bgPaddingMm * 2;
+              const bgHeight = textHeightMm + bgPaddingMm * 2;
+              
+              // Calculate the 4 corners of the rotated rectangle
+              const halfW = bgWidth / 2;
+              const halfH = bgHeight / 2;
+              const cos = Math.cos(angleRad);
+              const sin = Math.sin(angleRad);
+              const corners = [
+                { x: labelX + (-halfW) * cos - (-halfH) * sin, y: labelY + (-halfW) * sin + (-halfH) * cos },
+                { x: labelX + (halfW) * cos - (-halfH) * sin, y: labelY + (halfW) * sin + (-halfH) * cos },
+                { x: labelX + (halfW) * cos - (halfH) * sin, y: labelY + (halfW) * sin + (halfH) * cos },
+                { x: labelX + (-halfW) * cos - (halfH) * sin, y: labelY + (-halfW) * sin + (halfH) * cos },
+              ];
+              pdf.setFillColor(255, 255, 255);
+              pdf.moveTo(corners[0].x, corners[0].y);
+              pdf.lineTo(corners[1].x, corners[1].y);
+              pdf.lineTo(corners[2].x, corners[2].y);
+              pdf.lineTo(corners[3].x, corners[3].y);
+              pdf.fill();
+              
+              pdf.setTextColor(0, 0, 0);
               pdf.text(displayLabel, startX, startY, { angle: rect.rotation });
             }
           } else {
@@ -1180,6 +1209,15 @@ export default function TemplatePrint() {
               // Label goes halfway between slot top and guide line
               const labelY = (slotTop + guideLineY) / 2;
               
+              // Draw white background rectangle behind label
+              const bgPaddingMm = 1.5;
+              const textHeightMm = fontPt * 0.35; // Approximate text height in mm
+              const bgWidth = textWidth + bgPaddingMm * 2;
+              const bgHeight = textHeightMm + bgPaddingMm * 2;
+              pdf.setFillColor(255, 255, 255);
+              pdf.rect(localX - bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight, 'F');
+              
+              pdf.setTextColor(0, 0, 0);
               pdf.text(displayLabel2, localX, labelY, { align: 'center', baseline: 'middle' });
             }
           }
@@ -1503,6 +1541,31 @@ export default function TemplatePrint() {
             const startX = labelX - (textWidthMm / 2) * Math.cos(labelAngleRad);
             const startY = labelYPos + (textWidthMm / 2) * Math.sin(labelAngleRad);
             
+            // Draw white background rectangle behind label (rotated)
+            const bgPaddingMm = 1.5;
+            const textHeightMm = fontPt * 0.35;
+            const bgWidth = textWidthMm + bgPaddingMm * 2;
+            const bgHeight = textHeightMm + bgPaddingMm * 2;
+            
+            // Calculate the 4 corners of the rotated rectangle
+            const halfW = bgWidth / 2;
+            const halfH = bgHeight / 2;
+            const cos = Math.cos(labelAngleRad);
+            const sin = Math.sin(labelAngleRad);
+            const corners = [
+              { x: labelX + (-halfW) * cos - (-halfH) * sin, y: labelYPos + (-halfW) * sin + (-halfH) * cos },
+              { x: labelX + (halfW) * cos - (-halfH) * sin, y: labelYPos + (halfW) * sin + (-halfH) * cos },
+              { x: labelX + (halfW) * cos - (halfH) * sin, y: labelYPos + (halfW) * sin + (halfH) * cos },
+              { x: labelX + (-halfW) * cos - (halfH) * sin, y: labelYPos + (-halfW) * sin + (halfH) * cos },
+            ];
+            pdf.setFillColor(255, 255, 255);
+            pdf.moveTo(corners[0].x, corners[0].y);
+            pdf.lineTo(corners[1].x, corners[1].y);
+            pdf.lineTo(corners[2].x, corners[2].y);
+            pdf.lineTo(corners[3].x, corners[3].y);
+            pdf.fill();
+            
+            pdf.setTextColor(0, 0, 0);
             pdf.text(displayLabelRotated, startX, startY, { angle: rect.rotation });
           }
         } else {
@@ -1571,6 +1634,15 @@ export default function TemplatePrint() {
             const guideLineY = yMm - guideSpacingMm / 2;
             const labelY = (slotTop + guideLineY) / 2;
             
+            // Draw white background rectangle behind label
+            const bgPaddingMm = 1.5;
+            const textHeightMm = fontPt * 0.35; // Approximate text height in mm
+            const bgWidth = textWidth + bgPaddingMm * 2;
+            const bgHeight = textHeightMm + bgPaddingMm * 2;
+            pdf.setFillColor(255, 255, 255);
+            pdf.rect(xMm - bgWidth / 2, labelY - bgHeight / 2, bgWidth, bgHeight, 'F');
+            
+            pdf.setTextColor(0, 0, 0);
             pdf.text(displayLabelNonRotated, xMm, labelY, { align: 'center', baseline: 'middle' });
           }
         }
