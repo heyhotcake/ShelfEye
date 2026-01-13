@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 DHT20 Temperature/Humidity Sensor Reader
-Uses I2C protocol on GPIO 4 (SDA) and GPIO 5 (SCL) - Physical Pins 7 and 29
-I2C Bus 3 - Requires: dtoverlay=i2c3,pins_4_5 in /boot/config.txt
+Uses I2C protocol on GPIO 2 (SDA) and GPIO 3 (SCL) - Physical Pins 3 and 5
+I2C Bus 1 - Standard I2C bus with built-in pull-up resistors
 I2C Address: 0x38
 """
 
@@ -18,7 +18,7 @@ except ImportError:
     SMBUS_AVAILABLE = False
 
 DHT20_I2C_ADDRESS = 0x38
-I2C_BUS = 3
+I2C_BUS = 1
 
 class DHT20Sensor:
     def __init__(self, bus_number=I2C_BUS, address=DHT20_I2C_ADDRESS):
