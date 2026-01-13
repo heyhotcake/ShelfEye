@@ -359,6 +359,11 @@ export default function TemplatePrint() {
             const yPx = cmToPixels(pos.yCm, false);
             const sizePx = cmToPixels(markerSizeCm, true);
             
+            // Draw white border around corner marker (1 pixel)
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(xPx - 0.5, yPx - 0.5, sizePx + 1, sizePx + 1);
+            
             ctx.drawImage(arucoImageCache[marker.id], xPx, yPx, sizePx, sizePx);
           }
         });
@@ -737,6 +742,11 @@ export default function TemplatePrint() {
           }
 
           if (marker && marker.image) {
+            // Draw white border around corner marker (0.5mm)
+            pdf.setDrawColor(255, 255, 255);
+            pdf.setLineWidth(0.5);
+            pdf.rect(markerX - 0.25, markerY - 0.25, markerSizeMm + 0.5, markerSizeMm + 0.5);
+            
             pdf.addImage(marker.image, 'PNG', markerX, markerY, markerSizeMm, markerSizeMm);
           }
         }
@@ -1251,6 +1261,11 @@ export default function TemplatePrint() {
       arucoMarkers.markers.forEach((marker: any, index: number) => {
         const pos = cornerPositions[index];
         if (marker.image) {
+          // Draw white border around corner marker (0.5mm)
+          pdf.setDrawColor(255, 255, 255);
+          pdf.setLineWidth(0.5);
+          pdf.rect(pos.x - 0.25, pos.y - 0.25, markerSizeMm + 0.5, markerSizeMm + 0.5);
+          
           pdf.addImage(marker.image, 'PNG', pos.x, pos.y, markerSizeMm, markerSizeMm);
         }
       });
