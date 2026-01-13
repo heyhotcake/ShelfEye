@@ -534,23 +534,23 @@ export default function TemplatePrint() {
         } else {
           // Standard tool slot rendering
           
-          // Fill entire slot with category color, leaving safezone around QR code (reduced for small slots)
+          // Fill slot with category color, leaving worker nametag placement area white
           const fillColor = rect.category.labelColor || "#FFFFFF";
           const qrSizeCm = 3;
-          // For small slots like 赤ペン, reduce safezone to fit within slot dimensions
-          const slotMinDimCm = Math.min(rect.category.widthCm, rect.category.heightCm);
-          const safezoneMarginCm = rect.category.label === "赤ペン" ? 0 : Math.min(2, Math.max(0, (slotMinDimCm - qrSizeCm) / 2));
-          const clearAreaSizeCm = qrSizeCm + safezoneMarginCm * 2;
-          const clearAreaSizePx = cmToPixels(clearAreaSizeCm, true);
+          // Worker nametag placement area dimensions (between guide lines)
+          const guideWidthCm = 3.45;
+          const guideSpacingCm = 6.75;
+          const guideWidthPx = cmToPixels(guideWidthCm, true);
+          const guideHeightPx = cmToPixels(guideSpacingCm, false);
           
           if (fillColor && fillColor !== "#FFFFFF") {
             // Fill entire slot with color
             ctx.fillStyle = fillColor;
             ctx.fillRect(-widthPx / 2, -heightPx / 2, widthPx, heightPx);
             
-            // Draw white rectangle in center for QR code safezone
+            // Draw white rectangle for worker nametag placement area (between guide lines)
             ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(-clearAreaSizePx / 2, -clearAreaSizePx / 2, clearAreaSizePx, clearAreaSizePx);
+            ctx.fillRect(-guideWidthPx / 2, -guideHeightPx / 2, guideWidthPx, guideHeightPx);
           }
           
           // Draw black outline on top
@@ -564,23 +564,18 @@ export default function TemplatePrint() {
             ctx.drawImage(qrImageCache[rect.autoQrId], -qrSizePx / 2, -qrSizePx / 2, qrSizePx, qrSizePx);
           }
 
-          // Draw alignment guides (light grey horizontal lines for worker card placement)
-          const guideWidthCm = 3.45;
-          const guideSpacingCm = 6.75;
-          const guideWidthPx = cmToPixels(guideWidthCm, true);
-          const guideSpacingPx = cmToPixels(guideSpacingCm, false);
-          
+          // Draw alignment guides (horizontal lines for worker card placement)
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = 1;
           
           ctx.beginPath();
-          ctx.moveTo(-guideWidthPx / 2, -guideSpacingPx / 2);
-          ctx.lineTo(guideWidthPx / 2, -guideSpacingPx / 2);
+          ctx.moveTo(-guideWidthPx / 2, -guideHeightPx / 2);
+          ctx.lineTo(guideWidthPx / 2, -guideHeightPx / 2);
           ctx.stroke();
           
           ctx.beginPath();
-          ctx.moveTo(-guideWidthPx / 2, guideSpacingPx / 2);
-          ctx.lineTo(guideWidthPx / 2, guideSpacingPx / 2);
+          ctx.moveTo(-guideWidthPx / 2, guideHeightPx / 2);
+          ctx.lineTo(guideWidthPx / 2, guideHeightPx / 2);
           ctx.stroke();
 
           // Draw label above QR code (use numbered label for consistency with PDF)
@@ -962,13 +957,12 @@ export default function TemplatePrint() {
               y: localY + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
             }));
 
-            // Fill entire slot with category color, leaving safezone around QR code (reduced for small slots)
+            // Fill entire slot with category color, leaving worker nametag area white
             const fillColor = rect.category.labelColor || "#FFFFFF";
             const qrSizeMm = 30;
-            // For small slots like 赤ペン, reduce safezone to fit within slot dimensions
-            const slotMinDimMm = Math.min(widthMm, heightMm);
-            const safezoneMarginMm = rect.category.label === "赤ペン" ? 0 : Math.min(20, Math.max(0, (slotMinDimMm - qrSizeMm) / 2));
-            const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2;
+            // Worker nametag placement area dimensions (between guide lines)
+            const guideWidthMm = 34.5;  // 3.45cm
+            const guideHeightMm = 67.5; // 6.75cm
             
             if (fillColor && fillColor !== "#FFFFFF") {
               const r = parseInt(fillColor.slice(1, 3), 16);
@@ -988,13 +982,14 @@ export default function TemplatePrint() {
                 'F'
               );
               
-              // Draw white rectangle in center for QR code safezone (rotated)
-              const clearHalf = clearAreaSizeMm / 2;
+              // Draw white rectangle for worker nametag placement area (rotated)
+              const guideHalfW = guideWidthMm / 2;
+              const guideHalfH = guideHeightMm / 2;
               const clearCorners = [
-                { x: -clearHalf, y: -clearHalf },
-                { x: clearHalf, y: -clearHalf },
-                { x: clearHalf, y: clearHalf },
-                { x: -clearHalf, y: clearHalf },
+                { x: -guideHalfW, y: -guideHalfH },
+                { x: guideHalfW, y: -guideHalfH },
+                { x: guideHalfW, y: guideHalfH },
+                { x: -guideHalfW, y: guideHalfH },
               ];
               const rotatedClearCorners = clearCorners.map(c => ({
                 x: localX + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
@@ -1042,19 +1037,17 @@ export default function TemplatePrint() {
             };
             
             // Draw alignment guides (rotated with shape)
-            const guideWidthMm = 34.5; // 3.45cm
-            const guideSpacingMm = 67.5; // 6.75cm
             pdf.setDrawColor(0, 0, 0); // Black
             pdf.setLineWidth(0.3);
             
             // Top guide line (rotated)
-            const topGuideLeft = rotatePoint(localX - guideWidthMm / 2, localY - guideSpacingMm / 2, localX, localY, angleRad);
-            const topGuideRight = rotatePoint(localX + guideWidthMm / 2, localY - guideSpacingMm / 2, localX, localY, angleRad);
+            const topGuideLeft = rotatePoint(localX - guideWidthMm / 2, localY - guideHeightMm / 2, localX, localY, angleRad);
+            const topGuideRight = rotatePoint(localX + guideWidthMm / 2, localY - guideHeightMm / 2, localX, localY, angleRad);
             pdf.line(topGuideLeft.x, topGuideLeft.y, topGuideRight.x, topGuideRight.y);
             
             // Bottom guide line (rotated)
-            const bottomGuideLeft = rotatePoint(localX - guideWidthMm / 2, localY + guideSpacingMm / 2, localX, localY, angleRad);
-            const bottomGuideRight = rotatePoint(localX + guideWidthMm / 2, localY + guideSpacingMm / 2, localX, localY, angleRad);
+            const bottomGuideLeft = rotatePoint(localX - guideWidthMm / 2, localY + guideHeightMm / 2, localX, localY, angleRad);
+            const bottomGuideRight = rotatePoint(localX + guideWidthMm / 2, localY + guideHeightMm / 2, localX, localY, angleRad);
             pdf.line(bottomGuideLeft.x, bottomGuideLeft.y, bottomGuideRight.x, bottomGuideRight.y);
             pdf.setDrawColor(0, 0, 0); // Reset to black
             
@@ -1091,7 +1084,7 @@ export default function TemplatePrint() {
               // Position label between slot top and top guide line (above the guide line)
               // But ensure it stays within slot bounds
               const slotTopOffset = heightMm / 2;
-              const guideLineOffset = guideSpacingMm / 2;
+              const guideLineOffset = guideHeightMm / 2;
               // Clamp label to stay inside slot: at most (slotTopOffset - padding) from center
               const maxLabelOffset = slotTopOffset - 5; // 5mm padding from edge
               const idealLabelOffset = (slotTopOffset + guideLineOffset) / 2;
@@ -1141,13 +1134,12 @@ export default function TemplatePrint() {
               pdf.text(displayLabel, startX, startY, { angle: rect.rotation });
             }
           } else {
-            // Fill entire slot with category color, leaving safezone around QR code (reduced for small slots)
+            // Fill entire slot with category color, leaving worker nametag area white
             const fillColor = rect.category.labelColor || "#FFFFFF";
             const qrSizeMm = 30;
-            // For small slots like 赤ペン, reduce safezone to fit within slot dimensions
-            const slotMinDimMm = Math.min(widthMm, heightMm);
-            const safezoneMarginMm = rect.category.label === "赤ペン" ? 0 : Math.min(20, Math.max(0, (slotMinDimMm - qrSizeMm) / 2));
-            const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2;
+            // Worker nametag placement area dimensions (between guide lines)
+            const guideWidthMm = 34.5;  // 3.45cm
+            const guideHeightMm = 67.5; // 6.75cm
             
             if (fillColor && fillColor !== "#FFFFFF") {
               const r = parseInt(fillColor.slice(1, 3), 16);
@@ -1158,9 +1150,9 @@ export default function TemplatePrint() {
               pdf.setFillColor(r, g, b);
               pdf.rect(localX - widthMm / 2, localY - heightMm / 2, widthMm, heightMm, 'F');
               
-              // Draw white rectangle in center for QR code safezone
+              // Draw white rectangle for worker nametag placement area
               pdf.setFillColor(255, 255, 255);
-              pdf.rect(localX - clearAreaSizeMm / 2, localY - clearAreaSizeMm / 2, clearAreaSizeMm, clearAreaSizeMm, 'F');
+              pdf.rect(localX - guideWidthMm / 2, localY - guideHeightMm / 2, guideWidthMm, guideHeightMm, 'F');
             }
             
             // Draw black outline on top (at original slot boundary)
@@ -1171,15 +1163,13 @@ export default function TemplatePrint() {
               pdf.addImage(qrCodes[rect.autoQrId], 'PNG', localX - qrSizeMm / 2, localY - qrSizeMm / 2, qrSizeMm, qrSizeMm);
             }
             
-            // Draw alignment guides (light grey horizontal lines for worker card placement)
-            const guideWidthMm = 34.5; // 3.45cm
-            const guideSpacingMm = 67.5; // 6.75cm
+            // Draw alignment guides (horizontal lines for worker card placement)
             pdf.setDrawColor(0, 0, 0); // Black
             pdf.setLineWidth(0.3);
             // Top guide line
-            pdf.line(localX - guideWidthMm / 2, localY - guideSpacingMm / 2, localX + guideWidthMm / 2, localY - guideSpacingMm / 2);
+            pdf.line(localX - guideWidthMm / 2, localY - guideHeightMm / 2, localX + guideWidthMm / 2, localY - guideHeightMm / 2);
             // Bottom guide line
-            pdf.line(localX - guideWidthMm / 2, localY + guideSpacingMm / 2, localX + guideWidthMm / 2, localY + guideSpacingMm / 2);
+            pdf.line(localX - guideWidthMm / 2, localY + guideHeightMm / 2, localX + guideWidthMm / 2, localY + guideHeightMm / 2);
             pdf.setDrawColor(0, 0, 0); // Reset to black
             
             // Add label above the top guide line (not cutting through it)
@@ -1212,10 +1202,10 @@ export default function TemplatePrint() {
               }
               
               // Position label between slot top and top guide line (above the guide line)
-              // Guide line is at guideSpacingMm/2 = 33.75mm from center
+              // Guide line is at guideHeightMm/2 = 33.75mm from center
               // Slot top is at heightMm/2 from center
               const slotTop = localY - heightMm / 2;
-              const guideLineY = localY - guideSpacingMm / 2;
+              const guideLineY = localY - guideHeightMm / 2;
               // Label goes halfway between slot top and guide line
               const labelY = (slotTop + guideLineY) / 2;
               
@@ -1417,13 +1407,12 @@ export default function TemplatePrint() {
             y: yMm + c.x * Math.sin(angleRad) + c.y * Math.cos(angleRad),
           }));
 
-          // Fill entire slot with category color, leaving safezone around QR code (reduced for small slots)
+          // Fill entire slot with category color, leaving worker nametag area white
           const fillColor = rect.category.labelColor || "#FFFFFF";
           const qrSizeMm = 30;
-          // For small slots like 赤ペン, reduce safezone to fit within slot dimensions
-          const slotMinDimMm = Math.min(widthMm, heightMm);
-          const safezoneMarginMm = rect.category.label === "赤ペン" ? 0 : Math.min(20, Math.max(0, (slotMinDimMm - qrSizeMm) / 2));
-          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2;
+          // Worker nametag placement area dimensions (between guide lines)
+          const guideWidthMm = 34.5;  // 3.45cm
+          const guideHeightMm = 67.5; // 6.75cm
           
           if (fillColor && fillColor !== "#FFFFFF") {
             const r = parseInt(fillColor.slice(1, 3), 16);
@@ -1443,13 +1432,14 @@ export default function TemplatePrint() {
               'F'
             );
             
-            // Draw white rectangle in center for QR code safezone (rotated)
-            const clearHalf = clearAreaSizeMm / 2;
+            // Draw white rectangle for worker nametag placement area (rotated)
+            const guideHalfW = guideWidthMm / 2;
+            const guideHalfH = guideHeightMm / 2;
             const clearCorners = [
-              { x: -clearHalf, y: -clearHalf },
-              { x: clearHalf, y: -clearHalf },
-              { x: clearHalf, y: clearHalf },
-              { x: -clearHalf, y: clearHalf },
+              { x: -guideHalfW, y: -guideHalfH },
+              { x: guideHalfW, y: -guideHalfH },
+              { x: guideHalfW, y: guideHalfH },
+              { x: -guideHalfW, y: guideHalfH },
             ];
             const rotatedClearCorners = clearCorners.map(c => ({
               x: xMm + c.x * Math.cos(angleRad) - c.y * Math.sin(angleRad),
@@ -1497,19 +1487,17 @@ export default function TemplatePrint() {
           };
           
           // Draw alignment guides (rotated with shape)
-          const guideWidthMm = 34.5; // 3.45cm
-          const guideSpacingMm = 67.5; // 6.75cm
           pdf.setDrawColor(0, 0, 0); // Black
           pdf.setLineWidth(0.3);
           
           // Top guide line (rotated)
-          const topGuideLeft = rotatePoint(xMm - guideWidthMm / 2, yMm - guideSpacingMm / 2, xMm, yMm, angleRad);
-          const topGuideRight = rotatePoint(xMm + guideWidthMm / 2, yMm - guideSpacingMm / 2, xMm, yMm, angleRad);
+          const topGuideLeft = rotatePoint(xMm - guideWidthMm / 2, yMm - guideHeightMm / 2, xMm, yMm, angleRad);
+          const topGuideRight = rotatePoint(xMm + guideWidthMm / 2, yMm - guideHeightMm / 2, xMm, yMm, angleRad);
           pdf.line(topGuideLeft.x, topGuideLeft.y, topGuideRight.x, topGuideRight.y);
           
           // Bottom guide line (rotated)
-          const bottomGuideLeft = rotatePoint(xMm - guideWidthMm / 2, yMm + guideSpacingMm / 2, xMm, yMm, angleRad);
-          const bottomGuideRight = rotatePoint(xMm + guideWidthMm / 2, yMm + guideSpacingMm / 2, xMm, yMm, angleRad);
+          const bottomGuideLeft = rotatePoint(xMm - guideWidthMm / 2, yMm + guideHeightMm / 2, xMm, yMm, angleRad);
+          const bottomGuideRight = rotatePoint(xMm + guideWidthMm / 2, yMm + guideHeightMm / 2, xMm, yMm, angleRad);
           pdf.line(bottomGuideLeft.x, bottomGuideLeft.y, bottomGuideRight.x, bottomGuideRight.y);
           pdf.setDrawColor(0, 0, 0); // Reset to black
           
@@ -1536,7 +1524,7 @@ export default function TemplatePrint() {
             // Position label between slot top and top guide line (above the guide line)
             // But ensure it stays within slot bounds
             const slotTopOffset = heightMm / 2;
-            const guideLineOffset = guideSpacingMm / 2;
+            const guideLineOffset = guideHeightMm / 2;
             // Clamp label to stay inside slot: at most (slotTopOffset - padding) from center
             const maxLabelOffset = slotTopOffset - 5; // 5mm padding from edge
             const idealLabelOffset = (slotTopOffset + guideLineOffset) / 2;
@@ -1584,13 +1572,12 @@ export default function TemplatePrint() {
             pdf.text(displayLabelRotated, startX, startY, { angle: rect.rotation });
           }
         } else {
-          // Fill entire slot with category color, leaving safezone around QR code (reduced for small slots)
+          // Fill entire slot with category color, leaving worker nametag area white
           const fillColor = rect.category.labelColor || "#FFFFFF";
           const qrSizeMm = 30;
-          // For small slots like 赤ペン, reduce safezone to fit within slot dimensions
-          const slotMinDimMm = Math.min(widthMm, heightMm);
-          const safezoneMarginMm = rect.category.label === "赤ペン" ? 0 : Math.min(20, Math.max(0, (slotMinDimMm - qrSizeMm) / 2));
-          const clearAreaSizeMm = qrSizeMm + safezoneMarginMm * 2;
+          // Worker nametag placement area dimensions (between guide lines)
+          const guideWidthMm = 34.5;  // 3.45cm
+          const guideHeightMm = 67.5; // 6.75cm
           
           if (fillColor && fillColor !== "#FFFFFF") {
             const r = parseInt(fillColor.slice(1, 3), 16);
@@ -1601,9 +1588,9 @@ export default function TemplatePrint() {
             pdf.setFillColor(r, g, b);
             pdf.rect(xMm - widthMm / 2, yMm - heightMm / 2, widthMm, heightMm, 'F');
             
-            // Draw white rectangle in center for QR code safezone
+            // Draw white rectangle for worker nametag placement area
             pdf.setFillColor(255, 255, 255);
-            pdf.rect(xMm - clearAreaSizeMm / 2, yMm - clearAreaSizeMm / 2, clearAreaSizeMm, clearAreaSizeMm, 'F');
+            pdf.rect(xMm - guideWidthMm / 2, yMm - guideHeightMm / 2, guideWidthMm, guideHeightMm, 'F');
           }
           
           // Draw black outline on top (at original slot boundary)
@@ -1614,15 +1601,13 @@ export default function TemplatePrint() {
             pdf.addImage(qrCodes[rect.autoQrId], 'PNG', xMm - qrSizeMm / 2, yMm - qrSizeMm / 2, qrSizeMm, qrSizeMm);
           }
           
-          // Draw alignment guides (light grey horizontal lines for worker card placement)
-          const guideWidthMm = 34.5; // 3.45cm
-          const guideSpacingMm = 67.5; // 6.75cm
+          // Draw alignment guides (horizontal lines for worker card placement)
           pdf.setDrawColor(0, 0, 0); // Black
           pdf.setLineWidth(0.3);
           // Top guide line
-          pdf.line(xMm - guideWidthMm / 2, yMm - guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm - guideSpacingMm / 2);
+          pdf.line(xMm - guideWidthMm / 2, yMm - guideHeightMm / 2, xMm + guideWidthMm / 2, yMm - guideHeightMm / 2);
           // Bottom guide line
-          pdf.line(xMm - guideWidthMm / 2, yMm + guideSpacingMm / 2, xMm + guideWidthMm / 2, yMm + guideSpacingMm / 2);
+          pdf.line(xMm - guideWidthMm / 2, yMm + guideHeightMm / 2, xMm + guideWidthMm / 2, yMm + guideHeightMm / 2);
           pdf.setDrawColor(0, 0, 0); // Reset to black
           
           // Add label above the top guide line (not cutting through it)
@@ -1646,7 +1631,7 @@ export default function TemplatePrint() {
             
             // Position label between slot top and top guide line (above the guide line)
             const slotTop = yMm - heightMm / 2;
-            const guideLineY = yMm - guideSpacingMm / 2;
+            const guideLineY = yMm - guideHeightMm / 2;
             const labelY = (slotTop + guideLineY) / 2;
             
             // Draw white background rectangle behind label
