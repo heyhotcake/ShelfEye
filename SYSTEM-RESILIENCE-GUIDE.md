@@ -8,7 +8,7 @@ ShelfEye includes multiple layers of protection to ensure the system remains ope
 
 1. **Hardware Watchdog** - Automatic reboot on system freeze
 2. **SystemD Auto-Restart** - Automatic service restart on crashes with resource limits
-3. **Automatic Maintenance** - Daily cleanup and disk space management
+3. **Automatic Maintenance** - Daily cleanup and disk space management 
 4. **Health Monitoring** - Real-time system status tracking
 
 ---
