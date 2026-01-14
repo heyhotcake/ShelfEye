@@ -1,0 +1,154 @@
+🔴 CRITICAL ISSUES - Must Fix Before Production
+1. Security Vulnerabilities
+No Authentication/Authorization
+
+All API endpoints are completely open - anyone can access/modify data
+No session management, no user authentication, no API keys
+Risk: Unauthorized users can delete cameras, modify slots, access logs
+Fix: Implement authentication middleware (Passport.js with sessions) or API tokens
+No Rate Limiting
+
+API is vulnerable to DoS attacks and abuse
+Fix: Add express-rate-limit middleware
+Error Handler Anti-Pattern (Line 59-65 in server/index.ts)
+
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+  res.status(status).json({ message });
+  throw err; // ❌ WRONG: throws after response sent, crashes process
+});
+Fix: Remove throw err; or log instead
+No CORS Configuration
+
+Undefined cross-origin behavior
+Fix: Configure CORS properly for production domain
+2. Outdated Dependencies with Known Vulnerabilities
+Python Dependencies:
+
+opencv-contrib-python-headless==4.8.1.78 (2023, outdated)
+numpy==1.24.3 (2023, has CVE-2021-41495, CVE-2021-41496)
+Flask==2.3.2 (2023, has known security issues)
+Pillow==10.0.0 (2023, has CVE-2023-44271, CVE-2023-50447)
+scikit-image==0.21.0 (2023)
+Recommendation: Update to latest versions (test thoroughly)
+
+3. No Backup Strategy
+No database backup automation
+No disaster recovery plan
+Camera calibration data could be lost
+Fix: Implement daily PostgreSQL backups to S3/external storage
+4. Auto-Update on Boot is Risky
+pi-startup.sh pulls latest code from GitHub on every boot
+No rollback mechanism if bad code is deployed
+Could break production system automatically
+Fix: Disable auto-update for production, use manual deployment with testing
+🟠 HIGH PRIORITY - Address Soon
+5. No Monitoring/Observability
+Logging:
+
+Using console.log everywhere (not structured)
+No log aggregation or retention policy
+Difficult to debug production issues
+Fix: Implement structured logging (Pino or Winston), ship logs to external service
+Monitoring:
+
+No application metrics (request latency, error rates, memory usage)
+No alerting on system failures
+Basic health endpoint exists but limited
+Fix: Add Prometheus metrics or use managed service (Datadog, New Relic)
+Error Tracking:
+
+No error tracking service (Sentry, Rollbar)
+Errors logged but not aggregated
+Fix: Integrate Sentry for error tracking
+6. Resource Leak Risks
+Found 15+ setInterval/setTimeout calls without clear cleanup:
+
+server/scheduler.ts: Capture scheduler intervals
+server/subprocess-manager.ts: Zombie detection interval (cleared on shutdown ✓)
+server/db.ts: Health check interval (cleared on close ✓)
+server/services/alert-queue.ts: Retry processor interval
+server/utils/buzzer-control.ts: Multiple timeouts
+Concern: Some intervals may not clean up on error paths
+Fix: Audit all intervals, ensure cleanup in error handlers
+
+7. No SSL/TLS
+Application runs on HTTP (port 5000)
+Credentials transmitted in plaintext
+Fix: Add reverse proxy (nginx) with Let's Encrypt SSL or use Cloudflare Tunnel
+8. No Automated Testing
+No unit tests, integration tests, or end-to-end tests
+Manual testing only
+High risk of regressions
+Fix: Add Jest for backend, Vitest for frontend, basic smoke tests minimum
+🟡 MEDIUM PRIORITY - Improve Stability
+9. Database Query Optimization
+No indexes on frequently queried columns evident beyond schema
+detection_logs table could grow large without partitioning
+Fix: Add indexes on timestamp, slot_id for queries; consider time-based partitioning
+10. Memory Management
+Camera frames processed in memory (4K images = ~24MB each)
+No memory limits in Python subprocesses
+Fix: Monitor memory usage, add limits to Python processes
+11. Alert Queue Edge Cases
+Alert queue has documented edge cases (Phase 3 commit failures, long retry handlers)
+Fix: Monitor "Failed to commit retry results" errors in logs
+12. No Input Sanitization
+Zod validation present (good) but no HTML/SQL sanitization
+Fix: Add DOMPurify for HTML inputs, parameterized queries already used ✓
+🟢 POSITIVE FINDINGS
+✅ Database Resilience: Connection pooling, health checks, automatic reconnection, retry logic
+✅ Process Management: Subprocess tracking, zombie detection, graceful shutdown
+✅ Resource Locking: Camera session manager prevents concurrent access
+✅ Input Validation: Zod schemas for API validation
+✅ Alert System: Queue-based with persistence and retry logic
+✅ Documentation: Comprehensive setup guides and system documentation
+✅ Systemd Integration: Proper service files with restart policies
+✅ Environment Config: Uses .env files for configuration
+📋 PRODUCTION READINESS CHECKLIST
+Category	Status	Notes
+Authentication	❌ Missing	No auth on any endpoints
+Rate Limiting	❌ Missing	Vulnerable to abuse
+HTTPS/SSL	❌ Missing	HTTP only
+Backup Strategy	❌ Missing	No automated backups
+Monitoring	❌ Missing	console.log only
+Error Tracking	❌ Missing	No Sentry/similar
+Automated Tests	❌ Missing	Manual testing only
+Dependency Updates	⚠️ Outdated	2023 versions, known CVEs
+Database Resilience	✅ Good	Health checks, retry logic
+Process Management	✅ Good	Subprocess tracking
+Documentation	✅ Excellent	Comprehensive guides
+Input Validation	✅ Good	Zod schemas present
+🎯 RECOMMENDED ACTION PLAN
+Phase 1 - Security Hardening (Before Production Launch)
+Add authentication middleware (API tokens or session-based auth)
+Fix error handler anti-pattern in server/index.ts
+Add rate limiting (express-rate-limit)
+Configure CORS properly
+Add HTTPS via reverse proxy (nginx + Let's Encrypt)
+Update Python dependencies, test thoroughly
+Phase 2 - Operational Excellence (Week 1-2)
+Implement database backup automation (daily to S3)
+Add structured logging (Pino or Winston)
+Integrate error tracking (Sentry)
+Disable auto-update in production, implement manual deployment
+Add basic smoke tests
+Phase 3 - Monitoring & Alerting (Week 2-4)
+Add application metrics (Prometheus or managed service)
+Set up uptime monitoring (UptimeRobot, Pingdom)
+Configure alerting for critical failures
+Add database query performance monitoring
+Phase 4 - Reliability Improvements (Ongoing)
+Add automated testing suite (unit + integration)
+Implement CI/CD pipeline
+Add memory profiling and leak detection
+Optimize database queries with indexes
+Set up staging environment
+🚨 IMMEDIATE ACTIONS (This Week)
+Fix Error Handler: Remove throw err; from server/index.ts:64
+Update Dependencies: Update Python packages to patch CVEs
+Add Authentication: Block public API access
+Disable Auto-Update: Comment out git pull in pi-startup.sh for production
+Setup Backups: Create daily PostgreSQL backup script
+Would you like me to help implement any of these fixes? I can generate code for authentication middleware, rate limiting, or backup scripts.
