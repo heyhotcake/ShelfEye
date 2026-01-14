@@ -2,6 +2,8 @@
 
 A Raspberry Pi-based automated tool monitoring system using QR codes, ArUco grid calibration, and computer vision to track tools across multiple cameras with email alerts and comprehensive logging.
 
+Last updated: January 2026
+
 ## Features
 
 ### Core Functionality
