@@ -1111,45 +1111,30 @@ export default function TemplatePrint() {
               const cos = Math.cos(angleRad);
               const sin = Math.sin(angleRad);
               
-              // Define rotation vectors (jsPDF uses clockwise rotation)
-              // Baseline direction (text extends this way): rotate (1,0) clockwise
-              const baselineX = cos;
-              const baselineY = sin;
-              // Up direction (perpendicular, toward top of text): rotate (0,-1) clockwise  
-              const upX = sin;
-              const upY = -cos;
+              // Position label center toward the slot's "top" (which rotates with the slot)
+              // For 0° rotation: up = (0, -1) = toward top of page
+              // For 90° rotation: up = (1, 0) = toward right of page
+              const labelCenterX = localX + labelOffset * sin;
+              const labelCenterY = localY - labelOffset * cos;
               
-              // Position label center offset along the slot's "up" direction from slot center
-              const labelCenterX = localX + labelOffset * upX;
-              const labelCenterY = localY + labelOffset * upY;
-              
-              // Now center the text at this point
               const textWidthMm = pdf.getTextWidth(displayLabel);
               const textHeightMm = fontPt * 0.35;
               
-              // Text baseline rise: distance from baseline to visual center of text
-              const baselineRise = textHeightMm * 0.3;
-              
-              // Calculate text start position:
-              // - Move back along baseline by half text width (to center horizontally)
-              // - Move down (opposite of up) by baselineRise (since text draws from baseline)
-              const startX = labelCenterX - (textWidthMm / 2) * baselineX - baselineRise * upX;
-              const startY = labelCenterY - (textWidthMm / 2) * baselineY - baselineRise * upY;
-              
               // Draw white background rectangle behind label (rotated)
-              // Background is centered at labelCenter (the visual center of the text)
               const bgPaddingMm = 1.5;
               const bgWidth = textWidthMm + bgPaddingMm * 2;
               const bgHeight = textHeightMm + bgPaddingMm * 2;
               
               const halfW = bgWidth / 2;
               const halfH = bgHeight / 2;
-              // Corners relative to labelCenter, using baseline (X) and up (Y) as local axes
+              
+              // Calculate rotated rectangle corners centered at labelCenter
+              // Local X axis = (cos, sin), Local Y axis = (-sin, cos)
               const corners = [
-                { x: labelCenterX - halfW * baselineX - halfH * upX, y: labelCenterY - halfW * baselineY - halfH * upY },
-                { x: labelCenterX + halfW * baselineX - halfH * upX, y: labelCenterY + halfW * baselineY - halfH * upY },
-                { x: labelCenterX + halfW * baselineX + halfH * upX, y: labelCenterY + halfW * baselineY + halfH * upY },
-                { x: labelCenterX - halfW * baselineX + halfH * upX, y: labelCenterY - halfW * baselineY + halfH * upY },
+                { x: labelCenterX + (-halfW) * cos - (-halfH) * (-sin), y: labelCenterY + (-halfW) * sin + (-halfH) * cos },
+                { x: labelCenterX + (halfW) * cos - (-halfH) * (-sin), y: labelCenterY + (halfW) * sin + (-halfH) * cos },
+                { x: labelCenterX + (halfW) * cos - (halfH) * (-sin), y: labelCenterY + (halfW) * sin + (halfH) * cos },
+                { x: labelCenterX + (-halfW) * cos - (halfH) * (-sin), y: labelCenterY + (-halfW) * sin + (halfH) * cos },
               ];
               pdf.setFillColor(255, 255, 255);
               pdf.moveTo(corners[0].x, corners[0].y);
@@ -1158,8 +1143,14 @@ export default function TemplatePrint() {
               pdf.lineTo(corners[3].x, corners[3].y);
               pdf.fill();
               
+              // Draw text centered at labelCenter
+              // jsPDF text() with align/baseline options applied AFTER rotation
               pdf.setTextColor(0, 0, 0);
-              pdf.text(displayLabel, startX, startY, { angle: rect.rotation });
+              pdf.text(displayLabel, labelCenterX, labelCenterY, { 
+                angle: rect.rotation,
+                align: 'center',
+                baseline: 'middle'
+              });
             }
           } else {
             // Fill entire slot with category color, leaving worker nametag area white
