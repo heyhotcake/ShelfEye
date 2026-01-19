@@ -1120,7 +1120,7 @@ export default function TemplatePrint() {
               // Text starts at (labelX, labelY) and extends in the rotated direction
               // To center: offset by -textWidth/2 along the rotated X axis
               const startX = labelX - (textWidthMm / 2) * Math.cos(angleRad);
-              const startY = labelY + (textWidthMm / 2) * Math.sin(angleRad);
+              const startY = labelY - (textWidthMm / 2) * Math.sin(angleRad);
               
               // Draw white background rectangle behind label (rotated)
               const bgPaddingMm = 1.5;
