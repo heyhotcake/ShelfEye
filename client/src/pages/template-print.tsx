@@ -1111,12 +1111,12 @@ export default function TemplatePrint() {
               const cos = Math.cos(angleRad);
               const sin = Math.sin(angleRad);
               
-              // jsPDF uses counter-clockwise rotation for positive angles
-              // Baseline direction (text extends this way): (cos, -sin) in page coordinates
-              // Up direction (toward top of text): (sin, cos) in page coordinates
+              // jsPDF counter-clockwise rotation basis vectors:
+              // Baseline direction (text extends this way): (cos, sin)
+              // Up direction (toward top of text): (-sin, cos)
               const baselineX = cos;
-              const baselineY = -sin;
-              const upX = sin;
+              const baselineY = sin;
+              const upX = -sin;
               const upY = cos;
               
               // Position label center toward the slot's "top" (which rotates with the slot)
@@ -1129,9 +1129,9 @@ export default function TemplatePrint() {
               
               // Calculate text start position to center text at labelCenter:
               // - Move back along baseline by half text width (horizontal centering)
-              // - Move down from visual center to baseline (vertical adjustment)
-              const startX = labelCenterX - (textWidthMm / 2) * baselineX - baselineRise * upX;
-              const startY = labelCenterY - (textWidthMm / 2) * baselineY - baselineRise * upY;
+              // - Move up from baseline to visual center (vertical adjustment)
+              const startX = labelCenterX - (textWidthMm / 2) * baselineX + baselineRise * upX;
+              const startY = labelCenterY - (textWidthMm / 2) * baselineY + baselineRise * upY;
               
               // Draw white background rectangle behind label (rotated)
               const bgPaddingMm = 1.5;
