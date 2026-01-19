@@ -1108,42 +1108,48 @@ export default function TemplatePrint() {
               
               // For rotated text, we need to manually position since jsPDF's align is applied before rotation
               const angleRad = (rect.rotation * Math.PI) / 180;
+              const cos = Math.cos(angleRad);
+              const sin = Math.sin(angleRad);
               
-              // Position label offset along the slot's "up" direction
-              // jsPDF uses clockwise rotation, so "up" in slot space becomes: (sin(θ), -cos(θ)) in page space
-              const labelX = localX + labelOffset * Math.sin(angleRad);
-              const labelY = localY - labelOffset * Math.cos(angleRad);
+              // Define rotation vectors (jsPDF uses clockwise rotation)
+              // Baseline direction (text extends this way): rotate (1,0) clockwise
+              const baselineX = cos;
+              const baselineY = sin;
+              // Up direction (perpendicular, toward top of text): rotate (0,-1) clockwise  
+              const upX = sin;
+              const upY = -cos;
+              
+              // Position label center offset along the slot's "up" direction from slot center
+              const labelCenterX = localX + labelOffset * upX;
+              const labelCenterY = localY + labelOffset * upY;
               
               // Now center the text at this point
               const textWidthMm = pdf.getTextWidth(displayLabel);
+              const textHeightMm = fontPt * 0.35;
               
-              // Text starts at (labelX, labelY) and extends in the rotated direction
-              // To center: offset by -textWidth/2 along the rotated X axis
-              const startX = labelX - (textWidthMm / 2) * Math.cos(angleRad);
-              const startY = labelY - (textWidthMm / 2) * Math.sin(angleRad);
+              // Text baseline rise: distance from baseline to visual center of text
+              const baselineRise = textHeightMm * 0.3;
+              
+              // Calculate text start position:
+              // - Move back along baseline by half text width (to center horizontally)
+              // - Move down (opposite of up) by baselineRise (since text draws from baseline)
+              const startX = labelCenterX - (textWidthMm / 2) * baselineX - baselineRise * upX;
+              const startY = labelCenterY - (textWidthMm / 2) * baselineY - baselineRise * upY;
               
               // Draw white background rectangle behind label (rotated)
+              // Background is centered at labelCenter (the visual center of the text)
               const bgPaddingMm = 1.5;
-              const textHeightMm = fontPt * 0.35;
               const bgWidth = textWidthMm + bgPaddingMm * 2;
               const bgHeight = textHeightMm + bgPaddingMm * 2;
               
-              // Calculate the 4 corners of the rotated rectangle
-              // Shift background center to account for text baseline (text is drawn from baseline, not center)
-              // Move background UP in slot space toward text body: "Up" = (sin(θ), -cos(θ)) in page space
-              const baselineOffset = textHeightMm * 0.4;
-              const bgCenterX = labelX + baselineOffset * Math.sin(angleRad);
-              const bgCenterY = labelY - baselineOffset * Math.cos(angleRad);
-              
               const halfW = bgWidth / 2;
               const halfH = bgHeight / 2;
-              const cos = Math.cos(angleRad);
-              const sin = Math.sin(angleRad);
+              // Corners relative to labelCenter, using baseline (X) and up (Y) as local axes
               const corners = [
-                { x: bgCenterX + (-halfW) * cos - (-halfH) * sin, y: bgCenterY + (-halfW) * sin + (-halfH) * cos },
-                { x: bgCenterX + (halfW) * cos - (-halfH) * sin, y: bgCenterY + (halfW) * sin + (-halfH) * cos },
-                { x: bgCenterX + (halfW) * cos - (halfH) * sin, y: bgCenterY + (halfW) * sin + (halfH) * cos },
-                { x: bgCenterX + (-halfW) * cos - (halfH) * sin, y: bgCenterY + (-halfW) * sin + (halfH) * cos },
+                { x: labelCenterX - halfW * baselineX - halfH * upX, y: labelCenterY - halfW * baselineY - halfH * upY },
+                { x: labelCenterX + halfW * baselineX - halfH * upX, y: labelCenterY + halfW * baselineY - halfH * upY },
+                { x: labelCenterX + halfW * baselineX + halfH * upX, y: labelCenterY + halfW * baselineY + halfH * upY },
+                { x: labelCenterX - halfW * baselineX + halfH * upX, y: labelCenterY - halfW * baselineY + halfH * upY },
               ];
               pdf.setFillColor(255, 255, 255);
               pdf.moveTo(corners[0].x, corners[0].y);
