@@ -1129,15 +1129,21 @@ export default function TemplatePrint() {
               const bgHeight = textHeightMm + bgPaddingMm * 2;
               
               // Calculate the 4 corners of the rotated rectangle
+              // Shift background center to account for text baseline (text is drawn from baseline, not center)
+              // Move background UP in slot space toward text body: "Up" = (sin(θ), -cos(θ)) in page space
+              const baselineOffset = textHeightMm * 0.4;
+              const bgCenterX = labelX + baselineOffset * Math.sin(angleRad);
+              const bgCenterY = labelY - baselineOffset * Math.cos(angleRad);
+              
               const halfW = bgWidth / 2;
               const halfH = bgHeight / 2;
               const cos = Math.cos(angleRad);
               const sin = Math.sin(angleRad);
               const corners = [
-                { x: labelX + (-halfW) * cos - (-halfH) * sin, y: labelY + (-halfW) * sin + (-halfH) * cos },
-                { x: labelX + (halfW) * cos - (-halfH) * sin, y: labelY + (halfW) * sin + (-halfH) * cos },
-                { x: labelX + (halfW) * cos - (halfH) * sin, y: labelY + (halfW) * sin + (halfH) * cos },
-                { x: labelX + (-halfW) * cos - (halfH) * sin, y: labelY + (-halfW) * sin + (halfH) * cos },
+                { x: bgCenterX + (-halfW) * cos - (-halfH) * sin, y: bgCenterY + (-halfW) * sin + (-halfH) * cos },
+                { x: bgCenterX + (halfW) * cos - (-halfH) * sin, y: bgCenterY + (halfW) * sin + (-halfH) * cos },
+                { x: bgCenterX + (halfW) * cos - (halfH) * sin, y: bgCenterY + (halfW) * sin + (halfH) * cos },
+                { x: bgCenterX + (-halfW) * cos - (halfH) * sin, y: bgCenterY + (-halfW) * sin + (halfH) * cos },
               ];
               pdf.setFillColor(255, 255, 255);
               pdf.moveTo(corners[0].x, corners[0].y);
