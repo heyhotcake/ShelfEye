@@ -14,6 +14,9 @@ The Tool Tracking System is a Raspberry Pi-based solution for real-time tool mon
 - **LED DMA Conflict**: Changed `python/process_cameras.py control_light()` to use `led_control_client.py` daemon instead of direct `unified_led_controller.py`, eliminating potential DMA channel conflicts.
 - **Fatal Error Handling**: Added `uncaughtException`, `unhandledRejection`, and custom `fatal-error` event handlers in `server/index.ts` for clean systemd restart on unrecoverable errors.
 - **LED+Buzzer Coupling**: Improved `startRedFlash()`/`stopRedFlash()` to use try/finally patterns ensuring buzzer stops even if LED commands fail.
+- **Large Payload Handling**: Changed Python capture input from stdin to temp files (`/tmp/capture-input-{pid}-{random}.json`) to avoid 64KB pipe buffer limits on large camera configs.
+- **Graceful Shutdown**: Added comprehensive shutdown handlers in `server/routes.ts` that stop scheduler (cron jobs + alert queue), close database connection (stops health check interval). Wrapped in try/catch for error resilience.
+- **Lock Expiry Resilience**: Verified capture/calibration locks use timeout-based expiry (11min/5min) which auto-releases stale locks on SIGKILL scenarios.
 
 ## User Preferences
 - Preferred communication style: Simple, everyday language.

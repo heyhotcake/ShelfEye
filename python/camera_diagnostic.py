@@ -222,9 +222,22 @@ class CameraDiagnostic:
 
 def main():
     """Main entry point"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Run camera diagnostics')
+    parser.add_argument('--input', type=str, help='Path to JSON input file (alternative to stdin)')
+    args = parser.parse_args()
+    
     try:
-        # Read camera data from stdin (JSON array)
-        input_data = sys.stdin.read()
+        # Read camera data from file (preferred) or stdin (fallback)
+        if args.input:
+            with open(args.input, 'r') as f:
+                input_data = f.read()
+            logger.info(f"Read input from file: {args.input}")
+        else:
+            input_data = sys.stdin.read()
+            logger.info("Read input from stdin")
+        
         cameras = json.loads(input_data)
         
         if not isinstance(cameras, list):

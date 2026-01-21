@@ -597,15 +597,53 @@ export class CaptureScheduler {
   }
 
   /**
-   * Run Python script with input data via stdin, with timeout protection
+   * Run Python script with input data via temp file, with timeout protection
+   * Uses temp file instead of stdin to avoid pipe buffer limits on large payloads
    * Kills process and alerts if it exceeds CAPTURE_TIMEOUT_MS (10 minutes)
    */
-  private runPythonScript(scriptPath: string, inputData: any): Promise<any> {
+  private async runPythonScript(scriptPath: string, inputData: any): Promise<any> {
+    // Write input data to temp file to avoid stdin pipe buffer limits
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const os = await import('os');
+    const crypto = await import('crypto');
+    
+    // Use PID + random suffix to prevent collision under concurrent runs
+    const uniqueId = `${process.pid}-${crypto.randomBytes(4).toString('hex')}`;
+    const inputFile = path.join(os.tmpdir(), `capture-input-${uniqueId}.json`);
+    
+    // Cleanup helper - logs errors but doesn't throw
+    const cleanupFile = async () => {
+      try {
+        await fs.unlink(inputFile);
+      } catch (err) {
+        // File may already be deleted or never existed - that's fine
+      }
+    };
+    
+    try {
+      await fs.writeFile(inputFile, JSON.stringify(inputData), 'utf-8');
+      console.log(`[Scheduler] Wrote input data to ${inputFile}`);
+    } catch (writeError) {
+      // Cleanup if file was partially created
+      await cleanupFile();
+      throw new Error(`Failed to write input file: ${writeError}`);
+    }
+
+    let python;
+    try {
+      // Pass --input argument instead of using stdin
+      python = spawnTracked('python3', [scriptPath, '--input', inputFile], scriptPath, 'python', 'scheduled_capture');
+    } catch (spawnError) {
+      // Cleanup temp file if spawn fails
+      await cleanupFile();
+      throw new Error(`Failed to spawn Python process: ${spawnError}`);
+    }
+    
+    const pid = python.pid;
+    const startTime = Date.now();
+    
     return new Promise((resolve, reject) => {
-      const python = spawnTracked('python3', [scriptPath], scriptPath, 'python', 'scheduled_capture');
-      const pid = python.pid;
-      const startTime = Date.now();
-      
       let stdout = '';
       let stderr = '';
       let isTimedOut = false;
@@ -644,6 +682,8 @@ export class CaptureScheduler {
             console.error(`[Scheduler] Failed to send SIGTERM to process ${python.pid}:`, killError);
           }
 
+          // Fire-and-forget cleanup - file will be deleted eventually
+          void cleanupFile();
           // Reject the promise immediately - don't wait for close event
           reject(new Error(`Capture timeout after ${elapsed}ms (exceeded ${this.CAPTURE_TIMEOUT_MS}ms limit)`));
         }
@@ -657,8 +697,9 @@ export class CaptureScheduler {
         stderr += data.toString();
       });
 
-      python.on('close', (code) => {
+      python.on('close', async (code) => {
         clearTimeout(timeoutHandle);
+        await cleanupFile();
         
         const elapsed = Date.now() - startTime;
         console.log(`[Scheduler] Python process exited after ${elapsed}ms (code: ${code})`);
@@ -684,27 +725,15 @@ export class CaptureScheduler {
         }
       });
 
-      python.on('error', (error) => {
+      python.on('error', async (error) => {
         clearTimeout(timeoutHandle);
+        await cleanupFile();
 
         if (!isSettled) {
           isSettled = true;
           reject(new Error(`Failed to spawn Python process: ${error.message}`));
         }
       });
-
-      // Send input data via stdin
-      try {
-        python.stdin.write(JSON.stringify(inputData));
-        python.stdin.end();
-      } catch (stdinError) {
-        console.error(`[Scheduler] Failed to write to stdin:`, stdinError);
-        clearTimeout(timeoutHandle);
-        if (!isSettled) {
-          isSettled = true;
-          reject(new Error(`Failed to write input data: ${stdinError}`));
-        }
-      }
     });
   }
 

@@ -150,3 +150,4 @@ const dbManager = new DatabaseConnectionManager(process.env.DATABASE_URL);
 export const db = dbManager.getDb();
 export const pool = dbManager.getPool();
 export const getDatabaseHealth = () => dbManager.isConnectionHealthy();
+export const closeDatabaseConnection = () => dbManager.close();

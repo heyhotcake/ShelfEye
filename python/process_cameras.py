@@ -1161,9 +1161,22 @@ class CameraProcessor:
 
 def main():
     """Main entry point"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Process camera captures')
+    parser.add_argument('--input', type=str, help='Path to JSON input file (alternative to stdin)')
+    args = parser.parse_args()
+    
     try:
-        # Read input data from stdin (JSON object with cameras and slots)
-        input_data = sys.stdin.read()
+        # Read input data from file (preferred) or stdin (fallback)
+        if args.input:
+            with open(args.input, 'r') as f:
+                input_data = f.read()
+            logger.info(f"Read input from file: {args.input}")
+        else:
+            input_data = sys.stdin.read()
+            logger.info("Read input from stdin")
+        
         data = json.loads(input_data)
         
         cameras = data.get('cameras', [])

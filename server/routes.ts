@@ -199,9 +199,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await scheduler.initialize();
   
   // Register shutdown handlers for graceful cleanup
+  // Note: SubprocessManager has its own SIGTERM/SIGINT handlers that cleanup processes
   const gracefulShutdown = async (signal: string) => {
-    console.log(`[Server] Received ${signal} - gracefully shutting down scheduler...`);
-    scheduler.shutdown();
+    console.log(`[Server] Received ${signal} - graceful shutdown starting...`);
+    
+    try {
+      // 1. Stop scheduler (stops cron jobs and alert queue timer)
+      console.log('[Server] Stopping scheduler...');
+      scheduler.shutdown();
+      
+      // 2. Close database connection (stops health check interval)
+      console.log('[Server] Closing database connection...');
+      const { closeDatabaseConnection } = await import('./db.js');
+      await closeDatabaseConnection();
+      
+      console.log('[Server] Graceful shutdown complete');
+    } catch (err) {
+      console.error('[Server] Error during graceful shutdown:', err);
+    }
   };
   
   process.once('SIGTERM', () => gracefulShutdown('SIGTERM'));
