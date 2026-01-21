@@ -9,6 +9,12 @@ The Tool Tracking System is a Raspberry Pi-based solution for real-time tool mon
 - Bulletproof spawn enforcement (ALL 13+ spawn calls use spawnTracked())
 - Persistent cleanup with exit verification (prevents premature process removal)
 
+**Critical Bug Fixes (Jan 21, 2026):**
+- **Scheduler Boolean Parsing**: Fixed `scheduler_paused` config value being stored as string "false" but cast as boolean, causing string truthiness bug. Added `parseBoolConfigValue()` and `stringifyBoolConfigValue()` utilities in `server/utils/config-utils.ts`.
+- **LED DMA Conflict**: Changed `python/process_cameras.py control_light()` to use `led_control_client.py` daemon instead of direct `unified_led_controller.py`, eliminating potential DMA channel conflicts.
+- **Fatal Error Handling**: Added `uncaughtException`, `unhandledRejection`, and custom `fatal-error` event handlers in `server/index.ts` for clean systemd restart on unrecoverable errors.
+- **LED+Buzzer Coupling**: Improved `startRedFlash()`/`stopRedFlash()` to use try/finally patterns ensuring buzzer stops even if LED commands fail.
+
 ## User Preferences
 - Preferred communication style: Simple, everyday language.
 - **Deployment Context**: User runs the application on a Raspberry Pi at `http://naniwatanacheck.local:5000`. **ALL debugging, testing, and issue reports refer to the Pi deployment, NOT the Replit web preview.** The Replit environment is for code development only; actual hardware features (camera, GPIO) only work on the Raspberry Pi. When user reports issues or provides screenshots, they are ALWAYS from the Pi, not from Replit webview.
