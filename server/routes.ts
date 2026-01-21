@@ -20,6 +20,7 @@ import { z } from "zod";
 import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertAlertRuleSchema, insertToolCategorySchema, insertTemplateRectangleSchema, insertWorkerSchema, insertCaptureRunSchema } from "@shared/schema";
 import { setWhiteLight, turnOffLED } from "./utils/led-control";
 import { readDHT20 } from "./utils/dht20-sensor";
+import { parseBoolConfigValue, stringifyBoolConfigValue } from "./utils/config-utils";
 
 // Helper function to get camera device source (path or index)
 function getCameraDeviceSource(camera: { devicePath?: string | null; deviceIndex?: number | null }): string {
@@ -2994,9 +2995,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const schedulerPausedConfig = await storage.getConfigByKey("scheduler_paused");
 
       res.json({
-        capture_times: captureTimesConfig?.value || ["08:00", "11:00", "14:00", "17:00"],
-        timezone: timezoneConfig?.value || "UTC",
-        scheduler_paused: schedulerPausedConfig?.value || false,
+        capture_times: Array.isArray(captureTimesConfig?.value) 
+          ? captureTimesConfig!.value 
+          : ["08:00", "11:00", "14:00", "17:00"],
+        timezone: (timezoneConfig?.value as string) || "Asia/Tokyo",
+        scheduler_paused: parseBoolConfigValue(schedulerPausedConfig?.value, false),
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to get schedule config", error });
@@ -3014,7 +3017,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.setConfig("timezone", timezone, "System timezone");
       }
       if (scheduler_paused !== undefined) {
-        await storage.setConfig("scheduler_paused", scheduler_paused, "Scheduler paused state");
+        const normalizedPaused = stringifyBoolConfigValue(parseBoolConfigValue(scheduler_paused, false));
+        await storage.setConfig("scheduler_paused", normalizedPaused, "Scheduler paused state");
       }
 
       await scheduler.reload();

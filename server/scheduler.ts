@@ -10,6 +10,7 @@ import { maintenanceService } from './services/maintenance-service';
 import { cameraSessionManager } from './camera-session-manager';
 import { subprocessManager, spawnTracked } from './subprocess-manager';
 import { AlertRetryQueue } from './services/alert-queue';
+import { parseBoolConfigValue } from './utils/config-utils';
 
 const TIMEZONE = 'Asia/Tokyo';
 
@@ -46,9 +47,11 @@ export class CaptureScheduler {
     const pausedConfig = await this.storage.getConfigByKey('scheduler_paused');
 
     return {
-      captureTimes: captureTimesConfig?.value as string[] || ['08:00', '11:00', '14:00', '17:00'],
-      timezone: timezoneConfig?.value as string || TIMEZONE,
-      schedulerPaused: pausedConfig?.value as boolean || false,
+      captureTimes: Array.isArray(captureTimesConfig?.value) 
+        ? (captureTimesConfig!.value as string[]) 
+        : ['08:00', '11:00', '14:00', '17:00'],
+      timezone: (timezoneConfig?.value as string) || TIMEZONE,
+      schedulerPaused: parseBoolConfigValue(pausedConfig?.value, false),
     };
   }
 
