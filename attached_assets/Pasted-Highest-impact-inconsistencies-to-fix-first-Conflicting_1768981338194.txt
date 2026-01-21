@@ -1,0 +1,120 @@
+Highest impact inconsistencies to fix first
+
+Conflicting LED hardware access paths
+
+Node uses the LED Manager Daemon via python/led_control_client.py (server/utils/led-control.ts), while the Python capture pipeline still calls python/unified_led_controller.py directly (hardware access) in python/process_cameras.py Lines 345–373. This can create DMA conflicts and flakey lighting/alerts when both paths run (e.g., preflight diagnostics vs capture). Fix by routing ALL Python usage through led_control_client.py (named pipe → daemon), not the direct WS2812 driver.
+Scheduler “Paused” flag type mismatch
+
+storage default sets scheduler_paused as string "false" (server/storage.ts Lines 192–194; server/utils/config-validator.ts treats it as string), but server/scheduler.ts Line 51 reads it as boolean using a TS cast: pausedConfig?.value as boolean || false. At runtime "false" is a truthy string, so the scheduler can be treated as paused even when you think it’s false, leading to captures not running or UI showing the wrong state. Parse it explicitly to boolean everywhere you read it.
+Fatal error handling is swallowed
+
+server/index.ts global error handler was changed to log and not rethrow (AI summary). On a fatal path you now keep a half‑broken process alive instead of letting systemd restart it, causing mysterious “stuck” states (e.g., no captures, locks never set) until manual intervention. Prefer logging and then exiting so systemd restarts cleanly.
+Operational reliability risks and edge cases
+
+Large stdin payloads to Python
+
+server/scheduler.ts writes the full slots/cameras payload to the Python process via stdin (multiple occurrences around Lines 601–704). With many slots/cameras this can exceed pipe buffers on the Pi and stall. Consider writing JSON to a temp file and passing a --input path.
+Timezone divergence
+
+The scheduler uses TIMEZONE = Asia/Tokyo (server/scheduler.ts) while /api/schedule-config defaults to UTC in server/routes.ts Lines 2996–2999, and the client derives timezone via a client-side TIMEZONE constant (client/src/pages/scheduler.ts Lines 106–108). This can surface as “captures run at the wrong time.” Normalize: single source of truth in DB, render and schedule from the same parsed TZ.
+Locks and forced terminations
+
+You have solid guards (isSettled gates, SIGTERM->SIGKILL fallbacks; server/scheduler.ts Lines 611–635, 662–681), but ensure the globalCaptureLock is always released when a SIGKILL occurs after timeout, not just on the happy close path. Otherwise subsequent calibrations/captures can be blocked until CAPTURE_TIMEOUT elapses (server/camera-session-manager.ts Lines 180–227).
+LED+buzzer coupling
+
+startRedFlash() also starts a continuous buzzer (server/utils/led-control.ts Lines 226–231) but stopRedFlash() is the only place that stops it (Lines 259–263). If a call flow fails before stopRedFlash, the buzzer may continue even when the LED command failed or timed out. Consider try/finally coupling or a watchdog to silence buzzer on Python job end.
+Environment sensor flakiness surfaces as “✕” in Sheets
+
+DHT20 read uses a 10s timeout and force-kill (server/utils/dht20-sensor.ts Lines 23–31). Transient I2C hiccups will show as ✕ on rows 19–20 (server/services/sheets-summary-report.ts Lines 506–538). If this is noisy in your environment, debounce or retry once before logging ✕.
+setInterval timers without unified shutdown
+
+Intervals exist for alert retries, memory monitoring, DB health (server/services/alert-queue.ts, server/scheduler.ts Lines 191–210, server/db.ts Lines 111–114). Most are fine for a long‑running service, but ensure you clear them during shutdown or hot‑reload to prevent overlapping processors after quick restarts.
+Targeted fixes (small diffs)
+
+Route Python lighting to the daemon to avoid conflicts
+python/process_cameras.py
+@@
+-def control_light(pin: int, state: str):
+-    """
+-    Control GPIO light strip via unified LED controller
+-    Args:
+-        pin: GPIO pin number
+-        state: 'on' or 'off'
+-    """
+-    try:
+-        script_dir = Path(__file__).parent
+-        led_controller = script_dir / "unified_led_controller.py"
+-        # Map 'on' to 'white' for the unified controller
+-        action = "white" if state == "on" else "off"
+-        result = subprocess.run(
+-            ["sudo", sys.executable, str(led_controller), "--pin", str(pin), "--action", action],
+-            capture_output=True,
+-            text=True,
+-        )
+-        if result.returncode == 0:
+-            logger.info(f"Light strip (GPIO {pin}): {state.upper()} (unified controller)")
+-        else:
+-            logger.warning(f"Light control failed: {result.stderr}")
+-    except Exception as e:
+-        logger.warning(f"Light control error: {e}")
++def control_light(pin: int, state: str):
++    """
++    Control LED lighting via the LED Manager Daemon (no direct WS2812 access).
++    Uses led_control_client.py → named pipe → daemon to avoid DMA conflicts.
++    """
++    try:
++        script_dir = Path(__file__).parent
++        client = script_dir / "led_control_client.py"
++        action = "white" if state == "on" else "off"
++        cmd = ["sudo", sys.executable, str(client), action]
++        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
++        if result.returncode == 0:
++            logger.info(f"Light strip: {state.upper()} (daemon client)")
++        else:
++            logger.warning(f"LED client failed: {result.stderr or result.stdout}")
++    except Exception as e:
++        logger.warning(f"LED client error: {e}")
+Parse scheduler_paused correctly (and similar config booleans)
+server/scheduler.ts
+@@
+   private async loadConfig(): Promise<SchedulerConfig> {
+@@
+-    const pausedConfig = await this.storage.getConfigByKey('scheduler_paused');
++    const pausedConfig = await this.storage.getConfigByKey('scheduler_paused');
++    const parseBool = (v: unknown, fallback = false) => {
++      if (typeof v === 'boolean') return v;
++      if (typeof v === 'string') return v.toLowerCase() === 'true';
++      return fallback;
++    };
+@@
+-    return {
+-      captureTimes: captureTimesConfig?.value as string[] || ['08:00', '11:00', '14:00', '17:00'],
+-      timezone: timezoneConfig?.value as string || TIMEZONE,
+-      schedulerPaused: pausedConfig?.value as boolean || false,
+-    };
++    return {
++      captureTimes: Array.isArray(captureTimesConfig?.value)
++        ? (captureTimesConfig!.value as string[])
++        : ['08:00', '11:00', '14:00', '17:00'],
++      timezone: (timezoneConfig?.value as string) || TIMEZONE,
++      schedulerPaused: parseBool(pausedConfig?.value, false),
++    };
+   }
+Also update /api/schedule-config getters/setters to parse/serialize booleans consistently, so the client sees true booleans.
+
+Fail fast on fatal server errors so systemd restarts cleanly
+server/index.ts (global error handler)
+ app.use((err, _req, res, _next) => {
+   console.error('[Error Handler]', err);
+   if (!res.headersSent) {
+     res.status(500).json({ message: 'Internal Server Error' });
+   }
+-  // previously rethrew; currently no-op
++  // Ensure clean restart under systemd on unrecoverable errors
++  setImmediate(() => process.exit(1));
+ });
+Optional robustness improvements
+
+Switch Python input from stdin to a temp file to avoid pipe stalls on large payloads. Example: write JSON to /tmp/capture-input-*.json in Node, pass --input path; parse that in python/process_cameras.py.
+Single source of truth for timezone in DB: server defaults, scheduler, and UI should all read/write the same key. Consider exposing scheduler.getNextRuns() only in formatted local time to avoid client-side TZ confusion.
+Add a finally guard in all Python-spawn wrappers that ensures stopRedFlash()/buzzerOff() is invoked if a job errors out after starting alerts.
