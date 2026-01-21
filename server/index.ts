@@ -3,6 +3,26 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 
+// Fatal error handlers - ensure clean restart under systemd on unrecoverable errors
+// These catch errors that escape all other handlers and would leave the process in a broken state
+process.on('uncaughtException', (err: Error) => {
+  console.error('[FATAL] Uncaught exception - process will exit for clean restart:', err);
+  // Give time for logs to flush before exiting
+  setImmediate(() => process.exit(1));
+});
+
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('[FATAL] Unhandled promise rejection - process will exit for clean restart:', reason);
+  // Give time for logs to flush before exiting
+  setImmediate(() => process.exit(1));
+});
+
+// Custom fatal error event for services to emit when they detect unrecoverable state
+process.on('fatal-error', (context: string, err?: Error) => {
+  console.error(`[FATAL] ${context} - process will exit for clean restart:`, err || 'No error details');
+  setImmediate(() => process.exit(1));
+});
+
 const app = express();
 
 // Serve static files from data directory for debug/download

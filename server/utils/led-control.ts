@@ -209,8 +209,11 @@ export async function turnOffLED(): Promise<void> {
 /**
  * Start RED FLASH alert (highest priority)
  * Communicates with LED daemon via client with retry logic
+ * Also triggers buzzer alert - coupled together for consistent alerting
  */
 export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow'): Promise<boolean> {
+  let buzzerStarted = false;
+  
   try {
     const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
     const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
@@ -224,9 +227,13 @@ export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow')
       console.log('[LED] RED FLASH started');
       
       // Trigger buzzer alert alongside red flash
-      alertBuzzer().catch(err => {
+      try {
+        await alertBuzzer();
+        buzzerStarted = true;
+      } catch (err) {
         console.error('[LED] Buzzer alert failed:', err);
-      });
+        // LED flash succeeded, but buzzer failed - continue without buzzer
+      }
       
       return true;
     } else {
@@ -235,6 +242,10 @@ export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow')
     }
   } catch (err) {
     console.error('[LED] startRedFlash error:', err);
+    // If buzzer was started but something failed after, stop it
+    if (buzzerStarted) {
+      stopAlertBuzzer();
+    }
     return false;
   }
 }
@@ -242,8 +253,11 @@ export async function startRedFlash(pattern: 'fast' | 'slow' | 'pulse' = 'slow')
 /**
  * Stop RED FLASH alert and turn off LEDs
  * Communicates with LED daemon via client with retry logic
+ * Always stops buzzer, even if LED command fails (defense in depth)
  */
 export async function stopRedFlash(): Promise<boolean> {
+  let ledSuccess = false;
+  
   try {
     const numLedsConfig = await storage.getConfigByKey('led_strip_num_leds');
     const numLeds = numLedsConfig ? parseInt(numLedsConfig.value as string) : 99;
@@ -255,17 +269,17 @@ export async function stopRedFlash(): Promise<boolean> {
 
     if (response.success || response.status === 'success') {
       console.log('[LED] RED FLASH stopped');
-      
-      // Stop buzzer alert when red flash stops
-      stopAlertBuzzer();
-      
-      return true;
+      ledSuccess = true;
     } else {
       console.error('[LED] Failed to stop flash:', response.message);
-      return false;
     }
   } catch (err) {
     console.error('[LED] stopRedFlash error:', err);
-    return false;
+  } finally {
+    // Always stop buzzer, even if LED command failed
+    // This ensures buzzer doesn't keep running if LED daemon is unresponsive
+    stopAlertBuzzer();
   }
+  
+  return ledSuccess;
 }

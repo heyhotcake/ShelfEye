@@ -43,20 +43,29 @@ export class AlertLEDController {
 
   /**
    * Flash LED for a specific duration then stop
+   * Uses try/finally to ensure cleanup even on errors
    */
   async flashFor(duration: number, pattern: 'fast' | 'slow' | 'pulse' = 'fast'): Promise<boolean> {
+    let started = false;
     try {
       await startRedFlash(pattern);
+      started = true;
       
       // Wait for duration, then stop
       await new Promise(resolve => setTimeout(resolve, duration * 1000));
-      await stopRedFlash();
       
       console.log(`[Alert LED] Flashed for ${duration}s`);
       return true;
     } catch (error) {
       console.error('[Alert LED] Error flashing:', error);
       return false;
+    } finally {
+      // Always stop if we started, even on errors
+      if (started) {
+        await stopRedFlash().catch(err => {
+          console.error('[Alert LED] Error stopping flash in finally:', err);
+        });
+      }
     }
   }
 

@@ -345,33 +345,35 @@ def calculate_rectified_region_coords(slot_data: Dict[str, Any], px_per_cm: floa
 # GPIO Light Control Functions
 def control_light(pin: int, state: str):
     """
-    Control GPIO light strip via unified LED controller
+    Control LED lighting via the LED Manager Daemon (no direct WS2812 access).
+    Uses led_control_client.py → named pipe → daemon to avoid DMA conflicts.
     
     Args:
-        pin: GPIO pin number
+        pin: GPIO pin number (legacy parameter, kept for compatibility)
         state: 'on' or 'off'
     """
     try:
         script_dir = Path(__file__).parent
-        led_controller = script_dir / "unified_led_controller.py"
+        client = script_dir / "led_control_client.py"
         
-        # Map 'on' to 'white' for the unified controller
+        # Map 'on' to 'white' for the LED daemon
         action = 'white' if state == 'on' else 'off'
         
-        # Use sudo for WS2812B /dev/mem access with proper arguments
+        # Use sudo for daemon client (daemon runs as root)
+        cmd = ["sudo", sys.executable, str(client), action]
         result = subprocess.run(
-            ["sudo", sys.executable, str(led_controller), "--pin", str(pin), "--action", action],
+            cmd,
             capture_output=True,
             text=True,
             timeout=5
         )
         
         if result.returncode == 0:
-            logger.info(f"Light strip (GPIO {pin}): {state.upper()} (unified controller)")
+            logger.info(f"Light strip: {state.upper()} (daemon client)")
         else:
-            logger.warning(f"Light control failed: {result.stderr}")
+            logger.warning(f"LED client failed: {result.stderr or result.stdout}")
     except Exception as e:
-        logger.warning(f"Light control error: {e}")
+        logger.warning(f"LED client error: {e}")
 
 
 class SlotProcessor:
