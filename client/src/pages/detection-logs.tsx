@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { downloadFile, apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Download, ChevronLeft, ChevronRight, Eye, Filter, Settings2 } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, Eye, Filter, Settings2, Clock, Play, RefreshCw, Save } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
+
+interface TimelineConfig {
+  enabled: boolean;
+  spreadsheetId: string | null;
+  templateTabName: string;
+  temperatureRow: number;
+  humidityRow: number;
+  confirmerRow: number;
+  dataStartColumn: number;
+}
 
 const TIMEZONE = "Asia/Tokyo";
 
@@ -59,11 +69,88 @@ export default function DetectionLogs() {
     queryKey: ['/api/config/SHEETS_FORMATTING'],
   });
 
+  const { data: timelineConfig, isLoading: timelineLoading } = useQuery<TimelineConfig>({
+    queryKey: ['/api/timeline/config'],
+  });
+
+  // Local state for timeline config editing (explicit save)
+  const [localTimelineConfig, setLocalTimelineConfig] = useState<Partial<TimelineConfig>>({});
+  const [timelineConfigDirty, setTimelineConfigDirty] = useState(false);
+
+  // Sync local state when server config loads
+  useEffect(() => {
+    if (timelineConfig) {
+      setLocalTimelineConfig({
+        enabled: timelineConfig.enabled,
+        spreadsheetId: timelineConfig.spreadsheetId,
+        templateTabName: timelineConfig.templateTabName,
+        temperatureRow: timelineConfig.temperatureRow,
+        humidityRow: timelineConfig.humidityRow,
+        confirmerRow: timelineConfig.confirmerRow,
+      });
+      setTimelineConfigDirty(false);
+    }
+  }, [timelineConfig]);
+
   const sheetsFormatting = sheetsFormattingConfig?.value || {
     tabCreation: 'monthly',
     tabNamePattern: 'Alerts-{YYYY-MM}',
     columnOrder: ['timestamp', 'alertType', 'status', 'cameraId', 'slotId', 'errorMessage', 'details']
   };
+
+  const updateTimelineConfigMutation = useMutation({
+    mutationFn: (config: Partial<TimelineConfig>) =>
+      apiRequest('POST', '/api/timeline/config', config),
+    onSuccess: () => {
+      toast({
+        title: "タイムライン設定が更新されました",
+        description: "設定が正常に保存されました",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/timeline/config'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "更新に失敗しました",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const scanTemplateMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/timeline/scan-template', {}),
+    onSuccess: () => {
+      toast({
+        title: "テンプレートスキャン完了",
+        description: "テンプレートのレイアウトをスキャンしました",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "スキャンに失敗しました",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const runCycleMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/timeline/run-cycle', {}),
+    onSuccess: (data: any) => {
+      toast({
+        title: data.success ? "サイクル実行完了" : "エラー",
+        description: data.message,
+        variant: data.success ? "default" : "destructive",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "実行に失敗しました",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const updateConfigMutation = useMutation({
     mutationFn: ({ key, value }: { key: string; value: any }) =>
@@ -477,6 +564,172 @@ export default function DetectionLogs() {
                     data-testid="switch-freeze-headers"
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* 15分タイムラインロガー設定 */}
+            <Card className="mt-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-primary" />
+                    <CardTitle>15分タイムラインロガー</CardTitle>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {timelineConfigDirty && (
+                      <Badge variant="outline" className="text-orange-500 border-orange-500">未保存</Badge>
+                    )}
+                    <Badge className={timelineConfig?.enabled ? "bg-green-500/20 text-green-500" : "bg-gray-500/20 text-gray-500"}>
+                      {timelineConfig?.enabled ? "有効" : "無効"}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  15分ごとに備品の使用状況をGoogle スプレッドシートに記録します。
+                  作業者名と使用時間帯がタイムライン形式で表示されます。
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>タイムラインロガーを有効化</Label>
+                    <p className="text-xs text-muted-foreground">15分間隔でスプレッドシートを更新</p>
+                  </div>
+                  <Switch
+                    checked={localTimelineConfig.enabled || false}
+                    onCheckedChange={(checked) => {
+                      setLocalTimelineConfig(prev => ({ ...prev, enabled: checked }));
+                      setTimelineConfigDirty(true);
+                    }}
+                    disabled={!localTimelineConfig.spreadsheetId}
+                    data-testid="switch-timeline-enabled"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="timeline-spreadsheet-id">スプレッドシートID</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="timeline-spreadsheet-id"
+                      value={localTimelineConfig.spreadsheetId || ''}
+                      onChange={(e) => {
+                        setLocalTimelineConfig(prev => ({ ...prev, spreadsheetId: e.target.value }));
+                        setTimelineConfigDirty(true);
+                      }}
+                      placeholder="例: 13QFikKubrrvlK44YL-zZtgeISLo4JKWfzAhyxiYqBj8"
+                      data-testid="input-timeline-spreadsheet-id"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Google スプレッドシートのURLからIDを抽出してください
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="timeline-template-tab">テンプレートタブ名</Label>
+                  <Input
+                    id="timeline-template-tab"
+                    value={localTimelineConfig.templateTabName || 'ひな形'}
+                    onChange={(e) => {
+                      setLocalTimelineConfig(prev => ({ ...prev, templateTabName: e.target.value }));
+                      setTimelineConfigDirty(true);
+                    }}
+                    placeholder="ひな形"
+                    data-testid="input-timeline-template-tab"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    日次シートのコピー元となるテンプレートタブの名前
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="timeline-temp-row">温度行</Label>
+                    <Input
+                      id="timeline-temp-row"
+                      type="number"
+                      value={localTimelineConfig.temperatureRow || 65}
+                      onChange={(e) => {
+                        setLocalTimelineConfig(prev => ({ ...prev, temperatureRow: parseInt(e.target.value) || 65 }));
+                        setTimelineConfigDirty(true);
+                      }}
+                      data-testid="input-timeline-temp-row"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="timeline-humidity-row">湿度行</Label>
+                    <Input
+                      id="timeline-humidity-row"
+                      type="number"
+                      value={localTimelineConfig.humidityRow || 66}
+                      onChange={(e) => {
+                        setLocalTimelineConfig(prev => ({ ...prev, humidityRow: parseInt(e.target.value) || 66 }));
+                        setTimelineConfigDirty(true);
+                      }}
+                      data-testid="input-timeline-humidity-row"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="timeline-confirmer-row">確認者行</Label>
+                    <Input
+                      id="timeline-confirmer-row"
+                      type="number"
+                      value={localTimelineConfig.confirmerRow || 68}
+                      onChange={(e) => {
+                        setLocalTimelineConfig(prev => ({ ...prev, confirmerRow: parseInt(e.target.value) || 68 }));
+                        setTimelineConfigDirty(true);
+                      }}
+                      data-testid="input-timeline-confirmer-row"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    onClick={() => {
+                      updateTimelineConfigMutation.mutate(localTimelineConfig, {
+                        onSuccess: () => setTimelineConfigDirty(false),
+                      });
+                    }}
+                    disabled={!timelineConfigDirty || updateTimelineConfigMutation.isPending}
+                    data-testid="button-save-timeline-config"
+                  >
+                    <Save className={`w-4 h-4 mr-2 ${updateTimelineConfigMutation.isPending ? 'animate-spin' : ''}`} />
+                    設定を保存
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => scanTemplateMutation.mutate()}
+                    disabled={scanTemplateMutation.isPending || !timelineConfig?.spreadsheetId}
+                    data-testid="button-scan-template"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${scanTemplateMutation.isPending ? 'animate-spin' : ''}`} />
+                    テンプレートスキャン
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => runCycleMutation.mutate()}
+                    disabled={runCycleMutation.isPending || !timelineConfig?.enabled}
+                    data-testid="button-run-cycle"
+                  >
+                    <Play className={`w-4 h-4 mr-2 ${runCycleMutation.isPending ? 'animate-spin' : ''}`} />
+                    手動実行
+                  </Button>
+                </div>
+
+                {localTimelineConfig.spreadsheetId && (
+                  <div className="pt-2">
+                    <a 
+                      href={`https://docs.google.com/spreadsheets/d/${localTimelineConfig.spreadsheetId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline"
+                    >
+                      スプレッドシートを開く →
+                    </a>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

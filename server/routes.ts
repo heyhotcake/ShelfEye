@@ -9,6 +9,7 @@ import { cameraSessionManager } from "./camera-session-manager";
 import { maintenanceService } from "./services/maintenance-service";
 import { piSimulationService } from "./services/pi-simulation-service";
 import { subprocessManager, spawnTracked } from "./subprocess-manager";
+import { getTimelineLogger } from "./services/timeline-logger";
 import multer from "multer";
 import { spawn, exec } from "child_process";
 import path from "path";
@@ -3726,6 +3727,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to get camera config' });
     }
   });
+
+  // =============================================
+  // Timeline Logger API Routes (15-minute logging)
+  // =============================================
+
+  // Get timeline logger configuration
+  app.get('/api/timeline/config', async (req, res) => {
+    try {
+      const timelineLogger = getTimelineLogger(storage);
+      const config = timelineLogger.getConfig();
+      res.json(config);
+    } catch (error) {
+      console.error('[API] Failed to get timeline config:', error);
+      res.status(500).json({ error: 'Failed to get timeline configuration' });
+    }
+  });
+
+  // Update timeline logger configuration
+  app.post('/api/timeline/config', async (req, res) => {
+    try {
+      const { enabled, spreadsheetId, templateTabName, temperatureRow, humidityRow, confirmerRow } = req.body;
+      const timelineLogger = getTimelineLogger(storage);
+      
+      await timelineLogger.setConfig({
+        enabled,
+        spreadsheetId,
+        templateTabName,
+        temperatureRow,
+        humidityRow,
+        confirmerRow,
+      });
+
+      // Reinitialize if enabled
+      if (enabled && spreadsheetId) {
+        await timelineLogger.initialize();
+        await timelineLogger.startScheduler();
+      } else {
+        timelineLogger.stopScheduler();
+      }
+
+      res.json({ success: true, config: timelineLogger.getConfig() });
+    } catch (error) {
+      console.error('[API] Failed to update timeline config:', error);
+      res.status(500).json({ error: 'Failed to update timeline configuration' });
+    }
+  });
+
+  // Scan template layout
+  app.post('/api/timeline/scan-template', async (req, res) => {
+    try {
+      const timelineLogger = getTimelineLogger(storage);
+      await timelineLogger.scanTemplateLayout();
+      res.json({ success: true, message: 'テンプレートのスキャンが完了しました' });
+    } catch (error) {
+      console.error('[API] Failed to scan timeline template:', error);
+      res.status(500).json({ error: 'Failed to scan template' });
+    }
+  });
+
+  // Trigger manual detection cycle
+  app.post('/api/timeline/run-cycle', async (req, res) => {
+    try {
+      const timelineLogger = getTimelineLogger(storage);
+      const result = await timelineLogger.runManualCycle();
+      res.json(result);
+    } catch (error) {
+      console.error('[API] Failed to run timeline cycle:', error);
+      res.status(500).json({ error: 'Failed to run detection cycle' });
+    }
+  });
+
+  // Initialize timeline logger on server start
+  (async () => {
+    try {
+      const timelineLogger = getTimelineLogger(storage);
+      await timelineLogger.initialize();
+      
+      const config = timelineLogger.getConfig();
+      if (config.enabled && config.spreadsheetId) {
+        await timelineLogger.startScheduler();
+        console.log('[TimelineLogger] Started scheduler on server initialization');
+      }
+    } catch (error) {
+      console.error('[TimelineLogger] Failed to initialize:', error);
+    }
+  })();
 
   const httpServer = createServer(app);
   return httpServer;
