@@ -122,7 +122,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     onSuccess: () => {
       toast({
         title: "カテゴリ作成完了",
-        description: "工具カテゴリが正常に作成されました",
+        description: "備品カテゴリが正常に作成されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
       form.reset();
@@ -142,7 +142,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     onSuccess: () => {
       toast({
         title: "カテゴリ更新完了",
-        description: "工具カテゴリが正常に更新されました",
+        description: "備品カテゴリが正常に更新されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
       setEditingId(null);
@@ -163,7 +163,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     onSuccess: () => {
       toast({
         title: "カテゴリ削除完了",
-        description: "工具カテゴリが正常に削除されました",
+        description: "備品カテゴリが正常に削除されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
     },
@@ -230,9 +230,9 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>工具カテゴリ管理</DialogTitle>
+          <DialogTitle>備品カテゴリ管理</DialogTitle>
           <DialogDescription>
-            寸法付きの工具カテゴリテンプレートを作成・管理
+            寸法付きの備品カテゴリテンプレートを作成・管理
           </DialogDescription>
         </DialogHeader>
 

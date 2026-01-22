@@ -78,7 +78,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
     if (formData.type === 'tool' && !formData.label) {
       toast({
         title: "情報不足",
-        description: "工具ラベルを入力してください",
+        description: "備品ラベルを入力してください",
         variant: "destructive",
       });
       return;
@@ -140,7 +140,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
               <DialogTitle className="text-2xl font-bold text-foreground">
                 QRコード生成
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">工具と作業者バッジ用の署名付きQRコードを生成</p>
+              <p className="text-sm text-muted-foreground mt-1">備品と作業者バッジ用の署名付きQRコードを生成</p>
             </div>
             <Button 
               variant="ghost" 
@@ -171,14 +171,14 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tool">工具タグ</SelectItem>
+                    <SelectItem value="tool">備品タグ</SelectItem>
                     <SelectItem value="worker">作業者バッジ</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <Label htmlFor="qrId">{formData.type === 'tool' ? '工具ID' : '作業者ID'}</Label>
+                <Label htmlFor="qrId">{formData.type === 'tool' ? '備品ID' : '作業者ID'}</Label>
                 <Input 
                   id="qrId"
                   placeholder={formData.type === 'tool' ? '例: S001' : '例: W001'}

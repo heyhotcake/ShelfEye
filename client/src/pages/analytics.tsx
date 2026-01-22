@@ -244,7 +244,7 @@ export default function Analytics() {
               {/* Tool Presence Over Time */}
               <Card>
                 <CardHeader>
-                  <CardTitle>工具存在推移</CardTitle>
+                  <CardTitle>備品存在推移</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {timeSeriesData.length > 0 ? (
@@ -273,7 +273,7 @@ export default function Analytics() {
                           dataKey="present" 
                           stroke="hsl(142, 76%, 45%)"
                           strokeWidth={2}
-                          name="工具存在"
+                          name="備品存在"
                         />
                         <Line 
                           type="monotone" 
@@ -373,7 +373,7 @@ export default function Analytics() {
                           }}
                           labelFormatter={(value) => format(toZonedTime(new Date(value), TIMEZONE), 'yyyy-MM-dd', { timeZone: TIMEZONE })}
                         />
-                        <Bar dataKey="toolMissing" stackId="a" fill="hsl(0, 84%, 60%)" name="工具不在" />
+                        <Bar dataKey="toolMissing" stackId="a" fill="hsl(0, 84%, 60%)" name="備品不在" />
                         <Bar dataKey="qrFailure" stackId="a" fill="hsl(38, 92%, 50%)" name="QR読取失敗" />
                         <Bar dataKey="cameraHealth" stackId="a" fill="hsl(280, 89%, 65%)" name="カメラ状態" />
                       </BarChart>
@@ -432,7 +432,7 @@ export default function Analytics() {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">工具利用可能率</span>
+                      <span className="text-muted-foreground">備品利用可能率</span>
                       <span className="font-mono text-foreground" data-testid="text-calibration-quality">
                         {availabilityRate > 0 ? `${availabilityRate}%` : '--'}
                       </span>
@@ -466,7 +466,7 @@ export default function Analytics() {
             {/* Tool Activity Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>最も使用頻度の高い工具</CardTitle>
+                <CardTitle>最も使用頻度の高い備品</CardTitle>
               </CardHeader>
               <CardContent>
                 {extended?.topTools && extended.topTools.length > 0 ? (
@@ -499,7 +499,7 @@ export default function Analytics() {
                 ) : (
                   <div className="py-8 text-center text-muted-foreground">
                     <Database className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>工具アクティビティはまだ記録されていません</p>
+                    <p>備品アクティビティはまだ記録されていません</p>
                     <p className="text-xs mt-1">検出ログがキャプチャされるとアクティビティが表示されます</p>
                   </div>
                 )}

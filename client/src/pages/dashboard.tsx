@@ -365,7 +365,7 @@ export default function Dashboard() {
                     {summary?.statusCounts.present || 0}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">工具あり</p>
+                <p className="text-sm text-muted-foreground">備品あり</p>
                 <p className="text-xs text-green-500 mt-1">
                   全体の{summary ? Math.round((summary.statusCounts.present / summary.activeSlots) * 100) : 0}%
                 </p>
@@ -382,7 +382,7 @@ export default function Dashboard() {
                     {summary?.statusCounts.empty || 0}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">工具なし</p>
+                <p className="text-sm text-muted-foreground">備品なし</p>
                 <p className="text-xs text-red-500 mt-1">アラート送信済み</p>
               </CardContent>
             </Card>
@@ -421,7 +421,7 @@ export default function Dashboard() {
           <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>工具グリッド - {selectedCamera?.name || 'カメラ未選択'}</CardTitle>
+                <CardTitle>備品グリッド - {selectedCamera?.name || 'カメラ未選択'}</CardTitle>
                 <div className="flex items-center gap-3">
                   <Select defaultValue="all">
                     <SelectTrigger className="w-40" data-testid="select-filter-status">
@@ -430,7 +430,7 @@ export default function Dashboard() {
                     <SelectContent>
                       <SelectItem value="all">すべて</SelectItem>
                       <SelectItem value="empty">空のみ</SelectItem>
-                      <SelectItem value="present">工具ありのみ</SelectItem>
+                      <SelectItem value="present">備品ありのみ</SelectItem>
                       <SelectItem value="checked-out">貸出中</SelectItem>
                       <SelectItem value="errors">エラー</SelectItem>
                     </SelectContent>

@@ -21,7 +21,7 @@ Key translations used throughout the application:
 - Analytics → 分析
 - Detection Logs → 検出ログ
 - Workers → 作業者
-- Tool → 工具
+- Tool → 備品
 - Slot → スロット
 - Camera → カメラ
 - Save → 保存

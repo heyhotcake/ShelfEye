@@ -579,13 +579,13 @@ export default function SlotDrawing() {
       if (response.partialSave) {
         toast({
           title: "⚠️ 部分保存",
-          description: `${response.requested}個中${response.rectangleCount}個の工具のみ保存されました。一部の工具に無効なカテゴリがある可能性があります。`,
+          description: `${response.requested}個中${response.rectangleCount}個の備品のみ保存されました。一部の備品に無効なカテゴリがある可能性があります。`,
           variant: "destructive",
         });
       } else {
         toast({
           title: "デザイン保存完了",
-          description: `${response.rectangleCount}個の工具でテンプレートを保存しました`,
+          description: `${response.rectangleCount}個の備品でテンプレートを保存しました`,
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
@@ -596,7 +596,7 @@ export default function SlotDrawing() {
       const errorData = error?.data || {};
       const message = errorData.message || error.message || "不明なエラー";
       const details = errorData.saved !== undefined 
-        ? ` (${errorData.saved}/${errorData.requested}個の工具を保存)`
+        ? ` (${errorData.saved}/${errorData.requested}個の備品を保存)`
         : '';
       
       toast({
@@ -1491,7 +1491,7 @@ export default function SlotDrawing() {
     if (templateRectangles.length === 0) {
       toast({
         title: "保存するテンプレートがありません",
-        description: "保存する前に工具テンプレートを追加してください",
+        description: "保存する前に備品テンプレートを追加してください",
         variant: "destructive",
       });
       return;
@@ -1506,7 +1506,7 @@ export default function SlotDrawing() {
     if (missingCategories.length > 0) {
       toast({
         title: "カテゴリが不足しています",
-        description: "一部の工具カテゴリが見つかりません。先に作成してください。",
+        description: "一部の備品カテゴリが見つかりません。先に作成してください。",
         variant: "destructive",
       });
       return;
@@ -1718,7 +1718,7 @@ export default function SlotDrawing() {
 
       toast({
         title: "テンプレートデザイン読み込み完了",
-        description: `「${version.paperSize} - ${version.name}」を${version.templateRectangles.length}個の工具で読み込みました`,
+        description: `「${version.paperSize} - ${version.name}」を${version.templateRectangles.length}個の備品で読み込みました`,
       });
     } catch (error) {
       toast({
@@ -1996,7 +1996,7 @@ export default function SlotDrawing() {
               <h2 className="text-2xl font-bold text-foreground" data-testid="slot-drawing-title">
                 テンプレートデザイン
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">工具レイアウトの設計 - ArUcoマーカー、テンプレート、QRコードを1枚のシートに</p>
+              <p className="text-sm text-muted-foreground mt-1">備品レイアウトの設計 - ArUcoマーカー、テンプレート、QRコードを1枚のシートに</p>
             </div>
             <div className="flex items-center gap-4">
               <Button variant="outline" size="sm" data-testid="button-close-slot-drawing">
@@ -2045,7 +2045,7 @@ export default function SlotDrawing() {
                     data-testid="button-category-manager"
                   >
                     <Layers className="w-4 h-4 mr-2" />
-                    工具カテゴリ
+                    備品カテゴリ
                   </Button>
                   <Button
                     variant="outline"
@@ -2108,7 +2108,7 @@ export default function SlotDrawing() {
                     data-testid="checkbox-snap-to-slot"
                   />
                   <Label htmlFor="snap-to-slot" className="text-sm cursor-pointer">
-                    工具スロットにスナップ
+                    備品スロットにスナップ
                   </Label>
                 </div>
               </div>
@@ -2192,7 +2192,7 @@ export default function SlotDrawing() {
                   </div>
                   
                   <p className="text-xs text-muted-foreground mt-2 italic">
-                    ドラッグで位置変更{snapToSlotEnabled ? '（近くの工具にスナップ、Ctrl/Altで無効化）' : '（スナップ無効）'}
+                    ドラッグで位置変更{snapToSlotEnabled ? '（近くの備品にスナップ、Ctrl/Altで無効化）' : '（スナップ無効）'}
                   </p>
                 </div>
               )}
@@ -2202,7 +2202,7 @@ export default function SlotDrawing() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Layers className="w-4 h-4" />
-                      テンプレート工具アウトライン
+                      テンプレート備品アウトライン
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -2234,7 +2234,7 @@ export default function SlotDrawing() {
                     ) : (
                       <div className="text-center py-4">
                         <p className="text-sm text-muted-foreground">
-                          工具カテゴリが定義されていません。テンプレート長方形を追加するにはカテゴリを作成してください。
+                          備品カテゴリが定義されていません。テンプレート長方形を追加するにはカテゴリを作成してください。
                         </p>
                         <Button
                           size="sm"
@@ -2301,7 +2301,7 @@ export default function SlotDrawing() {
                                 <div className="flex-1">
                                   <p className="font-medium">{version.paperSize} - {version.name}</p>
                                   <p className="text-xs text-muted-foreground">
-                                    {new Date(version.timestamp).toLocaleString()} • {version.templateRectangles.length}個の工具
+                                    {new Date(version.timestamp).toLocaleString()} • {version.templateRectangles.length}個の備品
                                   </p>
                                 </div>
                                 <div className="flex gap-1">

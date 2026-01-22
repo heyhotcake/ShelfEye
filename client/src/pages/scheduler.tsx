@@ -280,7 +280,7 @@ export default function Scheduler() {
                       <div className="text-xs text-muted-foreground mt-1">
                         {settings.allowWorkerCheckout 
                           ? "✓ 作業者チェックアウト許可" 
-                          : "✗ 全ての工具が必要"}
+                          : "✗ 全ての備品が必要"}
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -438,7 +438,7 @@ export default function Scheduler() {
                 <Label className="text-base font-medium">作業者チェックアウトを許可</Label>
                 <p className="text-sm text-muted-foreground">
                   有効にすると、作業者の名前タグQRコードがアラームをトリガーしません（チェックアウト状態が許容されます）。
-                  無効にすると、工具が不足している場合にアラームがトリガーされます - 全ての工具が必要です。
+                  無効にすると、備品が不足している場合にアラームがトリガーされます - 全ての備品が必要です。
                 </p>
                 <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
                   <strong>注意:</strong> 空のスロット（スロットQRコードが見える状態）は、この設定に関係なく常にアラームをトリガーします。
@@ -456,10 +456,10 @@ export default function Scheduler() {
               <h4 className="text-sm font-medium">例:</h4>
               <div className="text-xs space-y-1 text-muted-foreground">
                 <p>
-                  <strong>最初/最後の撮影 (オフ):</strong> 始業/終業時 - 全ての工具が必要、チェックアウト不可
+                  <strong>最初/最後の撮影 (オフ):</strong> 始業/終業時 - 全ての備品が必要、チェックアウト不可
                 </p>
                 <p>
-                  <strong>日中の撮影 (オン):</strong> 勤務時間中は作業者が工具をチェックアウト可能
+                  <strong>日中の撮影 (オン):</strong> 勤務時間中は作業者が備品をチェックアウト可能
                 </p>
               </div>
             </div>

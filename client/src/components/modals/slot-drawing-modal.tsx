@@ -177,7 +177,7 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                     </div>
                     
                     <div>
-                      <Label htmlFor="toolName">工具名</Label>
+                      <Label htmlFor="toolName">備品名</Label>
                       <Input 
                         id="toolName"
                         placeholder="例: はさみ"

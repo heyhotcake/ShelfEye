@@ -514,7 +514,7 @@ export default function Configuration() {
                 <div className="space-y-4">
                   <div className="bg-muted/50 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-3">
-                      エラー発生時（工具紛失、QR失敗、カメラ問題）に自動的に点滅する赤色LED。
+                      エラー発生時（備品紛失、QR失敗、カメラ問題）に自動的に点滅する赤色LED。
                       アラートLEDをテストするか、ここで手動制御できます。
                     </p>
                     <div className="flex gap-3">
