@@ -23,7 +23,7 @@ interface Point {
 interface SlotRegion {
   id: string;
   slotId: string;
-  slotNumber?: number; // Auto-assigned sequential number for simplified QR codes (1, 2, 3...)
+  slotNumber?: number;
   points: Point[];
   toolName: string;
   expectedQrId: string;
@@ -68,9 +68,9 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-bold text-foreground">
-                Draw Slot Regions
+                スロット領域描画
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">Click to define slot boundaries on the rectified image</p>
+              <p className="text-sm text-muted-foreground mt-1">クリックして矯正画像上にスロット境界を定義</p>
             </div>
             <Button 
               variant="ghost" 
@@ -110,7 +110,7 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                 data-testid="button-new-slot"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Slot
+                新規スロット
               </Button>
               
               <Button 
@@ -144,9 +144,9 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
               <Card className="mt-4">
                 <CardContent className="p-4">
                   <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-                    <h4 className="text-sm font-medium text-blue-500 mb-2">Drawing Mode Active</h4>
+                    <h4 className="text-sm font-medium text-blue-500 mb-2">描画モード有効</h4>
                     <p className="text-sm text-muted-foreground">
-                      Click to add points to define the slot boundary. Need at least 3 points to finish.
+                      クリックしてスロット境界を定義するポイントを追加します。完了するには少なくとも3ポイントが必要です。
                     </p>
                   </div>
                 </CardContent>
@@ -159,7 +159,7 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {selectedRegion ? `Slot ${selectedRegion.slotId}` : 'Select a Slot'}
+                  {selectedRegion ? `スロット ${selectedRegion.slotId}` : 'スロットを選択'}
                 </CardTitle>
               </CardHeader>
               
@@ -167,7 +167,7 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                 {selectedRegion ? (
                   <>
                     <div>
-                      <Label htmlFor="slotId">Slot ID</Label>
+                      <Label htmlFor="slotId">スロットID</Label>
                       <Input 
                         id="slotId"
                         value={selectedRegion.slotId}
@@ -177,10 +177,10 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                     </div>
                     
                     <div>
-                      <Label htmlFor="toolName">Tool Name</Label>
+                      <Label htmlFor="toolName">工具名</Label>
                       <Input 
                         id="toolName"
-                        placeholder="e.g., Scissors"
+                        placeholder="例: はさみ"
                         value={selectedRegion.toolName}
                         onChange={(e) => updateSelectedRegion({ toolName: e.target.value })}
                         data-testid="input-tool-name"
@@ -189,29 +189,29 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                     
                     <div>
                       <Label htmlFor="expectedQrId">
-                        Expected QR ID 
+                        予想QR ID 
                         {selectedRegion.slotNumber && (
                           <span className="ml-2 text-xs text-muted-foreground">
-                            (QR Code: "{selectedRegion.slotNumber}")
+                            (QRコード: "{selectedRegion.slotNumber}")
                           </span>
                         )}
                       </Label>
                       <Input 
                         id="expectedQrId"
-                        placeholder="e.g., S001 (optional - slot number will be used)"
+                        placeholder="例: S001 (オプション - スロット番号を使用)"
                         value={selectedRegion.expectedQrId}
                         onChange={(e) => updateSelectedRegion({ expectedQrId: e.target.value })}
                         data-testid="input-expected-qr"
                       />
                       {selectedRegion.slotNumber && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Print a QR code with "{selectedRegion.slotNumber}" for this slot
+                          このスロット用に "{selectedRegion.slotNumber}" のQRコードを印刷してください
                         </p>
                       )}
                     </div>
                     
                     <div>
-                      <Label htmlFor="priority">Priority</Label>
+                      <Label htmlFor="priority">優先度</Label>
                       <Select 
                         value={selectedRegion.priority} 
                         onValueChange={(value) => updateSelectedRegion({ priority: value as any })}
@@ -220,15 +220,15 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="high">High</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="high">高</SelectItem>
+                          <SelectItem value="medium">中</SelectItem>
+                          <SelectItem value="low">低</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     
                     <div className="pt-4 border-t border-border">
-                      <h4 className="text-sm font-semibold text-foreground mb-3">Business Rules</h4>
+                      <h4 className="text-sm font-semibold text-foreground mb-3">ビジネスルール</h4>
                       
                       <div className="space-y-3">
                         <div className="flex items-center space-x-2">
@@ -239,12 +239,12 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                             data-testid="checkbox-allow-checkout"
                           />
                           <Label htmlFor="allowCheckout" className="text-sm text-foreground">
-                            Allow checkout
+                            持出許可
                           </Label>
                         </div>
                         
                         <div>
-                          <Label htmlFor="graceWindow">Grace Window</Label>
+                          <Label htmlFor="graceWindow">猶予時間</Label>
                           <Input 
                             id="graceWindow"
                             value={selectedRegion.graceWindow}
@@ -261,13 +261,13 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                       data-testid="button-save-slot"
                     >
                       <Save className="w-4 h-4 mr-2" />
-                      Save Slot Configuration
+                      スロット設定を保存
                     </Button>
                   </>
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">
-                      Click on a slot region to configure it, or create a new slot region.
+                      設定するスロット領域をクリックするか、新しいスロット領域を作成してください。
                     </p>
                   </div>
                 )}
@@ -280,7 +280,7 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
         <div className="px-6 pb-6">
           <Card>
             <CardHeader>
-              <CardTitle>Configured Slots ({configuredSlotIds.length})</CardTitle>
+              <CardTitle>設定済みスロット ({configuredSlotIds.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
@@ -296,7 +296,7 @@ export function SlotDrawingModal({ open, onOpenChange }: SlotDrawingModalProps) 
                 
                 {configuredSlotIds.length === 0 && (
                   <p className="col-span-full text-muted-foreground text-sm text-center py-4">
-                    No slots configured yet. Draw slot regions on the camera image above.
+                    まだスロットが設定されていません。上のカメラ画像にスロット領域を描画してください。
                   </p>
                 )}
               </div>

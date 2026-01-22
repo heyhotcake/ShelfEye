@@ -157,7 +157,7 @@ export default function Dashboard() {
     },
     onError: (error) => {
       toast({
-        title: "Capture Failed", 
+        title: "撮影に失敗しました", 
         description: error.message,
         variant: "destructive",
       });
@@ -168,13 +168,13 @@ export default function Dashboard() {
     mutationFn: () => apiRequest('POST', '/api/alert-led/stop'),
     onSuccess: (data: any) => {
       toast({
-        title: "Alarm Stopped",
-        description: data.message || "Alert LED has been turned off",
+        title: "アラーム停止完了",
+        description: data.message || "アラートLEDがオフになりました",
       });
     },
     onError: (error) => {
       toast({
-        title: "Failed to Stop Alarm",
+        title: "アラーム停止に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -260,10 +260,10 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="dashboard-title">
-                Monitoring Dashboard
+                モニタリングダッシュボード
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Last updated: <span className="font-mono">{summary ? formatJSTTimestamp(summary.lastUpdate) : '--'}</span>
+                最終更新: <span className="font-mono">{summary ? formatJSTTimestamp(summary.lastUpdate) : '--'}</span>
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -274,14 +274,14 @@ export default function Dashboard() {
               />
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="text-sm font-medium">System Online</span>
+                <span className="text-sm font-medium">システム稼働中</span>
               </div>
               
               {latestCaptureRun && latestCaptureRun.length > 0 && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary" data-testid="badge-last-capture">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm">
-                    Last capture: <span className="font-mono font-medium">{formatJSTTimestamp(latestCaptureRun[0].timestamp)}</span>
+                    最終撮影: <span className="font-mono font-medium">{formatJSTTimestamp(latestCaptureRun[0].timestamp)}</span>
                   </span>
                 </div>
               )}
@@ -294,7 +294,7 @@ export default function Dashboard() {
                 data-testid="button-stop-alarm-header"
               >
                 <BellOff className="w-4 h-4" />
-                {stopAlarmMutation.isPending ? 'Stopping...' : 'Stop Alarm'}
+                {stopAlarmMutation.isPending ? '停止中...' : 'アラーム停止'}
               </Button>
               
               <Button
@@ -304,7 +304,7 @@ export default function Dashboard() {
                 data-testid="button-capture-now"
               >
                 <Camera className="w-4 h-4" />
-                {captureMutation.isPending ? 'Capturing...' : 'Capture Now'}
+                {captureMutation.isPending ? '撮影中...' : '今すぐ撮影'}
               </Button>
             </div>
           </div>
@@ -321,7 +321,7 @@ export default function Dashboard() {
                     <Camera className="w-6 h-6 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground">Active Camera & Template</h3>
+                    <h3 className="text-lg font-semibold text-foreground">稼働中のカメラとテンプレート</h3>
                     <div className="flex items-center gap-4 mt-2 text-sm">
                       <div className="flex items-center gap-2">
                         <Camera className="w-4 h-4 text-muted-foreground" />
@@ -347,7 +347,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/20">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="text-sm font-medium text-green-500">Calibrated</span>
+                    <span className="text-sm font-medium text-green-500">キャリブレーション済み</span>
                   </div>
                 </div>
               </CardContent>
@@ -365,9 +365,9 @@ export default function Dashboard() {
                     {summary?.statusCounts.present || 0}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">Tools Present</p>
+                <p className="text-sm text-muted-foreground">工具あり</p>
                 <p className="text-xs text-green-500 mt-1">
-                  {summary ? Math.round((summary.statusCounts.present / summary.activeSlots) * 100) : 0}% of total
+                  全体の{summary ? Math.round((summary.statusCounts.present / summary.activeSlots) * 100) : 0}%
                 </p>
               </CardContent>
             </Card>
@@ -382,8 +382,8 @@ export default function Dashboard() {
                     {summary?.statusCounts.empty || 0}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">Missing Tools</p>
-                <p className="text-xs text-red-500 mt-1">Alerts sent</p>
+                <p className="text-sm text-muted-foreground">工具なし</p>
+                <p className="text-xs text-red-500 mt-1">アラート送信済み</p>
               </CardContent>
             </Card>
             
@@ -397,8 +397,8 @@ export default function Dashboard() {
                     {summary?.statusCounts.checkedOut || 0}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">Checked Out</p>
-                <p className="text-xs text-blue-500 mt-1">By workers</p>
+                <p className="text-sm text-muted-foreground">貸出中</p>
+                <p className="text-xs text-blue-500 mt-1">作業者使用中</p>
               </CardContent>
             </Card>
             
@@ -412,8 +412,8 @@ export default function Dashboard() {
                     {summary?.statusCounts.occupied || 0}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">Occupied No QR</p>
-                <p className="text-xs text-amber-500 mt-1">Needs attention</p>
+                <p className="text-sm text-muted-foreground">QRなし占有</p>
+                <p className="text-xs text-amber-500 mt-1">要確認</p>
               </CardContent>
             </Card>
           </div>
@@ -421,24 +421,24 @@ export default function Dashboard() {
           <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Tool Grid - {selectedCamera?.name || 'No Camera Selected'}</CardTitle>
+                <CardTitle>工具グリッド - {selectedCamera?.name || 'カメラ未選択'}</CardTitle>
                 <div className="flex items-center gap-3">
                   <Select defaultValue="all">
                     <SelectTrigger className="w-40" data-testid="select-filter-status">
                       <SelectValue placeholder="All Statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="empty">Empty Only</SelectItem>
-                      <SelectItem value="present">Present Only</SelectItem>
-                      <SelectItem value="checked-out">Checked Out</SelectItem>
-                      <SelectItem value="errors">Errors</SelectItem>
+                      <SelectItem value="all">すべて</SelectItem>
+                      <SelectItem value="empty">空のみ</SelectItem>
+                      <SelectItem value="present">工具ありのみ</SelectItem>
+                      <SelectItem value="checked-out">貸出中</SelectItem>
+                      <SelectItem value="errors">エラー</SelectItem>
                     </SelectContent>
                   </Select>
                   
                   <Button variant="outline" size="sm" data-testid="button-fullscreen">
                     <Activity className="w-4 h-4 mr-2" />
-                    Fullscreen
+                    全画面表示
                   </Button>
                 </div>
               </div>
@@ -448,8 +448,8 @@ export default function Dashboard() {
               {slotGrid.length === 0 ? (
                 <div className="py-12 text-center">
                   <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-sm text-muted-foreground">No slots available for the calibrated camera</p>
-                  <p className="text-xs text-muted-foreground mt-1">Please calibrate a camera and create slots first</p>
+                  <p className="text-sm text-muted-foreground">キャリブレーション済みカメラにスロットがありません</p>
+                  <p className="text-xs text-muted-foreground mt-1">カメラをキャリブレーションしてスロットを作成してください</p>
                 </div>
               ) : (
                 <div>
@@ -499,16 +499,16 @@ export default function Dashboard() {
                           <p className="text-xs font-medium text-foreground truncate">{slot.toolName}</p>
                           
                           {slot.status === 'EMPTY' && (
-                            <p className="text-xs text-red-500 mt-1">EMPTY</p>
+                            <p className="text-xs text-red-500 mt-1">空</p>
                           )}
                           {slot.status === 'CHECKED_OUT' && slot.workerName && (
-                            <p className="text-xs text-blue-500 mt-1">Worker: {slot.workerName}</p>
+                            <p className="text-xs text-blue-500 mt-1">作業者: {slot.workerName}</p>
                           )}
                           {slot.status === 'ITEM_PRESENT' && slot.qrId && (
                             <p className="text-xs text-green-500 mt-1">QR: {slot.qrId}</p>
                           )}
                           {slot.status === 'TRAINING_ERROR' && (
-                            <p className="text-xs text-amber-500 mt-1">NO QR DETECTED</p>
+                            <p className="text-xs text-amber-500 mt-1">QR検出なし</p>
                           )}
                         </div>
                       );
@@ -516,9 +516,9 @@ export default function Dashboard() {
                   </div>
                   
                   <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                    <p>Showing {slotGrid.length} of {selectedCameraSlots.length} slots</p>
+                    <p>{selectedCameraSlots.length}件中{slotGrid.length}件を表示</p>
                     <Button variant="link" className="text-primary p-0" data-testid="link-view-all-slots">
-                      View All Slots →
+                      すべてのスロットを表示 →
                     </Button>
                   </div>
                 </div>
@@ -529,7 +529,7 @@ export default function Dashboard() {
           <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Recent Alerts</CardTitle>
+                  <CardTitle>最近のアラート</CardTitle>
                   <div className="flex items-center gap-2">
                     <Button
                       onClick={() => stopAlarmMutation.mutate()}
@@ -540,10 +540,10 @@ export default function Dashboard() {
                       data-testid="button-stop-alarm-alerts"
                     >
                       <BellOff className="w-4 h-4" />
-                      Stop Alarm
+                      アラーム停止
                     </Button>
                     <Button variant="link" className="text-primary p-0" data-testid="link-view-all-alerts">
-                      View All
+                      すべて表示
                     </Button>
                   </div>
                 </div>
@@ -600,8 +600,8 @@ export default function Dashboard() {
                     return (
                       <div className="text-center py-8 text-muted-foreground">
                         <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-500" />
-                        <p className="font-medium">No Recent Alerts</p>
-                        <p className="text-sm">All systems are operating normally</p>
+                        <p className="font-medium">最近のアラートはありません</p>
+                        <p className="text-sm">すべてのシステムは正常に動作しています</p>
                       </div>
                     );
                   }
@@ -669,7 +669,7 @@ export default function Dashboard() {
                                   color: isFailure ? 'hsl(0 84% 60%)' : isWarning ? 'hsl(45 93% 47%)' : 'hsl(217 91% 60%)',
                                 }}
                               >
-                                {alert.status === 'sent' ? 'Email sent' : alert.status}
+                                {alert.status === 'sent' ? 'メール送信済み' : alert.status}
                               </Badge>
                               {alert.type === 'diagnostic' && (
                                 <Badge 
@@ -679,7 +679,7 @@ export default function Dashboard() {
                                     color: 'hsl(0 84% 60%)',
                                   }}
                                 >
-                                  Calibration Check
+                                  キャリブレーション確認
                                 </Badge>
                               )}
                             </div>
@@ -699,17 +699,17 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Camera className="w-5 h-5" />
-              Capture Results
+              撮影結果
             </DialogTitle>
             <DialogDescription>
-              Summary of the manual capture operation
+              手動撮影の概要
             </DialogDescription>
           </DialogHeader>
           
           {captureResults && (
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
-                <span className="text-sm font-medium text-muted-foreground">Status</span>
+                <span className="text-sm font-medium text-muted-foreground">ステータス</span>
                 <Badge 
                   className={`${getStatusColor(captureResults.status)} font-medium`}
                   data-testid="badge-capture-status"
@@ -723,14 +723,14 @@ export default function Dashboard() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg border bg-card">
-                  <p className="text-xs text-muted-foreground mb-1">Cameras Captured</p>
+                  <p className="text-xs text-muted-foreground mb-1">撮影カメラ数</p>
                   <p className="text-2xl font-bold text-foreground" data-testid="text-cameras-captured">
                     {captureResults.camerasCaptured}
                   </p>
                 </div>
                 
                 <div className="p-3 rounded-lg border bg-card">
-                  <p className="text-xs text-muted-foreground mb-1">Slots Processed</p>
+                  <p className="text-xs text-muted-foreground mb-1">処理スロット数</p>
                   <p className="text-2xl font-bold text-foreground" data-testid="text-slots-processed">
                     {captureResults.slotsProcessed}
                   </p>
@@ -739,14 +739,14 @@ export default function Dashboard() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg border bg-card">
-                  <p className="text-xs text-muted-foreground mb-1">Failures</p>
+                  <p className="text-xs text-muted-foreground mb-1">失敗数</p>
                   <p className={`text-2xl font-bold ${captureResults.failureCount > 0 ? 'text-red-500' : 'text-foreground'}`} data-testid="text-failure-count">
                     {captureResults.failureCount}
                   </p>
                 </div>
                 
                 <div className="p-3 rounded-lg border bg-card">
-                  <p className="text-xs text-muted-foreground mb-1">Execution Time</p>
+                  <p className="text-xs text-muted-foreground mb-1">実行時間</p>
                   <p className="text-2xl font-bold text-foreground" data-testid="text-execution-time">
                     {captureResults.results?.[0]?.executionTimeMs || 0}<span className="text-sm">ms</span>
                   </p>
@@ -755,7 +755,7 @@ export default function Dashboard() {
 
               {captureResults.results && captureResults.results.some((r: any) => r.errors?.length > 0) && (
                 <div className="p-3 rounded-lg border border-destructive/20 bg-destructive/10">
-                  <p className="text-sm font-medium text-destructive mb-2">Error Messages:</p>
+                  <p className="text-sm font-medium text-destructive mb-2">エラーメッセージ:</p>
                   <ul className="space-y-1" data-testid="list-error-messages">
                     {captureResults.results.flatMap((r: any) => r.errors || []).map((error: string, index: number) => (
                       <li key={index} className="text-xs text-destructive/80">• {error}</li>
@@ -769,7 +769,7 @@ export default function Dashboard() {
                 className="w-full"
                 data-testid="button-close-dialog"
               >
-                Close
+                閉じる
               </Button>
             </div>
           )}

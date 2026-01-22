@@ -47,14 +47,14 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
       apiRequest('POST', '/api/config', { key, value, description }),
     onSuccess: () => {
       toast({
-        title: "Configuration Updated",
-        description: "Settings saved successfully",
+        title: "設定更新完了",
+        description: "設定が正常に保存されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/config'] });
     },
     onError: (error) => {
       toast({
-        title: "Update Failed",
+        title: "更新失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -65,13 +65,13 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
     try {
       await downloadFile(`/api/config/export?format=${format}`, `tool-tracker-config.${format}`);
       toast({
-        title: "Export Successful",
-        description: `Configuration exported as ${format.toUpperCase()}`,
+        title: "エクスポート成功",
+        description: `設定を${format.toUpperCase()}としてエクスポートしました`,
       });
     } catch (error) {
       toast({
-        title: "Export Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: "エクスポート失敗",
+        description: error instanceof Error ? error.message : "不明なエラー",
         variant: "destructive",
       });
     }
@@ -81,14 +81,14 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
     try {
       await uploadFile('/api/config/import', file);
       toast({
-        title: "Import Successful",
-        description: "Configuration imported successfully",
+        title: "インポート成功",
+        description: "設定が正常にインポートされました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/config'] });
     } catch (error) {
       toast({
-        title: "Import Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: "インポート失敗",
+        description: error instanceof Error ? error.message : "不明なエラー",
         variant: "destructive",
       });
     }
@@ -115,11 +115,11 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
   };
 
   const configSections = {
-    'BUSINESS_HOURS': { label: 'Business Hours', type: 'text' },
-    'EMAIL_RECIPIENTS': { label: 'Email Recipients', type: 'json' },
-    'GOOGLE_SHEETS_ID': { label: 'Google Sheets ID', type: 'text' },
-    'SMTP_CONFIG': { label: 'SMTP Configuration', type: 'json' },
-    'CAPTURE_SCHEDULE': { label: 'Capture Schedule', type: 'json' },
+    'BUSINESS_HOURS': { label: '営業時間', type: 'text' },
+    'EMAIL_RECIPIENTS': { label: 'メール受信者', type: 'json' },
+    'GOOGLE_SHEETS_ID': { label: 'Googleスプレッドシート ID', type: 'text' },
+    'SMTP_CONFIG': { label: 'SMTP設定', type: 'json' },
+    'CAPTURE_SCHEDULE': { label: 'キャプチャスケジュール', type: 'json' },
   };
 
   return (
@@ -129,9 +129,9 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-bold text-foreground">
-                System Configuration
+                システム設定
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">Export, import, and manage system settings</p>
+              <p className="text-sm text-muted-foreground mt-1">システム設定のエクスポート、インポート、管理</p>
             </div>
             <Button 
               variant="ghost" 
@@ -148,25 +148,25 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
           {/* Current Configuration */}
           <Card>
             <CardHeader>
-              <CardTitle>Current Configuration</CardTitle>
+              <CardTitle>現在の設定</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground mb-1">Configured Slots</p>
+                  <p className="text-muted-foreground mb-1">設定済みスロット</p>
                   <p className="font-mono font-medium text-foreground" data-testid="text-configured-slots">{slots?.length || 0}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Active Cameras</p>
+                  <p className="text-muted-foreground mb-1">アクティブカメラ</p>
                   <p className="font-mono font-medium text-foreground" data-testid="text-active-cameras">{cameras?.filter((c: any) => c.isActive).length || 0}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Capture Schedule</p>
+                  <p className="text-muted-foreground mb-1">キャプチャスケジュール</p>
                   <p className="font-mono font-medium text-foreground" data-testid="text-capture-schedule">8:00, 11:00, 14:00, 17:00</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1">Alert Recipients</p>
-                  <p className="font-mono font-medium text-foreground" data-testid="text-alert-recipients">3 emails</p>
+                  <p className="text-muted-foreground mb-1">アラート受信者</p>
+                  <p className="font-mono font-medium text-foreground" data-testid="text-alert-recipients">3 メール</p>
                 </div>
               </div>
             </CardContent>
@@ -176,7 +176,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
           {!isLoading && config && (
             <Card>
               <CardHeader>
-                <CardTitle>Configuration Settings</CardTitle>
+                <CardTitle>設定項目</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {config.map((setting) => {
@@ -202,7 +202,6 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                                 description: setting.description || undefined,
                               });
                             } catch (error) {
-                              // Invalid JSON, don't update yet
                             }
                           }}
                           className="font-mono text-sm"
@@ -230,7 +229,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
           {/* Export Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Export Configuration</CardTitle>
+              <CardTitle>設定エクスポート</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-3">
@@ -240,7 +239,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                   data-testid="button-export-yaml"
                 >
                   <FileCode className="w-4 h-4 mr-2" />
-                  Export as YAML
+                  YAMLでエクスポート
                 </Button>
                 <Button 
                   variant="outline"
@@ -249,11 +248,11 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                   data-testid="button-export-json"
                 >
                   <FileText className="w-4 h-4 mr-2" />
-                  Export as JSON
+                  JSONでエクスポート
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Includes slots, cameras, schedules, and alert settings
+                スロット、カメラ、スケジュール、アラート設定を含む
               </p>
             </CardContent>
           </Card>
@@ -261,7 +260,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
           {/* Import Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Import Configuration</CardTitle>
+              <CardTitle>設定インポート</CardTitle>
             </CardHeader>
             <CardContent>
               <div
@@ -275,14 +274,14 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                 data-testid="drop-zone-import"
               >
                 <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-foreground mb-2">Drop YAML or JSON file here</p>
-                <p className="text-xs text-muted-foreground mb-4">or click to browse</p>
+                <p className="text-sm text-foreground mb-2">YAMLまたはJSONファイルをここにドロップ</p>
+                <p className="text-xs text-muted-foreground mb-4">またはクリックして参照</p>
                 <Button 
                   variant="outline"
                   onClick={() => document.getElementById('file-input')?.click()}
                   data-testid="button-choose-file"
                 >
-                  Choose File
+                  ファイルを選択
                 </Button>
                 <input
                   id="file-input"
@@ -298,7 +297,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
               
               <div className="mt-3 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
                 <p className="text-sm text-amber-500">
-                  ⚠️ Importing will override current configuration. Create a backup first.
+                  ⚠️ インポートすると現在の設定が上書きされます。先にバックアップを作成してください。
                 </p>
               </div>
             </CardContent>
@@ -307,7 +306,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
           {/* Backup History */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Backups</CardTitle>
+              <CardTitle>最近のバックアップ</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
@@ -315,7 +314,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                   <FileCode className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-sm font-medium text-foreground">config_2025-01-09.yaml</p>
-                    <p className="text-xs text-muted-foreground">5.2 KB • 2 hours ago</p>
+                    <p className="text-xs text-muted-foreground">5.2 KB • 2時間前</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -325,7 +324,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                     data-testid="button-restore-latest"
                   >
                     <RotateCcw className="w-3 h-3 mr-1" />
-                    Restore
+                    復元
                   </Button>
                   <Button 
                     variant="link" 
@@ -334,7 +333,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                     data-testid="button-download-latest"
                   >
                     <Download className="w-3 h-3 mr-1" />
-                    Download
+                    ダウンロード
                   </Button>
                 </div>
               </div>
@@ -344,7 +343,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                   <FileCode className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium text-foreground">config_2025-01-08.yaml</p>
-                    <p className="text-xs text-muted-foreground">5.1 KB • 1 day ago</p>
+                    <p className="text-xs text-muted-foreground">5.1 KB • 1日前</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -354,7 +353,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                     data-testid="button-restore-previous"
                   >
                     <RotateCcw className="w-3 h-3 mr-1" />
-                    Restore
+                    復元
                   </Button>
                   <Button 
                     variant="link" 
@@ -363,7 +362,7 @@ export function ConfigModal({ open, onOpenChange }: ConfigModalProps) {
                     data-testid="button-download-previous"
                   >
                     <Download className="w-3 h-3 mr-1" />
-                    Download
+                    ダウンロード
                   </Button>
                 </div>
               </div>

@@ -175,14 +175,14 @@ export default function Calibration() {
   const { data: preview } = useQuery<CameraPreview>({
     queryKey: ['/api/camera-preview', selectedCamera?.id],
     queryFn: async () => {
-      if (!selectedCamera?.id) throw new Error('No active camera');
+      if (!selectedCamera?.id) throw new Error('稼働中のカメラがありません');
       const response = await fetch(`/api/camera-preview/${selectedCamera.id}`);
       
       // Handle camera locked during calibration
       if (response.status === 423) {
         const data = await response.json();
         setIsCameraLocked(true);
-        return { ok: false, error: data.message || 'Camera is busy with calibration' };
+        return { ok: false, error: data.message || 'カメラはキャリブレーション中です' };
       }
       
       // Clear locked state on successful response
@@ -190,7 +190,7 @@ export default function Calibration() {
       
       if (!response.ok) {
         const data = await response.json();
-        return { ok: false, error: data.message || 'Failed to fetch preview' };
+        return { ok: false, error: data.message || 'プレビューの取得に失敗しました' };
       }
       
       return response.json();
@@ -203,7 +203,7 @@ export default function Calibration() {
   const { data: rectifiedPreview, refetch: refetchRectified, isLoading: isLoadingRectified, error: rectifiedError } = useQuery<CameraPreview>({
     queryKey: ['/api/rectified-preview', selectedCamera?.id, selectedTemplate],
     queryFn: async () => {
-      if (!selectedCamera?.id) throw new Error('No active camera');
+      if (!selectedCamera?.id) throw new Error('稼働中のカメラがありません');
       console.log('[Rectified Preview] Fetching for camera:', selectedCamera.id);
       console.log('[Rectified Preview] Selected template:', selectedTemplate);
       
@@ -216,7 +216,7 @@ export default function Calibration() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('[Rectified Preview] Error:', errorData);
-        throw new Error(errorData.message || 'Failed to fetch rectified preview');
+        throw new Error(errorData.message || '補正プレビューの取得に失敗しました');
       }
       const data = await response.json();
       console.log('[Rectified Preview] Success:', data.ok);
@@ -269,16 +269,16 @@ export default function Calibration() {
           // All slot markers detected - skip old validation and move to tool placement prompt
           setCalibrationStep(2); // Jump to step 2: prompt user to place tools
           toast({
-            title: "Calibration Complete - Empty Slots Verified ✓",
-            description: `All ${valid_count}/${total_count} slot ArUco markers detected successfully. Now place ALL tools in their slots to verify they cover the markers.`,
+            title: "キャリブレーション完了 - 空きスロット確認済み ✓",
+            description: `全${valid_count}/${total_count}個のスロットArUcoマーカーが正常に検出されました。次に、全てのツールをスロットに配置してマーカーを覆っていることを確認してください。`,
             duration: 8000,
           });
         } else {
           // Some markers missing
           setCalibrationStep(1); // Show error state
           toast({
-            title: "Slot Marker Validation Failed",
-            description: `Only ${valid_count}/${total_count} markers detected. Check marker visibility and recalibrate.`,
+            title: "スロットマーカー検証に失敗しました",
+            description: `${valid_count}/${total_count}個のマーカーのみ検出されました。マーカーの視認性を確認し、再キャリブレーションしてください。`,
             variant: "destructive",
           });
         }
@@ -286,8 +286,8 @@ export default function Calibration() {
         // Legacy flow - no slot_validation in response
         setCalibrationStep(1);
         toast({
-          title: "ArUco Calibration Complete",
-          description: `Markers detected: ${data.markersDetected}, Error: ${errorText}. Verify template alignment below.`,
+          title: "ArUcoキャリブレーション完了",
+          description: `検出されたマーカー: ${data.markersDetected}、エラー: ${errorText}。以下でテンプレートの位置合わせを確認してください。`,
         });
       }
       
@@ -300,7 +300,7 @@ export default function Calibration() {
     onError: async (error: any) => {
       setIsCameraLocked(false); // Clear lock state on error
       // Try to extract the server's detailed error message
-      let errorMessage = "An error occurred during calibration";
+      let errorMessage = "キャリブレーション中にエラーが発生しました";
       if (error.response) {
         try {
           const errorData = await error.response.json();
@@ -313,7 +313,7 @@ export default function Calibration() {
       }
       
       toast({
-        title: "Calibration Failed",
+        title: "キャリブレーションに失敗しました",
         description: errorMessage,
         variant: "destructive",
       });
@@ -332,15 +332,15 @@ export default function Calibration() {
         // Update the calibration result with the new verified preview
         setCalibrationResult(prev => prev ? { ...prev, rectifiedPreview: data.rectifiedPreview } : null);
         toast({
-          title: "Verification Complete",
-          description: "Preview regenerated with adjusted coordinates. Verify the alignment matches your expectations.",
+          title: "確認完了",
+          description: "調整された座標でプレビューが再生成されました。位置合わせが期待通りか確認してください。",
         });
       }
     },
     onError: (error: any) => {
       toast({
-        title: "Verification Failed",
-        description: error.message || "Failed to regenerate preview with adjusted positions.",
+        title: "確認に失敗しました",
+        description: error.message || "調整された位置でプレビューの再生成に失敗しました。",
         variant: "destructive",
       });
     },
@@ -358,22 +358,22 @@ export default function Calibration() {
       
       if (data.success) {
         toast({
-          title: "Calibration Complete",
-          description: "All tools are properly covering ArUco markers. System is ready!",
+          title: "キャリブレーション完了",
+          description: "全てのツールがArUcoマーカーを正しく覆っています。システムは準備完了です！",
         });
         queryClient.invalidateQueries({ queryKey: ['/api/config/calibration-info'] });
       } else {
         if (data.error) {
           toast({
-            title: "Marker Validation Failed",
+            title: "マーカー検証に失敗しました",
             description: data.error,
             variant: "destructive",
           });
         } else {
           const description = data.message || 
-            (data.detected_count !== undefined ? `${data.detected_count} ArUco markers still visible` : 'Validation failed. Please check the camera and try again.');
+            (data.detected_count !== undefined ? `${data.detected_count}個のArUcoマーカーがまだ見えています` : '検証に失敗しました。カメラを確認して再試行してください。');
           toast({
-            title: "Tools Not Covering Markers",
+            title: "ツールがマーカーを覆っていません",
             description,
             variant: "destructive",
           });
@@ -383,7 +383,7 @@ export default function Calibration() {
     },
     onError: async (error: any) => {
       setIsCameraLocked(false);
-      let errorMessage = "Marker validation failed";
+      let errorMessage = "マーカー検証に失敗しました";
       if (error.response) {
         try {
           const errorData = await error.response.json();
@@ -393,7 +393,7 @@ export default function Calibration() {
         }
       }
       toast({
-        title: "Validation Error",
+        title: "検証エラー",
         description: errorMessage,
         variant: "destructive",
       });
@@ -411,9 +411,9 @@ export default function Calibration() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="calibration-title">
-                Camera Calibration
+                カメラキャリブレーション
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">Position camera to see all 4 corner markers (A/B/C/D)</p>
+              <p className="text-sm text-muted-foreground mt-1">カメラを調整して4つのコーナーマーカー（A/B/C/D）が全て見えるようにしてください</p>
             </div>
             <div className="flex items-center gap-4">
               <Button 
@@ -433,14 +433,14 @@ export default function Calibration() {
               
               {/* Live View */}
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">Live Camera View</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-3">ライブカメラビュー</h3>
                 
                 {/* Calibration in progress banner */}
                 {(calibrationMutation.isPending || isCameraLocked) && (
                   <div className="mb-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                     <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                      Calibration in progress... Preview paused
+                      キャリブレーション実行中... プレビュー一時停止
                     </p>
                   </div>
                 )}
@@ -451,7 +451,7 @@ export default function Calibration() {
                       <img 
                         key={preview.image.substring(0, 100)} 
                         src={preview.image} 
-                        alt="Camera preview" 
+                        alt="カメラプレビュー" 
                         className="w-full h-full object-contain"
                         data-testid="img-camera-preview"
                       />
@@ -460,7 +460,7 @@ export default function Calibration() {
                         <div className="text-center">
                           <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2 animate-pulse" />
                           <p className="text-sm text-muted-foreground">
-                            {preview?.error ? `Error: ${preview.error}` : 'Loading camera feed...'}
+                            {preview?.error ? `エラー: ${preview.error}` : 'カメラフィードを読み込み中...'}
                           </p>
                         </div>
                       </div>
@@ -498,39 +498,39 @@ export default function Calibration() {
               
               {/* Configuration */}
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">Calibration Settings</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-3">キャリブレーション設定</h3>
                 
                 <div className="space-y-6">
                   <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Active Camera</label>
+                    <label className="text-sm text-muted-foreground mb-2 block">稼働中のカメラ</label>
                     <Select 
                       value={selectedCamera?.id || ""} 
                       onValueChange={handleCameraChange}
                       disabled={calibrationMutation.isPending || isCameraLocked}
                     >
                       <SelectTrigger data-testid="select-active-camera">
-                        <SelectValue placeholder="No active camera" />
+                        <SelectValue placeholder="稼働中のカメラがありません" />
                       </SelectTrigger>
                       <SelectContent>
                         {cameras?.map((camera: any) => (
                           <SelectItem key={camera.id} value={camera.id}>
-                            {camera.name} (Device {camera.deviceIndex})
+                            {camera.name} (デバイス {camera.deviceIndex})
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     {(calibrationMutation.isPending || isCameraLocked) && (
-                      <p className="text-xs text-amber-500 mt-1">Camera locked during calibration</p>
+                      <p className="text-xs text-amber-500 mt-1">キャリブレーション中はカメラがロックされます</p>
                     )}
                   </div>
 
                   <div>
                     <label className="text-sm text-muted-foreground mb-2 block">
-                      Template Design {relevantDesigns.length > 0 ? "(required)" : "(no templates available)"}
+                      テンプレートデザイン {relevantDesigns.length > 0 ? "（必須）" : "（テンプレートがありません）"}
                     </label>
                     <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
                       <SelectTrigger data-testid="select-template">
-                        <SelectValue placeholder="Select template design for calibration" />
+                        <SelectValue placeholder="キャリブレーション用のテンプレートデザインを選択" />
                       </SelectTrigger>
                       <SelectContent>
                         {relevantDesigns.length > 0 ? (
@@ -541,41 +541,41 @@ export default function Calibration() {
                           ))
                         ) : (
                           <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                            No saved designs for this camera - create one in Template Designer first
+                            このカメラ用の保存されたデザインがありません - 先にテンプレートデザイナーで作成してください
                           </div>
                         )}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">
                       {relevantDesigns.length > 0 
-                        ? "Template defines the paper size and tool layout for calibration" 
-                        : "Go to Template Designer to create a template for this camera"}
+                        ? "テンプレートはキャリブレーション用の用紙サイズとツールレイアウトを定義します" 
+                        : "テンプレートデザイナーでこのカメラ用のテンプレートを作成してください"}
                     </p>
                   </div>
 
                   <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-foreground">Calibration Status</h4>
+                    <h4 className="text-sm font-semibold text-foreground">キャリブレーションステータス</h4>
                     
                     {selectedCamera?.homographyMatrix ? (
                       <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span className="text-sm font-medium text-green-500">Calibrated</span>
+                          <span className="text-sm font-medium text-green-500">キャリブレーション済み</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Last calibrated: {selectedCamera.calibrationTimestamp 
+                          最終キャリブレーション: {selectedCamera.calibrationTimestamp 
                             ? formatJSTTimestamp(selectedCamera.calibrationTimestamp)
-                            : 'Unknown'}
+                            : '不明'}
                         </p>
                       </div>
                     ) : (
                       <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <Camera className="w-4 h-4 text-amber-500" />
-                          <span className="text-sm font-medium text-amber-500">Not Calibrated</span>
+                          <span className="text-sm font-medium text-amber-500">未キャリブレーション</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Run calibration to enable slot detection
+                          スロット検出を有効にするにはキャリブレーションを実行してください
                         </p>
                       </div>
                     )}
@@ -587,13 +587,13 @@ export default function Calibration() {
                       <div className="space-y-2">
                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 1:</strong> Position camera to see all 4 ArUco corner markers (A/B/C/D), then run calibration.
+                            <strong>ステップ1:</strong> カメラを調整して4つのArUcoコーナーマーカー（A/B/C/D）が全て見えるようにし、キャリブレーションを実行してください。
                           </p>
                         </div>
                         <div className="space-y-2">
                           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
                             <p className="text-xs text-muted-foreground">
-                              <strong>Note:</strong> Calibration includes a 40-second camera warmup for optimal auto-focus and auto-exposure. Please be patient during this process.
+                              <strong>注意:</strong> キャリブレーションにはオートフォーカスと自動露出の最適化のため、40秒間のカメラウォームアップが含まれます。このプロセス中はしばらくお待ちください。
                             </p>
                           </div>
                           
@@ -608,8 +608,8 @@ export default function Calibration() {
                                 if (relevantDesigns.length > 0) {
                                   if (!selectedTemplate || selectedTemplate === '') {
                                     toast({
-                                      title: "Template Design Required",
-                                      description: "Please select a template design before calibrating.",
+                                      title: "テンプレートデザインが必要です",
+                                      description: "キャリブレーション前にテンプレートデザインを選択してください。",
                                       variant: "destructive",
                                     });
                                     return;
@@ -618,8 +618,8 @@ export default function Calibration() {
                                   const design = relevantDesigns.find(d => d.timestamp === selectedTemplate);
                                   if (!design) {
                                     toast({
-                                      title: "Invalid Template Design",
-                                      description: "The selected template design is not found.",
+                                      title: "無効なテンプレートデザイン",
+                                      description: "選択されたテンプレートデザインが見つかりません。",
                                       variant: "destructive",
                                     });
                                     return;
@@ -628,8 +628,8 @@ export default function Calibration() {
                                 } else {
                                   // No templates exist - cannot calibrate
                                   toast({
-                                    title: "No Templates Available",
-                                    description: "Please create a template design in Template Designer first.",
+                                    title: "テンプレートがありません",
+                                    description: "先にテンプレートデザイナーでテンプレートデザインを作成してください。",
                                     variant: "destructive",
                                   });
                                   return;
@@ -646,7 +646,7 @@ export default function Calibration() {
                             data-testid="button-start-calibration"
                           >
                             <Camera className="w-4 h-4 mr-2" />
-                            {calibrationMutation.isPending ? 'Warming up camera & calibrating (~60s)...' : 'Run ArUco Calibration'}
+                            {calibrationMutation.isPending ? 'カメラウォームアップ＆キャリブレーション中（約60秒）...' : 'ArUcoキャリブレーションを実行'}
                           </Button>
                         </div>
                       </div>
@@ -656,7 +656,7 @@ export default function Calibration() {
                       <div className="space-y-2">
                         <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Slot Detection Failed:</strong> Not all ArUco markers were detected. Adjust slot positions in the rectified preview below to match your physical layout, then recalibrate. {hasTemplateAdjustments && <span className="text-green-600 font-semibold">Adjustments detected - they will be saved when you recalibrate.</span>}
+                            <strong>スロット検出に失敗しました:</strong> 全てのArUcoマーカーが検出されませんでした。下の補正プレビューでスロット位置を物理レイアウトに合わせて調整し、再キャリブレーションを行ってください。{hasTemplateAdjustments && <span className="text-green-600 font-semibold">調整が検出されました - 再キャリブレーション時に保存されます。</span>}
                           </p>
                         </div>
                         
@@ -679,7 +679,7 @@ export default function Calibration() {
                             data-testid="button-verify-adjusted-positions"
                           >
                             <Ruler className="w-4 h-4 mr-2" />
-                            {verifyAdjustedPositionsMutation.isPending ? 'Verifying...' : 'Verify Adjusted Positions (Re-run with new coordinates)'}
+                            {verifyAdjustedPositionsMutation.isPending ? '確認中...' : '調整位置を確認（新しい座標で再実行）'}
                           </Button>
                         )}
                         
@@ -723,11 +723,11 @@ export default function Calibration() {
                                     
                                     console.log('[RecalibrateButton] Successfully saved to database');
                                     toast({
-                                      title: "Positions Saved",
-                                      description: `Updated ${adjustedTemplates.length} template positions. Re-running calibration with adjusted coordinates...`,
+                                      title: "位置を保存しました",
+                                      description: `${adjustedTemplates.length}個のテンプレート位置を更新しました。調整された座標で再キャリブレーションを実行中...`,
                                     });
                                   } else {
-                                    throw new Error('Failed to fetch database template rectangles');
+                                    throw new Error('データベースからテンプレート矩形の取得に失敗しました');
                                   }
                                 } else {
                                   console.error('[RecalibrateButton] Selected design not found');
@@ -735,8 +735,8 @@ export default function Calibration() {
                               } catch (error) {
                                 console.error('[RecalibrateButton] Failed to save adjusted positions:', error);
                                 toast({
-                                  title: "Save Failed",
-                                  description: "Failed to save adjusted positions. LocalStorage NOT updated to prevent inconsistency.",
+                                  title: "保存に失敗しました",
+                                  description: "調整された位置の保存に失敗しました。一貫性を保つため、ローカルストレージは更新されませんでした。",
                                   variant: "destructive",
                                 });
                                 // Don't proceed if save failed
@@ -763,7 +763,7 @@ export default function Calibration() {
                           data-testid="button-recalibrate"
                         >
                           <Camera className="w-4 h-4 mr-2" />
-                          {calibrationMutation.isPending ? 'Recalibrating...' : (hasTemplateAdjustments ? 'Save Adjustments & Recalibrate' : 'Recalibrate')}
+                          {calibrationMutation.isPending ? '再キャリブレーション中...' : (hasTemplateAdjustments ? '調整を保存して再キャリブレーション' : '再キャリブレーション')}
                         </Button>
                       </div>
                     )}
@@ -772,7 +772,7 @@ export default function Calibration() {
                       <div className="space-y-2">
                         <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>Step 2:</strong> Place ALL tools in their designated slots. Tools should completely cover the ArUco markers. Click below to verify markers are hidden.
+                            <strong>ステップ2:</strong> 全てのツールを指定されたスロットに配置してください。ツールはArUcoマーカーを完全に覆う必要があります。以下をクリックしてマーカーが隠れていることを確認してください。
                           </p>
                         </div>
                         <Button 
@@ -786,11 +786,11 @@ export default function Calibration() {
                           data-testid="button-validate-markers-covered"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          {validateMarkersCoveredMutation.isPending ? 'Validating...' : 'Verify Tools Cover ArUco Markers'}
+                          {validateMarkersCoveredMutation.isPending ? '検証中...' : 'ツールがArUcoマーカーを覆っているか確認'}
                         </Button>
                         {step2Result && !step2Result.success && step2Result.visible_qrs && (
                           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
-                            <p className="text-xs text-red-500 font-semibold mb-1">ArUco Markers Still Visible:</p>
+                            <p className="text-xs text-red-500 font-semibold mb-1">ArUcoマーカーがまだ見えています:</p>
                             <ul className="text-xs text-muted-foreground list-disc list-inside">
                               {step2Result.visible_qrs.map((qr: any, idx: number) => (
                                 <li key={idx}>{qr.slotId} - {qr.toolName}</li>
@@ -802,10 +802,10 @@ export default function Calibration() {
                           <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mt-2">
                             <div className="flex items-center gap-2">
                               <CheckCircle className="w-4 h-4 text-green-500" />
-                              <p className="text-xs text-green-500 font-semibold">Calibration Complete!</p>
+                              <p className="text-xs text-green-500 font-semibold">キャリブレーション完了！</p>
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
-                              All tools are properly covering ArUco markers. System is ready for monitoring.
+                              全てのツールが正しくArUcoマーカーを覆っています。システムは監視可能な状態です。
                             </p>
                           </div>
                         )}
@@ -825,7 +825,7 @@ export default function Calibration() {
                         }}
                         data-testid="button-reset-calibration"
                       >
-                        Reset Calibration
+                        キャリブレーションをリセット
                       </Button>
                     )}
                   </div>
@@ -863,7 +863,7 @@ export default function Calibration() {
                 return {
                   id: rect.id,
                   categoryId: rect.categoryId,
-                  categoryName: category?.name || 'Unknown',
+                  categoryName: category?.name || '不明',
                   xCm: rect.xCm,
                   yCm: rect.yCm,
                   widthCm: category?.widthCm || 0,
@@ -879,7 +879,7 @@ export default function Calibration() {
               return (
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-foreground">Rectified Preview with Template Overlay</h4>
+                  <h4 className="text-sm font-semibold text-foreground">テンプレートオーバーレイ付き補正プレビュー</h4>
                   <Button
                     variant="outline"
                     size="sm"
@@ -891,14 +891,14 @@ export default function Calibration() {
                     data-testid="button-download-rectified"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Download High-Res
+                    高解像度をダウンロード
                   </Button>
                 </div>
                 {templatesWithCategories.length === 0 && (
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-3">
                     <p className="text-xs text-amber-600 dark:text-amber-400">
-                      <strong>Warning:</strong> No template rectangles found for this camera and paper size. 
-                      Go to Template Designer to create a template first.
+                      <strong>警告:</strong> このカメラと用紙サイズのテンプレート矩形が見つかりません。
+                      先にテンプレートデザイナーでテンプレートを作成してください。
                     </p>
                   </div>
                 )}
@@ -922,9 +922,9 @@ export default function Calibration() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </div>
-                        <p className="text-sm font-medium text-foreground mb-2">Preview Not Available</p>
+                        <p className="text-sm font-medium text-foreground mb-2">プレビューが利用できません</p>
                         <p className="text-xs text-muted-foreground max-w-md">
-                          The rectified preview was not generated during calibration. This may indicate a camera or processing issue.
+                          キャリブレーション中に補正プレビューが生成されませんでした。カメラまたは処理の問題が発生している可能性があります。
                         </p>
                       </div>
                     )}

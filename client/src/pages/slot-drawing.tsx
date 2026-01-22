@@ -307,14 +307,14 @@ export default function SlotDrawing() {
         localStorage.removeItem(TEMPLATE_STORAGE_KEY);
         queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
         toast({
-          title: "Migration Complete",
-          description: `Migrated ${legacyDesigns.length} template designs from localStorage to database`,
+          title: "移行完了",
+          description: `${legacyDesigns.length}個のテンプレートデザインをlocalStorageからデータベースに移行しました`,
         });
       }).catch((error) => {
         console.error('[Migration] Migration failed:', error);
         toast({
-          title: "Migration Warning",
-          description: "Some template designs could not be migrated. Check console for details.",
+          title: "移行警告",
+          description: "一部のテンプレートデザインを移行できませんでした。詳細はコンソールを確認してください。",
           variant: "destructive",
         });
       });
@@ -410,14 +410,14 @@ export default function SlotDrawing() {
     mutationFn: (slotData: any) => apiRequest('POST', '/api/slots', slotData),
     onSuccess: () => {
       toast({
-        title: "Slot Created",
-        description: "Slot configuration saved successfully",
+        title: "スロット作成完了",
+        description: "スロット設定が正常に保存されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/slots'] });
     },
     onError: (error) => {
       toast({
-        title: "Failed to Save Slot",
+        title: "スロット保存に失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -429,14 +429,14 @@ export default function SlotDrawing() {
       apiRequest('PUT', `/api/slots/${id}`, data),
     onSuccess: () => {
       toast({
-        title: "Slot Updated", 
-        description: "Slot configuration updated successfully",
+        title: "スロット更新完了", 
+        description: "スロット設定が正常に更新されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/slots'] });
     },
     onError: (error) => {
       toast({
-        title: "Failed to Update Slot",
+        title: "スロット更新に失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -447,8 +447,8 @@ export default function SlotDrawing() {
     mutationFn: (id: string) => apiRequest('DELETE', `/api/slots/${id}`),
     onSuccess: () => {
       toast({
-        title: "Slot Deleted",
-        description: "Slot removed successfully",
+        title: "スロット削除完了",
+        description: "スロットが正常に削除されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/slots'] });
       setSelectedRegion(null);
@@ -456,7 +456,7 @@ export default function SlotDrawing() {
     },
     onError: (error) => {
       toast({
-        title: "Failed to Delete Slot",
+        title: "スロット削除に失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -491,7 +491,7 @@ export default function SlotDrawing() {
     },
     onError: (error) => {
       toast({
-        title: "Failed to Create Template",
+        title: "テンプレート作成に失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -506,7 +506,7 @@ export default function SlotDrawing() {
     },
     onError: (error) => {
       toast({
-        title: "Failed to Update Template",
+        title: "テンプレート更新に失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -519,22 +519,22 @@ export default function SlotDrawing() {
     onSuccess: (data: any) => {
       if (data.fixed > 0) {
         toast({
-          title: "Rectangles Auto-Corrected",
-          description: `Fixed ${data.fixed} rectangle(s) that were outside safe zones. Details: ${data.details.fixed.map((f: any) => f.autoQrId).join(', ')}`,
+          title: "長方形を自動修正",
+          description: `安全ゾーン外の${data.fixed}個の長方形を修正しました。詳細: ${data.details.fixed.map((f: any) => f.autoQrId).join(', ')}`,
           variant: "default",
         });
         queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles', paperSize] });
       } else {
         toast({
-          title: "All Clear",
-          description: "All rectangles are within safe zones.",
+          title: "すべて正常",
+          description: "すべての長方形が安全ゾーン内にあります。",
           variant: "default",
         });
       }
     },
     onError: (error) => {
       toast({
-        title: "Validation Failed",
+        title: "検証に失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -545,8 +545,8 @@ export default function SlotDrawing() {
     mutationFn: (id: string) => apiRequest('DELETE', `/api/template-rectangles/${id}`),
     onSuccess: (_response, id) => {
       toast({
-        title: "Template Deleted",
-        description: "Template rectangle removed successfully",
+        title: "テンプレート削除完了",
+        description: "テンプレート長方形が正常に削除されました",
       });
       setTemplateRectangles(prev => prev.filter(r => r.id !== id));
       setSelectedTemplateRect(null);
@@ -558,12 +558,12 @@ export default function SlotDrawing() {
         setTemplateRectangles(prev => prev.filter(r => r.id !== id));
         setSelectedTemplateRect(null);
         toast({
-          title: "Orphaned Template Removed",
-          description: "Template rectangle cleaned up from canvas",
+          title: "孤立テンプレート削除",
+          description: "キャンバスからテンプレート長方形をクリーンアップしました",
         });
       } else {
         toast({
-          title: "Failed to Delete Template",
+          title: "テンプレート削除に失敗",
           description: error.message,
           variant: "destructive",
         });
@@ -578,14 +578,14 @@ export default function SlotDrawing() {
       // Check for partial save warning
       if (response.partialSave) {
         toast({
-          title: "⚠️ Partial Save",
-          description: `Only ${response.rectangleCount}/${response.requested} tools saved. Some tools may have invalid categories.`,
+          title: "⚠️ 部分保存",
+          description: `${response.requested}個中${response.rectangleCount}個の工具のみ保存されました。一部の工具に無効なカテゴリがある可能性があります。`,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Design Saved",
-          description: `Template saved with ${response.rectangleCount} tools`,
+          title: "デザイン保存完了",
+          description: `${response.rectangleCount}個の工具でテンプレートを保存しました`,
         });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
@@ -594,13 +594,13 @@ export default function SlotDrawing() {
     onError: (error: any) => {
       // Parse error response for detailed info
       const errorData = error?.data || {};
-      const message = errorData.message || error.message || "Unknown error";
+      const message = errorData.message || error.message || "不明なエラー";
       const details = errorData.saved !== undefined 
-        ? ` (${errorData.saved}/${errorData.requested} tools saved)`
+        ? ` (${errorData.saved}/${errorData.requested}個の工具を保存)`
         : '';
       
       toast({
-        title: "Failed to Save Design",
+        title: "デザイン保存に失敗",
         description: `${message}${details}`,
         variant: "destructive",
       });
@@ -611,14 +611,14 @@ export default function SlotDrawing() {
     mutationFn: (id: string) => apiRequest('DELETE', `/api/template-designs/${id}`),
     onSuccess: () => {
       toast({
-        title: "Design Deleted",
-        description: "Template design removed successfully",
+        title: "デザイン削除完了",
+        description: "テンプレートデザインが正常に削除されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
     },
     onError: (error) => {
       toast({
-        title: "Failed to Delete Design",
+        title: "デザイン削除に失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -1259,8 +1259,8 @@ export default function SlotDrawing() {
     const activeCamera = cameras?.find((c: any) => c.isActive);
     if (!activeCamera) {
       toast({
-        title: "No Active Camera",
-        description: "Please activate a camera first",
+        title: "アクティブなカメラがありません",
+        description: "最初にカメラを有効化してください",
         variant: "destructive",
       });
       return;
@@ -1433,8 +1433,8 @@ export default function SlotDrawing() {
   const saveVersion = () => {
     if (!versionName.trim()) {
       toast({
-        title: "Version Name Required",
-        description: "Please enter a name for this version",
+        title: "バージョン名が必要です",
+        description: "このバージョンの名前を入力してください",
         variant: "destructive",
       });
       return;
@@ -1451,8 +1451,8 @@ export default function SlotDrawing() {
     localStorage.setItem('slotConfigVersions', JSON.stringify(updated));
     
     toast({
-      title: "Version Saved",
-      description: `Configuration saved as "${versionName}"`,
+      title: "バージョン保存完了",
+      description: `設定を「${versionName}」として保存しました`,
     });
     
     setVersionName('');
@@ -1462,8 +1462,8 @@ export default function SlotDrawing() {
     setRegions(version.regions);
     setSelectedRegion(null);
     toast({
-      title: "Version Loaded",
-      description: `Loaded configuration "${version.name}"`,
+      title: "バージョン読み込み完了",
+      description: `設定「${version.name}」を読み込みました`,
     });
   };
 
@@ -1472,8 +1472,8 @@ export default function SlotDrawing() {
     setSavedVersions(updated);
     localStorage.setItem('slotConfigVersions', JSON.stringify(updated));
     toast({
-      title: "Version Deleted",
-      description: "Configuration version removed",
+      title: "バージョン削除完了",
+      description: "設定バージョンが削除されました",
     });
   };
 
@@ -1481,8 +1481,8 @@ export default function SlotDrawing() {
   const saveTemplateVersion = async () => {
     if (!templateVersionName.trim()) {
       toast({
-        title: "Design Name Required",
-        description: "Please enter a name for this template design",
+        title: "デザイン名が必要です",
+        description: "このテンプレートデザインの名前を入力してください",
         variant: "destructive",
       });
       return;
@@ -1490,8 +1490,8 @@ export default function SlotDrawing() {
 
     if (templateRectangles.length === 0) {
       toast({
-        title: "No Templates to Save",
-        description: "Add some tool templates before saving",
+        title: "保存するテンプレートがありません",
+        description: "保存する前に工具テンプレートを追加してください",
         variant: "destructive",
       });
       return;
@@ -1505,8 +1505,8 @@ export default function SlotDrawing() {
     
     if (missingCategories.length > 0) {
       toast({
-        title: "Missing Categories",
-        description: "Some tool categories are missing. Please create them first.",
+        title: "カテゴリが不足しています",
+        description: "一部の工具カテゴリが見つかりません。先に作成してください。",
         variant: "destructive",
       });
       return;
@@ -1679,8 +1679,8 @@ export default function SlotDrawing() {
           );
           
           toast({
-            title: "Template Auto-Corrected",
-            description: `"${rect.autoQrId}" was outside printable area and has been adjusted.`,
+            title: "テンプレート自動修正",
+            description: `「${rect.autoQrId}」が印刷可能エリア外でしたので調整しました。`,
             variant: "default",
           });
           
@@ -1717,13 +1717,13 @@ export default function SlotDrawing() {
       setSelectedTemplateRect(null);
 
       toast({
-        title: "Template Design Loaded",
-        description: `Loaded "${version.paperSize} - ${version.name}" with ${version.templateRectangles.length} tools`,
+        title: "テンプレートデザイン読み込み完了",
+        description: `「${version.paperSize} - ${version.name}」を${version.templateRectangles.length}個の工具で読み込みました`,
       });
     } catch (error) {
       toast({
-        title: "Load Failed",
-        description: "Failed to load template design",
+        title: "読み込み失敗",
+        description: "テンプレートデザインの読み込みに失敗しました",
         variant: "destructive",
       });
     }
@@ -1735,8 +1735,8 @@ export default function SlotDrawing() {
     const versionToDelete = savedTemplateVersions.find(v => v.timestamp === templateToDelete);
     if (!versionToDelete || !versionToDelete.id) {
       toast({
-        title: "Delete Failed",
-        description: "Template design ID not found",
+        title: "削除失敗",
+        description: "テンプレートデザインIDが見つかりません",
         variant: "destructive",
       });
       setDeleteConfirmOpen(false);
@@ -1770,8 +1770,8 @@ export default function SlotDrawing() {
     // Just load it onto the canvas - same as the load button
     await loadTemplateVersion(version);
     toast({
-      title: "Template Loaded for Preview",
-      description: `"${version.paperSize} - ${version.name}" is now shown on canvas`,
+      title: "プレビュー用テンプレート読み込み",
+      description: `「${version.paperSize} - ${version.name}」がキャンバスに表示されました`,
     });
   };
   
@@ -1780,8 +1780,8 @@ export default function SlotDrawing() {
     
     await loadTemplateVersion(templateToLoad);
     toast({
-      title: "Template Loaded",
-      description: `"${templateToLoad.paperSize} - ${templateToLoad.name}" is now shown on canvas`,
+      title: "テンプレート読み込み完了",
+      description: `「${templateToLoad.paperSize} - ${templateToLoad.name}」がキャンバスに表示されました`,
     });
     
     setUnsavedWarningOpen(false);
@@ -1799,8 +1799,8 @@ export default function SlotDrawing() {
     URL.revokeObjectURL(url);
     
     toast({
-      title: "Template Exported",
-      description: `"${version.paperSize} - ${version.name}" downloaded as JSON file`,
+      title: "テンプレートエクスポート完了",
+      description: `「${version.paperSize} - ${version.name}」をJSONファイルとしてダウンロードしました`,
     });
   };
 
@@ -1819,8 +1819,8 @@ export default function SlotDrawing() {
         // Validate the imported data
         if (!importedVersion.name || !importedVersion.paperSize || !importedVersion.templateRectangles || !importedVersion.categories) {
           toast({
-            title: "Invalid Template File",
-            description: "The file doesn't contain valid template data",
+            title: "無効なテンプレートファイル",
+            description: "ファイルに有効なテンプレートデータが含まれていません",
             variant: "destructive",
           });
           return;
@@ -1845,22 +1845,22 @@ export default function SlotDrawing() {
           onSuccess: () => {
             console.log(`[SlotDrawing] Imported template design: ${importedVersion.name}`);
             toast({
-              title: "Template Imported",
-              description: `"${importedVersion.paperSize} - ${importedVersion.name}" has been imported and saved to database`,
+              title: "テンプレートインポート完了",
+              description: `「${importedVersion.paperSize} - ${importedVersion.name}」をインポートしてデータベースに保存しました`,
             });
           },
           onError: (error) => {
             toast({
-              title: "Import Failed",
-              description: `Failed to save imported design: ${error.message}`,
+              title: "インポート失敗",
+              description: `インポートしたデザインの保存に失敗しました: ${error.message}`,
               variant: "destructive",
             });
           },
         });
       } catch (error) {
         toast({
-          title: "Import Failed",
-          description: error instanceof Error ? error.message : "Failed to read template file",
+          title: "インポート失敗",
+          description: error instanceof Error ? error.message : "テンプレートファイルの読み込みに失敗しました",
           variant: "destructive",
         });
       }
@@ -1879,8 +1879,8 @@ export default function SlotDrawing() {
     // ArUco marker IDs: 1-50 for slots (96-99 reserved for corners)
     if (nextSlotNumber > 50) {
       toast({
-        title: "Slot Limit Reached",
-        description: "Maximum 50 slots per template design. ArUco marker IDs 1-50 are used for slots, 96-99 are reserved for corners.",
+        title: "スロット上限に達しました",
+        description: "テンプレートデザインあたり最大50スロットです。ArUcoマーカーID 1-50はスロット用、96-99はコーナー用に予約されています。",
         variant: "destructive",
       });
       return;
@@ -1891,8 +1891,8 @@ export default function SlotDrawing() {
     try {
       // Show loading toast
       toast({
-        title: "Adding Slot",
-        description: `Creating slot ${nextSlotNumber} (ArUco marker ID ${nextSlotNumber})...`,
+        title: "スロット追加中",
+        description: `スロット${nextSlotNumber}を作成中 (ArUcoマーカーID ${nextSlotNumber})...`,
       });
 
       // No QR code generation needed - ArUco markers are generated during print
@@ -1919,13 +1919,13 @@ export default function SlotDrawing() {
 
       // Show success toast
       toast({
-        title: "Slot Added",
-        description: `Successfully created slot ${nextSlotNumber} for ${category.name}`,
+        title: "スロット追加完了",
+        description: `${category.name}のスロット${nextSlotNumber}を正常に作成しました`,
       });
     } catch (error) {
       toast({
-        title: "Failed to Add Slot",
-        description: error instanceof Error ? error.message : "Failed to add slot to template",
+        title: "スロット追加に失敗",
+        description: error instanceof Error ? error.message : "テンプレートへのスロット追加に失敗しました",
         variant: "destructive",
       });
     }
@@ -1994,9 +1994,9 @@ export default function SlotDrawing() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="slot-drawing-title">
-                Template Design
+                テンプレートデザイン
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">Design your tool layout - ArUco markers, templates, and QR codes on one sheet</p>
+              <p className="text-sm text-muted-foreground mt-1">工具レイアウトの設計 - ArUcoマーカー、テンプレート、QRコードを1枚のシートに</p>
             </div>
             <div className="flex items-center gap-4">
               <Button variant="outline" size="sm" data-testid="button-close-slot-drawing">
@@ -2014,27 +2014,27 @@ export default function SlotDrawing() {
               {/* Paper Size Selector */}
               <div className="mb-3 flex items-center gap-3 justify-between">
                 <div className="flex items-center gap-3">
-                  <Label htmlFor="paper-size" className="text-sm font-medium">Paper Size:</Label>
+                  <Label htmlFor="paper-size" className="text-sm font-medium">用紙サイズ:</Label>
                   <Select value={paperSize} onValueChange={setPaperSize}>
                     <SelectTrigger className="w-48" id="paper-size" data-testid="select-paper-size">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="A5-landscape">A5 Landscape</SelectItem>
-                      <SelectItem value="A4-landscape">A4 Landscape</SelectItem>
-                      <SelectItem value="A3-landscape">A3 Landscape</SelectItem>
-                      <SelectItem value="2xA5-landscape">2× A5 Landscape</SelectItem>
-                      <SelectItem value="3xA5-landscape">3× A5 Landscape</SelectItem>
-                      <SelectItem value="6-page-3x2">6-Page (3×2 A4)</SelectItem>
-                      <SelectItem value="8-page-4x2">8-Page (4×2 A4)</SelectItem>
+                      <SelectItem value="A5-landscape">A5 横向き</SelectItem>
+                      <SelectItem value="A4-landscape">A4 横向き</SelectItem>
+                      <SelectItem value="A3-landscape">A3 横向き</SelectItem>
+                      <SelectItem value="2xA5-landscape">2× A5 横向き</SelectItem>
+                      <SelectItem value="3xA5-landscape">3× A5 横向き</SelectItem>
+                      <SelectItem value="6-page-3x2">6ページ (3×2 A4)</SelectItem>
+                      <SelectItem value="8-page-4x2">8ページ (4×2 A4)</SelectItem>
                     </SelectContent>
                   </Select>
                   <div className="flex flex-col gap-0.5">
                     <p className="text-xs text-muted-foreground">
-                      Match your ArUco grid paper size (templates can be used with any camera)
+                      ArUcoグリッドの用紙サイズと一致させてください（テンプレートはどのカメラでも使用可能）
                     </p>
                     <p className="text-xs text-muted-foreground/70">
-                      💡 Drag to pan • Scroll to zoom • Drag rectangles to move • Hold Ctrl/Alt for precise positioning
+                      💡 ドラッグでパン • スクロールでズーム • 長方形をドラッグして移動 • Ctrl/Altキーで精密位置調整
                     </p>
                   </div>
                 </div>
@@ -2045,7 +2045,7 @@ export default function SlotDrawing() {
                     data-testid="button-category-manager"
                   >
                     <Layers className="w-4 h-4 mr-2" />
-                    Tool Categories
+                    工具カテゴリ
                   </Button>
                   <Button
                     variant="outline"
@@ -2054,7 +2054,7 @@ export default function SlotDrawing() {
                     disabled={templateRectangles.length === 0}
                   >
                     <Printer className="w-4 h-4 mr-2" />
-                    Print Preview
+                    印刷プレビュー
                   </Button>
                 </div>
               </div>
@@ -2108,7 +2108,7 @@ export default function SlotDrawing() {
                     data-testid="checkbox-snap-to-slot"
                   />
                   <Label htmlFor="snap-to-slot" className="text-sm cursor-pointer">
-                    Snap to Tool Slot
+                    工具スロットにスナップ
                   </Label>
                 </div>
               </div>
@@ -2117,7 +2117,7 @@ export default function SlotDrawing() {
               {selectedTemplateRect && (
                 <div className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-medium text-blue-500">Selected: {selectedTemplateRect.categoryName}</h4>
+                    <h4 className="text-sm font-medium text-blue-500">選択中: {selectedTemplateRect.categoryName}</h4>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
                         {selectedTemplateRect.widthCm}×{selectedTemplateRect.heightCm} cm • ({selectedTemplateRect.xCm.toFixed(1)}, {selectedTemplateRect.yCm.toFixed(1)}) • {selectedTemplateRect.rotation || 0}°
@@ -2137,10 +2137,10 @@ export default function SlotDrawing() {
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <label className="text-xs font-medium text-blue-500 block mb-1">
-                        Expected QR ID
+                        予想QR ID
                       </label>
                       <Input
-                        placeholder="e.g., pen-004, tool-001"
+                        placeholder="例: pen-004, tool-001"
                         value={selectedTemplateRect.autoQrId || ''}
                         onChange={(e) => {
                           const newQrId = e.target.value;
@@ -2176,7 +2176,7 @@ export default function SlotDrawing() {
                         data-testid="button-rotate-left"
                       >
                         <RotateCcw className="w-4 h-4 mr-1" />
-                        Left
+                        左回転
                       </Button>
                       <Button
                         size="sm"
@@ -2186,13 +2186,13 @@ export default function SlotDrawing() {
                         data-testid="button-rotate-right"
                       >
                         <RotateCw className="w-4 h-4 mr-1" />
-                        Right
+                        右回転
                       </Button>
                     </div>
                   </div>
                   
                   <p className="text-xs text-muted-foreground mt-2 italic">
-                    Drag to reposition{snapToSlotEnabled ? ' (snaps to nearby tools, hold Ctrl/Alt to disable)' : ' (snapping disabled)'}
+                    ドラッグで位置変更{snapToSlotEnabled ? '（近くの工具にスナップ、Ctrl/Altで無効化）' : '（スナップ無効）'}
                   </p>
                 </div>
               )}
@@ -2202,7 +2202,7 @@ export default function SlotDrawing() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Layers className="w-4 h-4" />
-                      Template Tool Outlines
+                      テンプレート工具アウトライン
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -2234,7 +2234,7 @@ export default function SlotDrawing() {
                     ) : (
                       <div className="text-center py-4">
                         <p className="text-sm text-muted-foreground">
-                          No tool categories defined. Create categories to add template rectangles.
+                          工具カテゴリが定義されていません。テンプレート長方形を追加するにはカテゴリを作成してください。
                         </p>
                         <Button
                           size="sm"
@@ -2243,7 +2243,7 @@ export default function SlotDrawing() {
                           onClick={() => setShowCategoryManager(true)}
                           data-testid="button-manage-categories"
                         >
-                          Manage Categories
+                          カテゴリ管理
                         </Button>
                       </div>
                     )}
@@ -2251,7 +2251,7 @@ export default function SlotDrawing() {
                     {/* Template Rectangles Count */}
                     {templateRectangles.length > 0 && (
                       <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-                        {templateRectangles.length} template{templateRectangles.length !== 1 ? 's' : ''} placed
+                        {templateRectangles.length}個のテンプレートを配置済み
                       </div>
                     )}
                   </CardContent>
@@ -2263,11 +2263,11 @@ export default function SlotDrawing() {
                     <CardTitle className="flex items-center justify-between text-base">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        Template Designs
+                        テンプレートデザイン
                       </div>
                       {hasUnsavedChanges && (
                         <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
-                          Unsaved Changes
+                          未保存の変更
                         </Badge>
                       )}
                     </CardTitle>
@@ -2277,21 +2277,21 @@ export default function SlotDrawing() {
                       {/* Save Template Design */}
                       <div className="flex gap-2">
                         <Input
-                          placeholder="Design name (e.g., Workshop Layout)"
+                          placeholder="デザイン名（例：作業場レイアウト）"
                           value={templateVersionName}
                           onChange={(e) => setTemplateVersionName(e.target.value)}
                           data-testid="input-template-version-name"
                         />
                         <Button onClick={saveTemplateVersion} data-testid="button-save-template-version">
                           <Save className="w-4 h-4 mr-2" />
-                          Save
+                          保存
                         </Button>
                       </div>
                       
                       {/* Saved Template Designs List */}
                       {savedTemplateVersions.length > 0 && (
                         <div className="border rounded-lg p-3 space-y-2">
-                          <p className="text-sm font-medium">Saved Designs ({savedTemplateVersions.length})</p>
+                          <p className="text-sm font-medium">保存済みデザイン ({savedTemplateVersions.length})</p>
                           <div className="space-y-2 max-h-40 overflow-y-auto">
                             {savedTemplateVersions.map((version) => (
                               <div
@@ -2301,7 +2301,7 @@ export default function SlotDrawing() {
                                 <div className="flex-1">
                                   <p className="font-medium">{version.paperSize} - {version.name}</p>
                                   <p className="text-xs text-muted-foreground">
-                                    {new Date(version.timestamp).toLocaleString()} • {version.templateRectangles.length} tools
+                                    {new Date(version.timestamp).toLocaleString()} • {version.templateRectangles.length}個の工具
                                   </p>
                                 </div>
                                 <div className="flex gap-1">
@@ -2310,7 +2310,7 @@ export default function SlotDrawing() {
                                     variant="outline"
                                     onClick={() => previewTemplateVersion(version)}
                                     data-testid={`button-preview-template-version-${version.timestamp}`}
-                                    title="Preview template overlay"
+                                    title="テンプレートオーバーレイをプレビュー"
                                   >
                                     <Eye className="w-3 h-3" />
                                   </Button>
@@ -2326,7 +2326,7 @@ export default function SlotDrawing() {
                                       }
                                     }}
                                     data-testid={`button-load-template-version-${version.timestamp}`}
-                                    title="Load template to canvas"
+                                    title="テンプレートをキャンバスに読み込む"
                                   >
                                     <Upload className="w-3 h-3" />
                                   </Button>
@@ -2335,7 +2335,7 @@ export default function SlotDrawing() {
                                     variant="outline"
                                     onClick={() => exportTemplateVersion(version)}
                                     data-testid={`button-export-template-version-${version.timestamp}`}
-                                    title="Export template as file"
+                                    title="テンプレートをファイルとしてエクスポート"
                                   >
                                     <Download className="w-3 h-3" />
                                   </Button>
@@ -2344,7 +2344,7 @@ export default function SlotDrawing() {
                                     variant="outline"
                                     onClick={() => deleteTemplateVersion(version.timestamp)}
                                     data-testid={`button-delete-template-version-${version.timestamp}`}
-                                    title="Delete template"
+                                    title="テンプレートを削除"
                                   >
                                     <Trash className="w-3 h-3" />
                                   </Button>
@@ -2379,16 +2379,16 @@ export default function SlotDrawing() {
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template Design?</AlertDialogTitle>
+            <AlertDialogTitle>テンプレートデザインを削除しますか？</AlertDialogTitle>
             <AlertDialogDescription>
               {templateToDelete && (() => {
                 const version = savedTemplateVersions.find(v => v.timestamp === templateToDelete);
                 return version ? (
                   <>
-                    Are you sure you want to delete <strong>"{version.paperSize} - {version.name}"</strong>? 
-                    This action cannot be undone.
+                    <strong>「{version.paperSize} - {version.name}」</strong>を削除してもよろしいですか？
+                    この操作は元に戻せません。
                   </>
-                ) : "Are you sure you want to delete this template design? This action cannot be undone.";
+                ) : "このテンプレートデザインを削除してもよろしいですか？この操作は元に戻せません。";
               })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -2397,13 +2397,13 @@ export default function SlotDrawing() {
               setDeleteConfirmOpen(false);
               setTemplateToDelete(null);
             }}>
-              Cancel
+              キャンセル
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDeleteTemplateVersion}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              削除
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2413,10 +2413,10 @@ export default function SlotDrawing() {
       <AlertDialog open={unsavedWarningOpen} onOpenChange={setUnsavedWarningOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogTitle>未保存の変更</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes on the current canvas. Loading a new template will discard these changes. 
-              Do you want to continue?
+              現在のキャンバスに未保存の変更があります。新しいテンプレートを読み込むとこれらの変更は破棄されます。
+              続行しますか？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2424,10 +2424,10 @@ export default function SlotDrawing() {
               setUnsavedWarningOpen(false);
               setTemplateToLoad(null);
             }}>
-              Cancel
+              キャンセル
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmLoadTemplate}>
-              Load Template
+              テンプレートを読み込む
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

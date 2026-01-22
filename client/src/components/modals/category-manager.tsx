@@ -34,7 +34,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2, Edit, Save, X, Loader2, Grid3X3, Palette } from "lucide-react";
 
-// Professional pastel color spectrum for label backgrounds
 const LABEL_COLOR_PRESETS = [
   { color: "#FFFFFF", name: "White" },
   { color: "#FEE2E2", name: "Rose" },
@@ -63,10 +62,10 @@ const formSchema = insertToolCategorySchema;
 type FormData = z.infer<typeof formSchema>;
 
 const scannerGridFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  label: z.string().min(1, "Label is required"),
-  widthCm: z.number().min(1, "Width must be at least 1cm"),
-  heightCm: z.number().min(1, "Height must be at least 1cm"),
+  name: z.string().min(1, "名前は必須です"),
+  label: z.string().min(1, "ラベルは必須です"),
+  widthCm: z.number().min(1, "幅は1cm以上必要です"),
+  heightCm: z.number().min(1, "高さは1cm以上必要です"),
   detectionColor: z.string().default("#EAB308"),
   gridRows: z.number().min(1).max(8).default(2),
   gridCols: z.number().min(1).max(8).default(4),
@@ -122,15 +121,15 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
       apiRequest('POST', '/api/tool-categories', data),
     onSuccess: () => {
       toast({
-        title: "Category Created",
-        description: "Tool category has been created successfully",
+        title: "カテゴリ作成完了",
+        description: "工具カテゴリが正常に作成されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
       form.reset();
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to Create",
+        title: "作成失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -142,8 +141,8 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
       apiRequest('PUT', `/api/tool-categories/${id}`, data),
     onSuccess: () => {
       toast({
-        title: "Category Updated",
-        description: "Tool category has been updated successfully",
+        title: "カテゴリ更新完了",
+        description: "工具カテゴリが正常に更新されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
       setEditingId(null);
@@ -151,7 +150,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to Update",
+        title: "更新失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -163,14 +162,14 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
       apiRequest('DELETE', `/api/tool-categories/${id}`),
     onSuccess: () => {
       toast({
-        title: "Category Deleted",
-        description: "Tool category has been deleted successfully",
+        title: "カテゴリ削除完了",
+        description: "工具カテゴリが正常に削除されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to Delete",
+        title: "削除失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -182,15 +181,15 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
       apiRequest('POST', '/api/tool-categories/scanner-grid', data),
     onSuccess: () => {
       toast({
-        title: "Scanner Grid Created",
-        description: "Scanner grid and worker tag grid have been created successfully",
+        title: "スキャナーグリッド作成完了",
+        description: "スキャナーグリッドと作業者タググリッドが正常に作成されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/tool-categories'] });
       scannerGridForm.reset();
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to Create Scanner Grid",
+        title: "スキャナーグリッド作成失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -231,16 +230,16 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Tool Category Manager</DialogTitle>
+          <DialogTitle>工具カテゴリ管理</DialogTitle>
           <DialogDescription>
-            Create and manage tool category templates with dimensions
+            寸法付きの工具カテゴリテンプレートを作成・管理
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-sm font-medium mb-4">Create New Category</h3>
+              <h3 className="text-sm font-medium mb-4">新規カテゴリ作成</h3>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleCreate)} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -249,12 +248,12 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Category Name</FormLabel>
+                          <FormLabel>カテゴリ名</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
                               data-testid="input-category-name"
-                              placeholder="e.g., Pen, Scissors, Wrench"
+                              placeholder="例: ペン, はさみ, レンチ"
                             />
                           </FormControl>
                           <FormMessage />
@@ -266,12 +265,12 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="label"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Label</FormLabel>
+                          <FormLabel>ラベル</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
                               data-testid="input-label"
-                              placeholder="e.g., ドライバー, はさみ, カッター"
+                              placeholder="例: ドライバー, はさみ, カッター"
                             />
                           </FormControl>
                           <FormMessage />
@@ -283,7 +282,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="widthCm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Width (cm)</FormLabel>
+                          <FormLabel>幅 (cm)</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -302,7 +301,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="heightCm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Height (cm)</FormLabel>
+                          <FormLabel>高さ (cm)</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -324,7 +323,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           <Palette className="w-4 h-4" />
-                          Label Background Color
+                          ラベル背景色
                         </FormLabel>
                         <FormControl>
                           <div className="flex flex-wrap gap-2">
@@ -356,7 +355,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                   >
                     {createMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     <Plus className="w-4 h-4 mr-2" />
-                    Create Category
+                    カテゴリ作成
                   </Button>
                 </form>
               </Form>
@@ -367,10 +366,10 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 mb-4">
                 <Grid3X3 className="w-5 h-5 text-yellow-500" />
-                <h3 className="text-sm font-medium">Create Scanner Grid</h3>
+                <h3 className="text-sm font-medium">スキャナーグリッド作成</h3>
               </div>
               <p className="text-xs text-muted-foreground mb-4">
-                Creates a scanner grid for yellow sticker detection AND a linked worker tag grid for checkout tracking.
+                黄色ステッカー検出用のスキャナーグリッドと、持出追跡用の作業者タググリッドを作成します。
               </p>
               <Form {...scannerGridForm}>
                 <form onSubmit={scannerGridForm.handleSubmit(handleCreateScannerGrid)} className="space-y-4">
@@ -380,12 +379,12 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Grid Name</FormLabel>
+                          <FormLabel>グリッド名</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
                               data-testid="input-scanner-grid-name"
-                              placeholder="e.g., Scanner Rack A"
+                              placeholder="例: スキャナーラックA"
                             />
                           </FormControl>
                           <FormMessage />
@@ -397,12 +396,12 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="label"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Label (Japanese)</FormLabel>
+                          <FormLabel>ラベル (日本語)</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
                               data-testid="input-scanner-grid-label"
-                              placeholder="e.g., スキャナー棚A"
+                              placeholder="例: スキャナー棚A"
                             />
                           </FormControl>
                           <FormMessage />
@@ -414,7 +413,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="widthCm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Cell Width (cm)</FormLabel>
+                          <FormLabel>セル幅 (cm)</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -424,7 +423,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
                           </FormControl>
-                          <FormDescription>Width of each cell</FormDescription>
+                          <FormDescription>各セルの幅</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -434,7 +433,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="heightCm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Cell Height (cm)</FormLabel>
+                          <FormLabel>セル高さ (cm)</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -444,7 +443,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
                           </FormControl>
-                          <FormDescription>Height of each cell</FormDescription>
+                          <FormDescription>各セルの高さ</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -454,41 +453,41 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="detectionColor"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Detection Color</FormLabel>
+                          <FormLabel>検出色</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-detection-color">
-                                <SelectValue placeholder="Select color" />
+                                <SelectValue placeholder="色を選択" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="#EAB308">
                                 <div className="flex items-center gap-2">
                                   <div className="w-4 h-4 rounded bg-yellow-500" />
-                                  Yellow (Fluorescent)
+                                  黄色 (蛍光)
                                 </div>
                               </SelectItem>
                               <SelectItem value="#22C55E">
                                 <div className="flex items-center gap-2">
                                   <div className="w-4 h-4 rounded bg-green-500" />
-                                  Green
+                                  緑
                                 </div>
                               </SelectItem>
                               <SelectItem value="#EF4444">
                                 <div className="flex items-center gap-2">
                                   <div className="w-4 h-4 rounded bg-red-500" />
-                                  Red
+                                  赤
                                 </div>
                               </SelectItem>
                               <SelectItem value="#F97316">
                                 <div className="flex items-center gap-2">
                                   <div className="w-4 h-4 rounded bg-orange-500" />
-                                  Orange
+                                  オレンジ
                                 </div>
                               </SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormDescription>Color of stickers to detect</FormDescription>
+                          <FormDescription>検出するステッカーの色</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -498,16 +497,16 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="gridRows"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Grid Rows</FormLabel>
+                          <FormLabel>グリッド行数</FormLabel>
                           <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={String(field.value)}>
                             <FormControl>
                               <SelectTrigger data-testid="select-grid-rows">
-                                <SelectValue placeholder="Select rows" />
+                                <SelectValue placeholder="行数を選択" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                                <SelectItem key={n} value={String(n)}>{n} row{n > 1 ? 's' : ''}</SelectItem>
+                                <SelectItem key={n} value={String(n)}>{n} 行</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -520,16 +519,16 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                       name="gridCols"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Grid Columns</FormLabel>
+                          <FormLabel>グリッド列数</FormLabel>
                           <Select onValueChange={(v) => field.onChange(parseInt(v))} defaultValue={String(field.value)}>
                             <FormControl>
                               <SelectTrigger data-testid="select-grid-cols">
-                                <SelectValue placeholder="Select columns" />
+                                <SelectValue placeholder="列数を選択" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                                <SelectItem key={n} value={String(n)}>{n} column{n > 1 ? 's' : ''}</SelectItem>
+                                <SelectItem key={n} value={String(n)}>{n} 列</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -540,8 +539,8 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm text-muted-foreground">Grid Preview:</span>
-                      <span className="text-sm font-medium">{scannerGridForm.watch('gridRows')} × {scannerGridForm.watch('gridCols')} = {scannerGridForm.watch('gridRows') * scannerGridForm.watch('gridCols')} cells</span>
+                      <span className="text-sm text-muted-foreground">グリッドプレビュー:</span>
+                      <span className="text-sm font-medium">{scannerGridForm.watch('gridRows')} × {scannerGridForm.watch('gridCols')} = {scannerGridForm.watch('gridRows') * scannerGridForm.watch('gridCols')} セル</span>
                     </div>
                     {(() => {
                       const cellW = scannerGridForm.watch('widthCm');
@@ -574,7 +573,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                             ))}
                           </div>
                           <p className="text-xs text-muted-foreground text-center mt-2">
-                            Total: {totalW} × {totalH} cm (cells: {cellW} × {cellH} cm each)
+                            合計: {totalW} × {totalH} cm (セル: 各{cellW} × {cellH} cm)
                           </p>
                         </>
                       );
@@ -588,7 +587,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                   >
                     {createScannerGridMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     <Grid3X3 className="w-4 h-4 mr-2" />
-                    Create Scanner Grid
+                    スキャナーグリッド作成
                   </Button>
                 </form>
               </Form>
@@ -596,17 +595,17 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
           </Card>
 
           <div>
-            <h3 className="text-sm font-medium mb-4">Existing Categories</h3>
+            <h3 className="text-sm font-medium mb-4">既存カテゴリ</h3>
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : error ? (
-              <div className="text-sm text-destructive">Failed to load categories: {error.message}</div>
+              <div className="text-sm text-destructive">カテゴリの読み込みに失敗しました: {error.message}</div>
             ) : (
               <div className="space-y-2">
                 {categories.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No categories yet. Create one above.</p>
+                  <p className="text-sm text-muted-foreground">まだカテゴリがありません。上で作成してください。</p>
                 ) : (
                   categories.map((category) => (
                     <Card key={category.id}>
@@ -620,7 +619,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                   name="name"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Category Name</FormLabel>
+                                      <FormLabel>カテゴリ名</FormLabel>
                                       <FormControl>
                                         <Input {...field} />
                                       </FormControl>
@@ -633,7 +632,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                   name="label"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Label</FormLabel>
+                                      <FormLabel>ラベル</FormLabel>
                                       <FormControl>
                                         <Input {...field} />
                                       </FormControl>
@@ -646,7 +645,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                   name="widthCm"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Width (cm)</FormLabel>
+                                      <FormLabel>幅 (cm)</FormLabel>
                                       <FormControl>
                                         <Input
                                           {...field}
@@ -664,7 +663,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                   name="heightCm"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Height (cm)</FormLabel>
+                                      <FormLabel>高さ (cm)</FormLabel>
                                       <FormControl>
                                         <Input
                                           {...field}
@@ -685,7 +684,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                   <FormItem>
                                     <FormLabel className="flex items-center gap-2">
                                       <Palette className="w-4 h-4" />
-                                      Label Background Color
+                                      ラベル背景色
                                     </FormLabel>
                                     <FormControl>
                                       <div className="flex flex-wrap gap-2">
@@ -718,7 +717,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                 >
                                   {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                                   <Save className="w-4 h-4 mr-2" />
-                                  Save
+                                  保存
                                 </Button>
                                 <Button
                                   type="button"
@@ -727,7 +726,7 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                   onClick={handleCancelEdit}
                                 >
                                   <X className="w-4 h-4 mr-2" />
-                                  Cancel
+                                  キャンセル
                                 </Button>
                               </div>
                             </form>
@@ -739,13 +738,13 @@ export function CategoryManager({ open, onOpenChange }: CategoryManagerProps) {
                                 <div
                                   className="w-6 h-6 rounded-md border border-gray-300 shrink-0"
                                   style={{ backgroundColor: category.labelColor }}
-                                  title="Label color"
+                                  title="ラベル色"
                                 />
                               )}
                               <div>
                                 <h4 className="font-medium">{category.name}</h4>
                                 <p className="text-sm text-muted-foreground">
-                                  Label: {category.label} | Dimensions: {category.widthCm} × {category.heightCm} cm
+                                  ラベル: {category.label} | 寸法: {category.widthCm} × {category.heightCm} cm
                                 </p>
                               </div>
                             </div>

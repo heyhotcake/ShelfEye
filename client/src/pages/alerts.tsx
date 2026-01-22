@@ -63,14 +63,14 @@ export default function Alerts() {
       apiRequest('PUT', `/api/alert-rules/${id}`, updates),
     onSuccess: () => {
       toast({
-        title: "Rule Updated",
-        description: "Alert rule updated successfully",
+        title: "ルール更新完了",
+        description: "アラートルールが正常に更新されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/alert-rules'] });
     },
     onError: (error) => {
       toast({
-        title: "Update Failed",
+        title: "更新失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -82,14 +82,14 @@ export default function Alerts() {
       apiRequest('POST', '/api/config', { key, value }),
     onSuccess: () => {
       toast({
-        title: "Configuration Updated",
-        description: "Settings saved successfully",
+        title: "設定更新完了",
+        description: "設定が正常に保存されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/config'] });
     },
     onError: (error) => {
       toast({
-        title: "Update Failed",
+        title: "更新失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -100,13 +100,13 @@ export default function Alerts() {
     mutationFn: () => apiRequest('POST', '/api/alerts/test'),
     onSuccess: () => {
       toast({
-        title: "Test Alert Sent",
-        description: "Check your email and other notification channels",
+        title: "テストアラート送信済み",
+        description: "メールやその他の通知チャネルを確認してください",
       });
     },
     onError: (error) => {
       toast({
-        title: "Test Failed",
+        title: "テスト失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -131,6 +131,15 @@ export default function Alerts() {
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending': return '保留中';
+      case 'sent': return '送信済み';
+      case 'failed': return '失敗';
+      default: return status;
+    }
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar />
@@ -140,9 +149,9 @@ export default function Alerts() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="alerts-title">
-                Alert Management
+                アラート管理
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">Configure alert rules and notification channels</p>
+              <p className="text-sm text-muted-foreground mt-1">アラートルールと通知チャネルの設定</p>
             </div>
             <div className="flex items-center gap-3">
               <Button 
@@ -152,7 +161,7 @@ export default function Alerts() {
                 data-testid="button-test-alerts"
               >
                 <TestTube className="w-4 h-4 mr-2" />
-                Test Alerts
+                アラートをテスト
               </Button>
               <Button variant="outline" size="sm" data-testid="button-close-alerts">
                 <X className="w-4 h-4" />
@@ -165,9 +174,9 @@ export default function Alerts() {
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
-              {/* Alert Rules */}
+              {/* アラートルール */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">Alert Rules</h3>
+                <h3 className="text-lg font-semibold text-foreground">アラートルール</h3>
                 
                 {alertRules?.map((rule) => (
                   <Card key={rule.id}>
@@ -190,26 +199,26 @@ export default function Alerts() {
                       
                       <p className="text-sm text-muted-foreground mb-3">
                         {rule.ruleType === 'TOOL_MISSING' && 
-                          `Trigger when slot is empty for ${rule.verificationWindow}+ minutes during business hours`}
+                          `営業時間中にスロットが${rule.verificationWindow}分以上空の場合にトリガー`}
                         {rule.ruleType === 'QR_FAILURE' && 
-                          `Alert when QR is unreadable ${rule.conditions.consecutiveFailures || 3}+ consecutive captures`}
+                          `QRが${rule.conditions.consecutiveFailures || 3}回以上連続で読み取り不可の場合にアラート`}
                         {rule.ruleType === 'CAMERA_HEALTH' && 
-                          `Alert on calibration drift or capture failures`}
+                          `キャリブレーションのずれやキャプチャ失敗時にアラート`}
                       </p>
                       
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground">Verification:</span>
-                          <span className="text-foreground">{rule.verificationWindow} minutes</span>
+                          <span className="text-muted-foreground">確認時間:</span>
+                          <span className="text-foreground">{rule.verificationWindow}分</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground">Active:</span>
+                          <span className="text-muted-foreground">有効時間:</span>
                           <span className="text-foreground">
-                            {rule.businessHoursOnly ? '08:00-20:00 (weekdays)' : 'Always'}
+                            {rule.businessHoursOnly ? '08:00-20:00 (平日)' : '常時'}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground">Priority:</span>
+                          <span className="text-muted-foreground">優先度:</span>
                           <Badge 
                             className={
                               rule.priority === 'high' ? 'bg-red-500/20 text-red-500' :
@@ -217,7 +226,7 @@ export default function Alerts() {
                               'bg-gray-500/20 text-gray-500'
                             }
                           >
-                            {rule.priority}
+                            {rule.priority === 'high' ? '高' : rule.priority === 'medium' ? '中' : '低'}
                           </Badge>
                         </div>
                       </div>
@@ -226,9 +235,9 @@ export default function Alerts() {
                 ))}
               </div>
               
-              {/* Notification Channels */}
+              {/* 通知チャネル */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">Notification Channels</h3>
+                <h3 className="text-lg font-semibold text-foreground">通知チャネル</h3>
                 
                 {/* Google Sheets */}
                 <Card>
@@ -236,7 +245,7 @@ export default function Alerts() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Table className="w-5 h-5 text-green-500" />
-                        <p className="font-medium text-foreground">Google Sheets Log</p>
+                        <p className="font-medium text-foreground">Googleスプレッドシートログ</p>
                       </div>
                       <Switch defaultChecked data-testid="switch-sheets-log" />
                     </div>
@@ -248,26 +257,26 @@ export default function Alerts() {
                         className="text-sm text-primary hover:underline block mb-2"
                         data-testid="link-sheets-url"
                       >
-                        📊 Open Alert Log Spreadsheet
+                        📊 アラートログスプレッドシートを開く
                       </a>
                     ) : (
                       <p className="text-sm text-muted-foreground mb-2">
-                        Spreadsheet will be created automatically on first alert
+                        スプレッドシートは最初のアラート時に自動作成されます
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Logs all captures, diagnostics, and alerts to Google Sheets
+                      すべてのキャプチャ、診断、アラートをGoogleスプレッドシートに記録します
                     </p>
                   </CardContent>
                 </Card>
                 
-                {/* Sound Alert */}
+                {/* サウンドアラート */}
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Volume2 className="w-5 h-5 text-amber-500" />
-                        <p className="font-medium text-foreground">Sound Alert</p>
+                        <p className="font-medium text-foreground">サウンドアラート</p>
                       </div>
                       <Switch defaultChecked data-testid="switch-sound-alert" />
                     </div>
@@ -276,36 +285,36 @@ export default function Alerts() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="tone1">Alert Tone 1 (Beep)</SelectItem>
-                        <SelectItem value="tone2">Alert Tone 2 (Chime)</SelectItem>
-                        <SelectItem value="tone3">Alert Tone 3 (Siren)</SelectItem>
+                        <SelectItem value="tone1">アラート音1 (ビープ)</SelectItem>
+                        <SelectItem value="tone2">アラート音2 (チャイム)</SelectItem>
+                        <SelectItem value="tone3">アラート音3 (サイレン)</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Play sound on local machine when alert triggers
+                      アラート発生時にローカルマシンで音を再生します
                     </p>
                   </CardContent>
                 </Card>
                 
-                {/* Alert Queue Status */}
+                {/* アラートキューステータス */}
                 <Card>
                   <CardContent className="p-4">
-                    <h4 className="font-medium text-foreground mb-3">Alert Queue Status</h4>
+                    <h4 className="font-medium text-foreground mb-3">アラートキューステータス</h4>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Pending</span>
+                        <span className="text-muted-foreground">保留中</span>
                         <span className="font-mono text-foreground" data-testid="text-pending-alerts">
                           {alertQueue?.filter(a => a.status === 'pending').length || 0}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Failed (will retry)</span>
+                        <span className="text-muted-foreground">失敗 (再試行予定)</span>
                         <span className="font-mono text-foreground" data-testid="text-failed-alerts">
                           {alertQueue?.filter(a => a.status === 'failed').length || 0}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Sent (24h)</span>
+                        <span className="text-muted-foreground">送信済み (24時間)</span>
                         <span className="font-mono text-foreground" data-testid="text-sent-alerts">
                           {alertQueue?.filter(a => a.status === 'sent' && 
                             new Date(a.sentAt || '').getTime() > Date.now() - 24 * 60 * 60 * 1000
@@ -318,31 +327,31 @@ export default function Alerts() {
               </div>
             </div>
             
-            {/* Alert Message Templates Configuration */}
+            {/* アラートメッセージテンプレート設定 */}
             <Card className="mt-6">
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-primary" />
-                  <CardTitle>Alert Message Templates</CardTitle>
+                  <CardTitle>アラートメッセージテンプレート</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Customize alert messages for each type. Use placeholders: <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{timestamp}'}</code>, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{errorMessage}'}</code>, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{cameraId}'}</code>, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{slotId}'}</code>
+                  各タイプのアラートメッセージをカスタマイズします。プレースホルダー: <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{timestamp}'}</code>, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{errorMessage}'}</code>, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{cameraId}'}</code>, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{slotId}'}</code>
                 </p>
                 
                 <Tabs defaultValue="diagnostic_failure" className="w-full">
                   <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="diagnostic_failure">Diagnostic</TabsTrigger>
-                    <TabsTrigger value="capture_failure">Capture</TabsTrigger>
-                    <TabsTrigger value="camera_offline">Camera</TabsTrigger>
-                    <TabsTrigger value="test_alert">Test</TabsTrigger>
+                    <TabsTrigger value="diagnostic_failure">診断</TabsTrigger>
+                    <TabsTrigger value="capture_failure">キャプチャ</TabsTrigger>
+                    <TabsTrigger value="camera_offline">カメラ</TabsTrigger>
+                    <TabsTrigger value="test_alert">テスト</TabsTrigger>
                   </TabsList>
                   
                   {Object.entries(alertTemplates).map(([alertType, template]: [string, any]) => (
                     <TabsContent key={alertType} value={alertType} className="space-y-4">
                       <div>
-                        <Label htmlFor={`${alertType}-subject`}>Email Subject</Label>
+                        <Label htmlFor={`${alertType}-subject`}>メール件名</Label>
                         <Input
                           id={`${alertType}-subject`}
                           value={template.subject || ''}
@@ -356,7 +365,7 @@ export default function Alerts() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor={`${alertType}-body`}>Email Body</Label>
+                        <Label htmlFor={`${alertType}-body`}>メール本文</Label>
                         <Textarea
                           id={`${alertType}-body`}
                           value={template.emailBody || ''}
@@ -371,7 +380,7 @@ export default function Alerts() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor={`${alertType}-sheets`}>Sheets Message</Label>
+                        <Label htmlFor={`${alertType}-sheets`}>スプレッドシートメッセージ</Label>
                         <Input
                           id={`${alertType}-sheets`}
                           value={template.sheetsMessage || ''}
@@ -390,10 +399,10 @@ export default function Alerts() {
               </CardContent>
             </Card>
 
-            {/* Recent Alert History */}
+            {/* 最近のアラート履歴 */}
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Recent Alert History</CardTitle>
+                <CardTitle>最近のアラート履歴</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -401,7 +410,7 @@ export default function Alerts() {
                     <div key={alert.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
                       <div className="flex items-center gap-3">
                         <Badge className={getStatusColor(alert.status)}>
-                          {alert.status}
+                          {getStatusText(alert.status)}
                         </Badge>
                         <div>
                           <p className="text-sm font-medium text-foreground">{alert.alertType}</p>
@@ -414,7 +423,7 @@ export default function Alerts() {
                         </p>
                         {alert.retryCount > 0 && (
                           <p className="text-xs text-amber-500">
-                            Retries: {alert.retryCount}
+                            再試行回数: {alert.retryCount}
                           </p>
                         )}
                       </div>
@@ -423,7 +432,7 @@ export default function Alerts() {
                   
                   {!alertQueue?.length && (
                     <div className="text-center py-8">
-                      <p className="text-muted-foreground">No alerts in queue</p>
+                      <p className="text-muted-foreground">キューにアラートはありません</p>
                     </div>
                   )}
                 </div>

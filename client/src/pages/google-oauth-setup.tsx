@@ -13,9 +13,9 @@ import { CheckCircle, XCircle, ExternalLink, Key, Mail, FileSpreadsheet } from "
 import { z } from "zod";
 
 const setupSchema = z.object({
-  clientId: z.string().min(1, "Client ID is required"),
-  clientSecret: z.string().min(1, "Client Secret is required"),
-  redirectUri: z.string().url("Must be a valid URL"),
+  clientId: z.string().min(1, "クライアントIDは必須です"),
+  clientSecret: z.string().min(1, "クライアントシークレットは必須です"),
+  redirectUri: z.string().url("有効なURLを入力してください"),
 });
 
 type SetupForm = z.infer<typeof setupSchema>;
@@ -56,15 +56,15 @@ export default function GoogleOAuthSetup() {
 
     if (oauthResult === 'success' && service) {
       toast({
-        title: "Authorization Successful",
-        description: `${service.charAt(0).toUpperCase() + service.slice(1)} has been authorized successfully`,
+        title: "認可成功",
+        description: `${service === 'gmail' ? 'Gmail' : 'Google スプレッドシート'}の認可が完了しました`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/oauth/google/status'] });
       window.history.replaceState({}, '', window.location.pathname);
     } else if (oauthResult === 'error') {
-      const message = urlParams.get('message') || 'Unknown error';
+      const message = urlParams.get('message') || '不明なエラー';
       toast({
-        title: "Authorization Failed",
+        title: "認可失敗",
         description: decodeURIComponent(message),
         variant: "destructive",
       });
@@ -79,8 +79,8 @@ export default function GoogleOAuthSetup() {
     },
     onSuccess: () => {
       toast({
-        title: "Credentials Saved",
-        description: "OAuth client credentials saved. Now authorize the application.",
+        title: "認証情報を保存しました",
+        description: "OAuth認証情報を保存しました。次にアプリケーションを認可してください。",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/oauth/google/status'] });
       form.reset();
@@ -88,8 +88,8 @@ export default function GoogleOAuthSetup() {
     },
     onError: (error: any) => {
       toast({
-        title: "Setup Failed",
-        description: error.message || "Failed to save credentials",
+        title: "セットアップ失敗",
+        description: error.message || "認証情報の保存に失敗しました",
         variant: "destructive",
       });
     },
@@ -106,8 +106,8 @@ export default function GoogleOAuthSetup() {
     },
     onError: (error: any) => {
       toast({
-        title: "Authorization Failed",
-        description: error.message || "Failed to generate authorization URL",
+        title: "認可失敗",
+        description: error.message || "認可URLの生成に失敗しました",
         variant: "destructive",
       });
     },
@@ -125,21 +125,21 @@ export default function GoogleOAuthSetup() {
       <div className="flex-1 overflow-auto">
         <div className="p-6 space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Google OAuth Setup</h2>
+            <h2 className="text-2xl font-bold text-foreground">Google OAuthセットアップ</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Configure Google OAuth for standalone Raspberry Pi deployment
+              スタンドアロンRaspberry Pi展開用のGoogle OAuthを設定します
             </p>
           </div>
 
-          {/* Status Cards */}
+          {/* ステータスカード */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Mail className="w-5 h-5" />
-                  Gmail (Email Alerts)
+                  Gmail（メールアラート）
                 </CardTitle>
-                <CardDescription>OAuth status for email notifications</CardDescription>
+                <CardDescription>メール通知のOAuthステータス</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ export default function GoogleOAuthSetup() {
                     <XCircle className="w-5 h-5 text-red-500" />
                   )}
                   <span className="text-sm">
-                    {status?.gmail.configured ? 'Authorized & Ready' : 'Not Authorized'}
+                    {status?.gmail.configured ? '認可済み・準備完了' : '未認可'}
                   </span>
                 </div>
                 {status?.gmail.hasClientCredentials && !status?.gmail.configured && (
@@ -160,7 +160,7 @@ export default function GoogleOAuthSetup() {
                     data-testid="button-authorize-gmail"
                   >
                     <Key className="w-4 h-4 mr-2" />
-                    Authorize Gmail
+                    Gmailを認可する
                   </Button>
                 )}
                 {!status?.gmail.hasClientCredentials && (
@@ -170,7 +170,7 @@ export default function GoogleOAuthSetup() {
                     className="w-full"
                     data-testid="button-setup-gmail"
                   >
-                    Setup Credentials
+                    認証情報をセットアップ
                   </Button>
                 )}
               </CardContent>
@@ -180,9 +180,9 @@ export default function GoogleOAuthSetup() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileSpreadsheet className="w-5 h-5" />
-                  Google Sheets (Logging)
+                  Google スプレッドシート（ログ記録）
                 </CardTitle>
-                <CardDescription>OAuth status for spreadsheet logging</CardDescription>
+                <CardDescription>スプレッドシートログ記録のOAuthステータス</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -192,7 +192,7 @@ export default function GoogleOAuthSetup() {
                     <XCircle className="w-5 h-5 text-red-500" />
                   )}
                   <span className="text-sm">
-                    {status?.sheets.configured ? 'Authorized & Ready' : 'Not Authorized'}
+                    {status?.sheets.configured ? '認可済み・準備完了' : '未認可'}
                   </span>
                 </div>
                 {status?.sheets.hasClientCredentials && !status?.sheets.configured && (
@@ -203,7 +203,7 @@ export default function GoogleOAuthSetup() {
                     data-testid="button-authorize-sheets"
                   >
                     <Key className="w-4 h-4 mr-2" />
-                    Authorize Sheets
+                    スプレッドシートを認可する
                   </Button>
                 )}
                 {!status?.sheets.hasClientCredentials && (
@@ -213,22 +213,22 @@ export default function GoogleOAuthSetup() {
                     className="w-full"
                     data-testid="button-setup-sheets"
                   >
-                    Setup Credentials
+                    認証情報をセットアップ
                   </Button>
                 )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Setup Form */}
+          {/* セットアップフォーム */}
           {selectedService && (
             <Card>
               <CardHeader>
                 <CardTitle>
-                  Setup {selectedService === 'gmail' ? 'Gmail' : 'Google Sheets'} OAuth Credentials
+                  {selectedService === 'gmail' ? 'Gmail' : 'Google スプレッドシート'} OAuth認証情報のセットアップ
                 </CardTitle>
                 <CardDescription>
-                  Enter your Google Cloud Console OAuth 2.0 credentials
+                  Google Cloud ConsoleのOAuth 2.0認証情報を入力してください
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -239,7 +239,7 @@ export default function GoogleOAuthSetup() {
                       name="clientId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Client ID</FormLabel>
+                          <FormLabel>クライアントID</FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
@@ -248,7 +248,7 @@ export default function GoogleOAuthSetup() {
                             />
                           </FormControl>
                           <FormDescription>
-                            From Google Cloud Console → Credentials → OAuth 2.0 Client IDs
+                            Google Cloud Console → 認証情報 → OAuth 2.0クライアントIDから取得
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -260,7 +260,7 @@ export default function GoogleOAuthSetup() {
                       name="clientSecret"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Client Secret</FormLabel>
+                          <FormLabel>クライアントシークレット</FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
@@ -270,7 +270,7 @@ export default function GoogleOAuthSetup() {
                             />
                           </FormControl>
                           <FormDescription>
-                            The secret key associated with your Client ID
+                            クライアントIDに関連付けられたシークレットキー
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -282,7 +282,7 @@ export default function GoogleOAuthSetup() {
                       name="redirectUri"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Redirect URI</FormLabel>
+                          <FormLabel>リダイレクトURI</FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
@@ -291,7 +291,7 @@ export default function GoogleOAuthSetup() {
                             />
                           </FormControl>
                           <FormDescription>
-                            Must match exactly what you configured in Google Cloud Console
+                            Google Cloud Consoleで設定したものと完全に一致する必要があります
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -304,7 +304,7 @@ export default function GoogleOAuthSetup() {
                         disabled={setupMutation.isPending}
                         data-testid="button-save-credentials"
                       >
-                        {setupMutation.isPending ? 'Saving...' : 'Save Credentials'}
+                        {setupMutation.isPending ? '保存中...' : '認証情報を保存'}
                       </Button>
                       <Button 
                         type="button" 
@@ -315,7 +315,7 @@ export default function GoogleOAuthSetup() {
                         }}
                         data-testid="button-cancel"
                       >
-                        Cancel
+                        キャンセル
                       </Button>
                     </div>
                   </form>
@@ -324,19 +324,19 @@ export default function GoogleOAuthSetup() {
             </Card>
           )}
 
-          {/* Instructions */}
+          {/* 手順 */}
           <Card>
             <CardHeader>
-              <CardTitle>Setup Instructions</CardTitle>
+              <CardTitle>セットアップ手順</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <h4 className="font-semibold flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">1</span>
-                  Create Google Cloud Project
+                  Google Cloudプロジェクトを作成
                 </h4>
                 <p className="text-sm text-muted-foreground pl-8">
-                  Go to{' '}
+                  {' '}
                   <a 
                     href="https://console.cloud.google.com" 
                     target="_blank" 
@@ -346,33 +346,33 @@ export default function GoogleOAuthSetup() {
                     Google Cloud Console
                     <ExternalLink className="w-3 h-3" />
                   </a>
-                  {' '}and create a new project
+                  {' '}にアクセスし、新しいプロジェクトを作成します
                 </p>
               </div>
 
               <div className="space-y-2">
                 <h4 className="font-semibold flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">2</span>
-                  Enable APIs
+                  APIを有効化
                 </h4>
                 <p className="text-sm text-muted-foreground pl-8">
-                  Enable Gmail API and Google Sheets API for your project
+                  プロジェクトでGmail APIとGoogle Sheets APIを有効化します
                 </p>
               </div>
 
               <div className="space-y-2">
                 <h4 className="font-semibold flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">3</span>
-                  Create OAuth 2.0 Credentials
+                  OAuth 2.0認証情報を作成
                 </h4>
                 <p className="text-sm text-muted-foreground pl-8">
-                  Go to Credentials → Create Credentials → OAuth 2.0 Client ID
+                  認証情報 → 認証情報を作成 → OAuth 2.0クライアントIDに移動します
                 </p>
                 <p className="text-sm text-muted-foreground pl-8">
-                  Application type: Web application
+                  アプリケーションの種類: ウェブアプリケーション
                 </p>
                 <p className="text-sm text-muted-foreground pl-8">
-                  Authorized redirect URI: <code className="bg-muted px-1 py-0.5 rounded text-xs">
+                  承認済みのリダイレクトURI: <code className="bg-muted px-1 py-0.5 rounded text-xs">
                     {window.location.origin}/api/oauth/google/callback
                   </code>
                 </p>
@@ -381,10 +381,10 @@ export default function GoogleOAuthSetup() {
               <div className="space-y-2">
                 <h4 className="font-semibold flex items-center gap-2">
                   <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">4</span>
-                  Configure & Authorize
+                  設定して認可する
                 </h4>
                 <p className="text-sm text-muted-foreground pl-8">
-                  Copy Client ID and Client Secret, paste them above, then click "Authorize" to grant permissions
+                  クライアントIDとクライアントシークレットをコピーし、上記に貼り付けてから「認可する」をクリックして権限を付与します
                 </p>
               </div>
             </CardContent>

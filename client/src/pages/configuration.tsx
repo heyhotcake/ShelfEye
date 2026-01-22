@@ -68,20 +68,20 @@ export default function Configuration() {
         setDetectedCameras(data.cameras);
         setShowDetectedCameras(true);
         toast({
-          title: "Cameras Detected",
-          description: `Found ${data.cameras.length} available camera(s)`,
+          title: "カメラを検出しました",
+          description: `${data.cameras.length}台のカメラが見つかりました`,
         });
       } else {
         toast({
-          title: "No Cameras Found",
-          description: "No available cameras detected on this system",
+          title: "カメラが見つかりません",
+          description: "このシステムで利用可能なカメラが検出されませんでした",
           variant: "destructive",
         });
       }
     },
     onError: (error) => {
       toast({
-        title: "Detection Failed",
+        title: "検出に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -93,8 +93,8 @@ export default function Configuration() {
       apiRequest('POST', '/api/cameras', cameraData),
     onSuccess: () => {
       toast({
-        title: "Camera Added",
-        description: "New camera added successfully",
+        title: "カメラを追加しました",
+        description: "新しいカメラが正常に追加されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
       setNewCameraName("");
@@ -103,7 +103,7 @@ export default function Configuration() {
     },
     onError: (error) => {
       toast({
-        title: "Failed to Add Camera",
+        title: "カメラの追加に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -124,8 +124,8 @@ export default function Configuration() {
       apiRequest('PUT', `/api/cameras/${id}`, updates),
     onSuccess: async () => {
       toast({
-        title: "Camera Updated",
-        description: "Camera settings saved successfully",
+        title: "カメラを更新しました",
+        description: "カメラ設定が正常に保存されました",
       });
       setEditingCamera(null);
       await queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
@@ -133,7 +133,7 @@ export default function Configuration() {
     },
     onError: (error) => {
       toast({
-        title: "Failed to Update Camera",
+        title: "カメラの更新に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -144,15 +144,15 @@ export default function Configuration() {
     mutationFn: (id: string) => apiRequest('DELETE', `/api/cameras/${id}`),
     onSuccess: async () => {
       toast({
-        title: "Camera Deleted",
-        description: "Camera removed successfully",
+        title: "カメラを削除しました",
+        description: "カメラが正常に削除されました",
       });
       await queryClient.invalidateQueries({ queryKey: ['/api/cameras'] });
       await queryClient.refetchQueries({ queryKey: ['/api/cameras'] });
     },
     onError: (error) => {
       toast({
-        title: "Failed to Delete Camera",
+        title: "カメラの削除に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -169,9 +169,9 @@ export default function Configuration() {
     },
     onSuccess: (data: any) => {
       // Create formatted message from output
-      const output = data.output || 'No capability information available';
+      const output = data.output || '機能情報がありません';
       toast({
-        title: `${data.cameraName} - Supported Resolutions`,
+        title: `${data.cameraName} - 対応解像度`,
         description: (
           <pre className="text-xs whitespace-pre-wrap max-h-96 overflow-y-auto font-mono">
             {output}
@@ -182,7 +182,7 @@ export default function Configuration() {
     },
     onError: (error) => {
       toast({
-        title: "Failed to Check Capabilities",
+        title: "機能チェックに失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -194,14 +194,14 @@ export default function Configuration() {
       apiRequest('POST', '/api/config', { key, value, description }),
     onSuccess: () => {
       toast({
-        title: "Configuration Updated",
-        description: "Settings saved successfully",
+        title: "設定を更新しました",
+        description: "設定が正常に保存されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/config'] });
     },
     onError: (error) => {
       toast({
-        title: "Update Failed",
+        title: "更新に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -218,13 +218,13 @@ export default function Configuration() {
       console.log('[Light Control] data.message:', data.message);
       console.log('[Light Control] data.action:', data.action);
       toast({
-        title: "Light Control",
-        description: data.message || `Light ${data.action === 'on' ? 'turned on' : 'turned off'}`,
+        title: "照明コントロール",
+        description: data.message || `照明を${data.action === 'on' ? 'オン' : 'オフ'}にしました`,
       });
     },
     onError: (error) => {
       toast({
-        title: "Light Control Failed",
+        title: "照明コントロールに失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -243,13 +243,13 @@ export default function Configuration() {
     },
     onSuccess: (data: any) => {
       toast({
-        title: "Alert LED",
-        description: data.message || 'Alert LED action completed',
+        title: "アラートLED",
+        description: data.message || 'アラートLEDのアクションが完了しました',
       });
     },
     onError: (error) => {
       toast({
-        title: "Alert LED Failed",
+        title: "アラートLEDに失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -260,13 +260,13 @@ export default function Configuration() {
     mutationFn: () => apiRequest('POST', '/api/alerts/test'),
     onSuccess: () => {
       toast({
-        title: "Test Alert Sent",
-        description: "Check your email and other notification channels",
+        title: "テストアラートを送信しました",
+        description: "メールやその他の通知チャンネルをご確認ください",
       });
     },
     onError: (error) => {
       toast({
-        title: "Test Failed",
+        title: "テストに失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -314,9 +314,9 @@ export default function Configuration() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="configuration-title">
-                System Configuration
+                システム設定
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">Export, import, and manage system settings</p>
+              <p className="text-sm text-muted-foreground mt-1">システム設定のエクスポート、インポート、管理</p>
             </div>
             <Button variant="outline" size="sm" data-testid="button-close-config">
               <X className="w-4 h-4" />
@@ -330,25 +330,25 @@ export default function Configuration() {
             {/* Current Configuration */}
             <Card>
               <CardHeader>
-                <CardTitle>Current Configuration</CardTitle>
+                <CardTitle>現在の設定</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground mb-1">Configured Slots</p>
+                    <p className="text-muted-foreground mb-1">設定済みスロット</p>
                     <p className="font-mono font-medium text-foreground" data-testid="text-configured-slots">{slots?.length || 0}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1">Active Cameras</p>
+                    <p className="text-muted-foreground mb-1">有効なカメラ</p>
                     <p className="font-mono font-medium text-foreground" data-testid="text-active-cameras">{cameras?.filter((c: any) => c.isActive).length || 0}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1">Capture Schedule</p>
+                    <p className="text-muted-foreground mb-1">キャプチャスケジュール</p>
                     <p className="font-mono font-medium text-foreground" data-testid="text-capture-schedule">8:00, 11:00, 14:00, 17:00</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1">Alert Recipients</p>
-                    <p className="font-mono font-medium text-foreground" data-testid="text-alert-recipients">3 emails</p>
+                    <p className="text-muted-foreground mb-1">アラート受信者</p>
+                    <p className="font-mono font-medium text-foreground" data-testid="text-alert-recipients">3件のメール</p>
                   </div>
                 </div>
               </CardContent>
@@ -360,7 +360,7 @@ export default function Configuration() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
                     <Camera className="w-5 h-5" />
-                    Camera Management
+                    カメラ管理
                   </CardTitle>
                   <Button
                     variant="outline"
@@ -370,7 +370,7 @@ export default function Configuration() {
                     data-testid="button-detect-cameras"
                   >
                     <Search className="w-4 h-4 mr-2" />
-                    {detectCamerasMutation.isPending ? "Detecting..." : "Detect Cameras"}
+                    {detectCamerasMutation.isPending ? "検出中..." : "カメラを検出"}
                   </Button>
                 </div>
               </CardHeader>
@@ -394,7 +394,7 @@ export default function Configuration() {
                                 </>
                               ) : (
                                 <>
-                                  Device {camera.deviceIndex} • {camera.resolution || '2560x1440'}
+                                  デバイス {camera.deviceIndex} • {camera.resolution || '2560x1440'}
                                 </>
                               )}
                             </p>
@@ -408,14 +408,14 @@ export default function Configuration() {
                                 : "bg-muted text-muted-foreground border-border"
                             }
                           >
-                            {camera.isActive ? "Active" : "Inactive"}
+                            {camera.isActive ? "有効" : "無効"}
                           </Badge>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => checkCapabilitiesMutation.mutate(camera.id)}
                             disabled={checkCapabilitiesMutation.isPending}
-                            title="Check supported resolutions"
+                            title="対応解像度を確認"
                             data-testid={`button-check-capabilities-${camera.id}`}
                           >
                             <Search className="w-3 h-3" />
@@ -460,24 +460,24 @@ export default function Configuration() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No cameras configured. Add a camera below.
+                    カメラが設定されていません。以下からカメラを追加してください。
                   </p>
                 )}
 
                 {/* Add New Camera */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold mb-3">Add New Camera</h4>
+                  <h4 className="text-sm font-semibold mb-3">新しいカメラを追加</h4>
                   <div>
-                    <Label htmlFor="camera-name">Camera Name</Label>
+                    <Label htmlFor="camera-name">カメラ名</Label>
                     <Input
                       id="camera-name"
-                      placeholder="e.g., Camera Station A"
+                      placeholder="例: カメラステーションA"
                       value={newCameraName}
                       onChange={(e) => setNewCameraName(e.target.value)}
                       data-testid="input-camera-name"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Device index will be assigned automatically. Use "Detect Available Cameras" to select a specific device.
+                      デバイスインデックスは自動的に割り当てられます。特定のデバイスを選択するには「カメラを検出」を使用してください。
                     </p>
                   </div>
                   <Button
@@ -496,7 +496,7 @@ export default function Configuration() {
                     data-testid="button-add-camera"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    {createCameraMutation.isPending ? "Adding..." : "Add Camera"}
+                    {createCameraMutation.isPending ? "追加中..." : "カメラを追加"}
                   </Button>
                 </div>
               </CardContent>
@@ -507,15 +507,15 @@ export default function Configuration() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Power className="w-5 h-5 text-red-500" />
-                  Alert LED Control
+                  アラートLEDコントロール
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="bg-muted/50 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-3">
-                      Red flashing LED that activates automatically when errors occur (tool missing, QR failures, camera issues).
-                      Test the alert LED or manually control it here.
+                      エラー発生時（工具紛失、QR失敗、カメラ問題）に自動的に点滅する赤色LED。
+                      アラートLEDをテストするか、ここで手動制御できます。
                     </p>
                     <div className="flex gap-3">
                       <Button
@@ -524,7 +524,7 @@ export default function Configuration() {
                         variant="outline"
                         data-testid="button-test-alert-led"
                       >
-                        Test Alert (5s Flash)
+                        テストアラート（5秒点滅）
                       </Button>
                       <Button
                         onClick={() => alertLEDMutation.mutate('flash')}
@@ -532,7 +532,7 @@ export default function Configuration() {
                         variant="destructive"
                         data-testid="button-start-flash"
                       >
-                        Start Flashing
+                        点滅開始
                       </Button>
                       <Button
                         onClick={() => alertLEDMutation.mutate('stop')}
@@ -540,7 +540,7 @@ export default function Configuration() {
                         variant="secondary"
                         data-testid="button-stop-flash"
                       >
-                        Stop Flash
+                        点滅停止
                       </Button>
                     </div>
                   </div>
@@ -553,15 +553,15 @@ export default function Configuration() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Lightbulb className="w-5 h-5" />
-                  LED Light Strip Control
+                  LEDライトストリップコントロール
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="bg-muted/50 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-3">
-                      Controls the LED light strip on GPIO 18 for consistent lighting during captures.
-                      The light automatically turns on before captures and off after.
+                      キャプチャ時の一定した照明のためにGPIO 18のLEDライトストリップを制御します。
+                      照明はキャプチャ前に自動的にオンになり、キャプチャ後にオフになります。
                     </p>
                     <div className="flex gap-3">
                       <Button
@@ -572,7 +572,7 @@ export default function Configuration() {
                         data-testid="button-light-on"
                       >
                         <Lightbulb className="w-4 h-4 mr-2" />
-                        Turn On
+                        オン
                       </Button>
                       <Button
                         variant="outline"
@@ -582,13 +582,13 @@ export default function Configuration() {
                         data-testid="button-light-off"
                       >
                         <Power className="w-4 h-4 mr-2" />
-                        Turn Off
+                        オフ
                       </Button>
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    <p><strong>GPIO Pin:</strong> 18 (Physical Pin 12)</p>
-                    <p><strong>Connected to:</strong> LED Light Strip WS2812B (27 LEDs)</p>
+                    <p><strong>GPIOピン:</strong> 18（物理ピン12）</p>
+                    <p><strong>接続先:</strong> LEDライトストリップ WS2812B（27個のLED）</p>
                   </div>
                 </div>
               </CardContent>
@@ -599,7 +599,7 @@ export default function Configuration() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Mail className="w-5 h-5 text-primary" />
-                  Email Alerts
+                  メールアラート
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -625,7 +625,7 @@ export default function Configuration() {
                   
                   <div className="flex items-center gap-2">
                     <Input
-                      placeholder="Add recipient email"
+                      placeholder="受信者のメールアドレスを追加"
                       value={newEmailInput}
                       onChange={(e) => setNewEmailInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && addEmailRecipient()}
@@ -651,11 +651,11 @@ export default function Configuration() {
                       data-testid="button-test-email"
                     >
                       <TestTube className="w-4 h-4 mr-2" />
-                      {testAlertMutation.isPending ? 'Sending Test Email...' : 'Send Test Email'}
+                      {testAlertMutation.isPending ? 'テストメール送信中...' : 'テストメールを送信'}
                     </Button>
                     {emailRecipients.length === 0 && (
                       <p className="text-xs text-muted-foreground mt-2 text-center">
-                        Add at least one recipient to test
+                        テストするには少なくとも1つの受信者を追加してください
                       </p>
                     )}
                   </div>
@@ -671,9 +671,9 @@ export default function Configuration() {
       <Dialog open={showDetectedCameras} onOpenChange={setShowDetectedCameras}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Detected Cameras</DialogTitle>
+            <DialogTitle>検出されたカメラ</DialogTitle>
             <DialogDescription>
-              Found {detectedCameras.length} available camera(s). Click on a camera to use its device path.
+              {detectedCameras.length}台のカメラが見つかりました。カメラをクリックしてデバイスパスを使用してください。
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-4">
@@ -690,15 +690,15 @@ export default function Configuration() {
                       setNewCameraDevice(cam.deviceIndex.toString());
                     }
                     toast({
-                      title: "Camera Selected",
-                      description: `Device path: ${cam.devicePath}`,
+                      title: "カメラを選択しました",
+                      description: `デバイスパス: ${cam.devicePath}`,
                     });
                   } else if (cam.deviceIndex !== null && cam.deviceIndex !== undefined) {
                     setNewCameraDevice(cam.deviceIndex.toString());
                     setNewCameraDevicePath(""); // Clear path if only index available
                     toast({
-                      title: "Camera Selected",
-                      description: `Device index: ${cam.deviceIndex}`,
+                      title: "カメラを選択しました",
+                      description: `デバイスインデックス: ${cam.deviceIndex}`,
                     });
                   }
                   setShowDetectedCameras(false);
@@ -712,14 +712,14 @@ export default function Configuration() {
                     <p className="text-sm text-muted-foreground">
                       {cam.devicePath && <span className="font-mono">{cam.devicePath}</span>}
                       {cam.devicePath && cam.deviceIndex !== null && <span> • </span>}
-                      {cam.deviceIndex !== null && <span>Index {cam.deviceIndex}</span>}
+                      {cam.deviceIndex !== null && <span>インデックス {cam.deviceIndex}</span>}
                       {cam.width && cam.height && (
                         <span> • {cam.width}x{cam.height}</span>
                       )}
                     </p>
                   </div>
                 </div>
-                <Badge variant="outline">Available</Badge>
+                <Badge variant="outline">利用可能</Badge>
               </div>
             ))}
           </div>
@@ -730,25 +730,25 @@ export default function Configuration() {
       <Dialog open={!!editingCamera} onOpenChange={(open) => !open && setEditingCamera(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Camera Settings</DialogTitle>
+            <DialogTitle>カメラ設定を編集</DialogTitle>
             <DialogDescription>
-              Update camera name and resolution. Recalibrate after changing resolution.
+              カメラ名と解像度を更新します。解像度を変更した後は再キャリブレーションが必要です。
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div>
-              <Label htmlFor="edit-camera-name">Camera Name</Label>
+              <Label htmlFor="edit-camera-name">カメラ名</Label>
               <Input
                 id="edit-camera-name"
                 value={editCameraName}
                 onChange={(e) => setEditCameraName(e.target.value)}
-                placeholder="e.g., Camera 2 (Shelf 2)"
+                placeholder="例: カメラ2（棚2）"
                 data-testid="input-edit-camera-name"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="edit-resolution-width">Resolution Width</Label>
+                <Label htmlFor="edit-resolution-width">解像度の幅</Label>
                 <Input
                   id="edit-resolution-width"
                   type="number"
@@ -757,10 +757,10 @@ export default function Configuration() {
                   placeholder="1920"
                   data-testid="input-edit-resolution-width"
                 />
-                <p className="text-xs text-muted-foreground mt-1">Common: 1920, 2560, 3840</p>
+                <p className="text-xs text-muted-foreground mt-1">一般的な値: 1920, 2560, 3840</p>
               </div>
               <div>
-                <Label htmlFor="edit-resolution-height">Resolution Height</Label>
+                <Label htmlFor="edit-resolution-height">解像度の高さ</Label>
                 <Input
                   id="edit-resolution-height"
                   type="number"
@@ -769,12 +769,12 @@ export default function Configuration() {
                   placeholder="1080"
                   data-testid="input-edit-resolution-height"
                 />
-                <p className="text-xs text-muted-foreground mt-1">Common: 1080, 1440, 2160</p>
+                <p className="text-xs text-muted-foreground mt-1">一般的な値: 1080, 1440, 2160</p>
               </div>
             </div>
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                <strong>Important:</strong> After changing resolution, you must recalibrate the camera. The actual resolution used will be logged during calibration - check the server logs to verify.
+                <strong>重要:</strong> 解像度を変更した後は、カメラを再キャリブレーションする必要があります。実際に使用される解像度はキャリブレーション中にログに記録されます - サーバーログを確認してください。
               </p>
             </div>
             <div className="flex gap-2 pt-2">
@@ -784,7 +784,7 @@ export default function Configuration() {
                 className="flex-1"
                 data-testid="button-cancel-edit"
               >
-                Cancel
+                キャンセル
               </Button>
               <Button
                 onClick={() => {
@@ -793,8 +793,8 @@ export default function Configuration() {
                   
                   if (!editCameraName || isNaN(width) || isNaN(height)) {
                     toast({
-                      title: "Invalid Input",
-                      description: "Please provide valid camera name and resolution values",
+                      title: "入力エラー",
+                      description: "有効なカメラ名と解像度の値を入力してください",
                       variant: "destructive",
                     });
                     return;
@@ -812,7 +812,7 @@ export default function Configuration() {
                 className="flex-1"
                 data-testid="button-save-camera"
               >
-                {updateCameraMutation.isPending ? "Saving..." : "Save Changes"}
+                {updateCameraMutation.isPending ? "保存中..." : "変更を保存"}
               </Button>
             </div>
           </div>

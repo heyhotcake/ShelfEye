@@ -19,7 +19,7 @@ interface QRGeneratorModalProps {
 interface QRGenerationRequest {
   type: 'tool' | 'worker';
   id: string;
-  label?: string; // Display label for tools (supports Japanese)
+  label?: string;
   workerName?: string;
   errorCorrection: 'L' | 'M' | 'Q' | 'H';
   moduleSize: number;
@@ -52,13 +52,13 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
       const result: QRGenerationResult = await response.json();
       setGeneratedQR(result);
       toast({
-        title: "QR Code Generated",
-        description: "QR code created successfully",
+        title: "QRコード生成完了",
+        description: "QRコードが正常に作成されました",
       });
     },
     onError: (error) => {
       toast({
-        title: "Generation Failed",
+        title: "生成失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -68,8 +68,8 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
   const handleGenerate = () => {
     if (!formData.id) {
       toast({
-        title: "Missing Information",
-        description: "Please provide an ID",
+        title: "情報不足",
+        description: "IDを入力してください",
         variant: "destructive",
       });
       return;
@@ -77,8 +77,8 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
 
     if (formData.type === 'tool' && !formData.label) {
       toast({
-        title: "Missing Information",
-        description: "Please provide a tool label",
+        title: "情報不足",
+        description: "工具ラベルを入力してください",
         variant: "destructive",
       });
       return;
@@ -86,8 +86,8 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
 
     if (formData.type === 'worker' && !formData.workerName) {
       toast({
-        title: "Missing Information",
-        description: "Please provide a worker name",
+        title: "情報不足",
+        description: "作業者名を入力してください",
         variant: "destructive",
       });
       return;
@@ -122,8 +122,8 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
         });
       } else {
         toast({
-          title: "PDF Export",
-          description: "PDF export requires additional setup",
+          title: "PDFエクスポート",
+          description: "PDFエクスポートには追加設定が必要です",
           variant: "destructive",
         });
       }
@@ -138,9 +138,9 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-bold text-foreground">
-                QR Code Generator
+                QRコード生成
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">Generate signed QR codes for tools and worker badges</p>
+              <p className="text-sm text-muted-foreground mt-1">工具と作業者バッジ用の署名付きQRコードを生成</p>
             </div>
             <Button 
               variant="ghost" 
@@ -157,12 +157,12 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
           {/* QR Configuration */}
           <Card>
             <CardHeader>
-              <CardTitle>QR Configuration</CardTitle>
+              <CardTitle>QR設定</CardTitle>
             </CardHeader>
             
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="qrType">QR Type</Label>
+                <Label htmlFor="qrType">QRタイプ</Label>
                 <Select 
                   value={formData.type} 
                   onValueChange={(value: 'tool' | 'worker') => setFormData({ ...formData, type: value })}
@@ -171,17 +171,17 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tool">Tool Tag</SelectItem>
-                    <SelectItem value="worker">Worker Badge</SelectItem>
+                    <SelectItem value="tool">工具タグ</SelectItem>
+                    <SelectItem value="worker">作業者バッジ</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <Label htmlFor="qrId">{formData.type === 'tool' ? 'Tool ID' : 'Worker ID'}</Label>
+                <Label htmlFor="qrId">{formData.type === 'tool' ? '工具ID' : '作業者ID'}</Label>
                 <Input 
                   id="qrId"
-                  placeholder={formData.type === 'tool' ? 'e.g., S001' : 'e.g., W001'}
+                  placeholder={formData.type === 'tool' ? '例: S001' : '例: W001'}
                   value={formData.id}
                   onChange={(e) => setFormData({ ...formData, id: e.target.value })}
                   data-testid="input-qr-id"
@@ -190,10 +190,10 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
               
               {formData.type === 'tool' ? (
                 <div>
-                  <Label htmlFor="label">Label</Label>
+                  <Label htmlFor="label">ラベル</Label>
                   <Input 
                     id="label"
-                    placeholder="e.g., ドライバー, はさみ"
+                    placeholder="例: ドライバー, はさみ"
                     value={formData.label}
                     onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                     data-testid="input-label"
@@ -201,10 +201,10 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                 </div>
               ) : (
                 <div>
-                  <Label htmlFor="workerName">Worker Name</Label>
+                  <Label htmlFor="workerName">作業者名</Label>
                   <Input 
                     id="workerName"
-                    placeholder="e.g., Y. Tanaka"
+                    placeholder="例: 田中 太郎"
                     value={formData.workerName}
                     onChange={(e) => setFormData({ ...formData, workerName: e.target.value })}
                     data-testid="input-worker-name"
@@ -213,7 +213,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
               )}
               
               <div>
-                <Label htmlFor="errorCorrection">Error Correction Level</Label>
+                <Label htmlFor="errorCorrection">エラー訂正レベル</Label>
                 <Select 
                   value={formData.errorCorrection} 
                   onValueChange={(value: 'L' | 'M' | 'Q' | 'H') => setFormData({ ...formData, errorCorrection: value })}
@@ -225,13 +225,13 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                     <SelectItem value="L">L (7%)</SelectItem>
                     <SelectItem value="M">M (15%)</SelectItem>
                     <SelectItem value="Q">Q (25%)</SelectItem>
-                    <SelectItem value="H">H (30%) - Recommended</SelectItem>
+                    <SelectItem value="H">H (30%) - 推奨</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <Label htmlFor="moduleSize">Module Size (mm)</Label>
+                <Label htmlFor="moduleSize">モジュールサイズ (mm)</Label>
                 <Input 
                   id="moduleSize"
                   type="number"
@@ -252,10 +252,10 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                     data-testid="checkbox-include-hmac"
                   />
                   <Label htmlFor="includeHmac" className="text-sm text-foreground">
-                    Include HMAC signature
+                    HMAC署名を含める
                   </Label>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Prevents QR code spoofing</p>
+                <p className="text-xs text-muted-foreground mt-1">QRコードのなりすましを防止</p>
               </div>
               
               <Button 
@@ -265,7 +265,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                 data-testid="button-generate-qr"
               >
                 <QrCode className="w-4 h-4 mr-2" />
-                {generateQRMutation.isPending ? 'Generating...' : 'Generate QR Code'}
+                {generateQRMutation.isPending ? '生成中...' : 'QRコード生成'}
               </Button>
             </CardContent>
           </Card>
@@ -273,7 +273,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
           {/* QR Preview & Download */}
           <Card>
             <CardHeader>
-              <CardTitle>Preview & Download</CardTitle>
+              <CardTitle>プレビュー & ダウンロード</CardTitle>
             </CardHeader>
             
             <CardContent>
@@ -281,7 +281,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                 {generatedQR ? (
                   <img 
                     src={`data:image/png;base64,${generatedQR.qrCode}`}
-                    alt="Generated QR Code"
+                    alt="生成されたQRコード"
                     className="max-w-64 max-h-64"
                     data-testid="img-generated-qr"
                   />
@@ -296,7 +296,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                 <div className="space-y-3">
                   <Card>
                     <CardContent className="p-4">
-                      <p className="text-xs text-muted-foreground mb-1">Payload Preview</p>
+                      <p className="text-xs text-muted-foreground mb-1">ペイロードプレビュー</p>
                       <pre className="text-xs font-mono text-foreground overflow-auto bg-muted p-2 rounded">
                         {JSON.stringify(generatedQR.payload, null, 2)}
                       </pre>
@@ -328,7 +328,7 @@ export function QRGeneratorModal({ open, onOpenChange }: QRGeneratorModalProps) 
                     data-testid="button-print-label"
                   >
                     <Printer className="w-4 h-4 mr-2" />
-                    Print Label ({formData.moduleSize}mm x {formData.moduleSize}mm)
+                    ラベル印刷 ({formData.moduleSize}mm x {formData.moduleSize}mm)
                   </Button>
                 </div>
               )}

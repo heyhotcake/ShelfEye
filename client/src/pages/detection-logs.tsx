@@ -70,14 +70,14 @@ export default function DetectionLogs() {
       apiRequest('POST', '/api/config', { key, value }),
     onSuccess: () => {
       toast({
-        title: "Configuration Updated",
-        description: "Settings saved successfully",
+        title: "設定が更新されました",
+        description: "設定が正常に保存されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/config'] });
     },
     onError: (error) => {
       toast({
-        title: "Update Failed",
+        title: "更新に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -88,13 +88,13 @@ export default function DetectionLogs() {
     try {
       await downloadFile('/api/detection-logs/export', 'detection-logs.csv');
       toast({
-        title: "Export Successful",
-        description: "Detection logs exported to CSV",
+        title: "エクスポート成功",
+        description: "検出ログがCSVにエクスポートされました",
       });
     } catch (error) {
       toast({
-        title: "Export Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: "エクスポート失敗",
+        description: error instanceof Error ? error.message : "不明なエラー",
         variant: "destructive",
       });
     }
@@ -111,6 +111,17 @@ export default function DetectionLogs() {
     return variants[status] || 'bg-gray-500/20 text-gray-500';
   };
 
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'ITEM_PRESENT': '存在',
+      'EMPTY': '空',
+      'CHECKED_OUT': '貸出中',
+      'TRAINING_ERROR': 'エラー',
+      'OCCUPIED_NO_QR': 'QRなし占有',
+    };
+    return labels[status] || status.replace('_', ' ');
+  };
+
   const formatJSTTimestamp = (timestamp: string | Date) => {
     const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
     const zonedDate = toZonedTime(date, TIMEZONE);
@@ -125,6 +136,7 @@ export default function DetectionLogs() {
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2 text-muted-foreground">読み込み中...</span>
         </div>
       </div>
     );
@@ -139,16 +151,16 @@ export default function DetectionLogs() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="detection-logs-title">
-                Detection Logs
+                検出ログ
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">View and export detection history</p>
+              <p className="text-sm text-muted-foreground mt-1">検出履歴の表示とエクスポート</p>
             </div>
             <Button 
               onClick={exportLogs}
               data-testid="button-export-logs"
             >
               <Download className="w-4 h-4 mr-2" />
-              Export CSV
+              CSVエクスポート
             </Button>
           </div>
         </header>
@@ -156,12 +168,12 @@ export default function DetectionLogs() {
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-7xl mx-auto">
             
-            {/* Filters */}
+            {/* フィルター */}
             <Card className="mb-6">
               <CardContent className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Date From</label>
+                    <label className="text-sm text-muted-foreground mb-2 block">開始日付</label>
                     <Input 
                       type="date"
                       value={filters.startDate}
@@ -170,7 +182,7 @@ export default function DetectionLogs() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Date To</label>
+                    <label className="text-sm text-muted-foreground mb-2 block">終了日付</label>
                     <Input 
                       type="date"
                       value={filters.endDate}
@@ -179,16 +191,16 @@ export default function DetectionLogs() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Slot</label>
+                    <label className="text-sm text-muted-foreground mb-2 block">スロット</label>
                     <Select 
                       value={filters.slotId} 
                       onValueChange={(value) => setFilters({ ...filters, slotId: value })}
                     >
                       <SelectTrigger data-testid="select-slot-filter">
-                        <SelectValue placeholder="All Slots" />
+                        <SelectValue placeholder="すべてのスロット" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Slots</SelectItem>
+                        <SelectItem value="all">すべてのスロット</SelectItem>
                         {slots?.map((slot: any) => (
                           <SelectItem key={slot.id} value={slot.slotId}>
                             {slot.slotId} - {slot.toolName}
@@ -198,21 +210,21 @@ export default function DetectionLogs() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">Status</label>
+                    <label className="text-sm text-muted-foreground mb-2 block">ステータス</label>
                     <Select 
                       value={filters.status} 
                       onValueChange={(value) => setFilters({ ...filters, status: value })}
                     >
                       <SelectTrigger data-testid="select-status-filter">
-                        <SelectValue placeholder="All States" />
+                        <SelectValue placeholder="すべてのステータス" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All States</SelectItem>
-                        <SelectItem value="ITEM_PRESENT">Present</SelectItem>
-                        <SelectItem value="EMPTY">Empty</SelectItem>
-                        <SelectItem value="CHECKED_OUT">Checked Out</SelectItem>
-                        <SelectItem value="TRAINING_ERROR">Error</SelectItem>
-                        <SelectItem value="OCCUPIED_NO_QR">Occupied No QR</SelectItem>
+                        <SelectItem value="all">すべてのステータス</SelectItem>
+                        <SelectItem value="ITEM_PRESENT">存在</SelectItem>
+                        <SelectItem value="EMPTY">空</SelectItem>
+                        <SelectItem value="CHECKED_OUT">貸出中</SelectItem>
+                        <SelectItem value="TRAINING_ERROR">エラー</SelectItem>
+                        <SelectItem value="OCCUPIED_NO_QR">QRなし占有</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -224,32 +236,32 @@ export default function DetectionLogs() {
                       data-testid="button-clear-filters"
                     >
                       <Filter className="w-4 h-4 mr-2" />
-                      Clear Filters
+                      フィルタークリア
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Logs Table */}
+            {/* ログテーブル */}
             <Card>
               <CardHeader>
-                <CardTitle>Detection History</CardTitle>
+                <CardTitle>検出履歴</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="rounded-lg border border-border overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Timestamp</TableHead>
-                        <TableHead>Slot</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>QR ID / Worker</TableHead>
-                        <TableHead>Detection Method</TableHead>
+                        <TableHead>日時</TableHead>
+                        <TableHead>スロット</TableHead>
+                        <TableHead>ステータス</TableHead>
+                        <TableHead>QR ID / 作業者</TableHead>
+                        <TableHead>検出方法</TableHead>
                         <TableHead>SSIM</TableHead>
-                        <TableHead>Pose</TableHead>
-                        <TableHead>Alert</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead>姿勢</TableHead>
+                        <TableHead>アラート</TableHead>
+                        <TableHead>操作</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -263,7 +275,7 @@ export default function DetectionLogs() {
                           </TableCell>
                           <TableCell>
                             <Badge className={getStatusBadge(log.status)}>
-                              {log.status.replace('_', ' ')}
+                              {getStatusLabel(log.status)}
                             </Badge>
                           </TableCell>
                           <TableCell className="font-mono text-sm">
@@ -284,9 +296,9 @@ export default function DetectionLogs() {
                                 {log.rawDetectionData.detection_method}
                               </span>
                             ) : log.status === 'ITEM_PRESENT' ? (
-                              <span className="text-muted-foreground italic">no QR</span>
+                              <span className="text-muted-foreground italic">QRなし</span>
                             ) : (
-                              <span className="text-red-400">not detected</span>
+                              <span className="text-red-400">未検出</span>
                             )}
                           </TableCell>
                           <TableCell className="font-mono text-sm">
@@ -298,7 +310,7 @@ export default function DetectionLogs() {
                           <TableCell>
                             {log.alertTriggered ? (
                               <Badge className="bg-red-500/20 text-red-500">
-                                Triggered
+                                発動
                               </Badge>
                             ) : (
                               <span className="text-muted-foreground">—</span>
@@ -313,7 +325,7 @@ export default function DetectionLogs() {
                                 data-testid={`button-view-image-${log.id}`}
                               >
                                 <Eye className="w-3 h-3 mr-1" />
-                                View
+                                表示
                               </Button>
                             )}
                           </TableCell>
@@ -324,7 +336,7 @@ export default function DetectionLogs() {
                         <TableRow>
                           <TableCell colSpan={9} className="text-center py-8">
                             <div className="text-muted-foreground">
-                              No detection logs found
+                              検出ログが見つかりません
                             </div>
                           </TableCell>
                         </TableRow>
@@ -333,10 +345,10 @@ export default function DetectionLogs() {
                   </Table>
                 </div>
                 
-                {/* Pagination */}
+                {/* ページネーション */}
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Showing {((currentPage - 1) * logsPerPage) + 1}-{Math.min(currentPage * logsPerPage, logs?.length || 0)} of {logs?.length || 0} entries
+                    {((currentPage - 1) * logsPerPage) + 1}-{Math.min(currentPage * logsPerPage, logs?.length || 0)} / {logs?.length || 0} 件を表示
                   </div>
                   
                   <div className="flex items-center gap-2">
@@ -379,17 +391,17 @@ export default function DetectionLogs() {
               </CardContent>
             </Card>
 
-            {/* Google Sheets Formatting Configuration */}
+            {/* Google スプレッドシート書式設定 */}
             <Card className="mt-6">
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Settings2 className="w-5 h-5 text-primary" />
-                  <CardTitle>Google Sheets Formatting</CardTitle>
+                  <CardTitle>Google スプレッドシート書式設定</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="tab-creation">Tab Creation Rule</Label>
+                  <Label htmlFor="tab-creation">タブ作成ルール</Label>
                   <Select
                     value={sheetsFormatting.tabCreation || 'monthly'}
                     onValueChange={(value) => {
@@ -403,19 +415,19 @@ export default function DetectionLogs() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="single">Single Sheet (All in one tab)</SelectItem>
-                      <SelectItem value="monthly">Monthly Tabs (One per month)</SelectItem>
-                      <SelectItem value="weekly">Weekly Tabs (One per week)</SelectItem>
-                      <SelectItem value="daily">Daily Tabs (One per day)</SelectItem>
+                      <SelectItem value="single">単一シート（すべて1つのタブ）</SelectItem>
+                      <SelectItem value="monthly">月別タブ（月ごと）</SelectItem>
+                      <SelectItem value="weekly">週別タブ（週ごと）</SelectItem>
+                      <SelectItem value="daily">日別タブ（日ごと）</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Controls when new tabs are created in the spreadsheet
+                    スプレッドシートで新しいタブを作成するタイミングを制御します
                   </p>
                 </div>
 
                 <div>
-                  <Label htmlFor="tab-pattern">Tab Name Pattern</Label>
+                  <Label htmlFor="tab-pattern">タブ名パターン</Label>
                   <Input
                     id="tab-pattern"
                     value={sheetsFormatting.tabNamePattern || 'Alerts-{YYYY-MM}'}
@@ -428,14 +440,14 @@ export default function DetectionLogs() {
                     data-testid="input-tab-pattern"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Use: <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{YYYY}'}</code> for year, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{MM}'}</code> for month, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{DD}'}</code> for day, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{WW}'}</code> for week
+                    使用可能: <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{YYYY}'}</code> 年, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{MM}'}</code> 月, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{DD}'}</code> 日, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{WW}'}</code> 週
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Include Headers</Label>
-                    <p className="text-xs text-muted-foreground">Add column headers to new tabs</p>
+                    <Label>ヘッダーを含める</Label>
+                    <p className="text-xs text-muted-foreground">新しいタブに列ヘッダーを追加</p>
                   </div>
                   <Switch
                     checked={sheetsFormatting.includeHeaders !== false}
@@ -451,8 +463,8 @@ export default function DetectionLogs() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Freeze Header Row</Label>
-                    <p className="text-xs text-muted-foreground">Keep headers visible when scrolling</p>
+                    <Label>ヘッダー行を固定</Label>
+                    <p className="text-xs text-muted-foreground">スクロール時にヘッダーを表示したままにする</p>
                   </div>
                   <Switch
                     checked={sheetsFormatting.freezeHeaderRow !== false}

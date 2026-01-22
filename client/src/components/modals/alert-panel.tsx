@@ -59,14 +59,14 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
       apiRequest('PUT', `/api/alert-rules/${id}`, updates),
     onSuccess: () => {
       toast({
-        title: "Rule Updated",
-        description: "Alert rule updated successfully",
+        title: "ルール更新完了",
+        description: "アラートルールが正常に更新されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/alert-rules'] });
     },
     onError: (error) => {
       toast({
-        title: "Update Failed",
+        title: "更新失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -78,14 +78,14 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
       apiRequest('POST', '/api/config', { key, value }),
     onSuccess: () => {
       toast({
-        title: "Configuration Updated",
-        description: "Settings saved successfully",
+        title: "設定更新完了",
+        description: "設定が正常に保存されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/config'] });
     },
     onError: (error) => {
       toast({
-        title: "Update Failed",
+        title: "更新失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -96,13 +96,13 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
     mutationFn: () => apiRequest('POST', '/api/alerts/test'),
     onSuccess: () => {
       toast({
-        title: "Test Alert Sent",
-        description: "Check your email and other notification channels",
+        title: "テストアラート送信完了",
+        description: "メールおよびその他の通知チャンネルを確認してください",
       });
     },
     onError: (error) => {
       toast({
-        title: "Test Failed",
+        title: "テスト失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -149,9 +149,9 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-bold text-foreground">
-                Alert Management
+                アラート管理
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">Configure alert rules and notification channels</p>
+              <p className="text-sm text-muted-foreground mt-1">アラートルールと通知チャンネルを設定</p>
             </div>
             <div className="flex items-center gap-3">
               <Button 
@@ -161,7 +161,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                 data-testid="button-test-alerts"
               >
                 <TestTube className="w-4 h-4 mr-2" />
-                Test Alerts
+                アラートテスト
               </Button>
               <Button 
                 variant="ghost" 
@@ -179,7 +179,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
           
           {/* Alert Rules */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Alert Rules</h3>
+            <h3 className="text-lg font-semibold text-foreground">アラートルール</h3>
             
             {alertRules?.map((rule) => (
               <Card key={rule.id}>
@@ -202,26 +202,26 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                   
                   <p className="text-sm text-muted-foreground mb-3">
                     {rule.ruleType === 'TOOL_MISSING' && 
-                      `Trigger when slot is empty for ${rule.verificationWindow}+ minutes during business hours`}
+                      `営業時間中にスロットが${rule.verificationWindow}分以上空の場合にトリガー`}
                     {rule.ruleType === 'QR_FAILURE' && 
-                      `Alert when QR is unreadable ${rule.conditions.consecutiveFailures || 3}+ consecutive captures`}
+                      `QRが${rule.conditions.consecutiveFailures || 3}回以上連続で読み取り不可の場合にアラート`}
                     {rule.ruleType === 'CAMERA_HEALTH' && 
-                      `Alert on calibration drift or capture failures`}
+                      `キャリブレーションのずれまたはキャプチャ失敗時にアラート`}
                   </p>
                   
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground">Verification:</span>
-                      <span className="text-foreground">{rule.verificationWindow} minutes</span>
+                      <span className="text-muted-foreground">確認時間:</span>
+                      <span className="text-foreground">{rule.verificationWindow} 分</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground">Active:</span>
+                      <span className="text-muted-foreground">有効時間:</span>
                       <span className="text-foreground">
-                        {rule.businessHoursOnly ? '08:00-20:00 (weekdays)' : 'Always'}
+                        {rule.businessHoursOnly ? '08:00-20:00 (平日)' : '常時'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground">Priority:</span>
+                      <span className="text-muted-foreground">優先度:</span>
                       <Badge 
                         className={
                           rule.priority === 'high' ? 'bg-red-500/20 text-red-500' :
@@ -229,7 +229,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                           'bg-gray-500/20 text-gray-500'
                         }
                       >
-                        {rule.priority}
+                        {rule.priority === 'high' ? '高' : rule.priority === 'medium' ? '中' : '低'}
                       </Badge>
                     </div>
                   </div>
@@ -240,7 +240,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
           
           {/* Notification Channels */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Notification Channels</h3>
+            <h3 className="text-lg font-semibold text-foreground">通知チャンネル</h3>
             
             {/* Email Alerts */}
             <Card>
@@ -248,7 +248,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Mail className="w-5 h-5 text-primary" />
-                    <p className="font-medium text-foreground">Email Alerts</p>
+                    <p className="font-medium text-foreground">メールアラート</p>
                   </div>
                   <Switch defaultChecked data-testid="switch-email-alerts" />
                 </div>
@@ -280,7 +280,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                   
                   <div className="flex items-center gap-2">
                     <Input
-                      placeholder="Add recipient email"
+                      placeholder="受信者メールを追加"
                       value={newRecipient}
                       onChange={(e) => setNewRecipient(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && addEmailRecipient()}
@@ -306,17 +306,17 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Table className="w-5 h-5 text-green-500" />
-                    <p className="font-medium text-foreground">Google Sheets Log</p>
+                    <p className="font-medium text-foreground">Googleスプレッドシートログ</p>
                   </div>
                   <Switch defaultChecked data-testid="switch-sheets-log" />
                 </div>
                 <Input
-                  placeholder="Sheet ID or URL"
+                  placeholder="シートIDまたはURL"
                   className="text-sm"
                   data-testid="input-sheets-id"
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                  Logs all detections and alerts to Google Sheets
+                  すべての検出とアラートをGoogleスプレッドシートに記録
                 </p>
               </CardContent>
             </Card>
@@ -327,7 +327,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Volume2 className="w-5 h-5 text-amber-500" />
-                    <p className="font-medium text-foreground">Sound Alert</p>
+                    <p className="font-medium text-foreground">サウンドアラート</p>
                   </div>
                   <Switch defaultChecked data-testid="switch-sound-alert" />
                 </div>
@@ -336,13 +336,13 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tone1">Alert Tone 1 (Beep)</SelectItem>
-                    <SelectItem value="tone2">Alert Tone 2 (Chime)</SelectItem>
-                    <SelectItem value="tone3">Alert Tone 3 (Siren)</SelectItem>
+                    <SelectItem value="tone1">アラート音1 (ビープ)</SelectItem>
+                    <SelectItem value="tone2">アラート音2 (チャイム)</SelectItem>
+                    <SelectItem value="tone3">アラート音3 (サイレン)</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Play sound on local machine when alert triggers
+                  アラート発生時にローカルマシンで音を再生
                 </p>
               </CardContent>
             </Card>
@@ -350,22 +350,22 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
             {/* Alert Queue Status */}
             <Card>
               <CardContent className="p-4">
-                <h4 className="font-medium text-foreground mb-3">Alert Queue Status</h4>
+                <h4 className="font-medium text-foreground mb-3">アラートキュー状況</h4>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Pending</span>
+                    <span className="text-muted-foreground">保留中</span>
                     <span className="font-mono text-foreground" data-testid="text-pending-alerts">
                       {alertQueue?.filter(a => a.status === 'pending').length || 0}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Failed (will retry)</span>
+                    <span className="text-muted-foreground">失敗 (再試行予定)</span>
                     <span className="font-mono text-foreground" data-testid="text-failed-alerts">
                       {alertQueue?.filter(a => a.status === 'failed').length || 0}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Sent (24h)</span>
+                    <span className="text-muted-foreground">送信済み (24時間)</span>
                     <span className="font-mono text-foreground" data-testid="text-sent-alerts">
                       {alertQueue?.filter(a => a.status === 'sent' && 
                         new Date(a.sentAt || '').getTime() > Date.now() - 24 * 60 * 60 * 1000
@@ -382,7 +382,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
         <div className="px-6 pb-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Alert History</CardTitle>
+              <CardTitle>最近のアラート履歴</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -390,7 +390,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                   <div key={alert.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
                     <div className="flex items-center gap-3">
                       <Badge className={getStatusColor(alert.status)}>
-                        {alert.status}
+                        {alert.status === 'pending' ? '保留中' : alert.status === 'sent' ? '送信済み' : '失敗'}
                       </Badge>
                       <div>
                         <p className="text-sm font-medium text-foreground">{alert.alertType}</p>
@@ -403,7 +403,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                       </p>
                       {alert.retryCount > 0 && (
                         <p className="text-xs text-amber-500">
-                          Retries: {alert.retryCount}
+                          再試行: {alert.retryCount}
                         </p>
                       )}
                     </div>
@@ -412,7 +412,7 @@ export function AlertPanel({ open, onOpenChange }: AlertPanelProps) {
                 
                 {!alertQueue?.length && (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">No alerts in queue</p>
+                    <p className="text-muted-foreground">キューにアラートはありません</p>
                   </div>
                 )}
               </div>

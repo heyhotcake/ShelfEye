@@ -37,12 +37,11 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
   const [importData, setImportData] = useState<any>(null);
   const [importStep, setImportStep] = useState<'upload' | 'validate' | 'confirm'>('upload');
 
-  // Export slots for current camera
   const exportSlots = async () => {
     if (!cameraId) {
       toast({
-        title: "No Camera Selected",
-        description: "Please select a camera to export slots",
+        title: "カメラ未選択",
+        description: "スロットをエクスポートするカメラを選択してください",
         variant: "destructive",
       });
       return;
@@ -51,7 +50,7 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
     try {
       const response = await fetch(`/api/slots/export/${cameraId}`);
       if (!response.ok) {
-        throw new Error("Failed to export slots");
+        throw new Error("スロットのエクスポートに失敗しました");
       }
 
       const exportData = await response.json();
@@ -66,19 +65,18 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
       URL.revokeObjectURL(url);
 
       toast({
-        title: "Slots Exported",
-        description: `Downloaded ${exportData.slots?.length || 0} slots for ${cameraName || 'camera'}`,
+        title: "スロットエクスポート完了",
+        description: `${cameraName || 'カメラ'}の${exportData.slots?.length || 0}スロットをダウンロードしました`,
       });
     } catch (error) {
       toast({
-        title: "Export Failed",
-        description: error instanceof Error ? error.message : "Failed to export slots",
+        title: "エクスポート失敗",
+        description: error instanceof Error ? error.message : "スロットのエクスポートに失敗しました",
         variant: "destructive",
       });
     }
   };
 
-  // Validate slots from file
   const validateMutation = useMutation({
     mutationFn: async (data: { json: any; targetCameraId: string }) => {
       try {
@@ -88,18 +86,15 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
         });
         const result = await response.json();
         
-        // Successful validation (200 response means no errors, but may have warnings)
         return {
-          valid: true,  // 200 = validation passed
+          valid: true,
           errors: [],
           warnings: result.warnings || []
         };
       } catch (error: any) {
-        // Handle 400 validation errors
-        // apiRequest throws errors as "STATUS: BODY", extract the JSON body
         if (error.message && error.message.startsWith('400:')) {
           try {
-            const jsonBody = error.message.substring(4).trim(); // Remove "400:" prefix
+            const jsonBody = error.message.substring(4).trim();
             const errorData = JSON.parse(jsonBody);
             return {
               valid: false,
@@ -107,7 +102,6 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
               warnings: errorData.warnings || []
             };
           } catch (parseError) {
-            // Fallback if we can't parse the JSON
             console.error('Failed to parse validation error response:', parseError);
             throw error;
           }
@@ -119,26 +113,23 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
       setValidationResult(result);
       if (result.valid) {
         if (result.warnings.length > 0) {
-          // Has warnings - show them and allow user to proceed
           setImportStep('confirm');
           toast({
-            title: "Validation Passed with Warnings",
-            description: `${importData.slots.length} slots validated. Review ${result.warnings.length} warnings below before importing.`,
+            title: "警告付きで検証通過",
+            description: `${importData.slots.length}スロットが検証されました。インポート前に${result.warnings.length}件の警告を確認してください。`,
           });
         } else {
-          // No errors, no warnings - ready to import
           setImportStep('confirm');
           toast({
-            title: "Validation Passed",
-            description: `All ${importData.slots.length} slots are valid and ready to import`,
+            title: "検証通過",
+            description: `すべての${importData.slots.length}スロットが有効でインポート準備完了`,
           });
         }
       } else {
-        // Has errors - block import
         setImportStep('validate');
         toast({
-          title: "Validation Failed",
-          description: `Found ${result.errors.length} errors${result.warnings.length > 0 ? ` and ${result.warnings.length} warnings` : ''}. Fix errors before importing.`,
+          title: "検証失敗",
+          description: `${result.errors.length}件のエラー${result.warnings.length > 0 ? `と${result.warnings.length}件の警告` : ''}が見つかりました。インポート前にエラーを修正してください。`,
           variant: "destructive",
         });
       }
@@ -146,14 +137,13 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
     onError: (error: Error) => {
       setImportStep('upload');
       toast({
-        title: "Validation Failed",
+        title: "検証失敗",
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  // Import slots
   const importMutation = useMutation({
     mutationFn: async (data: { json: any; targetCameraId: string }) => {
       const response = await apiRequest('POST', '/api/slots/import', data);
@@ -163,15 +153,15 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
     onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/slots'] });
       toast({
-        title: "Import Successful",
-        description: `Imported ${result.imported} slots for ${cameraName || 'camera'}`,
+        title: "インポート成功",
+        description: `${cameraName || 'カメラ'}に${result.imported}スロットをインポートしました`,
       });
       onOpenChange(false);
       resetState();
     },
     onError: (error: Error) => {
       toast({
-        title: "Import Failed",
+        title: "インポート失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -190,22 +180,21 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
         const text = await file.text();
         const data = JSON.parse(text);
 
-        // Basic structure validation
         if (!data.cameraId || !Array.isArray(data.slots)) {
-          throw new Error("Invalid file format. Expected cameraId and slots array.");
+          throw new Error("無効なファイル形式です。cameraIdとslotsの配列が必要です。");
         }
 
         if (data.cameraId !== cameraId) {
           toast({
-            title: "Camera Mismatch",
-            description: `File is for camera ${data.cameraId}, but you have ${cameraName} selected. Import anyway?`,
+            title: "カメラ不一致",
+            description: `ファイルはカメラ${data.cameraId}用ですが、${cameraName}が選択されています。インポートしますか？`,
           });
         }
 
         if (!cameraId) {
           toast({
-            title: "No Camera Selected",
-            description: "Please select a camera before importing slots",
+            title: "カメラ未選択",
+            description: "スロットをインポートする前にカメラを選択してください",
             variant: "destructive",
           });
           return;
@@ -216,8 +205,8 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
         validateMutation.mutate({ json: data, targetCameraId: cameraId });
       } catch (error) {
         toast({
-          title: "Invalid File",
-          description: error instanceof Error ? error.message : "Failed to parse JSON file",
+          title: "無効なファイル",
+          description: error instanceof Error ? error.message : "JSONファイルの解析に失敗しました",
           variant: "destructive",
         });
       }
@@ -237,10 +226,7 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
   };
 
   const handleClose = () => {
-    // If we're in the confirm step with validation results showing,
-    // require explicit user action (don't allow accidental dismissal)
     if (importStep === 'confirm' && validationResult) {
-      // User must click Cancel button explicitly
       return;
     }
     
@@ -249,7 +235,6 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
   };
 
   const handleCancel = () => {
-    // Explicit cancel action - always close
     onOpenChange(false);
     setTimeout(resetState, 300);
   };
@@ -258,9 +243,9 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="dialog-slot-import-export">
         <DialogHeader>
-          <DialogTitle>Slot Import/Export</DialogTitle>
+          <DialogTitle>スロット インポート/エクスポート</DialogTitle>
           <DialogDescription>
-            {cameraName ? `Managing slots for ${cameraName}` : 'Select a camera to manage slots'}
+            {cameraName ? `${cameraName}のスロットを管理` : 'スロットを管理するカメラを選択してください'}
           </DialogDescription>
         </DialogHeader>
 
@@ -269,10 +254,10 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
           <div className="border rounded-lg p-4">
             <h3 className="font-semibold mb-2 flex items-center gap-2">
               <Download className="w-4 h-4" />
-              Export Current Slots
+              現在のスロットをエクスポート
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Download all slots for the selected camera as a JSON file
+              選択したカメラのすべてのスロットをJSONファイルとしてダウンロード
             </p>
             <Button
               onClick={exportSlots}
@@ -281,7 +266,7 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
               variant="outline"
             >
               <Download className="w-4 h-4 mr-2" />
-              Export to JSON
+              JSONにエクスポート
             </Button>
           </div>
 
@@ -289,10 +274,10 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
           <div className="border rounded-lg p-4">
             <h3 className="font-semibold mb-2 flex items-center gap-2">
               <Upload className="w-4 h-4" />
-              Import Slots from File
+              ファイルからスロットをインポート
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Upload a JSON file to import and validate slot configurations
+              JSONファイルをアップロードしてスロット設定をインポートおよび検証
             </p>
 
             {importStep === 'upload' && (
@@ -302,7 +287,7 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
                 data-testid="button-import-slots"
               >
                 <Upload className="w-4 h-4 mr-2" />
-                {validateMutation.isPending ? 'Validating...' : 'Select JSON File'}
+                {validateMutation.isPending ? '検証中...' : 'JSONファイルを選択'}
               </Button>
             )}
 
@@ -315,11 +300,11 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
                     {validationResult.valid ? (
                       <>
                         <CheckCircle className="w-4 h-4 inline mr-2" />
-                        All {importData?.slots?.length || 0} slots validated successfully
+                        すべての{importData?.slots?.length || 0}スロットが正常に検証されました
                       </>
                     ) : (
                       <>
-                        Found {validationResult.errors.length} errors and {validationResult.warnings.length} warnings
+                        {validationResult.errors.length}件のエラーと{validationResult.warnings.length}件の警告が見つかりました
                       </>
                     )}
                   </AlertDescription>
@@ -328,14 +313,14 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
                 {/* Errors Table */}
                 {validationResult.errors.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold mb-2 text-destructive">Errors</h4>
+                    <h4 className="text-sm font-semibold mb-2 text-destructive">エラー</h4>
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Slot ID</TableHead>
-                          <TableHead>Field</TableHead>
-                          <TableHead>Error Code</TableHead>
-                          <TableHead>Message</TableHead>
+                          <TableHead>スロットID</TableHead>
+                          <TableHead>フィールド</TableHead>
+                          <TableHead>エラーコード</TableHead>
+                          <TableHead>メッセージ</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -359,14 +344,14 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
                 {/* Warnings Table */}
                 {validationResult.warnings.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold mb-2 text-yellow-600">Warnings</h4>
+                    <h4 className="text-sm font-semibold mb-2 text-yellow-600">警告</h4>
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Slot ID</TableHead>
-                          <TableHead>Field</TableHead>
-                          <TableHead>Warning Code</TableHead>
-                          <TableHead>Message</TableHead>
+                          <TableHead>スロットID</TableHead>
+                          <TableHead>フィールド</TableHead>
+                          <TableHead>警告コード</TableHead>
+                          <TableHead>メッセージ</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -397,7 +382,7 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
             onClick={importStep === 'confirm' ? handleCancel : handleClose} 
             data-testid="button-cancel"
           >
-            {importStep === 'confirm' ? 'Cancel' : 'Close'}
+            {importStep === 'confirm' ? 'キャンセル' : '閉じる'}
           </Button>
           {importStep === 'validate' && !validationResult?.valid && (
             <Button
@@ -408,7 +393,7 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
               data-testid="button-try-again"
             >
               <FileJson className="w-4 h-4 mr-2" />
-              Try Another File
+              別のファイルを試す
             </Button>
           )}
           {importStep === 'confirm' && validationResult?.valid && (
@@ -417,7 +402,7 @@ export function SlotImportExportModal({ open, onOpenChange, cameraId, cameraName
               disabled={importMutation.isPending}
               data-testid="button-confirm-import"
             >
-              {importMutation.isPending ? 'Importing...' : `Import ${importData?.slots?.length || 0} Slots`}
+              {importMutation.isPending ? 'インポート中...' : `${importData?.slots?.length || 0}スロットをインポート`}
             </Button>
           )}
         </DialogFooter>

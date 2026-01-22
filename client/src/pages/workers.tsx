@@ -51,8 +51,8 @@ export default function Workers() {
       apiRequest('POST', '/api/workers', workerData),
     onSuccess: () => {
       toast({
-        title: "Worker Added",
-        description: "Worker registered successfully",
+        title: "作業者追加完了",
+        description: "作業者が正常に登録されました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/workers'] });
       setIsAddWorkerOpen(false);
@@ -60,7 +60,7 @@ export default function Workers() {
     },
     onError: (error) => {
       toast({
-        title: "Failed to Add Worker",
+        title: "作業者の追加に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -71,15 +71,15 @@ export default function Workers() {
     mutationFn: (id: string) => apiRequest('DELETE', `/api/workers/${id}`),
     onSuccess: (_data, deletedId) => {
       toast({
-        title: "Worker Deleted",
-        description: "Worker removed and ArUco ID freed for reuse",
+        title: "作業者削除完了",
+        description: "作業者が削除され、ArUco IDが再利用可能になりました",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/workers'] });
       setSelectedWorkers(prev => prev.filter(id => id !== deletedId));
     },
     onError: (error) => {
       toast({
-        title: "Failed to Delete Worker",
+        title: "作業者の削除に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -113,8 +113,8 @@ export default function Workers() {
   const handlePrintTags = () => {
     if (selectedWorkers.length === 0) {
       toast({
-        title: "No Workers Selected",
-        description: "Please select workers to print tags",
+        title: "作業者が選択されていません",
+        description: "タグを印刷する作業者を選択してください",
         variant: "destructive",
       });
       return;
@@ -131,8 +131,8 @@ export default function Workers() {
         <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Worker Management</h1>
-              <p className="text-muted-foreground mt-2">Register workers with ArUco marker tags (IDs 50-95)</p>
+              <h1 className="text-3xl font-bold tracking-tight">作業者管理</h1>
+              <p className="text-muted-foreground mt-2">ArUcoマーカータグで作業者を登録（ID 50-95）</p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -142,18 +142,18 @@ export default function Workers() {
                 data-testid="button-print-tags"
               >
                 <Printer className="mr-2 h-4 w-4" />
-                Print Tags ({selectedWorkers.length})
+                タグを印刷 ({selectedWorkers.length})
               </Button>
               <Dialog open={isAddWorkerOpen} onOpenChange={setIsAddWorkerOpen}>
                 <DialogTrigger asChild>
                   <Button data-testid="button-add-worker">
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Add Worker
+                    作業者を追加
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add New Worker</DialogTitle>
+                  <DialogTitle>新規作業者追加</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(handleAddWorker)} className="space-y-4">
@@ -162,7 +162,7 @@ export default function Workers() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name (Japanese) *</FormLabel>
+                          <FormLabel>名前 *</FormLabel>
                           <FormControl>
                             <Input placeholder="田中 広" data-testid="input-worker-name" {...field} />
                           </FormControl>
@@ -175,7 +175,7 @@ export default function Workers() {
                       name="team"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Team (Optional)</FormLabel>
+                          <FormLabel>チーム（任意）</FormLabel>
                           <FormControl>
                             <Input placeholder="組立ラインA" data-testid="input-worker-team" {...field} value={field.value || ""} />
                           </FormControl>
@@ -184,7 +184,7 @@ export default function Workers() {
                       )}
                     />
                     <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                      ArUco marker ID will be auto-assigned (50-95)
+                      ArUcoマーカーIDは自動割り当て（50-95）
                     </div>
                     <Button
                       type="submit"
@@ -192,7 +192,7 @@ export default function Workers() {
                       className="w-full"
                       data-testid="button-save-worker"
                     >
-                      {createWorkerMutation.isPending ? "Adding..." : "Add Worker"}
+                      {createWorkerMutation.isPending ? "追加中..." : "作業者を追加"}
                     </Button>
                   </form>
                 </Form>
@@ -203,21 +203,21 @@ export default function Workers() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Registered Workers ({workers?.length || 0} / 45 max)</CardTitle>
+              <CardTitle>登録済み作業者 ({workers?.length || 0} / 最大45名)</CardTitle>
               {workers && workers.length > 0 && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={handleSelectAll} data-testid="button-select-all">
-                    Select All
+                    すべて選択
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleDeselectAll} data-testid="button-deselect-all">
-                    Deselect All
+                    選択解除
                   </Button>
                 </div>
               )}
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <p data-testid="text-loading">Loading workers...</p>
+                <p data-testid="text-loading">作業者を読み込み中...</p>
               ) : workers && workers.length > 0 ? (
                 <div className="space-y-3">
                   {workers.map((worker) => (
@@ -280,8 +280,8 @@ export default function Workers() {
               ) : (
                 <div className="text-center py-12 text-muted-foreground" data-testid="text-no-workers">
                   <User className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                  <p>No workers registered</p>
-                  <p className="text-sm">Add your first worker to get started</p>
+                  <p>登録された作業者がいません</p>
+                  <p className="text-sm">最初の作業者を追加して開始</p>
                 </div>
               )}
             </CardContent>

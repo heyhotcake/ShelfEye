@@ -169,7 +169,7 @@ export default function WorkerTags() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Loading workers...</p>
+        <p>作業者を読み込み中...</p>
       </div>
     );
   }
@@ -177,10 +177,10 @@ export default function WorkerTags() {
   if (selectedWorkers.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p>No workers selected</p>
+        <p>作業者が選択されていません</p>
         <Button onClick={() => navigate('/workers')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Workers
+          作業者一覧に戻る
         </Button>
       </div>
     );
@@ -219,19 +219,19 @@ export default function WorkerTags() {
           <div className="flex items-center gap-4">
             <Button variant="outline" onClick={() => navigate('/workers')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
+              戻る
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Worker Tags</h1>
+              <h1 className="text-xl font-bold">作業者タグ</h1>
               <p className="text-sm text-muted-foreground">
-                {selectedWorkers.length} worker{selectedWorkers.length !== 1 ? 's' : ''} × 3 tags = {workersWithDuplicates.length} total • {totalPages} page{totalPages !== 1 ? 's' : ''}
+                {selectedWorkers.length}名 × 3タグ = {workersWithDuplicates.length}枚 • {totalPages}ページ
               </p>
             </div>
           </div>
           <div className="flex gap-2">
             <Button onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
-              Print (supports Japanese)
+              印刷
             </Button>
           </div>
         </div>
@@ -312,7 +312,7 @@ export default function WorkerTags() {
                       border: '1px dashed #ccc',
                     }}>
                       <div className="flex items-center justify-center w-full h-full">
-                        <p className="text-xs text-gray-400">Loading...</p>
+                        <p className="text-xs text-gray-400">読み込み中...</p>
                       </div>
                     </div>
                   )}
@@ -322,7 +322,7 @@ export default function WorkerTags() {
 
             {/* Page number (hidden in print) */}
             <div className="print:hidden absolute bottom-2 right-2 text-xs text-gray-400">
-              Page {pageIndex + 1} of {totalPages}
+              {pageIndex + 1} / {totalPages} ページ
             </div>
           </div>
         ))}

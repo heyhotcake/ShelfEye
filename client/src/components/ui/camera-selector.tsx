@@ -19,7 +19,7 @@ export function CameraSelector({ cameras, selectedCameraId, onCameraChange, clas
         <Camera className="h-4 w-4 text-muted-foreground" />
         <Select value={selectedCameraId} onValueChange={onCameraChange}>
           <SelectTrigger className="w-[200px]" data-testid="select-camera">
-            <SelectValue placeholder="Select camera" />
+            <SelectValue placeholder="カメラを選択" />
           </SelectTrigger>
           <SelectContent>
             {cameras.map((camera) => (

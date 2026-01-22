@@ -36,13 +36,13 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
       toast({
-        title: "Calibration Successful",
-        description: `Markers detected: ${data.markersDetected}, Error: ${data.reprojectionError.toFixed(2)} px`,
+        title: "キャリブレーション成功",
+        description: `検出マーカー: ${data.markersDetected}、エラー: ${data.reprojectionError.toFixed(2)} px`,
       });
     },
     onError: (error) => {
       toast({
-        title: "Calibration Failed",
+        title: "キャリブレーション失敗",
         description: error.message,
         variant: "destructive",
       });
@@ -58,9 +58,9 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-bold text-foreground">
-                ArUco GridBoard Calibration
+                ArUco GridBoard キャリブレーション
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">Align the camera with the grid markers</p>
+              <p className="text-sm text-muted-foreground mt-1">カメラをグリッドマーカーに合わせてください</p>
             </div>
             <Button 
               variant="ghost" 
@@ -76,13 +76,13 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
           {/* Live View */}
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-3">Live Camera View</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-3">ライブカメラビュー</h3>
             <div className="canvas-container">
               <div className="aspect-[4/3] bg-muted rounded relative overflow-hidden">
                 <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
                   <div className="text-center">
                     <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Camera feed will appear here</p>
+                    <p className="text-sm text-muted-foreground">カメラフィードがここに表示されます</p>
                   </div>
                 </div>
                 
@@ -115,7 +115,7 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
                 <CardContent className="flex items-center justify-between p-3">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-sm text-foreground">Markers Detected</span>
+                    <span className="text-sm text-foreground">検出マーカー</span>
                   </div>
                   <span className="text-sm font-mono text-foreground" data-testid="text-markers-detected">4/4</span>
                 </CardContent>
@@ -125,7 +125,7 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
                 <CardContent className="flex items-center justify-between p-3">
                   <div className="flex items-center gap-2">
                     <Ruler className="w-5 h-5 text-primary" />
-                    <span className="text-sm text-foreground">Reprojection Error</span>
+                    <span className="text-sm text-foreground">再投影エラー</span>
                   </div>
                   <span className="text-sm font-mono text-foreground" data-testid="text-reprojection-error">0.74 px</span>
                 </CardContent>
@@ -135,19 +135,19 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
           
           {/* Configuration */}
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-3">Calibration Settings</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-3">キャリブレーション設定</h3>
             
             <div className="space-y-6">
               <div>
-                <label className="text-sm text-muted-foreground mb-2 block">Active Camera</label>
+                <label className="text-sm text-muted-foreground mb-2 block">アクティブカメラ</label>
                 <Select value={activeCamera?.id || ""} disabled>
                   <SelectTrigger data-testid="select-active-camera">
-                    <SelectValue placeholder="No active camera" />
+                    <SelectValue placeholder="アクティブカメラなし" />
                   </SelectTrigger>
                   <SelectContent>
                     {cameras?.map((camera: any) => (
                       <SelectItem key={camera.id} value={camera.id}>
-                        {camera.name} (Device {camera.deviceIndex})
+                        {camera.name} (デバイス {camera.deviceIndex})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -155,13 +155,13 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
               </div>
 
               <div>
-                <label className="text-sm text-muted-foreground mb-2 block">Grid Resolution</label>
+                <label className="text-sm text-muted-foreground mb-2 block">グリッド解像度</label>
                 <Select value={selectedResolution} onValueChange={setSelectedResolution}>
                   <SelectTrigger data-testid="select-resolution">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="2560x1440">2560 x 1440 (Recommended)</SelectItem>
+                    <SelectItem value="2560x1440">2560 x 1440 (推奨)</SelectItem>
                     <SelectItem value="1920x1080">1920 x 1080</SelectItem>
                     <SelectItem value="1280x720">1280 x 720</SelectItem>
                   </SelectContent>
@@ -170,7 +170,7 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
               
               <div>
                 <label className="text-sm text-muted-foreground mb-2 block">
-                  Error Threshold (px)
+                  エラー閾値 (px)
                 </label>
                 <div className="px-3">
                   <Slider
@@ -191,28 +191,28 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
               </div>
 
               <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-foreground">Calibration Status</h4>
+                <h4 className="text-sm font-semibold text-foreground">キャリブレーション状態</h4>
                 
                 {activeCamera?.homographyMatrix ? (
                   <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium text-green-500">Calibrated</span>
+                      <span className="text-sm font-medium text-green-500">キャリブレーション済み</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Last calibrated: {activeCamera.calibrationTimestamp 
+                      最終キャリブレーション: {activeCamera.calibrationTimestamp 
                         ? new Date(activeCamera.calibrationTimestamp).toLocaleString() 
-                        : 'Unknown'}
+                        : '不明'}
                     </p>
                   </div>
                 ) : (
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Camera className="w-4 h-4 text-amber-500" />
-                      <span className="text-sm font-medium text-amber-500">Not Calibrated</span>
+                      <span className="text-sm font-medium text-amber-500">未キャリブレーション</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Run calibration to enable slot detection
+                      スロット検出を有効にするにはキャリブレーションを実行してください
                     </p>
                   </div>
                 )}
@@ -225,7 +225,7 @@ export function CalibrationModal({ open, onOpenChange }: CalibrationModalProps) 
                 data-testid="button-start-calibration"
               >
                 <Camera className="w-4 h-4 mr-2" />
-                {calibrationMutation.isPending ? 'Calibrating...' : 'Start Calibration'}
+                {calibrationMutation.isPending ? 'キャリブレーション中...' : 'キャリブレーション開始'}
               </Button>
             </div>
           </div>

@@ -62,13 +62,13 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
     try {
       await downloadFile('/api/detection-logs/export', 'detection-logs.csv');
       toast({
-        title: "Export Successful",
-        description: "Detection logs exported to CSV",
+        title: "エクスポート成功",
+        description: "検出ログをCSVにエクスポートしました",
       });
     } catch (error) {
       toast({
-        title: "Export Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: "エクスポート失敗",
+        description: error instanceof Error ? error.message : "不明なエラー",
         variant: "destructive",
       });
     }
@@ -83,6 +83,17 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
       'OCCUPIED_NO_QR': 'bg-amber-500/20 text-amber-500',
     };
     return variants[status] || 'bg-gray-500/20 text-gray-500';
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'ITEM_PRESENT': '存在',
+      'EMPTY': '空',
+      'CHECKED_OUT': '持出中',
+      'TRAINING_ERROR': 'エラー',
+      'OCCUPIED_NO_QR': 'QRなし',
+    };
+    return labels[status] || status.replace('_', ' ');
   };
 
   const formatJSTTimestamp = (timestamp: string | Date) => {
@@ -100,9 +111,9 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-bold text-foreground">
-                Detection Logs
+                検出ログ
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">View and export detection history</p>
+              <p className="text-sm text-muted-foreground mt-1">検出履歴の表示とエクスポート</p>
             </div>
             <div className="flex items-center gap-3">
               <Button 
@@ -110,7 +121,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                 data-testid="button-export-logs"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Export CSV
+                CSVエクスポート
               </Button>
               <Button 
                 variant="ghost" 
@@ -131,7 +142,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
             <CardContent className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Date From</label>
+                  <label className="text-sm text-muted-foreground mb-2 block">開始日</label>
                   <Input 
                     type="date"
                     value={filters.startDate}
@@ -140,7 +151,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Date To</label>
+                  <label className="text-sm text-muted-foreground mb-2 block">終了日</label>
                   <Input 
                     type="date"
                     value={filters.endDate}
@@ -149,16 +160,16 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Slot</label>
+                  <label className="text-sm text-muted-foreground mb-2 block">スロット</label>
                   <Select 
                     value={filters.slotId} 
                     onValueChange={(value) => setFilters({ ...filters, slotId: value })}
                   >
                     <SelectTrigger data-testid="select-slot-filter">
-                      <SelectValue placeholder="All Slots" />
+                      <SelectValue placeholder="すべてのスロット" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Slots</SelectItem>
+                      <SelectItem value="all">すべてのスロット</SelectItem>
                       {slots?.map((slot: any) => (
                         <SelectItem key={slot.id} value={slot.slotId}>
                           {slot.slotId} - {slot.toolName}
@@ -168,21 +179,21 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Status</label>
+                  <label className="text-sm text-muted-foreground mb-2 block">ステータス</label>
                   <Select 
                     value={filters.status} 
                     onValueChange={(value) => setFilters({ ...filters, status: value })}
                   >
                     <SelectTrigger data-testid="select-status-filter">
-                      <SelectValue placeholder="All States" />
+                      <SelectValue placeholder="すべての状態" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All States</SelectItem>
-                      <SelectItem value="ITEM_PRESENT">Present</SelectItem>
-                      <SelectItem value="EMPTY">Empty</SelectItem>
-                      <SelectItem value="CHECKED_OUT">Checked Out</SelectItem>
-                      <SelectItem value="TRAINING_ERROR">Error</SelectItem>
-                      <SelectItem value="OCCUPIED_NO_QR">Occupied No QR</SelectItem>
+                      <SelectItem value="all">すべての状態</SelectItem>
+                      <SelectItem value="ITEM_PRESENT">存在</SelectItem>
+                      <SelectItem value="EMPTY">空</SelectItem>
+                      <SelectItem value="CHECKED_OUT">持出中</SelectItem>
+                      <SelectItem value="TRAINING_ERROR">エラー</SelectItem>
+                      <SelectItem value="OCCUPIED_NO_QR">QRなし</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -194,7 +205,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                     data-testid="button-clear-filters"
                   >
                     <Filter className="w-4 h-4 mr-2" />
-                    Clear Filters
+                    フィルタークリア
                   </Button>
                 </div>
               </div>
@@ -204,7 +215,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
           {/* Logs Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Detection History</CardTitle>
+              <CardTitle>検出履歴</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -217,14 +228,14 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Timestamp</TableHead>
-                          <TableHead>Slot</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>QR ID / Worker</TableHead>
-                          <TableHead>SSIM Score</TableHead>
-                          <TableHead>Pose Quality</TableHead>
-                          <TableHead>Alert</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead>タイムスタンプ</TableHead>
+                          <TableHead>スロット</TableHead>
+                          <TableHead>ステータス</TableHead>
+                          <TableHead>QR ID / 作業者</TableHead>
+                          <TableHead>SSIMスコア</TableHead>
+                          <TableHead>姿勢品質</TableHead>
+                          <TableHead>アラート</TableHead>
+                          <TableHead>操作</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -238,7 +249,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                             </TableCell>
                             <TableCell>
                               <Badge className={getStatusBadge(log.status)}>
-                                {log.status.replace('_', ' ')}
+                                {getStatusLabel(log.status)}
                               </Badge>
                             </TableCell>
                             <TableCell className="font-mono text-sm">
@@ -259,7 +270,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                             <TableCell>
                               {log.alertTriggered ? (
                                 <Badge className="bg-red-500/20 text-red-500">
-                                  Triggered
+                                  発生
                                 </Badge>
                               ) : (
                                 <span className="text-muted-foreground">—</span>
@@ -274,7 +285,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                                   data-testid={`button-view-image-${log.id}`}
                                 >
                                   <Eye className="w-3 h-3 mr-1" />
-                                  View
+                                  表示
                                 </Button>
                               )}
                             </TableCell>
@@ -285,7 +296,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                           <TableRow>
                             <TableCell colSpan={8} className="text-center py-8">
                               <div className="text-muted-foreground">
-                                No detection logs found
+                                検出ログが見つかりません
                               </div>
                             </TableCell>
                           </TableRow>
@@ -297,7 +308,7 @@ export function LogsViewer({ open, onOpenChange }: LogsViewerProps) {
                   {/* Pagination */}
                   <div className="flex items-center justify-between mt-4">
                     <div className="text-sm text-muted-foreground">
-                      Showing {((currentPage - 1) * logsPerPage) + 1}-{Math.min(currentPage * logsPerPage, logs?.length || 0)} of {logs?.length || 0} entries
+                      {((currentPage - 1) * logsPerPage) + 1}-{Math.min(currentPage * logsPerPage, logs?.length || 0)} / {logs?.length || 0} 件を表示
                     </div>
                     
                     <div className="flex items-center gap-2">

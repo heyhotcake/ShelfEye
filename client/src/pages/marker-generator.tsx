@@ -12,7 +12,7 @@ export default function MarkerGenerator() {
 
   const generateMarker = async () => {
     if (markerId < 1 || markerId > 50) {
-      alert("Marker ID must be between 1 and 50");
+      alert("マーカーIDは1〜50の範囲で指定してください");
       return;
     }
 
@@ -28,7 +28,7 @@ export default function MarkerGenerator() {
       }
     } catch (error) {
       console.error("Failed to generate marker:", error);
-      alert("Failed to generate marker");
+      alert("マーカーの生成に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -47,15 +47,15 @@ export default function MarkerGenerator() {
     <div className="container mx-auto p-6 max-w-4xl">
       <Card>
         <CardHeader>
-          <CardTitle>ArUco Marker Generator (DICT_4X4_100)</CardTitle>
+          <CardTitle>ArUcoマーカー生成 (DICT_4X4_100)</CardTitle>
           <CardDescription>
-            Generate individual ArUco markers for your slots (IDs 1-50)
+            スロット用のArUcoマーカーを個別に生成します（ID 1-50）
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Marker ID (1-50)</label>
+              <label className="text-sm font-medium mb-2 block">マーカーID（1-50）</label>
               <Input
                 type="number"
                 min={1}
@@ -70,7 +70,7 @@ export default function MarkerGenerator() {
               disabled={loading}
               data-testid="button-generate"
             >
-              {loading ? "Generating..." : "Generate Marker"}
+              {loading ? "生成中..." : "マーカー生成"}
             </Button>
           </div>
 
@@ -92,17 +92,17 @@ export default function MarkerGenerator() {
                   data-testid="button-download"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Download Marker {markerId}
+                  マーカー {markerId} をダウンロード
                 </Button>
               </div>
 
               <div className="text-sm text-muted-foreground bg-muted p-4 rounded-lg">
-                <p className="font-medium mb-2">Printing Instructions:</p>
+                <p className="font-medium mb-2">印刷手順：</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Print at actual size (no scaling)</li>
-                  <li>Marker should be exactly 3×3 cm</li>
-                  <li>Center within your 4×4 cm slot area (0.5cm margin on all sides)</li>
-                  <li>Use high-quality white paper and black ink</li>
+                  <li>実寸で印刷してください（拡大縮小なし）</li>
+                  <li>マーカーは正確に3×3 cmにしてください</li>
+                  <li>4×4 cmのスロット領域の中央に配置（全側面に0.5cmの余白）</li>
+                  <li>高品質な白い紙と黒インクを使用してください</li>
                 </ul>
               </div>
             </div>

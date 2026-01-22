@@ -17,55 +17,65 @@ import logoPath from "@assets/Blue_and_white_bogo_1767655508883.jpg";
 
 const navigation = [
   {
-    name: "Dashboard",
+    name: "ダッシュボード",
     href: "/",
     icon: LayoutDashboard,
+    id: "dashboard",
   },
   {
-    name: "Template Design",
+    name: "テンプレート設計",
     href: "/slot-drawing", 
     icon: SquareFunction,
+    id: "template-design",
   },
   {
-    name: "Print Preview",
+    name: "印刷プレビュー",
     href: "/template-print",
     icon: Printer,
+    id: "print-preview",
   },
   {
-    name: "Calibration", 
+    name: "キャリブレーション", 
     href: "/calibration",
     icon: Camera,
+    id: "calibration",
   },
   {
-    name: "Configuration",
+    name: "設定",
     href: "/configuration",
     icon: Settings,
+    id: "configuration",
   },
   {
-    name: "Scheduler",
+    name: "スケジューラー",
     href: "/scheduler",
     icon: Clock,
+    id: "scheduler",
   },
   {
-    name: "Alerts",
+    name: "アラート",
     href: "/alerts",
     icon: Bell,
     badge: 3,
+    id: "alerts",
   },
   {
-    name: "Analytics",
+    name: "分析",
     href: "/analytics", 
     icon: TrendingUp,
+    id: "analytics",
   },
   {
-    name: "Detection Logs",
+    name: "検出ログ",
     href: "/detection-logs",
     icon: Database,
+    id: "detection-logs",
   },
   {
-    name: "Workers",
+    name: "作業者",
     href: "/workers",
     icon: User,
+    id: "workers",
   },
 ];
 
@@ -93,7 +103,7 @@ export function Sidebar() {
           const Icon = item.icon;
           
           return (
-            <Link key={item.name} href={item.href}>
+            <Link key={item.id} href={item.href}>
               <div
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors",
@@ -101,14 +111,14 @@ export function Sidebar() {
                     ? "bg-primary text-primary-foreground" 
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 )}
-                data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                data-testid={`nav-${item.id}`}
               >
                 <Icon className="w-5 h-5" />
                 <span>{item.name}</span>
                 {item.badge && (
                   <Badge 
                     className="ml-auto bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full alert-badge"
-                    data-testid={`badge-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    data-testid={`badge-${item.id}`}
                   >
                     {item.badge}
                   </Badge>

@@ -69,11 +69,11 @@ export default function Analytics() {
   })) || [];
 
   const statusDistribution = [
-    { name: 'Present', value: summary?.statusCounts?.present ?? 0, color: 'hsl(142, 76%, 45%)' },
-    { name: 'Empty', value: summary?.statusCounts?.empty ?? 0, color: 'hsl(0, 84%, 60%)' },
-    { name: 'Checked Out', value: summary?.statusCounts?.checkedOut ?? 0, color: 'hsl(217, 91%, 60%)' },
-    { name: 'Occupied', value: summary?.statusCounts?.occupied ?? 0, color: 'hsl(215, 20%, 45%)' },
-    { name: 'Error', value: summary?.statusCounts?.error ?? 0, color: 'hsl(280, 89%, 65%)' },
+    { name: '存在', value: summary?.statusCounts?.present ?? 0, color: 'hsl(142, 76%, 45%)' },
+    { name: '空', value: summary?.statusCounts?.empty ?? 0, color: 'hsl(0, 84%, 60%)' },
+    { name: '貸出中', value: summary?.statusCounts?.checkedOut ?? 0, color: 'hsl(217, 91%, 60%)' },
+    { name: '使用中', value: summary?.statusCounts?.occupied ?? 0, color: 'hsl(215, 20%, 45%)' },
+    { name: 'エラー', value: summary?.statusCounts?.error ?? 0, color: 'hsl(280, 89%, 65%)' },
   ].filter(item => item.value > 0);
 
   // Use real alert trends or empty array
@@ -108,10 +108,10 @@ export default function Analytics() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="analytics-title">
-                Analytics Dashboard
+                分析ダッシュボード
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Performance insights and trend analysis
+                パフォーマンスの洞察とトレンド分析
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -120,10 +120,10 @@ export default function Analytics() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="24h">Last 24H</SelectItem>
-                  <SelectItem value="7d">Last 7 Days</SelectItem>
-                  <SelectItem value="30d">Last 30 Days</SelectItem>
-                  <SelectItem value="90d">Last 90 Days</SelectItem>
+                  <SelectItem value="24h">過去24時間</SelectItem>
+                  <SelectItem value="7d">過去7日間</SelectItem>
+                  <SelectItem value="30d">過去30日間</SelectItem>
+                  <SelectItem value="90d">過去90日間</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -139,7 +139,7 @@ export default function Analytics() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Availability Rate</p>
+                      <p className="text-sm text-muted-foreground">利用可能率</p>
                       <p className="text-2xl font-bold text-foreground" data-testid="text-availability-rate">
                         {isNaN(availabilityRate) ? '--' : `${availabilityRate}%`}
                       </p>
@@ -151,7 +151,7 @@ export default function Analytics() {
                   <div className="flex items-center gap-1 mt-2">
                     <Database className="w-3 h-3 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
-                      {summary?.statusCounts?.present ?? 0} / {summary?.activeSlots ?? 0} slots available
+                      {summary?.statusCounts?.present ?? 0} / {summary?.activeSlots ?? 0} スロット利用可能
                     </span>
                   </div>
                 </CardContent>
@@ -161,7 +161,7 @@ export default function Analytics() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Active Slots</p>
+                      <p className="text-sm text-muted-foreground">アクティブスロット</p>
                       <p className="text-2xl font-bold text-foreground" data-testid="text-active-slots">
                         {summary?.activeSlots || 0}
                       </p>
@@ -173,7 +173,7 @@ export default function Analytics() {
                   <div className="flex items-center gap-1 mt-2">
                     <Database className="w-3 h-3 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
-                      {summary?.totalSlots || 0} total configured
+                      合計 {summary?.totalSlots || 0} 設定済み
                     </span>
                   </div>
                 </CardContent>
@@ -183,7 +183,7 @@ export default function Analytics() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Capture Success Rate</p>
+                      <p className="text-sm text-muted-foreground">キャプチャ成功率</p>
                       <p className="text-2xl font-bold text-foreground" data-testid="text-system-uptime">
                         {captureSuccessRate > 0 ? `${captureSuccessRate}%` : '--'}
                       </p>
@@ -196,20 +196,20 @@ export default function Analytics() {
                     {captureSuccessRate >= 95 ? (
                       <>
                         <CheckCircle className="w-3 h-3 text-green-500" />
-                        <span className="text-xs text-green-500">Excellent</span>
+                        <span className="text-xs text-green-500">優秀</span>
                       </>
                     ) : captureSuccessRate >= 80 ? (
                       <>
                         <Activity className="w-3 h-3 text-amber-500" />
-                        <span className="text-xs text-amber-500">Good</span>
+                        <span className="text-xs text-amber-500">良好</span>
                       </>
                     ) : totalCaptures > 0 ? (
                       <>
                         <AlertTriangle className="w-3 h-3 text-red-500" />
-                        <span className="text-xs text-red-500">Needs attention</span>
+                        <span className="text-xs text-red-500">要確認</span>
                       </>
                     ) : (
-                      <span className="text-xs text-muted-foreground">No captures yet</span>
+                      <span className="text-xs text-muted-foreground">キャプチャなし</span>
                     )}
                   </div>
                 </CardContent>
@@ -219,7 +219,7 @@ export default function Analytics() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Pending Alerts</p>
+                      <p className="text-sm text-muted-foreground">保留中のアラート</p>
                       <p className="text-2xl font-bold text-foreground" data-testid="text-critical-alerts">
                         {summary?.alertCounts?.pending ?? 0}
                       </p>
@@ -231,7 +231,7 @@ export default function Analytics() {
                   <div className="flex items-center gap-1 mt-2">
                     <Database className="w-3 h-3 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
-                      {summary?.alertCounts?.failed ?? 0} failed
+                      {summary?.alertCounts?.failed ?? 0} 件失敗
                     </span>
                   </div>
                 </CardContent>
@@ -244,7 +244,7 @@ export default function Analytics() {
               {/* Tool Presence Over Time */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Tool Presence Over Time</CardTitle>
+                  <CardTitle>工具存在推移</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {timeSeriesData.length > 0 ? (
@@ -273,14 +273,14 @@ export default function Analytics() {
                           dataKey="present" 
                           stroke="hsl(142, 76%, 45%)"
                           strokeWidth={2}
-                          name="Tools Present"
+                          name="工具存在"
                         />
                         <Line 
                           type="monotone" 
                           dataKey="empty" 
                           stroke="hsl(0, 84%, 60%)"
                           strokeWidth={2}
-                          name="Empty/Checked Out"
+                          name="空/貸出中"
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -288,8 +288,8 @@ export default function Analytics() {
                     <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                       <div className="text-center">
                         <Database className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>No detection data available yet</p>
-                        <p className="text-xs mt-1">Data will appear after captures are run</p>
+                        <p>検出データがまだありません</p>
+                        <p className="text-xs mt-1">キャプチャ実行後にデータが表示されます</p>
                       </div>
                     </div>
                   )}
@@ -299,7 +299,7 @@ export default function Analytics() {
               {/* Status Distribution */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Current Status Distribution</CardTitle>
+                  <CardTitle>現在のステータス分布</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {statusDistribution.length > 0 ? (
@@ -332,8 +332,8 @@ export default function Analytics() {
                     <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                       <div className="text-center">
                         <Database className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>No slot status data available</p>
-                        <p className="text-xs mt-1">Configure slots to see distribution</p>
+                        <p>スロットステータスデータがありません</p>
+                        <p className="text-xs mt-1">スロットを設定して分布を表示</p>
                       </div>
                     </div>
                   )}
@@ -347,7 +347,7 @@ export default function Analytics() {
               {/* Alert Trends */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Alert Trends (Last 7 Days)</CardTitle>
+                  <CardTitle>アラートトレンド（過去7日間）</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {alertTrends.length > 0 ? (
@@ -358,7 +358,7 @@ export default function Analytics() {
                           dataKey="date" 
                           stroke="hsl(var(--muted-foreground))"
                           fontSize={12}
-                          tickFormatter={(value) => format(toZonedTime(new Date(value), TIMEZONE), 'MMM dd', { timeZone: TIMEZONE })}
+                          tickFormatter={(value) => format(toZonedTime(new Date(value), TIMEZONE), 'M月d日', { timeZone: TIMEZONE })}
                         />
                         <YAxis 
                           stroke="hsl(var(--muted-foreground))"
@@ -373,17 +373,17 @@ export default function Analytics() {
                           }}
                           labelFormatter={(value) => format(toZonedTime(new Date(value), TIMEZONE), 'yyyy-MM-dd', { timeZone: TIMEZONE })}
                         />
-                        <Bar dataKey="toolMissing" stackId="a" fill="hsl(0, 84%, 60%)" name="Tool Missing" />
-                        <Bar dataKey="qrFailure" stackId="a" fill="hsl(38, 92%, 50%)" name="QR Failure" />
-                        <Bar dataKey="cameraHealth" stackId="a" fill="hsl(280, 89%, 65%)" name="Camera Health" />
+                        <Bar dataKey="toolMissing" stackId="a" fill="hsl(0, 84%, 60%)" name="工具不在" />
+                        <Bar dataKey="qrFailure" stackId="a" fill="hsl(38, 92%, 50%)" name="QR読取失敗" />
+                        <Bar dataKey="cameraHealth" stackId="a" fill="hsl(280, 89%, 65%)" name="カメラ状態" />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                       <div className="text-center">
                         <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-50 text-green-500" />
-                        <p>No alerts in the last 7 days</p>
-                        <p className="text-xs mt-1">System running smoothly</p>
+                        <p>過去7日間のアラートはありません</p>
+                        <p className="text-xs mt-1">システムは正常に稼働中</p>
                       </div>
                     </div>
                   )}
@@ -393,13 +393,13 @@ export default function Analytics() {
               {/* Performance Metrics */}
               <Card>
                 <CardHeader>
-                  <CardTitle>System Statistics</CardTitle>
+                  <CardTitle>システム統計</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Capture Success Rate</span>
+                      <span className="text-muted-foreground">キャプチャ成功率</span>
                       <span className="font-mono text-foreground" data-testid="text-detection-accuracy">
                         {captureSuccessRate > 0 ? `${captureSuccessRate}%` : '--'}
                       </span>
@@ -414,7 +414,7 @@ export default function Analytics() {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Slot Utilization</span>
+                      <span className="text-muted-foreground">スロット使用率</span>
                       <span className="font-mono text-foreground" data-testid="text-qr-detection-rate">
                         {summary && summary.totalSlots > 0 
                           ? `${Math.round((summary.activeSlots / summary.totalSlots) * 100)}%`
@@ -432,7 +432,7 @@ export default function Analytics() {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Tool Availability</span>
+                      <span className="text-muted-foreground">工具利用可能率</span>
                       <span className="font-mono text-foreground" data-testid="text-calibration-quality">
                         {availabilityRate > 0 ? `${availabilityRate}%` : '--'}
                       </span>
@@ -449,13 +449,13 @@ export default function Analytics() {
                     <div className="grid grid-cols-2 gap-4 text-center">
                       <div>
                         <p className="text-2xl font-bold text-foreground">{totalCaptures}</p>
-                        <p className="text-xs text-muted-foreground">Total Captures</p>
+                        <p className="text-xs text-muted-foreground">合計キャプチャ</p>
                       </div>
                       <div>
                         <p className="text-2xl font-bold text-foreground">
                           {captureSuccessRate > 0 ? `${captureSuccessRate}%` : '--'}
                         </p>
-                        <p className="text-xs text-muted-foreground">Success Rate</p>
+                        <p className="text-xs text-muted-foreground">成功率</p>
                       </div>
                     </div>
                   </div>
@@ -466,7 +466,7 @@ export default function Analytics() {
             {/* Tool Activity Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>Most Active Tools</CardTitle>
+                <CardTitle>最も使用頻度の高い工具</CardTitle>
               </CardHeader>
               <CardContent>
                 {extended?.topTools && extended.topTools.length > 0 ? (
@@ -482,16 +482,16 @@ export default function Analytics() {
                               'bg-gray-500/20 text-gray-500'
                             }
                           >
-                            {tool.status.replace('-', ' ')}
+                            {tool.status === 'present' ? '存在' : tool.status === 'checked-out' ? '貸出中' : tool.status === 'empty' ? '空' : tool.status.replace('-', ' ')}
                           </Badge>
                           <div>
                             <p className="text-sm font-medium text-foreground">{tool.tool}</p>
-                            <p className="text-xs text-muted-foreground">Slot: {tool.slotId}</p>
+                            <p className="text-xs text-muted-foreground">スロット: {tool.slotId}</p>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-mono text-foreground">{tool.checkouts}</p>
-                          <p className="text-xs text-muted-foreground">events</p>
+                          <p className="text-xs text-muted-foreground">イベント</p>
                         </div>
                       </div>
                     ))}
@@ -499,8 +499,8 @@ export default function Analytics() {
                 ) : (
                   <div className="py-8 text-center text-muted-foreground">
                     <Database className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No tool activity recorded yet</p>
-                    <p className="text-xs mt-1">Activity will appear after detection logs are captured</p>
+                    <p>工具アクティビティはまだ記録されていません</p>
+                    <p className="text-xs mt-1">検出ログがキャプチャされるとアクティビティが表示されます</p>
                   </div>
                 )}
               </CardContent>

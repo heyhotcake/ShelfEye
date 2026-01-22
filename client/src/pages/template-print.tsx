@@ -1701,10 +1701,10 @@ export default function TemplatePrint() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="template-print-title">
-                Print Template Preview
+                テンプレート印刷プレビュー
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Preview and print template rectangles with QR codes
+                QRコード付きテンプレートをプレビューして印刷
               </p>
             </div>
             <div className="flex gap-2">
@@ -1714,15 +1714,15 @@ export default function TemplatePrint() {
                 data-testid="button-back"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
+                戻る
               </Button>
               <Button variant="outline" onClick={handleDownload} data-testid="button-download">
                 <Download className="w-4 h-4 mr-2" />
-                Download
+                ダウンロード
               </Button>
               <Button onClick={handlePrint} data-testid="button-print">
                 <Printer className="w-4 h-4 mr-2" />
-                Print
+                印刷
               </Button>
             </div>
           </div>
@@ -1732,16 +1732,16 @@ export default function TemplatePrint() {
           <div className="max-w-7xl mx-auto space-y-6 print:space-y-0">
             <Card className="print:hidden">
               <CardHeader>
-                <CardTitle>Print Settings</CardTitle>
+                <CardTitle>印刷設定</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {savedTemplateDesigns.length > 0 ? (
                     <div className="flex items-center gap-3">
-                      <Label htmlFor="template-design" className="text-sm font-medium">Template Design:</Label>
+                      <Label htmlFor="template-design" className="text-sm font-medium">テンプレートデザイン：</Label>
                       <Select value={selectedDesignId} onValueChange={setSelectedDesignId}>
                         <SelectTrigger className="w-64" id="template-design" data-testid="select-template-design">
-                          <SelectValue placeholder="Select a template design" />
+                          <SelectValue placeholder="テンプレートデザインを選択" />
                         </SelectTrigger>
                         <SelectContent>
                           {savedTemplateDesigns.map((design) => (
@@ -1754,14 +1754,14 @@ export default function TemplatePrint() {
                     </div>
                   ) : (
                     <div className="text-sm text-muted-foreground">
-                      <p className="font-medium text-foreground mb-1">Loading templates from database...</p>
-                      <p>Showing {allTemplateRectangles.length} template{allTemplateRectangles.length !== 1 ? 's' : ''} with fresh QR codes (numbers 1-7)</p>
+                      <p className="font-medium text-foreground mb-1">データベースからテンプレートを読み込み中...</p>
+                      <p>{allTemplateRectangles.length}件のテンプレートを表示中（QRコード番号1-7）</p>
                     </div>
                   )}
                   {selectedDesignId && (
                     <div className="text-sm text-muted-foreground pl-32">
-                      <p>Paper Size: <span className="font-medium text-foreground">{paperSize}</span></p>
-                      <p>{templatesWithCategories.length} template{templatesWithCategories.length !== 1 ? 's' : ''}</p>
+                      <p>用紙サイズ: <span className="font-medium text-foreground">{paperSize}</span></p>
+                      <p>{templatesWithCategories.length}件のテンプレート</p>
                     </div>
                   )}
                 </div>
