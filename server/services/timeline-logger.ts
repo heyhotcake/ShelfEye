@@ -495,6 +495,12 @@ export class TimelineLogger {
         });
       }
 
+      // Add confirmer symbol (Ⓝ) to row 68 for each 15-minute interval
+      updates.push({
+        range: `'${tabName}'!${columnLetter}${this.config.confirmerRow}`,
+        values: [['Ⓝ']]
+      });
+
       if (updates.length > 0) {
         await sheets.spreadsheets.values.batchUpdate({
           spreadsheetId: this.config.spreadsheetId!,
