@@ -48,12 +48,18 @@ export async function sendAlertEmail(alertData: AlertEmailData): Promise<boolean
       return false;
     }
 
-    const recipients = typeof alertEmailsConfig.value === 'string' 
+    const rawRecipients: string[] = typeof alertEmailsConfig.value === 'string' 
       ? JSON.parse(alertEmailsConfig.value) 
       : alertEmailsConfig.value;
-    if (!recipients || recipients.length === 0) {
+    if (!rawRecipients || rawRecipients.length === 0) {
       console.log('[Email Alert] No alert email recipients configured');
       return false;
+    }
+    
+    // Deduplicate recipients to prevent sending duplicate emails
+    const recipients = [...new Set(rawRecipients)];
+    if (recipients.length !== rawRecipients.length) {
+      console.log(`[Email Alert] Deduplicated recipients: ${rawRecipients.length} -> ${recipients.length}`);
     }
 
     // Build email content
