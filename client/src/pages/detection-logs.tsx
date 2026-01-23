@@ -249,40 +249,21 @@ export default function DetectionLogs() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">スロット</label>
+                    <label className="text-sm text-muted-foreground mb-2 block">備品</label>
                     <Select 
                       value={filters.slotId} 
                       onValueChange={(value) => setFilters({ ...filters, slotId: value })}
                     >
                       <SelectTrigger data-testid="select-slot-filter">
-                        <SelectValue placeholder="すべてのスロット" />
+                        <SelectValue placeholder="すべての備品" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">すべてのスロット</SelectItem>
+                        <SelectItem value="all">すべての備品</SelectItem>
                         {slots?.map((slot: any) => (
                           <SelectItem key={slot.id} value={slot.slotId}>
-                            {slot.slotId} - {slot.toolName}
+                            {slot.toolName} #{slot.slotNumber}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-2 block">ステータス</label>
-                    <Select 
-                      value={filters.status} 
-                      onValueChange={(value) => setFilters({ ...filters, status: value })}
-                    >
-                      <SelectTrigger data-testid="select-status-filter">
-                        <SelectValue placeholder="すべてのステータス" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">すべてのステータス</SelectItem>
-                        <SelectItem value="ITEM_PRESENT">存在</SelectItem>
-                        <SelectItem value="EMPTY">空</SelectItem>
-                        <SelectItem value="CHECKED_OUT">貸出中</SelectItem>
-                        <SelectItem value="TRAINING_ERROR">エラー</SelectItem>
-                        <SelectItem value="OCCUPIED_NO_QR">QRなし占有</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
