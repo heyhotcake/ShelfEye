@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { downloadFile, apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Download, ChevronLeft, ChevronRight, Eye, Filter, Settings2, Clock, Play, RefreshCw, Save } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, Eye, Filter, Clock, Play, RefreshCw, Save } from "lucide-react";
 import { format, toZonedTime } from "date-fns-tz";
 
 interface TimelineConfig {
@@ -65,10 +65,6 @@ export default function DetectionLogs() {
     queryKey: ['/api/slots'],
   });
 
-  const { data: sheetsFormattingConfig } = useQuery<{ value: any }>({
-    queryKey: ['/api/config/SHEETS_FORMATTING'],
-  });
-
   const { data: timelineConfig, isLoading: timelineLoading } = useQuery<TimelineConfig>({
     queryKey: ['/api/timeline/config'],
   });
@@ -91,12 +87,6 @@ export default function DetectionLogs() {
       setTimelineConfigDirty(false);
     }
   }, [timelineConfig]);
-
-  const sheetsFormatting = sheetsFormattingConfig?.value || {
-    tabCreation: 'monthly',
-    tabNamePattern: 'Alerts-{YYYY-MM}',
-    columnOrder: ['timestamp', 'alertType', 'status', 'cameraId', 'slotId', 'errorMessage', 'details']
-  };
 
   const updateTimelineConfigMutation = useMutation({
     mutationFn: (config: Partial<TimelineConfig>) =>
@@ -146,25 +136,6 @@ export default function DetectionLogs() {
     onError: (error) => {
       toast({
         title: "実行に失敗しました",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateConfigMutation = useMutation({
-    mutationFn: ({ key, value }: { key: string; value: any }) =>
-      apiRequest('POST', '/api/config', { key, value }),
-    onSuccess: () => {
-      toast({
-        title: "設定が更新されました",
-        description: "設定が正常に保存されました",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/config'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "更新に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -474,95 +445,6 @@ export default function DetectionLogs() {
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Google スプレッドシート書式設定 */}
-            <Card className="mt-6">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Settings2 className="w-5 h-5 text-primary" />
-                  <CardTitle>Google スプレッドシート書式設定</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="tab-creation">タブ作成ルール</Label>
-                  <Select
-                    value={sheetsFormatting.tabCreation || 'monthly'}
-                    onValueChange={(value) => {
-                      const updated = { ...sheetsFormatting, tabCreation: value };
-                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
-                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
-                      });
-                    }}
-                  >
-                    <SelectTrigger id="tab-creation" data-testid="select-tab-creation">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="single">単一シート（すべて1つのタブ）</SelectItem>
-                      <SelectItem value="monthly">月別タブ（月ごと）</SelectItem>
-                      <SelectItem value="weekly">週別タブ（週ごと）</SelectItem>
-                      <SelectItem value="daily">日別タブ（日ごと）</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    スプレッドシートで新しいタブを作成するタイミングを制御します
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="tab-pattern">タブ名パターン</Label>
-                  <Input
-                    id="tab-pattern"
-                    value={sheetsFormatting.tabNamePattern || 'Alerts-{YYYY-MM}'}
-                    onChange={(e) => {
-                      const updated = { ...sheetsFormatting, tabNamePattern: e.target.value };
-                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
-                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
-                      });
-                    }}
-                    data-testid="input-tab-pattern"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    使用可能: <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{YYYY}'}</code> 年, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{MM}'}</code> 月, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{DD}'}</code> 日, <code className="text-xs bg-secondary px-1 py-0.5 rounded">{'{WW}'}</code> 週
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>ヘッダーを含める</Label>
-                    <p className="text-xs text-muted-foreground">新しいタブに列ヘッダーを追加</p>
-                  </div>
-                  <Switch
-                    checked={sheetsFormatting.includeHeaders !== false}
-                    onCheckedChange={(checked) => {
-                      const updated = { ...sheetsFormatting, includeHeaders: checked };
-                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
-                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
-                      });
-                    }}
-                    data-testid="switch-include-headers"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>ヘッダー行を固定</Label>
-                    <p className="text-xs text-muted-foreground">スクロール時にヘッダーを表示したままにする</p>
-                  </div>
-                  <Switch
-                    checked={sheetsFormatting.freezeHeaderRow !== false}
-                    onCheckedChange={(checked) => {
-                      const updated = { ...sheetsFormatting, freezeHeaderRow: checked };
-                      updateConfigMutation.mutate({ key: 'SHEETS_FORMATTING', value: updated }, {
-                        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/config/SHEETS_FORMATTING'] })
-                      });
-                    }}
-                    data-testid="switch-freeze-headers"
-                  />
                 </div>
               </CardContent>
             </Card>
