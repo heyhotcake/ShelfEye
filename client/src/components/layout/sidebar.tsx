@@ -66,7 +66,7 @@ const navigation = [
     id: "analytics",
   },
   {
-    name: "検出ログ",
+    name: "備品利用ログ",
     href: "/detection-logs",
     icon: Database,
     id: "detection-logs",
