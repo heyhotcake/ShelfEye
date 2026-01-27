@@ -274,8 +274,8 @@ def main():
             paper_w, paper_h = map(float, args.paper_size.split('x'))
             
             # Sample points at paper corners to measure pixel density
-            # Markers are 5cm from edges, so paper area is between markers
-            marker_offset = 5.0
+            # Markers are 5cm x 5cm, so marker CENTERS are 2.5cm from edges
+            marker_offset = 2.5
             test_points_cm = np.array([
                 [marker_offset, marker_offset],
                 [paper_w - marker_offset, marker_offset],
@@ -289,10 +289,11 @@ def main():
             pixels = pixels_h[:, :2] / pixels_h[:, 2:3]
             
             # Measure pixel density from horizontal and vertical spans
+            # Distance between marker centers = paper dimension - 2 * offset (2.5cm each side)
             horizontal_px = np.linalg.norm(pixels[1] - pixels[0])
             vertical_px = np.linalg.norm(pixels[3] - pixels[0])
-            horizontal_cm = paper_w - 2 * marker_offset
-            vertical_cm = paper_h - 2 * marker_offset
+            horizontal_cm = paper_w - 2 * marker_offset  # e.g., 89.1 - 5 = 84.1cm for 6-page
+            vertical_cm = paper_h - 2 * marker_offset    # e.g., 42 - 5 = 37cm for 6-page
             
             px_per_cm_h = horizontal_px / horizontal_cm
             px_per_cm_v = vertical_px / vertical_cm
