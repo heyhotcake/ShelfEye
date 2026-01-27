@@ -100,15 +100,15 @@ class DHT20Sensor:
         return False
     
     def _read_raw_data(self):
-        """Read raw sensor data using register 0x71 per datasheet"""
+        """Read raw sensor data - plain 7-byte read after measurement trigger"""
         if not self.bus:
             return None
         
         try:
-            # Read 7 bytes from register 0x71 (status + data + CRC)
-            time.sleep(0.01)
-            data = self.bus.read_i2c_block_data(self.address, 0x71, 7)
-            return data
+            # Plain I2C read of 7 bytes (no register address - data follows trigger)
+            msg = smbus2.i2c_msg.read(self.address, 7)
+            self.bus.i2c_rdwr(msg)
+            return list(msg)
         except Exception as e:
             print(f"Read error: {e}", file=sys.stderr)
             return None
