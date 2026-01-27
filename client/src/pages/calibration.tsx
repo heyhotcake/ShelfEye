@@ -192,7 +192,7 @@ export default function Calibration() {
       
       return response.json();
     },
-    enabled: !!selectedCamera && !isCameraLocked && !calibrationMutation.isPending, // Enable only when not in calibration
+    enabled: !!selectedCamera && !isCameraLocked, // Enable only when camera not locked
     refetchInterval: 5000, // Low framerate: 1 frame every 5 seconds (0.2 fps) to avoid Pi overload
   });
 
