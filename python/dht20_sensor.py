@@ -100,14 +100,15 @@ class DHT20Sensor:
         return False
     
     def _read_raw_data(self):
-        """Read raw sensor data - plain 7-byte read after measurement trigger"""
+        """Read raw sensor data using register 0x71 per datasheet"""
         if not self.bus:
             return None
         
         try:
-            msg = smbus2.i2c_msg.read(self.address, 7)
-            self.bus.i2c_rdwr(msg)
-            return list(msg)
+            # Read 7 bytes from register 0x71 (status + data + CRC)
+            time.sleep(0.01)
+            data = self.bus.read_i2c_block_data(self.address, 0x71, 7)
+            return data
         except Exception as e:
             print(f"Read error: {e}", file=sys.stderr)
             return None
@@ -140,16 +141,18 @@ class DHT20Sensor:
             if data[0] & 0x80:
                 return {'ok': False, 'error': 'Sensor still busy after wait'}
             
-            # Extract 20-bit humidity value per AHT20/DHT20 datasheet
-            # Humidity is in the upper 20 bits of bytes 1-3
-            humidity_raw = ((data[1] << 16) | (data[2] << 8) | data[3]) >> 4
+            # Extract 20-bit values per verified DFRobot/Aosong implementation
+            # Temperature: lower 4 bits of byte 3 + bytes 4 and 5
+            temperature_raw = ((data[3] & 0x0F) << 16) + (data[4] << 8) + data[5]
             
-            # Extract 20-bit temperature value per datasheet  
-            # Temperature is in the lower 20 bits (lower 4 bits of byte 3 + bytes 4-5)
-            temperature_raw = ((data[3] & 0x0F) << 16) | (data[4] << 8) | data[5]
+            # Humidity: upper 4 bits of byte 3 + bytes 1 and 2 (different bit arrangement!)
+            humidity_raw = ((data[3] & 0xF0) >> 4) + (data[1] << 12) + (data[2] << 4)
             
-            humidity = (humidity_raw / 1048576.0) * 100.0
-            temperature_c = (temperature_raw / 1048576.0) * 200.0 - 50.0
+            # Convert using verified formulas from DFRobot library
+            # Temperature: rawData / 5242.88 - 50 (equivalent to rawData / 2^20 * 200 - 50)
+            temperature_c = float(temperature_raw) / 5242.88 - 50.0
+            # Humidity: rawData / 0x100000 * 100 (equivalent to rawData / 2^20 * 100)
+            humidity = float(humidity_raw) / 0x100000 * 100.0
             temperature_f = temperature_c * 9.0 / 5.0 + 32.0
             
             return {
