@@ -169,7 +169,7 @@ export default function Calibration() {
     }
   }, [selectedCamera?.id]);
 
-  // Camera preview - poll every 3 seconds, but pause when camera is locked
+  // Camera preview - poll every 5 seconds, but pause when camera is locked
   // For 4K cameras, backend automatically uses 1920x1080 for preview to prevent memory issues
   // Calibration/capture still uses full 4K resolution
   const { data: preview } = useQuery<CameraPreview>({
@@ -178,15 +178,12 @@ export default function Calibration() {
       if (!selectedCamera?.id) throw new Error('稼働中のカメラがありません');
       const response = await fetch(`/api/camera-preview/${selectedCamera.id}`);
       
-      // Handle camera locked during calibration
+      // Handle camera locked during calibration - DON'T modify isCameraLocked here
+      // Let the mutation control the lock state to avoid feedback loops
       if (response.status === 423) {
         const data = await response.json();
-        setIsCameraLocked(true);
         return { ok: false, error: data.message || 'カメラはキャリブレーション中です' };
       }
-      
-      // Clear locked state on successful response
-      setIsCameraLocked(false);
       
       if (!response.ok) {
         const data = await response.json();
@@ -195,7 +192,7 @@ export default function Calibration() {
       
       return response.json();
     },
-    enabled: !!selectedCamera && !isCameraLocked, // Enable low-res preview when camera not in use
+    enabled: !!selectedCamera && !isCameraLocked && !calibrationMutation.isPending, // Enable only when not in calibration
     refetchInterval: 5000, // Low framerate: 1 frame every 5 seconds (0.2 fps) to avoid Pi overload
   });
 
