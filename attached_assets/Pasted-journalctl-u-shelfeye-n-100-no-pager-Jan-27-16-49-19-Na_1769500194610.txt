@@ -1,0 +1,102 @@
+journalctl -u shelfeye -n 100 --no-pager
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] Failed to create slot for template a0511729-d519-4a4c-ac49-66d889425562: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:     at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:     at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:     at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:309:20)
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:     at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:202:30) {
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   length: 211,
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   severity: 'ERROR',
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   code: '23505',
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   detail: 'Key (slot_id)=(slot-28) already exists.',
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   hint: undefined,
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   position: undefined,
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   internalPosition: undefined,
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   internalQuery: undefined,
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   where: undefined,
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   schema: 'public',
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   table: 'slots',
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   column: undefined,
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   dataType: undefined,
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   constraint: 'slots_slot_id_unique',
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   file: 'nbtinsert.c',
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   line: '666',
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]:   routine: '_bt_check_unique'
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]: }
+Jan 27 16:49:19 NaniwaTanaCheck pi-startup.sh[40078]: [Database] ✅ Client connected to pool
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]: [Database] Client removed from pool
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] Failed to create slot for template 69ed40e7-bebb-45f2-8519-b4cace0ab749: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:     at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:     at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:     at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:309:20)
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:     at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:202:30) {
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   length: 211,
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   severity: 'ERROR',
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   code: '23505',
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   detail: 'Key (slot_id)=(slot-28) already exists.',
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   hint: undefined,
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   position: undefined,
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   internalPosition: undefined,
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   internalQuery: undefined,
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   where: undefined,
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   schema: 'public',
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   table: 'slots',
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   column: undefined,
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   dataType: undefined,
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   constraint: 'slots_slot_id_unique',
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   file: 'nbtinsert.c',
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   line: '666',
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]:   routine: '_bt_check_unique'
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]: }
+Jan 27 16:49:21 NaniwaTanaCheck pi-startup.sh[40078]: [Database] ✅ Client connected to pool
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]: [Database] Client removed from pool
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] Failed to create slot for template 33b62252-fd28-4976-8e58-297374047bcd: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:     at file:///home/naniwa/ShelfEye/node_modules/@neondatabase/serverless/index.mjs:1345:74
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:     at async NeonPreparedQuery.execute (/home/naniwa/ShelfEye/node_modules/src/neon-serverless/session.ts:102:18)
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:     at async DbStorage.createSlot (/home/naniwa/ShelfEye/server/storage.ts:309:20)
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:     at async ChildProcess.<anonymous> (/home/naniwa/ShelfEye/server/services/startup-calibration.ts:202:30) {
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   length: 211,
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   severity: 'ERROR',
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   code: '23505',
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   detail: 'Key (slot_id)=(slot-29) already exists.',
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   hint: undefined,
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   position: undefined,
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   internalPosition: undefined,
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   internalQuery: undefined,
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   where: undefined,
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   schema: 'public',
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   table: 'slots',
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   column: undefined,
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   dataType: undefined,
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   constraint: 'slots_slot_id_unique',
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   file: 'nbtinsert.c',
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   line: '666',
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]:   routine: '_bt_check_unique'
+Jan 27 16:49:22 NaniwaTanaCheck pi-startup.sh[40078]: }
+Jan 27 16:49:23 NaniwaTanaCheck pi-startup.sh[40078]: [Database] ✅ Client connected to pool
+Jan 27 16:49:23 NaniwaTanaCheck pi-startup.sh[40078]: [Database] ✅ Client connected to pool
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] Calibration completed: 4/4 markers, error: 0.00px
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [SubprocessManager] Tracking led process PID 40174: LED: turnOffLED
+Jan 27 16:49:24 NaniwaTanaCheck sudo[40174]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py off --num-leds 99
+Jan 27 16:49:24 NaniwaTanaCheck sudo[40174]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 27 16:49:24 NaniwaTanaCheck sudo[40174]: pam_unix(sudo:session): session closed for user root
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [SubprocessManager] Process PID 40174 exited after 217ms (code: 1, signal: null)
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [LED] turnOffLED failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [LED] LED off response: { success: false }
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] ✓ Camera Wide Shelf validated successfully
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [CameraSessionManager] Global calibration lock released for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [CameraSessionManager] Global calibration lock acquired for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] Validating camera: Camera 2 (Shelf 2) (/dev/video1)
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] Paper size: 6-page-3x2
+Jan 27 16:49:24 NaniwaTanaCheck pi-startup.sh[40078]: [SubprocessManager] Tracking led process PID 40177: LED: setWhiteLight
+Jan 27 16:49:24 NaniwaTanaCheck sudo[40177]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py white --num-leds 99 --brightness 100
+Jan 27 16:49:24 NaniwaTanaCheck sudo[40177]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 27 16:49:25 NaniwaTanaCheck sudo[40177]: pam_unix(sudo:session): session closed for user root
+Jan 27 16:49:25 NaniwaTanaCheck pi-startup.sh[40078]: [SubprocessManager] Process PID 40177 exited after 162ms (code: 1, signal: null)
+Jan 27 16:49:25 NaniwaTanaCheck pi-startup.sh[40078]: [LED] setWhiteLight failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Jan 27 16:49:25 NaniwaTanaCheck pi-startup.sh[40078]: [LED] Unexpected response: { success: false }
+Jan 27 16:49:25 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] Using device path: /dev/video1
+Jan 27 16:49:25 NaniwaTanaCheck pi-startup.sh[40078]: [SubprocessManager] Tracking python process PID 40180: Startup calibration: Camera 2 (Shelf 2)
+naniwa@NaniwaTanaCheck:~/ShelfEye $ ss -tl
