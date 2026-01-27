@@ -35,19 +35,21 @@ class DHT20Sensor:
                 self.bus = None
     
     def _initialize(self):
-        """Initialize the DHT20 sensor"""
+        """Initialize the DHT20 sensor - per AHT20/DHT20 datasheet"""
         if not self.bus:
             return False
         
         try:
+            # Wait 40ms after power-on per datasheet
+            time.sleep(0.04)
+            
+            # Read status register to check calibration
             status = self.bus.read_byte(self.address)
             
+            # If calibration bit (0x08) is not set, sensor needs initialization
             if (status & 0x18) != 0x18:
-                self.bus.write_i2c_block_data(self.address, 0x1B, [0x00, 0x00])
-                time.sleep(0.01)
-                self.bus.write_i2c_block_data(self.address, 0x1C, [0x00, 0x00])
-                time.sleep(0.01)
-                self.bus.write_i2c_block_data(self.address, 0x1E, [0x00, 0x00])
+                # Soft reset and recalibration per datasheet
+                self.bus.write_i2c_block_data(self.address, 0xBE, [0x08, 0x00])
                 time.sleep(0.01)
             
             return True
@@ -138,8 +140,13 @@ class DHT20Sensor:
             if data[0] & 0x80:
                 return {'ok': False, 'error': 'Sensor still busy after wait'}
             
-            humidity_raw = ((data[1] << 12) | (data[2] << 4) | (data[3] >> 4))
-            temperature_raw = (((data[3] & 0x0F) << 16) | (data[4] << 8) | data[5])
+            # Extract 20-bit humidity value per AHT20/DHT20 datasheet
+            # Humidity is in the upper 20 bits of bytes 1-3
+            humidity_raw = ((data[1] << 16) | (data[2] << 8) | data[3]) >> 4
+            
+            # Extract 20-bit temperature value per datasheet  
+            # Temperature is in the lower 20 bits (lower 4 bits of byte 3 + bytes 4-5)
+            temperature_raw = ((data[3] & 0x0F) << 16) | (data[4] << 8) | data[5]
             
             humidity = (humidity_raw / 1048576.0) * 100.0
             temperature_c = (temperature_raw / 1048576.0) * 200.0 - 50.0
@@ -150,7 +157,13 @@ class DHT20Sensor:
                 'temperature_c': round(temperature_c, 1),
                 'temperature_f': round(temperature_f, 1),
                 'humidity': round(humidity, 1),
-                'timestamp': time.time()
+                'timestamp': time.time(),
+                'debug': {
+                    'raw_bytes': [hex(b) for b in data],
+                    'humidity_raw': humidity_raw,
+                    'temperature_raw': temperature_raw,
+                    'status_byte': hex(data[0])
+                }
             }
         
         except Exception as e:
