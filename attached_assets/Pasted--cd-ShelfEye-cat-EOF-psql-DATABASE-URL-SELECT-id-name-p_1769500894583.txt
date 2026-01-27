@@ -1,0 +1,49 @@
+ cd ~/ShelfEye
+cat << 'EOF' | psql "$DATABASE_URL"
+SELECT id, name, paper_size, homography_matrix[1:3] as h_row1, homography_matrix[4:6] as h_row2, homography_matrix[7:9] as h_row3
+FROM cameras WHERE calibration_status = 'calibrated';
+EOF
+^Z
+[2]+  Stopped                 cat <<'EOF'
+SELECT id, name, paper_size, homography_matrix[1:3] as h_row1, homography_matrix[4:6] as h_row2, homography_matrix[7:9] as h_row3
+FROM cameras WHERE calibration_status = 'calibrated';
+EOF
+ | psql "$DATABASE_URL"
+naniwa@NaniwaTanaCheck:~/ShelfEye $ python3 python/rectified_preview.py --help
+usage: rectified_preview.py [-h] [--camera CAMERA] [--device-path DEVICE_PATH]
+                            --resolution RESOLUTION --homography HOMOGRAPHY
+                            [--output-size OUTPUT_SIZE] [--templates TEMPLATES]
+                            [--paper-size PAPER_SIZE] [--camera-matrix CAMERA_MATRIX]
+                            [--dist-coeffs DIST_COEFFS]
+
+Generate rectified preview using homography
+
+options:
+  -h, --help            show this help message and exit
+  --camera CAMERA       Camera device index (fallback if --device-path not provided)
+  --device-path DEVICE_PATH
+                        Camera device path for Raspberry Pi (e.g., /dev/video0)
+  --resolution RESOLUTION
+                        Camera resolution (WxH)
+  --homography HOMOGRAPHY
+                        Homography matrix as comma-separated values
+  --output-size OUTPUT_SIZE
+                        Output image size (WxH). If not provided, calculates from homography to
+                        match camera resolution
+  --templates TEMPLATES
+                        Template rectangles as JSON string
+  --paper-size PAPER_SIZE
+                        Paper size in cm (WxH)
+  --camera-matrix CAMERA_MATRIX
+                        Camera intrinsic matrix as comma-separated values (9 values)
+  --dist-coeffs DIST_COEFFS
+                        Distortion coefficients as comma-separated values (5 values)
+naniwa@NaniwaTanaCheck:~/ShelfEye $ grep -n "marker_offset" python/rectified_preview.py
+278:            marker_offset = 2.5
+280:                [marker_offset, marker_offset],
+281:                [paper_w - marker_offset, marker_offset],
+282:                [paper_w - marker_offset, paper_h - marker_offset],
+283:                [marker_offset, paper_h - marker_offset]
+295:            horizontal_cm = paper_w - 2 * marker_offset  # e.g., 89.1 - 5 = 84.1cm for 6-page
+296:            vertical_cm = paper_h - 2 * marker_offset    # e.g., 42 - 5 = 37cm for 6-page
+naniwa@NaniwaTanaCheck:~/ShelfEye $
