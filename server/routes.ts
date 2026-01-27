@@ -573,12 +573,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Get template rectangles with category dimensions for preview overlay
-      // Templates are camera-independent and filtered by paper size only
-      // User explicitly selects template in UI, no timestamp filtering needed
-      const templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
-      const templatesWithDimensions = [];
+      // CRITICAL: Filter by template design timestamp to get only the selected template's slots
+      // Without this, it would count ALL templates with the same paper size (wrong slot count)
+      let templateRectanglesForPreview: any[] = [];
       
-      console.log(`[Calibration] Found ${templateRectanglesForPreview.length} templates matching paper size: ${paperSizeFormat}`);
+      if (templateTimestamp) {
+        // Look up the template design by its timestamp
+        const templateDesign = await storage.getTemplateDesignByTimestamp(templateTimestamp);
+        if (templateDesign) {
+          templateRectanglesForPreview = await storage.getTemplateRectanglesByDesignId(templateDesign.id);
+          console.log(`[Calibration] Found ${templateRectanglesForPreview.length} templates for design "${templateDesign.name}" (id: ${templateDesign.id})`);
+        } else {
+          console.warn(`[Calibration] No template design found for timestamp: ${templateTimestamp}, falling back to paper size filter`);
+          templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
+        }
+      } else {
+        // Fallback: filter by paper size only (legacy behavior)
+        templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
+        console.log(`[Calibration] No template timestamp provided, found ${templateRectanglesForPreview.length} templates matching paper size: ${paperSizeFormat}`);
+      }
+      
+      const templatesWithDimensions = [];
       
       for (const template of templateRectanglesForPreview) {
         const category = await storage.getToolCategory(template.categoryId);
@@ -589,7 +604,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             width: category.widthCm,
             height: category.heightCm,
             rotation: template.rotation,
-            categoryName: category.name
+            categoryName: category.name,
+            autoQrId: template.autoQrId // Include ArUco marker ID for slot validation
           });
         } else {
           console.warn(`[Calibration] Template ${template.id} has missing category ${template.categoryId}`);

@@ -67,6 +67,7 @@ export interface IStorage {
   // Template design methods (saved templates)
   getTemplateDesigns(): Promise<TemplateDesign[]>;
   getTemplateDesign(id: string): Promise<TemplateDesign | undefined>;
+  getTemplateDesignByTimestamp(timestamp: string): Promise<TemplateDesign | undefined>;
   createTemplateDesign(design: InsertTemplateDesign): Promise<TemplateDesign>;
   updateTemplateDesign(id: string, updates: Partial<InsertTemplateDesign>): Promise<TemplateDesign | undefined>;
   deleteTemplateDesign(id: string): Promise<boolean>;
@@ -578,6 +579,15 @@ export class DbStorage implements IStorage {
     await this.ensureInitialized();
     const result = await db.select().from(schema.templateDesigns)
       .where(eq(schema.templateDesigns.id, id));
+    return result[0];
+  }
+
+  async getTemplateDesignByTimestamp(timestamp: string): Promise<TemplateDesign | undefined> {
+    await this.ensureInitialized();
+    // Parse the timestamp and find the design with matching createdAt
+    const targetDate = new Date(timestamp);
+    const result = await db.select().from(schema.templateDesigns)
+      .where(eq(schema.templateDesigns.createdAt, targetDate));
     return result[0];
   }
 
