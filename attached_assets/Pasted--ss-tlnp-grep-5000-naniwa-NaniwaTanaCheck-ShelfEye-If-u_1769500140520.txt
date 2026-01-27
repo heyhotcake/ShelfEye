@@ -1,0 +1,61 @@
+ ss -tlnp | grep 5000
+naniwa@NaniwaTanaCheck:~/ShelfEye $ # If using pm2
+pm2 logs
+
+# Or if running with systemd
+journalctl -u shelfeye -n 50
+
+# Or check if there's a log file
+tail -100 ~/ShelfEye/logs/*.log
+-bash: pm2: command not found
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] Failed to create slot for >
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:     at file:///home/naniwa/ShelfEye/node_module>
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:     at process.processTicksAndRejections (node:>
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:     at async NeonPreparedQuery.execute (/home/n>
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:     at async DbStorage.createSlot (/home/naniwa>
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:     at async ChildProcess.<anonymous> (/home/na>
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   length: 211,
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   severity: 'ERROR',
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   code: '23505',
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   detail: 'Key (slot_id)=(slot-10) already exis>
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   hint: undefined,
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   position: undefined,
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   internalPosition: undefined,
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   internalQuery: undefined,
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   where: undefined,
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   schema: 'public',
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   table: 'slots',
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   column: undefined,
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   dataType: undefined,
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   constraint: 'slots_slot_id_unique',
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   file: 'nbtinsert.c',
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   line: '666',
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]:   routine: '_bt_check_unique'
+Jan 27 16:48:51 NaniwaTanaCheck pi-startup.sh[40078]: }
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]: [Database] ✅ Client connected to pool
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]: [Database] Client removed from pool
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]: [StartupCalibration] Failed to create slot for >
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:     at file:///home/naniwa/ShelfEye/node_module>
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:     at process.processTicksAndRejections (node:>
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:     at async NeonPreparedQuery.execute (/home/n>
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:     at async DbStorage.createSlot (/home/naniwa>
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:     at async ChildProcess.<anonymous> (/home/na>
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   length: 211,
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   severity: 'ERROR',
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   code: '23505',
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   detail: 'Key (slot_id)=(slot-11) already exis>
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   hint: undefined,
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   position: undefined,
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   internalPosition: undefined,
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   internalQuery: undefined,
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   where: undefined,
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   schema: 'public',
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   table: 'slots',
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   column: undefined,
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   dataType: undefined,
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   constraint: 'slots_slot_id_unique',
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   file: 'nbtinsert.c',
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   line: '666',
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]:   routine: '_bt_check_unique'
+Jan 27 16:48:52 NaniwaTanaCheck pi-startup.sh[40078]: }
+lines 1-50
