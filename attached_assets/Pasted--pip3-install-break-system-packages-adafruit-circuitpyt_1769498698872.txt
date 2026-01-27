@@ -1,0 +1,17 @@
+ pip3 install --break-system-packages adafruit-circuitpython-ahtx0
+Defaulting to user installation because normal site-packages is not writeable
+Requirement already satisfied: adafruit-circuitpython-ahtx0 in /usr/local/lib/python3.13/dist-packages (1.0.28)
+Requirement already satisfied: Adafruit-Blinka in /usr/local/lib/python3.13/dist-packages (from adafruit-circuitpython-ahtx0) (8.69.0)
+Requirement already satisfied: adafruit-circuitpython-register in /usr/local/lib/python3.13/dist-packages (from adafruit-circuitpython-ahtx0) (1.11.1)
+Requirement already satisfied: adafruit-circuitpython-busdevice in /usr/local/lib/python3.13/dist-packages (from adafruit-circuitpython-ahtx0) (5.2.15)
+Requirement already satisfied: Adafruit-PlatformDetect>=3.70.1 in /usr/local/lib/python3.13/dist-packages (from Adafruit-Blinka->adafruit-circuitpython-ahtx0) (3.86.0)
+Requirement already satisfied: Adafruit-PureIO>=1.1.7 in /usr/local/lib/python3.13/dist-packages (from Adafruit-Blinka->adafruit-circuitpython-ahtx0) (1.1.11)
+Requirement already satisfied: binho-host-adapter>=0.1.6 in /usr/local/lib/python3.13/dist-packages (from Adafruit-Blinka->adafruit-circuitpython-ahtx0) (0.1.6)
+Requirement already satisfied: pyftdi>=0.40.0 in /usr/local/lib/python3.13/dist-packages (from Adafruit-Blinka->adafruit-circuitpython-ahtx0) (0.57.1)
+Requirement already satisfied: adafruit-circuitpython-typing in /usr/local/lib/python3.13/dist-packages (from Adafruit-Blinka->adafruit-circuitpython-ahtx0) (1.12.3)
+Requirement already satisfied: sysv_ipc>=1.1.0 in /usr/local/lib/python3.13/dist-packages (from Adafruit-Blinka->adafruit-circuitpython-ahtx0) (1.2.0)
+Requirement already satisfied: pyserial in /usr/local/lib/python3.13/dist-packages (from binho-host-adapter>=0.1.6->Adafruit-Blinka->adafruit-circuitpython-ahtx0) (3.5)
+Requirement already satisfied: pyusb!=1.2.0,>=1.0.0 in /usr/local/lib/python3.13/dist-packages (from pyftdi>=0.40.0->Adafruit-Blinka->adafruit-circuitpython-ahtx0) (1.3.1)
+Requirement already satisfied: typing-extensions~=4.0 in /usr/local/lib/python3.13/dist-packages (from adafruit-circuitpython-register->adafruit-circuitpython-ahtx0) (4.15.0)
+Requirement already satisfied: adafruit-circuitpython-requests in /usr/local/lib/python3.13/dist-packages (from adafruit-circuitpython-typing->Adafruit-Blinka->adafruit-circuitpython-ahtx0) (4.1.15)
+Requirement already satisfied: Adafruit-Circuitpython-ConnectionManager in /usr/local/lib/python3.13/dist-packages (from adafruit-circuitpython-requests->adafruit-circuitpython-typing->Adafruit-Blinka->adafruit-circuitpython-ahtx0) (3.1.6)
