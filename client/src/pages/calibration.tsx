@@ -74,6 +74,11 @@ export default function Calibration() {
     queryKey: ['/api/cameras'],
   });
 
+  // Fetch all tool categories for proper name lookup in overlay
+  const { data: toolCategories } = useQuery<any[]>({
+    queryKey: ['/api/tool-categories'],
+  });
+
   // Initialize selected camera to first camera or saved preference
   useEffect(() => {
     if (cameras && cameras.length > 0 && !selectedCameraId) {
@@ -115,19 +120,21 @@ export default function Calibration() {
     categories: design.categories || [],
   }));
 
-  // Fetch template rectangles from DATABASE for the selected paper size (for calibration overlay)
-  // This query now uses camera-specific coordinates with fallback to shared templates
+  // Fetch template rectangles from DATABASE for the selected template design (for calibration overlay)
+  // CRITICAL: Filter by designId to get only the selected template's slots (not all with same paper size)
   const selectedDesignForQuery = savedTemplateDesigns.find(d => d.timestamp === selectedTemplate);
-  const paperSizeForQuery = selectedDesignForQuery?.paperSize || '6-page-3x2';
+  const selectedDesignId = templateDesignsFromDb.find((d: any) => 
+    new Date(d.createdAt).toISOString() === selectedTemplate
+  )?.id;
+  
   const { data: dbTemplateRectangles } = useQuery<any[]>({
-    queryKey: ['/api/template-rectangles', paperSizeForQuery, selectedCameraId],
-    enabled: calibrationStep >= 1 && !!paperSizeForQuery && !!selectedCameraId,
+    queryKey: ['/api/template-rectangles/by-design', selectedDesignId],
+    enabled: calibrationStep >= 1 && !!selectedDesignId,
     queryFn: async () => {
-      console.log('[CalibrationOverlay] Fetching camera-specific templates for:', { paperSize: paperSizeForQuery, cameraId: selectedCameraId });
-      const response = await fetch(`/api/template-rectangles?paperSize=${paperSizeForQuery}&cameraId=${selectedCameraId}`);
+      console.log('[CalibrationOverlay] Fetching templates for design ID:', selectedDesignId);
+      const response = await fetch(`/api/template-rectangles?designId=${selectedDesignId}`);
       const data = await response.json();
-      console.log('[CalibrationOverlay] DB templates loaded:', data.length, 'templates (camera-specific or shared)');
-      console.log('[CalibrationOverlay] First template cameraId:', data[0]?.cameraId);
+      console.log('[CalibrationOverlay] DB templates loaded:', data.length, 'templates for selected design');
       return data;
     },
   });
@@ -852,11 +859,13 @@ export default function Calibration() {
               const paperDimensions = getPaperDimensions(paperSize);
               const aspectRatio = paperDimensions.width / paperDimensions.height;
               
-              // Get templates with categories for the canvas - use DB data if available, fallback to localStorage
-              // dbTemplateRectangles is fetched at top level (lines 93-96)
-              const templatesWithCategories = (dbTemplateRectangles || selectedDesign?.templateRectangles || []).map((rect: any) => {
-                // Match category from selectedDesign for dimension info
-                const category = selectedDesign?.categories?.find((c: any) => c.id === rect.categoryId);
+              // Get templates with categories for the canvas - use DB data if available
+              // dbTemplateRectangles is filtered by designId to show only the selected template's slots
+              // Use toolCategories from database for proper name lookup (not the saved design's categories)
+              const templatesWithCategories = (dbTemplateRectangles || []).map((rect: any) => {
+                // Look up category from database tool categories (more reliable than saved design's categories)
+                const category = toolCategories?.find((c: any) => c.id === rect.categoryId) ||
+                                 selectedDesign?.categories?.find((c: any) => c.id === rect.categoryId);
                 return {
                   id: rect.id,
                   categoryId: rect.categoryId,

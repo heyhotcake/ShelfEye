@@ -2841,7 +2841,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Template rectangle routes
   app.get("/api/template-rectangles", async (req, res) => {
     try {
-      const { paperSize, cameraId } = req.query;
+      const { paperSize, cameraId, designId } = req.query;
+      
+      // If designId is provided, get templates for that specific design only
+      if (designId && typeof designId === 'string') {
+        const rectangles = await storage.getTemplateRectanglesByDesignId(designId);
+        return res.json(rectangles);
+      }
       
       // If both paperSize and cameraId are provided, use camera-specific query with fallback
       if (paperSize && typeof paperSize === 'string' && cameraId && typeof cameraId === 'string') {
