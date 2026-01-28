@@ -295,8 +295,8 @@ def main():
             horizontal_cm = paper_w - 2 * marker_offset  # e.g., 89.1 - 5 = 84.1cm for 6-page
             vertical_cm = paper_h - 2 * marker_offset    # e.g., 42 - 5 = 37cm for 6-page
             
-            px_per_cm_h = horizontal_px / horizontal_cm
-            px_per_cm_v = vertical_px / vertical_cm
+            px_per_cm_h = float(horizontal_px / horizontal_cm)
+            px_per_cm_v = float(vertical_px / vertical_cm)
             px_per_cm = min(px_per_cm_h, px_per_cm_v)
             
             out_width = int(paper_w * px_per_cm)
