@@ -1,0 +1,36 @@
+# Check available controls on your Streamplify CAM PRO
+v4l2-ctl -d /dev/video0 --list-ctrls-menus
+
+User Controls
+
+                     brightness 0x00980900 (int)    : min=0 max=255 step=1 default=128 value=128
+                       contrast 0x00980901 (int)    : min=0 max=255 step=1 default=28 value=28
+                     saturation 0x00980902 (int)    : min=0 max=255 step=1 default=45 value=45
+                            hue 0x00980903 (int)    : min=0 max=255 step=1 default=128 value=128
+        white_balance_automatic 0x0098090c (bool)   : default=1 value=1
+                          gamma 0x00980910 (int)    : min=100 max=300 step=1 default=110 value=110
+                           gain 0x00980913 (int)    : min=0 max=255 step=1 default=0 value=0
+           power_line_frequency 0x00980918 (menu)   : min=0 max=2 default=2 value=2 (60 Hz)
+                                0: Disabled
+                                1: 50 Hz
+                                2: 60 Hz
+      white_balance_temperature 0x0098091a (int)    : min=2800 max=6500 step=1 default=4600 value=4600 flags=inactive
+                      sharpness 0x0098091b (int)    : min=0 max=255 step=1 default=32 value=32
+         backlight_compensation 0x0098091c (int)    : min=0 max=1 step=1 default=0 value=0
+
+Camera Controls
+
+                  auto_exposure 0x009a0901 (menu)   : min=0 max=3 default=3 value=3 (Aperture Priority Mode)
+                                1: Manual Mode
+                                3: Aperture Priority Mode
+         exposure_time_absolute 0x009a0902 (int)    : min=3 max=2047 step=1 default=166 value=166 flags=inactive
+                   pan_absolute 0x009a0908 (int)    : min=-576000 max=576000 step=3600 default=0 value=0
+                  tilt_absolute 0x009a0909 (int)    : min=-576000 max=576000 step=3600 default=0 value=0
+                 focus_absolute 0x009a090a (int)    : min=0 max=255 step=1 default=0 value=0 flags=inactive
+     focus_automatic_continuous 0x009a090c (bool)   : default=0 value=1
+                  zoom_absolute 0x009a090d (int)    : min=0 max=60 step=1 default=0 value=0
+naniwa@NaniwaTanaCheck:~/ShelfEye $ psql "$DATABASE_URL" -c "SELECT slot_name, x_cm, y_cm, width_cm, height_cm FROM template_rectangles WHERE slot_name LIKE '%Box Cutter%' LIMIT 5;"
+
+^Z
+[1]+  Stopped                 psql "$DATABASE_URL" -c "SELECT slot_name, x_cm, y_cm, width_cm, height_cm FROM template_rectangles WHERE slot_name LIKE '%Box Cutter%' LIMIT 5;"
+naniwa@NaniwaTanaCheck:~/ShelfEye $ psql "$DATABASE_URL" -c "SELECT slot_name, x_cm, y_cm, width_cm, height_cm FROM template_rectangles WHERE slot_name LIKE '%Box Cutter%' LIMIT 5;"
