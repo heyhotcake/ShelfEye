@@ -435,9 +435,10 @@ class ArucoCornerCalibrator:
                     if generate_preview and preview_output_size:
                         try:
                             # Also save a labeled version for download/display (using already calculated highres_size)
+                            # Use LINEAR interpolation for smoother visual quality
                             highres_labeled = generate_rectified_image_from_frame(
                                 frame, homography, highres_size, paper_size_cm, templates,  # WITH templates - labeled image
-                                camera_matrix, dist_coeffs
+                                camera_matrix, dist_coeffs, use_linear_interpolation=True
                             )
                             highres_labeled_path = os.path.join(data_dir, f'latest_calibration_rectified_labeled_{camera_id}.png')
                             cv2.imwrite(highres_labeled_path, highres_labeled, [cv2.IMWRITE_PNG_COMPRESSION, 3])
@@ -445,10 +446,11 @@ class ArucoCornerCalibrator:
                             
                             # Generate downscaled version for UI preview WITHOUT templates
                             # The frontend RectifiedPreviewCanvas will draw adjustable overlays interactively
+                            # Use LINEAR interpolation for smoother visual quality (no marker detection here)
                             logger.info(f"Generating UI preview: {preview_output_size[0]}x{preview_output_size[1]}px (no template overlays)")
                             rectified_preview = generate_rectified_image_from_frame(
                                 frame, homography, preview_output_size, paper_size_cm, None,  # NO templates - clean base image
-                                camera_matrix, dist_coeffs
+                                camera_matrix, dist_coeffs, use_linear_interpolation=True
                             )
                             
                             # Encode preview as base64 for UI

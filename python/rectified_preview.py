@@ -23,7 +23,8 @@ def generate_rectified_image_from_frame(
     paper_size_cm: Tuple[float, float],
     templates: Optional[List[dict]] = None,
     camera_matrix: Optional[np.ndarray] = None,
-    dist_coeffs: Optional[np.ndarray] = None
+    dist_coeffs: Optional[np.ndarray] = None,
+    use_linear_interpolation: bool = False
 ) -> np.ndarray:
     """
     Generate rectified image from an existing frame using homography
@@ -72,10 +73,11 @@ def generate_rectified_image_from_frame(
     # Combined warp for warpPerspective: camera_pixel → cm → output_pixel
     M = S @ H_inv
     
-    # Warp the image using NEAREST NEIGHBOR interpolation
-    # CRITICAL: INTER_NEAREST preserves sharp ArUco marker edges (no blur from interpolation)
-    # Default INTER_LINEAR blurs edges and breaks ArUco bit decoding
-    rectified = cv2.warpPerspective(frame, M, output_size, flags=cv2.INTER_NEAREST)
+    # Choose interpolation method based on use case:
+    # - INTER_NEAREST: Preserves sharp ArUco marker edges (required for marker detection)
+    # - INTER_LINEAR: Smoother visual quality (better for calibration previews)
+    interp_flag = cv2.INTER_LINEAR if use_linear_interpolation else cv2.INTER_NEAREST
+    rectified = cv2.warpPerspective(frame, M, output_size, flags=interp_flag)
     
     # Draw grid overlay for visual reference
     for x in range(0, output_size[0], 50):
