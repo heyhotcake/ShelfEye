@@ -1,0 +1,27 @@
+# Check what gets generated during calibration
+ls -la ~/ShelfEye/data/latest_calibration* 2>/dev/null
+file ~/ShelfEye/data/latest_calibration*.png 2>/dev/null
+
+# Also check the logs from your calibration
+tail -100 ~/ShelfEye/logs/*.log 2>/dev/null | grep -i "preview\|output\|size\|width\|height" | tail -30
+-rw-r--r-- 1 naniwa naniwa 1152702 Nov 18 09:16 /home/naniwa/ShelfEye/data/latest_calibration_rectified_5e164d3c-1809-49ba-b284-a734843b32f1.png
+-rw-r--r-- 1 naniwa naniwa 6692217 Jan 28 15:26 /home/naniwa/ShelfEye/data/latest_calibration_rectified_a91d43f1-47bf-4d75-8a7d-d2faf0503f81.png
+-rw-r--r-- 1 naniwa naniwa 2188307 Nov  5 14:23 /home/naniwa/ShelfEye/data/latest_calibration_rectified.jpg
+-rw-r--r-- 1 naniwa naniwa 1063898 Nov  7 10:37 /home/naniwa/ShelfEye/data/latest_calibration_rectified_labeled_5e164d3c-1809-49ba-b284-a734843b32f1.png
+-rw-r--r-- 1 naniwa naniwa 6384460 Jan 28 15:26 /home/naniwa/ShelfEye/data/latest_calibration_rectified_labeled_a91d43f1-47bf-4d75-8a7d-d2faf0503f81.png
+-rw-r--r-- 1 naniwa naniwa 2205980 Nov  5 14:23 /home/naniwa/ShelfEye/data/latest_calibration_rectified_labeled.jpg
+-rw-r--r-- 1 naniwa naniwa 3498263 Nov  6 13:34 /home/naniwa/ShelfEye/data/latest_calibration_rectified_labeled.png
+-rw-r--r-- 1 naniwa naniwa 3513045 Nov  6 13:33 /home/naniwa/ShelfEye/data/latest_calibration_rectified.png
+/home/naniwa/ShelfEye/data/latest_calibration_rectified_5e164d3c-1809-49ba-b284-a734843b32f1.png:         PNG image data, 1425 x 671, 8-bit/color RGB, non-interlaced
+/home/naniwa/ShelfEye/data/latest_calibration_rectified_a91d43f1-47bf-4d75-8a7d-d2faf0503f81.png:         PNG image data, 3462 x 1224, 8-bit/color RGB, non-interlaced
+/home/naniwa/ShelfEye/data/latest_calibration_rectified_labeled_5e164d3c-1809-49ba-b284-a734843b32f1.png: PNG image data, 1623 x 765, 8-bit/color RGB, non-interlaced
+/home/naniwa/ShelfEye/data/latest_calibration_rectified_labeled_a91d43f1-47bf-4d75-8a7d-d2faf0503f81.png: PNG image data, 3462 x 1224, 8-bit/color RGB, non-interlaced
+/home/naniwa/ShelfEye/data/latest_calibration_rectified_labeled.png:
+    PNG image data, 2823 x 1330, 8-bit/color RGB, non-interlaced
+/home/naniwa/ShelfEye/data/latest_calibration_rectified.png:
+    PNG image data, 2823 x 1330, 8-bit/color RGB, non-interlaced
+3:31:03 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 23054ms :: …
+[Preview] Using lower resolution for RAM efficiency: 1920x1080
+[SubprocessManager] Tracking python process PID 47443: Camera preview: Wide Shelf
+3:31:31 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 22949ms :: …
+naniwa@NaniwaTanaCheck:~/ShelfEye $
