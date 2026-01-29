@@ -213,4 +213,6 @@ log "Access at: http://naniwatanacheck.local:5000"
 log "========================================="
 
 # Run the production server (compiled dist/index.js)
-exec npm start 2>&1 | tee -a "$LOG_FILE"
+# Use process substitution so Node becomes the main PID for proper systemd signal handling
+exec > >(tee -a "$LOG_FILE") 2>&1
+exec npm start
