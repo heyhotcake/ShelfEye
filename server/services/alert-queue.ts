@@ -73,7 +73,7 @@ export class AlertRetryQueue {
   private sheetsLogger: SheetsLogger;
   private queue: Map<string, QueuedAlert> = new Map();
   private retryIntervalMs = 60000; // Check every 1 minute
-  private maxRetryDurationMs = 24 * 60 * 60 * 1000; // 24 hours
+  private maxRetryDurationMs = 7 * 24 * 60 * 60 * 1000; // 7 days - extended window for flaky networks
   private retryTimer?: NodeJS.Timeout;
   private queueMutex = new AsyncMutex(); // Serialize queue modifications
   
@@ -127,7 +127,7 @@ export class AlertRetryQueue {
       createdAt: Date.now(),
       retryCount: 0,
       nextRetryAt: Date.now() + 60000, // Retry in 1 minute
-      maxRetries: 10, // Max 10 retries with exponential backoff
+      maxRetries: 100, // Extended horizon for flaky networks
       data: { emailType, subject, details }
     };
     
@@ -157,7 +157,7 @@ export class AlertRetryQueue {
       createdAt: Date.now(),
       retryCount: 0,
       nextRetryAt: Date.now() + 60000, // Retry in 1 minute
-      maxRetries: 10,
+      maxRetries: 100, // Extended horizon for flaky networks
       data: alertData
     };
     
@@ -234,9 +234,9 @@ export class AlertRetryQueue {
     for (const alert of alertsToRetry) {
       const age = now - alert.createdAt;
       
-      // Check if alert has exceeded max duration
+      // Check if alert has exceeded max duration (7 days)
       if (age > this.maxRetryDurationMs) {
-        console.error(`[AlertQueue] Alert ${alert.id} exceeded 24hr timeout - marking for deletion`);
+        console.error(`[AlertQueue] Alert ${alert.id} exceeded 7-day timeout - marking for deletion`);
         results.set(alert.id, { action: 'delete' });
         continue;
       }

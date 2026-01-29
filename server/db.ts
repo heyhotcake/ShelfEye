@@ -16,9 +16,10 @@ class DatabaseConnectionManager {
   private isHealthy: boolean = false;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private reconnectAttempts: number = 0;
-  private readonly MAX_RECONNECT_ATTEMPTS = 10;
+  private readonly MAX_RECONNECT_ATTEMPTS = Infinity; // Never give up on DB reconnection
   private readonly HEALTH_CHECK_INTERVAL_MS = 30000; // 30 seconds
-  private readonly RECONNECT_DELAY_MS = 5000; // 5 seconds
+  private readonly RECONNECT_DELAY_MS = 5000; // Initial backoff delay
+  private readonly MAX_RECONNECT_DELAY_MS = 300000; // Cap at 5 minutes
 
   constructor(connectionString: string) {
     this.connectionString = connectionString;
@@ -59,15 +60,17 @@ class DatabaseConnectionManager {
   }
 
   private async handleConnectionLoss(): Promise<void> {
-    if (this.reconnectAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
-      console.error('[Database] Max reconnection attempts reached. Giving up.');
-      return;
-    }
+    // With MAX_RECONNECT_ATTEMPTS = Infinity, we never give up
+    // This ensures the app stays resilient during extended network outages
 
     this.reconnectAttempts++;
-    console.log(`[Database] Attempting reconnection ${this.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS}...`);
+    const delay = Math.min(
+      this.RECONNECT_DELAY_MS * Math.pow(1.5, Math.min(this.reconnectAttempts - 1, 10)),
+      this.MAX_RECONNECT_DELAY_MS
+    );
+    console.log(`[Database] Attempting reconnection #${this.reconnectAttempts} (delay: ${Math.round(delay / 1000)}s)...`);
 
-    await new Promise(resolve => setTimeout(resolve, this.RECONNECT_DELAY_MS));
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     try {
       await this.pool.end();

@@ -197,10 +197,20 @@ EOF
 log "📊 Total pre-app startup: ${TOTAL_STARTUP_TIME}s"
 log "   Timing details saved to: $TIMING_LOG"
 
+# Build for production
+log "🔨 Building production assets..."
+if run_with_timeout 900 npm run build; then
+    record_phase "build"
+    log "✅ Production build completed successfully"
+else
+    log "❌ FATAL: Build failed"
+    exit 1
+fi
+
 # Start the application
-log "🚀 Starting ShelfEye application..."
+log "🚀 Starting ShelfEye application (production mode)..."
 log "Access at: http://naniwatanacheck.local:5000"
 log "========================================="
 
-# Run the application
-exec npm run dev 2>&1 | tee -a "$LOG_FILE"
+# Run the production server (compiled dist/index.js)
+exec npm start 2>&1 | tee -a "$LOG_FILE"
