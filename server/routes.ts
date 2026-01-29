@@ -479,11 +479,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paperSize: z.string().optional(),
         templateTimestamp: z.string().optional(),
       });
-      const result = calibrateSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid calibration data", errors: result.error.flatten() });
+      const parseResult = calibrateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ message: "Invalid calibration data", errors: parseResult.error.flatten() });
       }
-      const { paperSize, templateTimestamp } = result.data;
+      const { paperSize, templateTimestamp } = parseResult.data;
       
       // Get camera info first
       const camera = await storage.getCamera(cameraId);
@@ -927,11 +927,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })).min(1, "Must include at least one template"),
       });
       
-      const result = verifyPositionsSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid verification data", errors: result.error.flatten() });
+      const parseResult = verifyPositionsSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ message: "Invalid verification data", errors: parseResult.error.flatten() });
       }
-      const { adjustedTemplates, paperSize } = result.data;
+      const { adjustedTemplates, paperSize } = parseResult.data;
       
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
