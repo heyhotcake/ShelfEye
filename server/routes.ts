@@ -460,6 +460,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Calibration routes
   app.post("/api/calibrate/:cameraId", async (req, res) => {
+    // Set generous timeout for long-running calibration (12 minutes)
+    res.setTimeout(12 * 60 * 1000);
+    
     const { cameraId } = req.params;
     let lockAcquired = false;
     
@@ -516,30 +519,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[Calibration] Wait complete. Now killing any stuck camera processes...');
       
       try {
-        const killPromises = [
-          new Promise((resolve) => {
-            exec('pkill -9 -f "aruco_calibrator.py" || true', () => resolve(null));
-          }),
-          new Promise((resolve) => {
-            exec('pkill -9 -f "camera_preview.py" || true', () => resolve(null));
-          }),
-          new Promise((resolve) => {
-            exec('pkill -9 -f "validate_slot_qrs.py" || true', () => resolve(null));
-          }),
-          new Promise((resolve) => {
-            exec('pkill -9 -f "rectified_preview.py" || true', () => resolve(null));
-          }),
-          new Promise((resolve) => {
-            const devicePath = camera.devicePath || '/dev/video0';
-            exec(`fuser -k ${devicePath} 2>/dev/null || true`, () => resolve(null));
-          }),
-          new Promise((resolve) => {
-            exec('fuser -k /dev/video0 /dev/video1 /dev/video2 2>/dev/null || true', () => resolve(null));
-          })
-        ];
-        await Promise.all(killPromises);
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        console.log('[Calibration] Killed existing camera processes, waited 3s for device release');
+        // Use SubprocessManager to kill only tracked processes (safer than pkill)
+        await subprocessManager.killAllCameraProcesses();
+        console.log('[Calibration] Killed existing camera processes via SubprocessManager');
       } catch (e) {
         console.error('[Calibration] Error killing stuck processes:', e);
       }
@@ -907,6 +889,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Verify adjusted template positions by regenerating rectified preview
   app.post("/api/calibrate/:cameraId/verify-positions", async (req, res) => {
+    // Set generous timeout for long-running verification (12 minutes)
+    res.setTimeout(12 * 60 * 1000);
+    
     const { cameraId } = req.params;
     let lockAcquired = false;
     
@@ -1500,7 +1485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Debug images endpoint - serves captured validation images for troubleshooting
-  app.get("/api/debug-images/:filename", (req, res) => {
+  app.get("/api/debug-images/:filename", async (req, res) => {
     try {
       const { filename } = req.params;
       // Use absolute path to home directory
@@ -1508,10 +1493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filePath = path.join(debugDir, filename);
       
       console.log(`[Debug Images] Request for: ${filename}`);
-      console.log(`[Debug Images] CWD: ${process.cwd()}`);
-      console.log(`[Debug Images] Debug dir: ${debugDir}`);
       console.log(`[Debug Images] Full path: ${filePath}`);
-      console.log(`[Debug Images] File exists: ${fsSync.existsSync(filePath)}`);
       
       // Security: prevent directory traversal
       if (!filePath.startsWith(debugDir)) {
@@ -1519,12 +1501,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      // Check if file exists
-      if (!fsSync.existsSync(filePath)) {
-        // List what files ARE in the directory
+      // Check if file exists (async)
+      const exists = await fs.access(filePath).then(() => true).catch(() => false);
+      if (!exists) {
+        // List what files ARE in the directory (async, cap output)
         try {
-          const files = fsSync.readdirSync(debugDir);
-          console.log(`[Debug Images] Files in debug dir: ${files.join(', ')}`);
+          const files = await fs.readdir(debugDir);
+          console.log(`[Debug Images] Files in debug dir: ${files.slice(0, 20).join(', ')}${files.length > 20 ? '...' : ''}`);
         } catch (e) {
           console.log(`[Debug Images] Could not list debug dir: ${e}`);
         }
@@ -1541,7 +1524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Serve validation debug images from data directory
-  app.get("/api/validation-images/:filename", (req, res) => {
+  app.get("/api/validation-images/:filename", async (req, res) => {
     try {
       const { filename } = req.params;
       const dataDir = path.join(process.cwd(), 'data');
@@ -1556,8 +1539,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      // Check if file exists
-      if (!fsSync.existsSync(filePath)) {
+      // Check if file exists (async)
+      const exists = await fs.access(filePath).then(() => true).catch(() => false);
+      if (!exists) {
         return res.status(404).json({ message: "Validation image not found" });
       }
       
@@ -1571,6 +1555,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Rectified preview route
   app.get("/api/rectified-preview/:cameraId", async (req, res) => {
+    // Set generous timeout for long-running preview (12 minutes)
+    res.setTimeout(12 * 60 * 1000);
+    
     try {
       const { cameraId } = req.params;
       const { templateTimestamp } = req.query; // Optional: specific template to show

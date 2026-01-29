@@ -294,6 +294,106 @@ class SubprocessManager {
   getProcessesByType(type: 'python' | 'led'): TrackedProcess[] {
     return Array.from(this.processes.values()).filter(p => p.type === type);
   }
+
+  /**
+   * Kill all tracked processes matching a specific purpose
+   * Safer than pkill - only kills PIDs we spawned
+   */
+  async killByPurpose(purpose: string): Promise<number> {
+    const matchingProcesses = Array.from(this.processes.entries()).filter(
+      ([, proc]) => proc.purpose.includes(purpose)
+    );
+
+    if (matchingProcesses.length === 0) {
+      return 0;
+    }
+
+    console.log(`[SubprocessManager] Killing ${matchingProcesses.length} process(es) matching purpose: ${purpose}`);
+    let killedCount = 0;
+
+    for (const [pid, proc] of matchingProcesses) {
+      try {
+        // Try SIGTERM first
+        process.kill(pid, 'SIGTERM');
+        
+        // Wait 1s for graceful shutdown
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Check if still alive
+        try {
+          process.kill(pid, 0);
+          // Still alive, force kill
+          process.kill(pid, 'SIGKILL');
+          console.log(`[SubprocessManager] Force killed PID ${pid} (${proc.purpose})`);
+        } catch {
+          // Process is gone
+        }
+        
+        this.processes.delete(pid);
+        killedCount++;
+        console.log(`[SubprocessManager] Killed PID ${pid} (${proc.purpose})`);
+      } catch (error: any) {
+        if (error.code === 'ESRCH') {
+          // Already dead
+          this.processes.delete(pid);
+          killedCount++;
+        } else {
+          console.error(`[SubprocessManager] Failed to kill PID ${pid}:`, error.message);
+        }
+      }
+    }
+
+    return killedCount;
+  }
+
+  /**
+   * Kill all tracked Python processes (camera-related)
+   * Also cleans up orphaned processes from prior runs and releases device locks
+   */
+  async killAllCameraProcesses(): Promise<void> {
+    console.log('[SubprocessManager] Killing all camera-related Python processes...');
+    
+    // Step 1: Kill all tracked processes
+    let totalKilled = 0;
+    totalKilled += await this.killByPurpose('aruco_calibrator');
+    totalKilled += await this.killByPurpose('camera_preview');
+    totalKilled += await this.killByPurpose('validate_slot');
+    totalKilled += await this.killByPurpose('rectified_preview');
+    totalKilled += await this.killByPurpose('scheduled_capture');
+    
+    console.log(`[SubprocessManager] Killed ${totalKilled} tracked process(es)`);
+    
+    // Step 2: Always clean up orphaned processes from prior runs
+    // This handles processes that were running before a service restart
+    const scripts = [
+      'aruco_calibrator.py',
+      'camera_preview.py',
+      'validate_slot_qrs.py',
+      'rectified_preview.py',
+      'scheduled_capture.py'
+    ];
+    
+    for (const script of scripts) {
+      try {
+        // Use targeted pkill with exact script name match
+        await execAsync(`pkill -9 -f "${script}" 2>/dev/null || true`);
+      } catch {
+        // Ignore errors - process may not exist
+      }
+    }
+    
+    // Step 3: Release device locks on common video devices
+    // This handles stale file handles that may persist after process death
+    try {
+      await execAsync('fuser -k /dev/video0 /dev/video1 /dev/video2 2>/dev/null || true');
+    } catch {
+      // Ignore errors - devices may not be in use
+    }
+    
+    // Wait for device release
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log('[SubprocessManager] Camera process cleanup complete');
+  }
 }
 
 export const subprocessManager = new SubprocessManager();
