@@ -1,0 +1,221 @@
+🚨 Critical: Raspberry Pi 4 2GB RAM Specific Issues
+I've analyzed the codebase from the perspective of long-term operation on 2GB RAM hardware. Several critical memory management issues need immediate attention.
+
+🔴 Immediate Action Required
+1. Memory Limits are Too Aggressive for 2GB System
+Current: MemoryMax=1.8G on a 2GB Pi
+Problem: Leaves only ~200MB for OS, Python subprocesses, and system buffers. Your app will hit OOM killer.
+
+Evidence from systemd:
+
+MemoryHigh=1.5G
+MemoryMax=1.8G
+Fix: Adjust shelfeye.service for 2GB reality
+
+ # Resource limits for 2GB Raspberry Pi 4
+ LimitNOFILE=65536
+ CPUQuota=380%
+-MemoryHigh=1.5G
+-MemoryMax=1.8G
++MemoryHigh=1.2G
++MemoryMax=1.4G
+Why:
+
+Node.js server: ~400-600MB baseline
+Single Python + OpenCV process: ~200-400MB during capture
+OS + systemd + LED daemon: ~200-300MB
+Safe total: 1.4GB max with headroom for spikes
+2. Node.js Heap Not Tuned - Will Conflict with cgroups
+Current: No NODE_OPTIONS set; Node defaults to ~512MB heap
+Problem: Node may try to allocate 512MB+ while cgroup limits are 1.4GB, leaving insufficient space for Python subprocesses.
+
+Fix: Cap Node heap in package.json
+
+ "scripts": {
+   "dev": "NODE_ENV=development tsx server/index.ts",
+   "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+-  "start": "NODE_ENV=production node dist/index.js",
++  "start": "NODE_ENV=production node --max-old-space-size=768 dist/index.js",
+   "check": "tsc",
+   "db:push": "drizzle-kit push"
+ }
+Why: 768MB for Node + 400MB for Python + 300MB buffer = ~1.5GB total
+
+3. No Concurrent Process Limits - Memory Spikes
+Current: No limits found on concurrent captures or calibrations
+Problem: If scheduler triggers multiple cameras simultaneously, or a user starts calibration during scheduled capture, memory can spike to 2.5GB+.
+
+Evidence:
+
+Scheduler has no maxConcurrent limiter
+Routes allow parallel calibration + capture + validation
+Each Python OpenCV process: 200-400MB
+Fix: Add semaphore for camera operations
+
+Create server/utils/concurrency-limiter.ts:
+
+class CameraOperationLimiter {
+  private activeOperations = 0;
+  private readonly maxConcurrent = 1; // Only 1 camera operation at a time on 2GB
+
+  async acquire(): Promise<void> {
+    while (this.activeOperations >= this.maxConcurrent) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    this.activeOperations++;
+  }
+
+  release(): void {
+    this.activeOperations--;
+  }
+}
+
+export const cameraLimiter = new CameraOperationLimiter();
+Apply in scheduler.ts and routes.ts:
+
+// Before any camera operation
+await cameraLimiter.acquire();
+try {
+  // ... spawn Python process
+} finally {
+  cameraLimiter.release();
+}
+4. Swap is Mentioned but Not Enforced
+Current: PI-DEPLOYMENT.md suggests 2GB swap if "you run out of memory during npm install"
+Problem: On 2GB RAM, swap is mandatory for stability, not optional.
+
+Fix: Make swap configuration mandatory in docs
+
+RASPBERRY_PI_SETUP.md additions:
+
++## ⚠️ CRITICAL: Configure Swap (Mandatory for 2GB Pi)
++
++Raspberry Pi 4 2GB **requires** swap for stable 24/7 operation:
++
++```bash
++# Configure 2GB swap (do this before installing dependencies)
++sudo dphys-swapfile swapoff
++sudo sed -i 's/CONF_SWAPSIZE=.*/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
++sudo dphys-swapfile setup
++sudo dphys-swapfile swapon
++
++# Verify swap is active
++free -h
++# Should show 2GB swap
++```
+Also add runtime swap check in pi-startup.sh:
+
+# Check swap is configured (critical for 2GB Pi)
+SWAP_SIZE=$(free -m | awk '/Swap:/ {print $2}')
+if [ "$SWAP_SIZE" -lt 1024 ]; then
+  log "⚠️  WARNING: Insufficient swap ($SWAP_SIZE MB). 2GB+ swap recommended for 2GB Pi."
+  log "⚠️  Run: sudo dphys-swapfile swapoff && sudo nano /etc/dphys-swapfile"
+fi
+5. No Image Cleanup - Disk and Memory Exhaustion
+Current: No retention policies found
+Problem: Months of captures will fill SD card; old images in memory during listing operations.
+
+Fix: Add retention policy to scheduler
+
+// server/scheduler.ts - add hourly cleanup job
+import { promises as fs } from 'fs';
+import path from 'path';
+
+async function cleanupOldImages() {
+  const RETENTION_DAYS = 30; // Keep 30 days of debug images
+  const cutoff = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  
+  const dirs = ['data/debug_images', 'data/validation_images'];
+  
+  for (const dir of dirs) {
+    try {
+      const files = await fs.readdir(dir);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stat = await fs.stat(filePath);
+        if (stat.mtime.getTime() < cutoff) {
+          await fs.unlink(filePath);
+          console.log(`[Cleanup] Deleted old image: ${file}`);
+        }
+      }
+    } catch (err) {
+      console.error(`[Cleanup] Error cleaning ${dir}:`, err);
+    }
+  }
+}
+
+// Schedule daily at 3 AM
+cron.schedule('0 3 * * *', cleanupOldImages, { timezone: config.timezone });
+6. Python Processes Have No Resource Limits
+Current: Python scripts spawn without ulimits
+Problem: A runaway OpenCV operation can consume all available memory.
+
+Fix: Add ulimit wrapper in subprocess spawn
+
+server/subprocess-manager.ts:
+
+   spawn(command: string, args: string[], purpose: string, cwd?: string) {
++    // Memory limit for Python processes on 2GB Pi (400MB cap)
++    const env = {
++      ...process.env,
++      // Python virtual memory limit (soft cap)
++      PYTHONMALLOC: 'malloc',
++    };
++    
+     const childProcess = spawn(command, args, {
+       cwd: cwd || process.cwd(),
+       stdio: ['ignore', 'pipe', 'pipe'],
++      env,
+     });
+Also add to Python wrapper (optional but recommended):
+
+# At top of aruco_calibrator.py and other memory-intensive scripts
+import resource
+# Cap memory to 400MB (for 2GB Pi safety)
+try:
+    resource.setrlimit(resource.RLIMIT_AS, (400 * 1024 * 1024, 500 * 1024 * 1024))
+except Exception:
+    pass  # Not all systems support this
+📊 Memory Budget for 2GB Pi (24/7 Operation)
+Component	Baseline	Peak	Notes
+OS + systemd	200MB	250MB	Raspberry Pi OS Lite
+Node.js server	400MB	768MB	With --max-old-space-size=768
+LED daemon	20MB	30MB	Python service
+Single Python capture	150MB	400MB	OpenCV + numpy
+Buffers/cache	100MB	200MB	Filesystem cache
+Total	870MB	1.65GB	Safe with 1.4GB cgroup limit + swap
+✅ Pre-Production Checklist (2GB Pi Specific)
+Before deploying:
+
+Update systemd limits:
+
+MemoryHigh=1.2G
+MemoryMax=1.4G
+Set Node heap cap:
+
+"start": "NODE_ENV=production node --max-old-space-size=768 dist/index.js"
+Configure 2GB swap:
+
+sudo sed -i 's/CONF_SWAPSIZE=.*/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
+sudo dphys-swapfile setup && sudo dphys-swapfile swapon
+Add concurrency limiter (only 1 camera op at a time)
+
+Add image cleanup cron (30-day retention)
+
+Test under load:
+
+# Trigger calibration + scheduled capture simultaneously
+# Monitor: watch -n1 'free -h && echo && ps aux --sort=-%mem | head -10'
+🎯 Why This Matters for Months-to-Years Uptime
+Without these fixes:
+
+Week 1: OOM killer terminates processes during concurrent operations
+Month 1: SD card fills with debug images (16GB card = ~50k images)
+Month 3: Memory fragmentation causes slowdowns; swap thrashing without proper limits
+Month 6: System becomes unresponsive during peak usage
+With these fixes:
+
+Controlled memory usage under cgroup limits
+Swap absorbs temporary spikes
+Automatic cleanup prevents disk exhaustion
+Concurrency limits prevent resource contention

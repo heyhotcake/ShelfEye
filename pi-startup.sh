@@ -53,6 +53,14 @@ cd "$APP_DIR" || {
     exit 1
 }
 
+# Check swap is configured (critical for 2GB Pi)
+SWAP_SIZE=$(free -m | awk '/Swap:/ {print $2}')
+if [ "$SWAP_SIZE" -lt 1024 ]; then
+    log "⚠️  WARNING: Insufficient swap ($SWAP_SIZE MB). 2GB+ swap recommended for 2GB Pi."
+    log "   To fix: sudo dphys-swapfile swapoff && sudo nano /etc/dphys-swapfile"
+    log "   Set CONF_SWAPSIZE=2048, then: sudo dphys-swapfile setup && sudo dphys-swapfile swapon"
+fi
+
 # Load environment variables from .env.pi if it exists
 if [ -f ".env.pi" ]; then
     log "Loading environment variables from .env.pi..."

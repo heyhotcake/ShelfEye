@@ -21,11 +21,11 @@ StandardError=journal
 # Environment variables (loaded from .env.pi in startup script)
 Environment="PATH=/home/naniwa/.nvm/versions/node/v20.18.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-# Resource limits for long-term reliability
+# Resource limits for 2GB Raspberry Pi 4
 LimitNOFILE=65536
 CPUQuota=380%
-MemoryHigh=1.5G
-MemoryMax=1.8G
+MemoryHigh=1.2G
+MemoryMax=1.4G
 
 [Install]
 WantedBy=multi-user.target

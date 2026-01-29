@@ -22,6 +22,7 @@ import { insertCameraSchema, insertSlotSchema, insertDetectionLogSchema, insertA
 import { setWhiteLight, turnOffLED } from "./utils/led-control";
 import { readDHT20 } from "./utils/dht20-sensor";
 import { parseBoolConfigValue, stringifyBoolConfigValue } from "./utils/config-utils";
+import { cameraLimiter } from "./utils/concurrency-limiter";
 
 // Helper function to get camera device source (path or index)
 function getCameraDeviceSource(camera: { devicePath?: string | null; deviceIndex?: number | null }): string {
