@@ -425,7 +425,7 @@ You can schedule the health check to run periodically and send alerts if issues 
 
 **Symptoms:**
 - Pi reboots repeatedly every 3-4 minutes
-- Can briefly SSH in but connection drops
+- Can briefly SSH in but connection drops.
 - Web interface becomes inaccessible after a few minutes
 
 **Cause:**
