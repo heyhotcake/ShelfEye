@@ -9,9 +9,12 @@ StartLimitIntervalSec=600
 Type=simple
 User=naniwa
 WorkingDirectory=/home/naniwa/ShelfEye
+EnvironmentFile=-/home/naniwa/ShelfEye/.env.pi
 ExecStart=/home/naniwa/ShelfEye/pi-startup.sh
 Restart=always
 RestartSec=10
+TimeoutStopSec=30s
+KillMode=mixed
 StandardOutput=journal
 StandardError=journal
 
@@ -23,7 +26,6 @@ LimitNOFILE=65536
 CPUQuota=380%
 MemoryHigh=1.5G
 MemoryMax=1.8G
-RestartPreventExitStatus=SIGKILL
 
 [Install]
 WantedBy=multi-user.target
