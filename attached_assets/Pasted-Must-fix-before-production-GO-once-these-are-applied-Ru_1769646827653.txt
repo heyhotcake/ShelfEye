@@ -1,0 +1,116 @@
+Must-fix before production (GO once these are applied)
+
+Run production build, not dev server
+Today: shelfeye.service → pi-startup.sh ends with npm run dev (dev/HMR via tsx).
+Risk: higher memory footprint and instability over weeks; dev deps kept in memory; Vite overlay hooks.
+Fix: build then start compiled server.
+pi-startup.sh (replace the final run block)
+
+-# Run the application
+-exec npm run dev 2>&1 | tee -a "$LOG_FILE"
++# Build for production and run compiled server
++log "Building production assets..."
++run_with_timeout 900 npm run build || { log "❌ FATAL: build failed"; exit 1; }
++record_phase "build"
++
++# Important: use production server (dist/index.js)
++exec npm start 2>&1 | tee -a "$LOG_FILE"
+Never give up on DB reconnection
+Today: server/db.ts stops after 10 attempts; if Neon is flaky for >~1 minute, the app may stay down until a restart.
+Fix: use indefinite retries with capped backoff.
+server/db.ts
+
+-  private readonly MAX_RECONNECT_ATTEMPTS = 10;
+-  private readonly RECONNECT_DELAY_MS = 5000; // 5 seconds
++  private readonly MAX_RECONNECT_ATTEMPTS = Infinity; // never give up
++  private readonly RECONNECT_DELAY_MS = 5000; // initial backoff
++  private readonly MAX_RECONNECT_DELAY_MS = 300000; // cap at 5 minutes
+@@
+-    await new Promise(resolve => setTimeout(resolve, this.RECONNECT_DELAY_MS));
++    const delay = Math.min(this.RECONNECT_DELAY_MS * Math.max(1, this.reconnectAttempts), this.MAX_RECONNECT_DELAY_MS);
++    await new Promise(resolve => setTimeout(resolve, delay));
+Don’t drop alerts during extended outages
+Today: server/services/alert-queue.ts uses maxRetries: 10 and maxRetryDurationMs: 24h, then deletes.
+Risk: multi-day email/Gmail/Sheets issues would lose alerts.
+Fix: extend horizon and retries; or park in a dead-letter queue (simple change below keeps behavior but longer window).
+server/services/alert-queue.ts
+
+-  private maxRetryDurationMs = 24 * 60 * 60 * 1000; // 24 hours
++  private maxRetryDurationMs = 7 * 24 * 60 * 60 * 1000; // 7 days
+@@ queueEmailAlert / queueSheetsAlert
+-      maxRetries: 10, // Max 10 retries
++      maxRetries: 100, // Longer horizon for flaky networks
+Make shelfeye.service the single, hardened unit
+Today: three units exist; use shelfeye.service; disable the two “tool-tracker.service” variants to avoid confusion.
+Strengthen graceful shutdown and env loading:
+shelfeye.service
+ [Unit]
+-After=network-online.target led-manager.service
+-Wants=network-online.target led-manager.service
++After=network-online.target led-manager.service
++Wants=network-online.target led-manager.service
+ StartLimitBurst=5
+ StartLimitIntervalSec=600
+ 
+ [Service]
+ Type=simple
+ User=naniwa
+ WorkingDirectory=/home/naniwa/ShelfEye
+ ExecStart=/home/naniwa/ShelfEye/pi-startup.sh
+ Restart=always
+ RestartSec=10
+ StandardOutput=journal
+ StandardError=journal
++# Load environment for Node (pi-startup also sources .env.pi)
++EnvironmentFile=-/home/naniwa/ShelfEye/.env.pi
++# Ensure graceful stops complete
++TimeoutStopSec=30s
++KillMode=mixed
+@@
+ LimitNOFILE=65536
+ CPUQuota=380%
+ MemoryHigh=1.5G
+ MemoryMax=1.8G
+-RestartPreventExitStatus=SIGKILL
++# Remove invalid RestartPreventExitStatus; rely on Restart=always
+Disable legacy units on the Pi:
+
+sudo systemctl disable tool-tracker.service || true
+sudo systemctl disable systemd/tool-tracker.service || true
+Ensure API key is documented and present in production
+server/index.ts requires SHELFEYE_API_KEY in production (auth exempt for /api/health,/ping).
+.env.example and pi-startup guidance don’t mention it.
+.env.example
+
++# API Authentication (required in production)
++SHELFEYE_API_KEY=choose-a-long-random-string
+Add the same key to /home/naniwa/ShelfEye/.env.pi on the Pi.
+
+High-impact (do in the first week)
+
+Log rotation: startup.log grows over time. Add a simple logrotate entry for /home/naniwa/ShelfEye/logs/*.log (size 5M, rotate 7).
+Unit consistency: consider Environment=NODE_ENV=production in shelfeye.service to make the mode explicit.
+Memory guardrails: your MemoryHigh/Max are good for a 2GB Pi; if you deploy on 4GB, bump MemoryMax to ~3.5G to avoid premature OOM.
+CI (quick): a single workflow that runs tsc and npm run build on pushes catches breakages early.
+What already looks production-ready
+
+Graceful shutdown handlers for Node (uncaughtException/unhandledRejection exit for clean systemd restart) and Python; SubprocessManager cleans zombies and escalates; signal handling throughout.
+LED manager as its own systemd root service with named pipes; server LED client has exponential backoff to ride cold-start races.
+/api/health with uptime and memory; hourly memory monitor in scheduler; 24h soak test script (tests/test-24h-stability.sh).
+Hardware watchdog scripts configure the kernel module and daemon with sensible timeouts (240s) and disabled load triggers suited to OpenCV bursts.
+Cutover checklist (Pi 4, 64‑bit, January 2026)
+
+One-time
+Run enable-watchdog.sh and verify with check_watchdog.sh.
+Disable legacy tool-tracker.service; keep shelfeye.service + led-manager.service only.
+Add SHELFEYE_API_KEY to /home/naniwa/ShelfEye/.env.pi; keep DATABASE_URL and SESSION_SECRET present.
+Deploy
+sudo ./install-led-daemon.sh
+sudo ./install-autostart.sh
+sudo systemctl restart led-manager
+sudo systemctl restart shelfeye
+Verify
+curl -s http://localhost:5000/api/health → HTTP 200 with uptime/memory.
+journalctl -u shelfeye -f during a capture; ensure no tsx/vite dev messages (confirm production build).
+Simulate 30–60 min network loss; verify DB reconnection logs and no fatal exits; send a test alert and confirm retry queue behavior.
+Run tests/test-24h-stability.sh overnight.
