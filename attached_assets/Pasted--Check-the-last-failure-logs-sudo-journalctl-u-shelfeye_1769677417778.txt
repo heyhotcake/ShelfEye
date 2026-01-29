@@ -1,0 +1,112 @@
+# Check the last failure logs
+sudo journalctl -u shelfeye -n 200 --no-pager | tail -100
+Jan 29 13:03:37 NaniwaTanaCheck pi-startup.sh[62246]: [2026-01-29 13:03:37] Access at: http://naniwatanacheck.local:5000
+Jan 29 13:03:37 NaniwaTanaCheck pi-startup.sh[62249]: [2026-01-29 13:03:37] =========================================
+Jan 29 13:03:37 NaniwaTanaCheck pi-startup.sh[62251]: > rest-express@1.0.0 start
+Jan 29 13:03:37 NaniwaTanaCheck pi-startup.sh[62251]: > NODE_ENV=production node --max-old-space-size=768 dist/index.js
+Jan 29 13:03:43 NaniwaTanaCheck pi-startup.sh[62251]: [Database] Connection pool created
+Jan 29 13:03:43 NaniwaTanaCheck pi-startup.sh[62251]: [Database] Health check started (interval: 30000ms)
+Jan 29 13:03:43 NaniwaTanaCheck pi-startup.sh[62251]: [SubprocessManager] Starting zombie detection (interval: 60000ms)
+Jan 29 13:03:43 NaniwaTanaCheck pi-startup.sh[62251]: [Startup] Environment validation...
+Jan 29 13:03:43 NaniwaTanaCheck pi-startup.sh[62251]: [Startup] ❌ CRITICAL ERRORS:
+Jan 29 13:03:43 NaniwaTanaCheck pi-startup.sh[62251]:   - SHELFEYE_API_KEY is required in production - API endpoints must be protected
+Jan 29 13:03:43 NaniwaTanaCheck pi-startup.sh[62251]: [Startup] ⚠️ Warnings:
+Jan 29 13:03:43 NaniwaTanaCheck pi-startup.sh[62251]:   - Google Mail integration not detected - email alerts will not work
+Jan 29 13:03:43 NaniwaTanaCheck pi-startup.sh[62251]: [Startup] Cannot start - fix the above errors and restart
+Jan 29 13:03:43 NaniwaTanaCheck systemd[1]: shelfeye.service: Main process exited, code=exited, status=1/FAILURE
+Jan 29 13:03:43 NaniwaTanaCheck systemd[1]: shelfeye.service: Killing process 62251 (tee) with signal SIGKILL.
+Jan 29 13:03:43 NaniwaTanaCheck systemd[1]: shelfeye.service: Failed with result 'exit-code'.
+Jan 29 13:03:43 NaniwaTanaCheck systemd[1]: shelfeye.service: Consumed 2min 13.252s CPU time.
+Jan 29 13:03:53 NaniwaTanaCheck systemd[1]: shelfeye.service: Scheduled restart job, restart counter is at 3.
+Jan 29 13:03:53 NaniwaTanaCheck systemd[1]: Started shelfeye.service - ShelfEye Tool Monitoring System.
+Jan 29 13:03:53 NaniwaTanaCheck pi-startup.sh[62283]: [2026-01-29 13:03:53] =========================================
+Jan 29 13:03:53 NaniwaTanaCheck pi-startup.sh[62286]: [2026-01-29 13:03:53] Starting ShelfEye Auto-Update System
+Jan 29 13:03:53 NaniwaTanaCheck pi-startup.sh[62289]: [2026-01-29 13:03:53] =========================================
+Jan 29 13:03:53 NaniwaTanaCheck pi-startup.sh[62295]: [2026-01-29 13:03:53] Loading environment variables from .env.pi...
+Jan 29 13:03:53 NaniwaTanaCheck pi-startup.sh[62298]: [2026-01-29 13:03:53] Checking for updates from GitHub...
+Jan 29 13:03:54 NaniwaTanaCheck pi-startup.sh[62301]: From https://github.com/heyhotcake/ShelfEye
+Jan 29 13:03:54 NaniwaTanaCheck pi-startup.sh[62301]:  * branch            main       -> FETCH_HEAD
+Jan 29 13:03:54 NaniwaTanaCheck pi-startup.sh[62311]: [2026-01-29 13:03:54] ⏱️  Phase 'git-fetch' completed in 1s (cumulative)
+Jan 29 13:03:54 NaniwaTanaCheck pi-startup.sh[62316]: [2026-01-29 13:03:54] ✓ Already up to date (commit: a90a57f)
+Jan 29 13:03:54 NaniwaTanaCheck pi-startup.sh[62320]: [2026-01-29 13:03:54] ⏱️  Phase 'git-check' completed in 1s (cumulative)
+Jan 29 13:03:54 NaniwaTanaCheck pi-startup.sh[62324]: [2026-01-29 13:03:54] ✓ WS2812B LED library already installed
+Jan 29 13:03:54 NaniwaTanaCheck pi-startup.sh[62327]: [2026-01-29 13:03:54] Configuring LED Manager Daemon...
+Jan 29 13:03:54 NaniwaTanaCheck pi-startup.sh[62332]: [2026-01-29 13:03:54] ✓ LED daemon config generated
+Jan 29 13:03:54 NaniwaTanaCheck pi-startup.sh[62335]: [2026-01-29 13:03:54] Installing LED Manager Daemon service...
+Jan 29 13:03:54 NaniwaTanaCheck sudo[62337]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/cp /home/naniwa/ShelfEye/led-manager.service /etc/systemd/system/
+Jan 29 13:03:54 NaniwaTanaCheck sudo[62337]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 29 13:03:54 NaniwaTanaCheck sudo[62337]: pam_unix(sudo:session): session closed for user root
+Jan 29 13:03:54 NaniwaTanaCheck sudo[62340]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl daemon-reload
+Jan 29 13:03:54 NaniwaTanaCheck sudo[62340]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 29 13:03:56 NaniwaTanaCheck sudo[62340]: pam_unix(sudo:session): session closed for user root
+Jan 29 13:03:56 NaniwaTanaCheck sudo[62432]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl enable led-manager.service
+Jan 29 13:03:56 NaniwaTanaCheck sudo[62432]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 29 13:03:57 NaniwaTanaCheck sudo[62432]: pam_unix(sudo:session): session closed for user root
+Jan 29 13:03:57 NaniwaTanaCheck sudo[62524]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl is-active --quiet led-manager.service
+Jan 29 13:03:57 NaniwaTanaCheck sudo[62524]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 29 13:03:57 NaniwaTanaCheck sudo[62524]: pam_unix(sudo:session): session closed for user root
+Jan 29 13:03:57 NaniwaTanaCheck pi-startup.sh[62528]: [2026-01-29 13:03:57] ✅ LED Manager Daemon is already running
+Jan 29 13:03:57 NaniwaTanaCheck pi-startup.sh[62531]: [2026-01-29 13:03:57] Skipping database schema sync (managed from Replit)
+Jan 29 13:03:57 NaniwaTanaCheck pi-startup.sh[62535]: [2026-01-29 13:03:57] ⏱️  Phase 'db-push-skipped' completed in 4s (cumulative)
+Jan 29 13:03:57 NaniwaTanaCheck pi-startup.sh[62540]: [2026-01-29 13:03:57] ⏱️  Phase 'pre-app-complete' completed in 4s (cumulative)
+Jan 29 13:03:57 NaniwaTanaCheck pi-startup.sh[62548]: [2026-01-29 13:03:57] 📊 Total pre-app startup: 4s
+Jan 29 13:03:57 NaniwaTanaCheck pi-startup.sh[62551]: [2026-01-29 13:03:57]    Timing details saved to: /home/naniwa/ShelfEye/state/startup-timing.json
+Jan 29 13:03:57 NaniwaTanaCheck pi-startup.sh[62554]: [2026-01-29 13:03:57] 🔨 Building production assets...
+Jan 29 13:03:57 NaniwaTanaCheck pi-startup.sh[62557]: > rest-express@1.0.0 build
+Jan 29 13:03:57 NaniwaTanaCheck pi-startup.sh[62557]: > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+Jan 29 13:03:58 NaniwaTanaCheck pi-startup.sh[62557]: vite v5.4.20 building for production...
+Jan 29 13:03:58 NaniwaTanaCheck pi-startup.sh[62557]: transforming...
+Jan 29 13:04:00 NaniwaTanaCheck pi-startup.sh[62557]: Browserslist: browsers data (caniuse-lite) is 15 months old. Please run:
+Jan 29 13:04:00 NaniwaTanaCheck pi-startup.sh[62557]:   npx update-browserslist-db@latest
+Jan 29 13:04:00 NaniwaTanaCheck pi-startup.sh[62557]:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Jan 29 13:05:07 NaniwaTanaCheck pi-startup.sh[62557]: ✓ 3350 modules transformed.
+Jan 29 13:05:10 NaniwaTanaCheck pi-startup.sh[62557]: rendering chunks...
+Jan 29 13:05:15 NaniwaTanaCheck pi-startup.sh[62557]: computing gzip size...
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: ../dist/public/index.html
+                           3.08 kB │ gzip:     0.99 kB
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: ../dist/public/assets/Blue_and_white_bogo_1767655508883-C6h_V3Vx.jpg      17.79 kB
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: ../dist/public/assets/index-B33X5cs0.css                                  69.16 kB │ gzip:    12.21 kB
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: ../dist/public/assets/purify.es-DfngIMfA.js                               22.26 kB │ gzip:     8.72 kB
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: ../dist/public/assets/index.es-BHPNHmfy.js                               150.56 kB │ gzip:    51.51 kB
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: ../dist/public/assets/html2canvas.esm-CBrSDip1.js                        201.42 kB │ gzip:    48.03 kB
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: ../dist/public/assets/index-D9LJMR5m.js
+                      14,519.23 kB │ gzip: 7,623.20 kB
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: (!) Some chunks are larger than 500 kB after minification. Consider:
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: - Using dynamic import() to code-split the application
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Jan 29 13:05:16 NaniwaTanaCheck pi-startup.sh[62557]: ✓ built in 1m 18s
+Jan 29 13:05:18 NaniwaTanaCheck pi-startup.sh[62557]:   dist/index.js  349.6kb
+Jan 29 13:05:18 NaniwaTanaCheck pi-startup.sh[62557]: ⚡ Done in 170ms
+Jan 29 13:05:18 NaniwaTanaCheck pi-startup.sh[62613]: [2026-01-29 13:05:18] ⏱️  Phase 'build' completed in 85s (cumulative)
+Jan 29 13:05:18 NaniwaTanaCheck pi-startup.sh[62616]: [2026-01-29 13:05:18] ✅ Production build completed successfully
+Jan 29 13:05:18 NaniwaTanaCheck pi-startup.sh[62619]: [2026-01-29 13:05:18] 🚀 Starting ShelfEye application (production mode)...
+Jan 29 13:05:18 NaniwaTanaCheck pi-startup.sh[62622]: [2026-01-29 13:05:18] Access at: http://naniwatanacheck.local:5000
+Jan 29 13:05:18 NaniwaTanaCheck pi-startup.sh[62625]: [2026-01-29 13:05:18] =========================================
+Jan 29 13:05:18 NaniwaTanaCheck pi-startup.sh[62627]: > rest-express@1.0.0 start
+Jan 29 13:05:18 NaniwaTanaCheck pi-startup.sh[62627]: > NODE_ENV=production node --max-old-space-size=768 dist/index.js
+Jan 29 13:05:26 NaniwaTanaCheck pi-startup.sh[62627]: [Database] Connection pool created
+Jan 29 13:05:26 NaniwaTanaCheck pi-startup.sh[62627]: [Database] Health check started (interval: 30000ms)
+Jan 29 13:05:26 NaniwaTanaCheck pi-startup.sh[62627]: [SubprocessManager] Starting zombie detection (interval: 60000ms)
+Jan 29 13:05:26 NaniwaTanaCheck pi-startup.sh[62627]: [Startup] Environment validation...
+Jan 29 13:05:26 NaniwaTanaCheck pi-startup.sh[62627]: [Startup] ❌ CRITICAL ERRORS:
+Jan 29 13:05:26 NaniwaTanaCheck pi-startup.sh[62627]:   - SHELFEYE_API_KEY is required in production - API endpoints must be protected
+Jan 29 13:05:26 NaniwaTanaCheck pi-startup.sh[62627]: [Startup] ⚠️ Warnings:
+Jan 29 13:05:26 NaniwaTanaCheck pi-startup.sh[62627]:   - Google Mail integration not detected - email alerts will not work
+Jan 29 13:05:26 NaniwaTanaCheck pi-startup.sh[62627]: [Startup] Cannot start - fix the above errors and restart
+Jan 29 13:05:26 NaniwaTanaCheck systemd[1]: shelfeye.service: Main process exited, code=exited, status=1/FAILURE
+Jan 29 13:05:26 NaniwaTanaCheck systemd[1]: shelfeye.service: Killing process 62627 (tee) with signal SIGKILL.
+Jan 29 13:05:26 NaniwaTanaCheck systemd[1]: shelfeye.service: Failed with result 'exit-code'.
+Jan 29 13:05:26 NaniwaTanaCheck systemd[1]: shelfeye.service: Consumed 2min 16.508s CPU time.
+Jan 29 13:05:36 NaniwaTanaCheck systemd[1]: shelfeye.service: Scheduled restart job, restart counter is at 4.
+Jan 29 13:05:36 NaniwaTanaCheck systemd[1]: shelfeye.service: Start request repeated too quickly.
+Jan 29 13:05:36 NaniwaTanaCheck systemd[1]: shelfeye.service: Failed with result 'exit-code'.
+Jan 29 13:05:36 NaniwaTanaCheck systemd[1]: Failed to start shelfeye.service - ShelfEye Tool Monitoring System.
+naniwa@NaniwaTanaCheck:~/ShelfEye $ cd ~/ShelfEye
+cat package.json | grep -A5 '"scripts"'
+  "scripts": {
+    "dev": "NODE_ENV=development tsx server/index.ts",
+    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "start": "NODE_ENV=production node --max-old-space-size=768 dist/index.js",
+    "check": "tsc",
+    "db:push": "drizzle-kit push"

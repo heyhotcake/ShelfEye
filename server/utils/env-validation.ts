@@ -18,14 +18,10 @@ export function validateEnvironment(): EnvValidationResult {
     errors.push('DATABASE_URL is required for database connection');
   }
 
-  // API key is required in production, optional in development
-  const isProduction = process.env.NODE_ENV === 'production';
+  // API key is optional - secure local network deployments don't require it
+  // Set SHELFEYE_API_KEY to enable Bearer token authentication for external access
   if (!process.env.SHELFEYE_API_KEY) {
-    if (isProduction) {
-      errors.push('SHELFEYE_API_KEY is required in production - API endpoints must be protected');
-    } else {
-      warnings.push('SHELFEYE_API_KEY not set - API endpoints are NOT protected. Required in production.');
-    }
+    warnings.push('SHELFEYE_API_KEY not set - API endpoints are NOT protected. Set this for external network access.');
   }
 
   // Check Google integration availability (optional but recommended for alerts)
