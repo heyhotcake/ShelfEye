@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 import cv2
+from camera_utils import enable_camera_auto_modes
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -40,10 +41,13 @@ class CameraManager:
             # Set camera properties
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1440)
-            # Enable all automatic features - trust the camera to adjust properly
+            # Enable all automatic features via OpenCV (fallback)
             self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
             self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
             self.cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+            
+            # Also enable via v4l2-ctl for more reliable results on Linux
+            enable_camera_auto_modes(str(self.camera_index))
             
             logger.info(f"Camera {self.camera_index} initialized successfully")
             return True

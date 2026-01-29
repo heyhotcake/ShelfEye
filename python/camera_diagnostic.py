@@ -79,10 +79,14 @@ class CameraDiagnostic:
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             
-            # Enable all automatic features - trust the camera to adjust properly
+            # Enable all automatic features via OpenCV (fallback)
             cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
             cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Aperture Priority (auto mode for v4l2)
             cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+            
+            # Also enable via v4l2-ctl for more reliable results on Linux
+            from camera_utils import enable_camera_auto_modes
+            enable_camera_auto_modes(str(camera_source))
             
             actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))

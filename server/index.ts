@@ -2,6 +2,11 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
+import { apiAuthMiddleware, isAuthEnabled } from "./utils/api-auth";
+import { validateAndExit } from "./utils/env-validation";
+
+// Validate environment variables before anything else
+validateAndExit();
 
 // Fatal error handlers - ensure clean restart under systemd on unrecoverable errors
 // These catch errors that escape all other handlers and would leave the process in a broken state
@@ -40,6 +45,40 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
+// API authentication middleware - protects all /api routes except health checks
+// Set SHELFEYE_API_KEY environment variable to enable
+app.use('/api', (req, res, next) => {
+  // Allow health check without auth
+  if (req.path === '/health' || req.path === '/ping') {
+    return next();
+  }
+  return apiAuthMiddleware(req, res, next);
+});
+
+// Log auth status on startup
+if (isAuthEnabled()) {
+  console.log('[Security] API authentication ENABLED - all /api routes require Bearer token');
+} else {
+  console.log('[Security] WARNING: API authentication DISABLED - set SHELFEYE_API_KEY to secure API');
+}
+
+// Sanitize sensitive data from log output
+function sanitizeForLogging(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj;
+  
+  const sensitiveKeys = ['password', 'token', 'secret', 'apiKey', 'api_key', 'authorization', 'credentials'];
+  const sanitized = Array.isArray(obj) ? [...obj] : { ...obj };
+  
+  for (const key of Object.keys(sanitized)) {
+    if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+      sanitized[key] = '[REDACTED]';
+    } else if (typeof sanitized[key] === 'object') {
+      sanitized[key] = sanitizeForLogging(sanitized[key]);
+    }
+  }
+  return sanitized;
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -56,7 +95,8 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        const sanitized = sanitizeForLogging(capturedJsonResponse);
+        logLine += ` :: ${JSON.stringify(sanitized)}`;
       }
 
       if (logLine.length > 80) {

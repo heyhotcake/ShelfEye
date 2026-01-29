@@ -7,8 +7,95 @@ import cv2
 import numpy as np
 import time
 import logging
+import subprocess
+import re
 
 logger = logging.getLogger(__name__)
+
+
+def enable_camera_auto_modes(device_path: str) -> bool:
+    """
+    Enable all camera auto modes using v4l2-ctl for reliable results.
+    OpenCV's CAP_PROP settings don't always work on Linux USB cameras.
+    
+    This mimics what laptop camera apps do automatically:
+    - Auto focus (continuous)
+    - Auto exposure
+    - Auto white balance
+    
+    Args:
+        device_path: Camera device path like '/dev/video0' or index like '0'
+    
+    Returns:
+        True if successful, False if v4l2-ctl not available or failed
+    """
+    # Convert numeric index to device path
+    if device_path.isdigit():
+        device_path = f"/dev/video{device_path}"
+    
+    try:
+        # Check if v4l2-ctl is available
+        result = subprocess.run(['which', 'v4l2-ctl'], capture_output=True)
+        if result.returncode != 0:
+            logger.warning("v4l2-ctl not found - falling back to OpenCV auto settings")
+            return False
+        
+        # Get available controls
+        list_result = subprocess.run(
+            ['v4l2-ctl', '-d', device_path, '--list-ctrls'],
+            capture_output=True, text=True, timeout=5
+        )
+        controls = list_result.stdout
+        
+        # Build the settings command based on available controls
+        settings = []
+        
+        # Auto focus
+        if 'focus_automatic_continuous' in controls:
+            settings.append('focus_automatic_continuous=1')
+            logger.info(f"Enabling auto focus continuous on {device_path}")
+        elif 'focus_auto' in controls:
+            settings.append('focus_auto=1')
+            logger.info(f"Enabling auto focus on {device_path}")
+        
+        # Auto exposure
+        if 'auto_exposure' in controls:
+            # 3 = Aperture Priority (auto mode), 1 = Manual
+            settings.append('auto_exposure=3')
+            logger.info(f"Enabling auto exposure on {device_path}")
+        elif 'exposure_auto' in controls:
+            settings.append('exposure_auto=3')
+            logger.info(f"Enabling auto exposure on {device_path}")
+        
+        # Auto white balance
+        if 'white_balance_automatic' in controls:
+            settings.append('white_balance_automatic=1')
+            logger.info(f"Enabling auto white balance on {device_path}")
+        elif 'white_balance_temperature_auto' in controls:
+            settings.append('white_balance_temperature_auto=1')
+            logger.info(f"Enabling auto white balance temperature on {device_path}")
+        
+        if not settings:
+            logger.warning(f"No auto controls found on {device_path}")
+            return False
+        
+        # Apply all settings in one call
+        cmd = ['v4l2-ctl', '-d', device_path, '--set-ctrl=' + ','.join(settings)]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        
+        if result.returncode != 0:
+            logger.warning(f"v4l2-ctl failed: {result.stderr}")
+            return False
+        
+        logger.info(f"✓ Camera auto modes enabled via v4l2-ctl: {', '.join(settings)}")
+        return True
+        
+    except subprocess.TimeoutExpired:
+        logger.warning(f"v4l2-ctl timed out for {device_path}")
+        return False
+    except Exception as e:
+        logger.warning(f"Failed to enable auto modes via v4l2-ctl: {e}")
+        return False
 
 def apply_auto_brightness_contrast(image, clip_hist_percent=1):
     """
@@ -65,9 +152,14 @@ def apply_gamma_correction(image, gamma=1.15):
                       for i in np.arange(0, 256)]).astype("uint8")
     return cv2.LUT(image, table)
 
-def setup_camera_optimal(cap, resolution=(3840, 2160)):
+def setup_camera_optimal(cap, resolution=(3840, 2160), device_path: str = None):
     """
-    Setup camera with optimal settings for quality
+    Setup camera with optimal settings for quality.
+    
+    Args:
+        cap: OpenCV VideoCapture object
+        resolution: Tuple of (width, height)
+        device_path: Device path like '/dev/video0' for v4l2-ctl (optional but recommended)
     """
     width, height = resolution
     
@@ -84,10 +176,15 @@ def setup_camera_optimal(cap, resolution=(3840, 2160)):
     cap.set(cv2.CAP_PROP_CONTRAST, 28)     # Default value
     cap.set(cv2.CAP_PROP_GAIN, 0)          # Auto gain
     
-    # Enable all automatic features - let camera firmware handle everything
+    # Enable auto modes via OpenCV (fallback)
     cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
     cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)  # 3 = Auto mode (aperture priority)
     cap.set(cv2.CAP_PROP_AUTO_WB, 1)
+    
+    # Also enable via v4l2-ctl for reliable results (if device path provided)
+    # v4l2-ctl is more reliable than OpenCV CAP_PROP on Linux USB cameras
+    if device_path:
+        enable_camera_auto_modes(device_path)
     
     # Log what was actually set
     actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))

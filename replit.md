@@ -104,3 +104,32 @@ LED control uses a daemon-based client-server model to eliminate DMA channel con
 - **clsx & tailwind-merge**: Conditional className handling.
 - **zod**: Runtime type validation.
 - **drizzle-zod**: Zod schema generation.
+
+## Production Security & Reliability (Added Jan 2026)
+
+### API Authentication
+- All `/api` routes are protected by Bearer token authentication when `SHELFEYE_API_KEY` is set
+- Health endpoints (`/api/health`, `/api/ping`) are excluded from auth for monitoring
+- In production (`NODE_ENV=production`), the API key is **required** - startup will fail without it
+- In development, missing API key shows a warning but allows startup
+
+### Environment Validation
+- Startup validates required environment variables before the app starts
+- `DATABASE_URL`: Required for database connection
+- `SHELFEYE_API_KEY`: Required in production, optional in development
+- Google integrations: Optional but recommended for email alerts
+
+### Camera Auto-Mode Initialization
+- USB cameras now use `v4l2-ctl` for reliable auto-mode enabling (focus, exposure, white balance)
+- This mimics laptop camera behavior where auto modes are enabled by default
+- Falls back to OpenCV settings if v4l2-ctl is unavailable
+- Addresses inconsistent autofocus/white balance on Linux
+
+### Log Sanitization
+- Sensitive data (passwords, tokens, API keys, credentials) is redacted from logs
+- Response bodies are sanitized before logging
+
+### Resource Cleanup
+- SubprocessManager tracks all Python/LED processes with zombie detection
+- Graceful shutdown on SIGTERM/SIGINT kills all child processes
+- Python scripts use try/finally blocks for camera release
