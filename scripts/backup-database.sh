@@ -2,7 +2,7 @@
 # ShelfEye Database Backup Script
 # Run daily via cron: 0 2 * * * /home/naniwa/ShelfEye/scripts/backup-database.sh
 
-set -e
+set -euo pipefail
 
 BACKUP_DIR="/home/naniwa/backups"
 RETENTION_DAYS=30
@@ -31,6 +31,13 @@ pg_dump "$DATABASE_URL" | gzip > "$BACKUP_FILE"
 # Verify backup was created and has content
 if [ ! -s "$BACKUP_FILE" ]; then
   echo "[Backup] ERROR: Backup file is empty or not created"
+  exit 1
+fi
+
+# Verify gzip integrity
+if ! gzip -t "$BACKUP_FILE" 2>/dev/null; then
+  echo "[Backup] ERROR: Backup file is corrupted (gzip integrity check failed)"
+  rm -f "$BACKUP_FILE"
   exit 1
 fi
 

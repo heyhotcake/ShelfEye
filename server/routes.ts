@@ -320,26 +320,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cameras", async (req, res) => {
     try {
-      const cameraData = insertCameraSchema.parse(req.body);
+      const result = insertCameraSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid camera data", errors: result.error.flatten() });
+      }
+      const cameraData = result.data;
       // Always strip deviceIndex - it will be auto-assigned by storage
       delete (cameraData as any).deviceIndex;
       const camera = await storage.createCamera(cameraData);
       res.json(camera);
     } catch (error) {
-      res.status(400).json({ message: "Invalid camera data", error });
+      res.status(500).json({ message: "Failed to create camera", error });
     }
   });
 
   app.put("/api/cameras/:id", async (req, res) => {
     try {
-      const updates = insertCameraSchema.partial().parse(req.body);
-      const camera = await storage.updateCamera(req.params.id, updates);
+      const result = insertCameraSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid camera data", errors: result.error.flatten() });
+      }
+      const camera = await storage.updateCamera(req.params.id, result.data);
       if (!camera) {
         return res.status(404).json({ message: "Camera not found" });
       }
       res.json(camera);
     } catch (error) {
-      res.status(400).json({ message: "Invalid camera data", error });
+      res.status(500).json({ message: "Failed to update camera", error });
     }
   });
 
@@ -468,7 +475,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let lockAcquired = false;
     
     try {
-      const { paperSize, templateTimestamp } = req.body; // Expected: paperSize: "6-page-3x2", templateTimestamp: ISO string
+      const calibrateSchema = z.object({
+        paperSize: z.string().optional(),
+        templateTimestamp: z.string().optional(),
+      });
+      const result = calibrateSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid calibration data", errors: result.error.flatten() });
+      }
+      const { paperSize, templateTimestamp } = result.data;
       
       // Get camera info first
       const camera = await storage.getCamera(cameraId);
@@ -897,22 +912,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let lockAcquired = false;
     
     try {
-      const { adjustedTemplates, paperSize } = req.body;
+      const verifyPositionsSchema = z.object({
+        paperSize: z.string().optional(),
+        adjustedTemplates: z.array(z.object({
+          xCm: z.number(),
+          yCm: z.number(),
+          widthCm: z.number(),
+          heightCm: z.number(),
+          id: z.string().optional(),
+          slotId: z.string().optional(),
+          toolName: z.string().optional(),
+          rotation: z.number().optional(),
+          sheetIndex: z.number().optional(),
+        })).min(1, "Must include at least one template"),
+      });
       
-      // Validate adjusted templates payload
-      if (!adjustedTemplates || !Array.isArray(adjustedTemplates) || adjustedTemplates.length === 0) {
-        return res.status(400).json({ message: "Invalid adjusted templates: must be a non-empty array" });
+      const result = verifyPositionsSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid verification data", errors: result.error.flatten() });
       }
-      
-      // Validate each template has required numeric fields
-      for (const template of adjustedTemplates) {
-        if (typeof template.xCm !== 'number' || typeof template.yCm !== 'number' || 
-            typeof template.widthCm !== 'number' || typeof template.heightCm !== 'number') {
-          return res.status(400).json({ 
-            message: "Invalid template data: xCm, yCm, widthCm, and heightCm must be numbers" 
-          });
-        }
-      }
+      const { adjustedTemplates, paperSize } = result.data;
       
       const camera = await storage.getCamera(cameraId);
       if (!camera) {
@@ -1870,30 +1889,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/slots", async (req, res) => {
     try {
-      const slotData = insertSlotSchema.parse(req.body);
-      const slot = await storage.createSlot(slotData);
+      const result = insertSlotSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid slot data", errors: result.error.flatten() });
+      }
+      const slot = await storage.createSlot(result.data);
       res.json(slot);
     } catch (error) {
-      res.status(400).json({ message: "Invalid slot data", error });
+      res.status(500).json({ message: "Failed to create slot", error });
     }
   });
 
   app.put("/api/slots/:id", async (req, res) => {
     try {
       const { updateSlotSchema } = await import("@shared/schema");
-      const updates = updateSlotSchema.parse(req.body);
+      const result = updateSlotSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid slot data", errors: result.error.flatten() });
+      }
       
-      if (Object.keys(updates).length === 0) {
+      if (Object.keys(result.data).length === 0) {
         return res.status(400).json({ message: "No update fields provided" });
       }
       
-      const slot = await storage.updateSlot(req.params.id, updates);
+      const slot = await storage.updateSlot(req.params.id, result.data);
       if (!slot) {
         return res.status(404).json({ message: "Slot not found" });
       }
       res.json(slot);
     } catch (error) {
-      res.status(400).json({ message: "Invalid slot data", error });
+      res.status(500).json({ message: "Failed to update slot", error });
     }
   });
 
@@ -2090,11 +2115,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/alert-rules", async (req, res) => {
     try {
-      const ruleData = insertAlertRuleSchema.parse(req.body);
-      const rule = await storage.createAlertRule(ruleData);
+      const result = insertAlertRuleSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid alert rule data", errors: result.error.flatten() });
+      }
+      const rule = await storage.createAlertRule(result.data);
       res.json(rule);
     } catch (error) {
-      res.status(400).json({ message: "Invalid alert rule data", error });
+      res.status(500).json({ message: "Failed to create alert rule", error });
     }
   });
 
@@ -2581,24 +2609,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tool-categories", async (req, res) => {
     try {
-      const categoryData = insertToolCategorySchema.parse(req.body);
-      const category = await storage.createToolCategory(categoryData);
+      const result = insertToolCategorySchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid tool category data", errors: result.error.flatten() });
+      }
+      const category = await storage.createToolCategory(result.data);
       res.json(category);
     } catch (error) {
-      res.status(400).json({ message: "Invalid tool category data", error });
+      res.status(500).json({ message: "Failed to create tool category", error });
     }
   });
 
   app.post("/api/tool-categories/scanner-grid", async (req, res) => {
     try {
-      const { name, label, widthCm, heightCm, detectionColor, gridRows, gridCols } = req.body;
+      const scannerGridSchema = z.object({
+        name: z.string().min(1),
+        label: z.string().min(1),
+        widthCm: z.number().positive(),
+        heightCm: z.number().positive(),
+        detectionColor: z.string().optional(),
+        gridRows: z.number().int().positive().optional().default(2),
+        gridCols: z.number().int().positive().optional().default(4),
+      });
       
-      if (!name || !label || !widthCm || !heightCm) {
-        return res.status(400).json({ message: "Missing required fields" });
+      const result = scannerGridSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid scanner grid data", errors: result.error.flatten() });
       }
 
-      const rows = gridRows || 2;
-      const cols = gridCols || 4;
+      const { name, label, widthCm, heightCm } = result.data;
+      const rows = result.data.gridRows;
+      const cols = result.data.gridCols;
       const totalWidthCm = widthCm * cols;
       const totalHeightCm = heightCm * rows;
 
@@ -2642,14 +2683,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/tool-categories/:id", async (req, res) => {
     try {
-      const updates = insertToolCategorySchema.partial().parse(req.body);
-      const category = await storage.updateToolCategory(req.params.id, updates);
+      const result = insertToolCategorySchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid update data", errors: result.error.flatten() });
+      }
+      const category = await storage.updateToolCategory(req.params.id, result.data);
       if (!category) {
         return res.status(404).json({ message: "Tool category not found" });
       }
       res.json(category);
     } catch (error) {
-      res.status(400).json({ message: "Invalid update data", error });
+      res.status(500).json({ message: "Failed to update tool category", error });
     }
   });
 
@@ -2871,22 +2915,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/template-rectangles", async (req, res) => {
     try {
-      const rectangleData = insertTemplateRectangleSchema.parse(req.body);
+      const result = insertTemplateRectangleSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid template rectangle data", errors: result.error.flatten() });
+      }
       
       // Templates are now camera-independent - no camera validation needed
       
-      const category = await storage.getToolCategory(rectangleData.categoryId);
+      const category = await storage.getToolCategory(result.data.categoryId);
       if (!category) {
         return res.status(400).json({ message: "Tool category not found" });
       }
       
-      const rectangle = await storage.createTemplateRectangle(rectangleData);
+      const rectangle = await storage.createTemplateRectangle(result.data);
       res.json(rectangle);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid template rectangle data", errors: error.errors });
-      }
-      
       console.error('Error creating template rectangle:', error);
       res.status(500).json({ message: "Failed to create template rectangle. Please try again." });
     }
@@ -2895,8 +2938,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/template-rectangles/:id", async (req, res) => {
     try {
       console.log(`[API] PUT /api/template-rectangles/${req.params.id}`, req.body);
-      const updates = insertTemplateRectangleSchema.partial().parse(req.body);
-      const rectangle = await storage.updateTemplateRectangle(req.params.id, updates);
+      const result = insertTemplateRectangleSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid template rectangle data", errors: result.error.flatten() });
+      }
+      const rectangle = await storage.updateTemplateRectangle(req.params.id, result.data);
       
       if (!rectangle) {
         return res.status(404).json({ message: "Template rectangle not found" });
@@ -2906,10 +2952,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(rectangle);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid update data", errors: error.errors });
-      }
-      
       console.error('Error updating template rectangle:', error);
       res.status(500).json({ message: "Failed to update template rectangle. Please try again." });
     }
@@ -3154,7 +3196,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workers", async (req, res) => {
     try {
-      const workerData = insertWorkerSchema.parse(req.body);
+      const result = insertWorkerSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid worker data", errors: result.error.flatten() });
+      }
       
       // Auto-assign ArUco ID (51-95, reusing deleted numbers)
       const existingWorkers = await storage.getWorkers();
@@ -3176,26 +3221,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create worker with auto-assigned ArUco ID
       const worker = await storage.createWorker({
-        ...workerData,
+        ...result.data,
         arucoId: nextArucoId,
         workerCode: `W${nextArucoId}`, // Auto-generate from ArUco ID
       });
       res.json(worker);
     } catch (error) {
-      res.status(400).json({ message: "Invalid worker data", error });
+      res.status(500).json({ message: "Failed to create worker", error });
     }
   });
 
   app.put("/api/workers/:id", async (req, res) => {
     try {
-      const updates = insertWorkerSchema.partial().parse(req.body);
-      const worker = await storage.updateWorker(req.params.id, updates);
+      const result = insertWorkerSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid worker data", errors: result.error.flatten() });
+      }
+      const worker = await storage.updateWorker(req.params.id, result.data);
       if (!worker) {
         return res.status(404).json({ message: "Worker not found" });
       }
       res.json(worker);
     } catch (error) {
-      res.status(400).json({ message: "Failed to update worker", error });
+      res.status(500).json({ message: "Failed to update worker", error });
     }
   });
 
