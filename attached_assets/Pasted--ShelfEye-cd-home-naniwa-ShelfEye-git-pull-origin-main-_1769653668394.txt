@@ -1,0 +1,56 @@
+:~/ShelfEye $ cd /home/naniwa/ShelfEye
+git pull origin main
+sudo cp shelfeye.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl restart shelfeye
+sudo systemctl status shelfeye
+remote: Enumerating objects: 60, done.
+remote: Counting objects: 100% (60/60), done.
+remote: Compressing objects: 100% (25/25), done.
+remote: Total 48 (delta 36), reused 35 (delta 23), pack-reused 0 (from 0)
+Unpacking objects: 100% (48/48), 22.15 KiB | 360.00 KiB/s, done.
+From https://github.com/heyhotcake/ShelfEye
+ * branch            main       -> FETCH_HEAD
+   769932f..bdc80a4  main       -> origin/main
+Updating 769932f..bdc80a4
+Fast-forward
+ PRODUCTION_DEPLOYMENT.md                                         | 106 ++++++++++++++
+ SYSTEM-RESILIENCE-GUIDE.md                                       |   2 +-
+ ...spberry-Pi-4-2GB-RAM-Specific-Issues-I-ve-a_1769653090376.txt | 221 +++++++++++++++++++++++++++++
+ ...xpress-version-1-0-0-type-module-license-MI_1769653526550.txt | 115 +++++++++++++++
+ ...per-pass-focused-on-less-obvious-long-horiz_1769649601354.txt | 144 +++++++++++++++++++
+ ...ore-production-GO-once-these-are-applied-Ru_1769646827653.txt | 116 +++++++++++++++
+ package.json                                                     |   2 +-
+ pi-startup.sh                                                    |  26 +++-
+ server/db.ts                                                     |  19 +--
+ server/routes.ts                                                 |  60 ++++----
+ server/services/alert-queue.ts                                   |  10 +-
+ server/subprocess-manager.ts                                     | 100 +++++++++++++
+ server/utils/concurrency-limiter.ts                              |  55 +++++++
+ shelfeye-logrotate.conf                                          |  31 ++++
+ shelfeye.service                                                 |  10 +-
+ 15 files changed, 959 insertions(+), 58 deletions(-)
+ create mode 100644 PRODUCTION_DEPLOYMENT.md
+ create mode 100644 attached_assets/Pasted--Critical-Raspberry-Pi-4-2GB-RAM-Specific-Issues-I-ve-a_1769653090376.txt
+ create mode 100644 attached_assets/Pasted--name-rest-express-version-1-0-0-type-module-license-MI_1769653526550.txt
+ create mode 100644 attached_assets/Pasted-Here-s-a-deeper-pass-focused-on-less-obvious-long-horiz_1769649601354.txt
+ create mode 100644 attached_assets/Pasted-Must-fix-before-production-GO-once-these-are-applied-Ru_1769646827653.txt
+ create mode 100644 server/utils/concurrency-limiter.ts
+ create mode 100644 shelfeye-logrotate.conf
+● shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2026-01-29 11:27:41 JST; 64ms ago
+ Invocation: 331ce9273b5744f48e51bbb80690720a
+   Main PID: 57000 (pi-startup.sh)
+      Tasks: 2 (limit: 1579)
+        CPU: 40ms
+     CGroup: /system.slice/shelfeye.service
+             ├─57000 /bin/bash /home/naniwa/ShelfEye/pi-startup.sh
+             ├─57015 /bin/bash /home/naniwa/ShelfEye/pi-startup.sh
+             └─57016 tee -a /home/naniwa/ShelfEye/logs/startup.log
+
+Jan 29 11:27:41 NaniwaTanaCheck systemd[1]: Started shelfeye.service - ShelfEye Tool Monitoring Syste>
+Jan 29 11:27:41 NaniwaTanaCheck pi-startup.sh[57010]: [2026-01-29 11:27:41] =========================>
+Jan 29 11:27:41 NaniwaTanaCheck pi-startup.sh[57013]: [2026-01-29 11:27:41] Starting ShelfEye Auto-Up>
+Jan 29 11:27:41 NaniwaTanaCheck pi-startup.sh[57016]: [2026-01-29 11:27:41] =========================>
+lines 1-16/16 (END)
