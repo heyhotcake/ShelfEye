@@ -1,4 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
@@ -29,6 +31,80 @@ process.on('fatal-error', (context: string, err?: Error) => {
 });
 
 const app = express();
+
+// Security headers (helmet)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Vite dev requires unsafe-inline/eval
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+      connectSrc: ["'self'", 'ws:', 'wss:'], // WebSocket for Vite HMR
+      fontSrc: ["'self'", 'data:'],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: null, // Disable in development
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Disable for camera preview compatibility
+}));
+
+// CORS configuration - strict in production, relaxed for development
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, same-origin)
+    if (!origin) return callback(null, true);
+    
+    // Always allow explicitly configured origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // In development mode, allow common development domains
+    if (isDevelopment) {
+      if (origin.includes('localhost') || 
+          origin.includes('127.0.0.1') ||
+          origin.includes('.replit.dev') || 
+          origin.includes('.repl.co')) {
+        return callback(null, true);
+      }
+    }
+    
+    // Production: only allow explicitly configured origins
+    console.warn(`[CORS] Blocked request from origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
+
+// Request timeout middleware (30 seconds default, extended for specific routes)
+const DEFAULT_TIMEOUT_MS = 30000;
+app.use((req, res, next) => {
+  // Skip timeout for long-running operations (calibration, capture)
+  const longRunningPaths = ['/api/calibrate', '/api/capture', '/api/preview'];
+  const isLongRunning = longRunningPaths.some(p => req.path.startsWith(p));
+  
+  if (!isLongRunning) {
+    const timeoutId = setTimeout(() => {
+      if (!res.headersSent) {
+        console.warn(`[Timeout] Request timed out: ${req.method} ${req.path}`);
+        res.status(503).json({ error: 'Request timeout', message: 'The server took too long to respond' });
+      }
+    }, DEFAULT_TIMEOUT_MS);
+    
+    res.on('finish', () => clearTimeout(timeoutId));
+    res.on('close', () => clearTimeout(timeoutId));
+  }
+  
+  next();
+});
+
+console.log('[Security] Helmet security headers ENABLED');
+console.log('[Security] CORS configured for origins:', allowedOrigins.join(', '));
+console.log('[Security] Request timeout: 30s (extended for calibration/capture routes)');
 
 // Serve static files from data directory for debug/download
 app.use('/data', express.static(path.join(process.cwd(), 'data')));

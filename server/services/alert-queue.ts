@@ -1,15 +1,61 @@
 import { IStorage } from '../storage';
 import { sendAlertEmail } from './email-alerts';
 import { SheetsLogger } from './sheets-logger';
+import * as crypto from 'crypto';
 
 interface QueuedAlert {
   id: string;
+  idempotencyKey: string; // Hash of type + timestamp + message to prevent duplicates
   type: 'email' | 'sheets';
   createdAt: number;
   retryCount: number;
   nextRetryAt: number;
   maxRetries: number;
   data: any;
+}
+
+/**
+ * Generate idempotency key from alert data to prevent duplicate sends
+ * Uses a 5-minute time bucket to prevent both:
+ * - Duplicate sends of the same alert within a short window
+ * - Accidental deduplication of legitimately different alerts
+ */
+function generateIdempotencyKey(type: 'email' | 'sheets', data: any): string {
+  // Create 5-minute time bucket (300000ms) to handle timestamp variations
+  const timestamp = data.details?.timestamp || data.timestamp || '';
+  let timeBucket = '';
+  
+  if (timestamp) {
+    // Try to parse the timestamp and bucket it
+    try {
+      const date = new Date(timestamp);
+      if (!isNaN(date.getTime())) {
+        // Round to 5-minute bucket
+        timeBucket = String(Math.floor(date.getTime() / 300000));
+      } else {
+        // If unparseable, use the raw timestamp with some normalization
+        timeBucket = timestamp.replace(/:\d{2}$/, ''); // Remove seconds
+      }
+    } catch {
+      timeBucket = timestamp.replace(/:\d{2}$/, '');
+    }
+  }
+  
+  const content = JSON.stringify({
+    type,
+    alertType: data.emailType || data.alertType || 'unknown',
+    timeBucket, // Use bucketed time instead of raw timestamp
+    cameraId: data.details?.cameraId || data.cameraId || '',
+    slotId: data.details?.slotId || data.slotId || '',
+    toolName: data.details?.toolName || '', // Include tool name for missing tool alerts
+    // Hash the error message to catch same-error duplicates without exact match issues
+    errorHash: crypto.createHash('md5')
+      .update(data.details?.errorMessage || data.errorMessage || '')
+      .digest('hex')
+      .substring(0, 8),
+  });
+  
+  return crypto.createHash('sha256').update(content).digest('hex').substring(0, 32);
 }
 
 /**
@@ -121,8 +167,20 @@ export class AlertRetryQueue {
   
   async queueEmailAlert(emailType: string, subject: string, details: any) {
     const id = `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const idempotencyKey = generateIdempotencyKey('email', { emailType, details });
+    
+    // Check for existing alert with same idempotency key (prevent duplicates)
+    const existingAlerts = Array.from(this.queue.values());
+    for (const existingAlert of existingAlerts) {
+      if (existingAlert.idempotencyKey === idempotencyKey) {
+        console.log(`[AlertQueue] Duplicate alert detected (idempotency key: ${idempotencyKey.substring(0, 8)}...), skipping`);
+        return; // Already queued, don't duplicate
+      }
+    }
+    
     const alert: QueuedAlert = {
       id,
+      idempotencyKey,
       type: 'email',
       createdAt: Date.now(),
       retryCount: 0,
@@ -134,11 +192,20 @@ export class AlertRetryQueue {
     // Acquire lock to serialize queue modifications
     await this.queueMutex.lock();
     try {
+      // Double-check for duplicates inside lock
+      const alertsInLock = Array.from(this.queue.values());
+      for (const existingAlert of alertsInLock) {
+        if (existingAlert.idempotencyKey === idempotencyKey) {
+          console.log(`[AlertQueue] Duplicate alert detected in lock (idempotency key: ${idempotencyKey.substring(0, 8)}...), skipping`);
+          return;
+        }
+      }
+      
       // Add to queue and persist atomically
       this.queue.set(id, alert);
       const items = Array.from(this.queue.entries());
       await this.storage.setConfig('ALERT_RETRY_QUEUE', items);
-      console.log(`[AlertQueue] Queued email alert: ${id} (${emailType})`);
+      console.log(`[AlertQueue] Queued email alert: ${id} (${emailType}) [idempotency: ${idempotencyKey.substring(0, 8)}...]`);
     } catch (error) {
       // Rollback in-memory change on save failure
       this.queue.delete(id);
@@ -151,8 +218,20 @@ export class AlertRetryQueue {
   
   async queueSheetsAlert(alertData: any) {
     const id = `sheets-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const idempotencyKey = generateIdempotencyKey('sheets', alertData);
+    
+    // Check for existing alert with same idempotency key (prevent duplicates)
+    const existingSheetsAlerts = Array.from(this.queue.values());
+    for (const existingAlert of existingSheetsAlerts) {
+      if (existingAlert.idempotencyKey === idempotencyKey) {
+        console.log(`[AlertQueue] Duplicate sheets alert detected (idempotency key: ${idempotencyKey.substring(0, 8)}...), skipping`);
+        return; // Already queued, don't duplicate
+      }
+    }
+    
     const alert: QueuedAlert = {
       id,
+      idempotencyKey,
       type: 'sheets',
       createdAt: Date.now(),
       retryCount: 0,
@@ -164,11 +243,20 @@ export class AlertRetryQueue {
     // Acquire lock to serialize queue modifications
     await this.queueMutex.lock();
     try {
+      // Double-check for duplicates inside lock
+      const sheetsAlertsInLock = Array.from(this.queue.values());
+      for (const existingAlert of sheetsAlertsInLock) {
+        if (existingAlert.idempotencyKey === idempotencyKey) {
+          console.log(`[AlertQueue] Duplicate sheets alert detected in lock (idempotency key: ${idempotencyKey.substring(0, 8)}...), skipping`);
+          return;
+        }
+      }
+      
       // Add to queue and persist atomically
       this.queue.set(id, alert);
       const items = Array.from(this.queue.entries());
       await this.storage.setConfig('ALERT_RETRY_QUEUE', items);
-      console.log(`[AlertQueue] Queued sheets alert: ${id}`);
+      console.log(`[AlertQueue] Queued sheets alert: ${id} [idempotency: ${idempotencyKey.substring(0, 8)}...]`);
     } catch (error) {
       // Rollback in-memory change on save failure
       this.queue.delete(id);
@@ -276,7 +364,8 @@ export class AlertRetryQueue {
       await this.queueMutex.lock();
       try {
         // Apply all changes to in-memory queue
-        for (const [id, result] of results.entries()) {
+        const resultEntries = Array.from(results.entries());
+        for (const [id, result] of resultEntries) {
           if (result.action === 'delete') {
             this.queue.delete(id);
           } else if (result.action === 'update') {
