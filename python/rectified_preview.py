@@ -86,7 +86,6 @@ def generate_rectified_image_from_frame(
     # Draw template slot overlays if provided
     if templates:
         logger.info(f"Drawing {len(templates)} template overlays")
-        logger.info(f"Templates data: {templates}")
         for template in templates:
             x_cm = template.get('x', 0)
             y_cm = template.get('y', 0)

@@ -526,7 +526,6 @@ def main():
         if args.templates:
             templates = json.loads(args.templates)
             logger.info(f"Parsed {len(templates)} templates for preview overlay")
-            logger.info(f"Templates: {templates}")
         
         # Initialize calibrator
         calibrator = ArucoCornerCalibrator()
