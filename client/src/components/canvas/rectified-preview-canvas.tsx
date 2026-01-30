@@ -64,10 +64,28 @@ export function RectifiedPreviewCanvas({
         const width = containerWidth;
         const height = width / aspectRatio;
         setCanvasSize({ width, height });
+        
+        // Diagnostic logging for scale mismatch debugging
+        const expectedAspectRatio = paperWidthCm / paperHeightCm;
+        const actualPxPerCmX = img.width / paperWidthCm;
+        const actualPxPerCmY = img.height / paperHeightCm;
+        console.log('[RectifiedPreviewCanvas] Image loaded:', {
+          imageDimensions: `${img.width}×${img.height}px`,
+          paperDimensions: `${paperWidthCm}×${paperHeightCm}cm`,
+          imageAspectRatio: aspectRatio.toFixed(4),
+          expectedAspectRatio: expectedAspectRatio.toFixed(4),
+          aspectRatioMatch: Math.abs(aspectRatio - expectedAspectRatio) < 0.01,
+          calculatedPxPerCm: `${actualPxPerCmX.toFixed(1)} (X), ${actualPxPerCmY.toFixed(1)} (Y)`,
+          canvasSize: `${width.toFixed(0)}×${height.toFixed(0)}px`,
+        });
+        
+        if (Math.abs(aspectRatio - expectedAspectRatio) > 0.01) {
+          console.warn('[RectifiedPreviewCanvas] ASPECT RATIO MISMATCH! Image may not match paper dimensions.');
+        }
       }
     };
     img.src = baseImage;
-  }, [baseImage]);
+  }, [baseImage, paperWidthCm, paperHeightCm]);
 
   const cmToPixels = (cm: number, axis: 'x' | 'y'): number => {
     if (axis === 'x') {

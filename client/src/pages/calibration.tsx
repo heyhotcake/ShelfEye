@@ -882,6 +882,21 @@ export default function Calibration() {
                 };
               });
               
+              // Diagnostic logging for overlay scale mismatch debugging
+              console.log('[CalibrationOverlay] Paper & template data:', {
+                selectedPaperSize: paperSize,
+                paperDimensionsCm: `${paperDimensions.width}×${paperDimensions.height}`,
+                aspectRatio: aspectRatio.toFixed(4),
+                templateCount: templatesWithCategories.length,
+                templates: templatesWithCategories.slice(0, 3).map(t => ({
+                  name: t.categoryName,
+                  position: `(${t.xCm.toFixed(1)}, ${t.yCm.toFixed(1)})`,
+                  size: `${t.widthCm}×${t.heightCm}cm`,
+                  categoryFound: t.widthCm > 0 && t.heightCm > 0,
+                })),
+                moreTemplates: templatesWithCategories.length > 3 ? `...and ${templatesWithCategories.length - 3} more` : undefined,
+              });
+              
               return (
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-3">
