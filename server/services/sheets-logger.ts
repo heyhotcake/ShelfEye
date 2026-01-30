@@ -1,5 +1,29 @@
 import { getSheetsClient } from './sheets-client-oauth.js';
 import type { IStorage } from '../storage';
+import { rateLimitedSheets } from './api-rate-limiter';
+import { createCircuitBreaker, queueForFallback, setupCircuitBreakerQueueDrain } from './circuit-breaker';
+import type CircuitBreaker from 'opossum';
+
+let sheetsCircuitBreaker: CircuitBreaker<any[], any> | null = null;
+
+function getSheetsCircuitBreaker() {
+  if (!sheetsCircuitBreaker) {
+    sheetsCircuitBreaker = createCircuitBreaker(
+      async (sheets: any, params: any) => {
+        return sheets.spreadsheets.values.append(params);
+      },
+      'sheets-append',
+      {
+        timeout: 15000, // 15 second timeout
+        errorThresholdPercentage: 50,
+        resetTimeout: 60000, // 1 minute recovery time
+      }
+    );
+    // Set up automatic queue drain when circuit closes
+    setupCircuitBreakerQueueDrain(sheetsCircuitBreaker, 'sheets');
+  }
+  return sheetsCircuitBreaker;
+}
 
 export interface SheetsLogEntry {
   timestamp: string;
@@ -223,16 +247,33 @@ export class SheetsLogger {
         this.formattingConfig.columnOrder.map((col: string) => rowData[col] || '')
       ];
 
-      await sheets.spreadsheets.values.append({
+      // Use rate limiter + circuit breaker for Sheets API calls
+      const breaker = getSheetsCircuitBreaker();
+      const appendParams = {
         spreadsheetId,
         range: `${tabName}!A:Z`,
         valueInputOption: 'RAW',
         requestBody: {
           values,
         },
-      });
-
-      console.log(`[SheetsLogger] Logged alert: ${entry.alertType} at ${entry.timestamp} to tab ${tabName}`);
+      };
+      
+      try {
+        await rateLimitedSheets(async () => {
+          return breaker.fire(sheets, appendParams);
+        }, `sheets-log-${Date.now()}`);
+        
+        console.log(`[SheetsLogger] Logged alert: ${entry.alertType} at ${entry.timestamp} to tab ${tabName}`);
+      } catch (circuitError: any) {
+        if (circuitError.message?.includes('circuit') || circuitError.name === 'OpenCircuitError') {
+          console.warn(`[SheetsLogger] Circuit breaker open for Sheets, queueing for retry`);
+          queueForFallback('sheets', async () => {
+            const freshSheets = await getSheetsClient();
+            return freshSheets.spreadsheets.values.append(appendParams);
+          });
+        }
+        throw circuitError;
+      }
     } catch (error) {
       console.error('[SheetsLogger] Failed to log to sheets:', error);
       throw error;

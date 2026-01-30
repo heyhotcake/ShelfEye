@@ -1,0 +1,71 @@
+
+/
+
+Integrations
+Replit managed
+These are built-in integrations that work automatically. Create an app and your agent can start using these right away.
+Name
+Type
+Replit Database
+PostgreSQL	
+Replit App Storage
+Object Storage	
+Replit Auth
+Authentication	
+Replit Domains
+Domains	
+Connectors
+These are first-party integrations Replit supports. Sign in once and build with them across your apps.
+Name
+Description
+Connection Status
+No connections added to this app
+MCP Servers for Replit Agent
+Beta
+Provide external context and tools to Replit Agent by connecting to MCP servers.
+Name
+Description
+Connection Status
+Figma MCP
+Figma MCP
+Allow Replit Agent to view and rapidly build your designs from Figma	
+Active
+Help us expand MCP support
+Tell us which MCP servers would be most useful for your workflows. Your feedback will help shape what we build next.
+Git Providers
+Connect your git provider to push, pull, and sync code via the Git pane. Not accessible to Replit Agent.
+Name
+Description
+Connection Status
+GitHub
+GitHub
+Sync code to GitHub repositories from your Replit apps	
+Active
+Bitbucket
+Bitbucket
+Sync code to Bitbucket repositories from your Replit apps	
+GitLab
+GitLab
+Sync code to GitLab projects from your Replit apps	
+Publish your app
+Primary URL
+You can add your own custom domain after publishing your app.
+shelf-eye
+.replit.app
+Available
+Published App access
+Limit published app access to team members who have viewer access. Learn more
+
+Enable feedback widget
+Add a feedback widget to the corner of your published app. Review submissions in your inbox and send to Agent for fixes. Available for web-based apps only.
+
+Adjust settings
+Manually configure machine settings, secrets, build commands, ports, and more.
+What does publishing do?
+npm run dev
+2m
+ • 
+2 minutes ago
+Enable "Accessible Terminal" in Workspace Settings to use a screen reader with the shell.
+Unsupported state: your index is currently locked. This can happen if multiple git processes are running operations at the same time.
+Please resolve the issue by ending those git operations. If you are sure you do not have git operations running, you can delete your .git/index.lock file.

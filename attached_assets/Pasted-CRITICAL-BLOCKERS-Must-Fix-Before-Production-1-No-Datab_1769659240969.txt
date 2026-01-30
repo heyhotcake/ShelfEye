@@ -1,0 +1,455 @@
+CRITICAL BLOCKERS (Must Fix Before Production)
+1. No Database Backup Strategy
+Risk: Complete data loss on hardware failure or corruption
+Impact: All calibration data, detection logs, alerts, and configurations lost
+Fix:
+
+# Add to cron (daily at 2 AM JST)
+0 2 * * * pg_dump $DATABASE_URL | gzip > /backups/shelfeye_$(date +\%Y\%m\%d).sql.gz
+
+# Retention: Keep 30 days, auto-delete older
+find /backups -name "shelfeye_*.sql.gz" -mtime +30 -delete
+2. No External API Rate Limiting
+Risk: Gmail/Sheets quota exhaustion → alerts fail silently for 24h+
+Impact: Critical alerts not delivered during production issues
+Current: Unlimited API calls to googleapis.com
+Fix:
+
+// server/services/api-rate-limiter.ts
+import Bottleneck from 'bottleneck';
+
+export const gmailLimiter = new Bottleneck({
+  maxConcurrent: 1,
+  minTime: 1000, // 1 req/sec (Gmail: 250 quota units/sec)
+});
+
+export const sheetsLimiter = new Bottleneck({
+  maxConcurrent: 2,
+  minTime: 100, // 10 req/sec (Sheets: 100 req/min per user)
+});
+
+// Wrap API calls:
+await gmailLimiter.schedule(() => gmail.users.messages.send(...));
+await sheetsLimiter.schedule(() => sheets.spreadsheets.values.append(...));
+3. No Circuit Breaker for External APIs
+Risk: Gmail/Sheets outage causes cascading failures, request pileup
+Impact: Memory exhaustion, process crash, lost alerts
+Current: Infinite retries on 500 errors
+Fix:
+
+// server/services/circuit-breaker.ts
+import CircuitBreaker from 'opossum';
+
+const gmailBreaker = new CircuitBreaker(sendEmailFn, {
+  timeout: 5000, // 5s timeout
+  errorThresholdPercentage: 50,
+  resetTimeout: 30000, // Try again after 30s
+});
+
+gmailBreaker.fallback(() => {
+  console.error('[Circuit] Gmail circuit open - queuing alert');
+  return alertQueue.queueEmailAlert(...);
+});
+4. No Request Timeout on HTTP Routes
+Risk: Slow clients hold connections open indefinitely → resource exhaustion
+Impact: Server stops accepting new connections, alerts fail
+Current: No timeout configured on Express routes
+Fix:
+
+// server/index.ts
+app.use(timeout('30s')); // 30 second timeout for all routes
+app.use((req, res, next) => {
+  if (!req.timedout) next();
+});
+5. Missing CORS & Security Headers
+Risk: XSS, clickjacking, MIME sniffing attacks
+Impact: Session hijacking, data exfiltration
+Current: No helmet, no CORS policy
+Fix:
+
+// server/index.ts
+import helmet from 'helmet';
+import cors from 'cors';
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Vite dev requires unsafe-inline
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    },
+  },
+}));
+
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5000'],
+  credentials: true,
+}));
+🟠 HIGH-RISK ISSUES (Likely to Fail Under Real Use)
+6. No Transaction Isolation for Critical Operations
+Risk: Concurrent slot updates cause race conditions → data corruption
+Impact: Slot assignments overwritten, lost calibration data
+Example: saveTemplateDesignWithRectangles uses transaction but no row-level locks
+Fix:
+
+// server/storage.ts - Add FOR UPDATE locks
+await db.transaction(async (tx) => {
+  const design = await tx.select().from(templateDesigns)
+    .where(eq(templateDesigns.id, id))
+    .for('update'); // Row-level lock
+  
+  // Now safe to update
+});
+7. Python Subprocess Errors Not Always Propagated
+Risk: Capture fails silently, scheduler reports "success"
+Impact: Missing detection logs, false sense of security
+Issue: runPythonScript timeout kills process but may not reject promise if close event fires first
+Fix:
+
+// server/scheduler.ts line 690
+python.on('close', async (code) => {
+  clearTimeout(timeoutHandle);
+  await cleanupFile();
+  
+  if (isSettled) {
+    console.log(`[Scheduler] Process completed after timeout - ignoring close event`);
+    return; // Don't settle promise twice
+  }
+  
+  isSettled = true;
+  
+  // FIX: Timeout should always reject, even if close fires
+  if (isTimedOut) {
+    reject(new Error(`Process killed by timeout after ${Date.now() - startTime}ms`));
+    return;
+  }
+  
+  if (code !== 0 && code !== 2) {
+    reject(new Error(`Python script exited with code ${code}: ${stderr}`));
+    return;
+  }
+  
+  // ... rest of parsing
+});
+8. Alert Queue Persistence Failures Silently Ignored
+Risk: Queue diverges from storage, alerts reprocessed after restart
+Impact: Duplicate emails sent, confusion
+Code: server/services/alert-queue.ts line 209-211
+Fix:
+
+// Phase 3: Commit results to storage (with retry)
+try {
+  await withRetry(() => 
+    this.storage.setConfig('alert_retry_queue', Array.from(this.queue.values()), 'Retry queue state'),
+    { maxAttempts: 5, initialDelayMs: 500 }
+  );
+} catch (commitError) {
+  console.error('[AlertQueue] CRITICAL: Failed to commit retry results after 5 attempts');
+  // Emit fatal error event to trigger process restart
+  process.emit('fatal-error' as any, '[AlertQueue] Persistence failure - queue diverged from storage', commitError);
+}
+9. Concurrent Camera Access Race Conditions
+Risk: Preview starts during calibration → corrupted homography matrix
+Impact: All subsequent captures use bad calibration
+Issue: 10-second wait in acquireExclusiveLock is heuristic, not guaranteed
+Fix:
+
+// server/camera-session-manager.ts
+async acquireExclusiveLock(cameraId: string, reason: ExclusiveReason): Promise<void> {
+  // Set lock FIRST
+  this.locks.set(cameraId, { cameraId, type: 'exclusive', timestamp: Date.now(), reason });
+  
+  // Poll subprocess manager for active camera processes
+  let retries = 0;
+  while (retries < 30) { // 30 seconds max
+    const activeProcesses = await subprocessManager.getActiveProcesses();
+    const cameraProcesses = activeProcesses.filter(p => 
+      p.type === 'python' && p.script.includes('camera') && p.purpose.includes(cameraId)
+    );
+    
+    if (cameraProcesses.length === 0) {
+      console.log(`[CameraSessionManager] Camera ${cameraId} confirmed idle after ${retries} checks`);
+      return; // Safe to proceed
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    retries++;
+  }
+  
+  throw new Error(`Camera ${cameraId} still in use after 30s - aborting exclusive lock`);
+}
+10. No Idempotency for Webhook/Retry Operations
+Risk: Alert queue retry sends duplicate emails
+Impact: Alert fatigue, ignored warnings
+Issue: AlertRetryQueue retries alerts but doesn't deduplicate
+Fix:
+
+// server/services/alert-queue.ts
+interface QueuedAlert {
+  id: string; // Use deterministic ID: hash(type + timestamp + message)
+  idempotencyKey: string; // Store in DB
+  // ...
+}
+
+async queueEmailAlert(...) {
+  const idempotencyKey = crypto.createHash('sha256')
+    .update(`${type}-${timestamp}-${message}`)
+    .digest('hex');
+  
+  // Check if already sent
+  const existing = await storage.getAlertByIdempotencyKey(idempotencyKey);
+  if (existing && existing.status === 'sent') {
+    console.log('[AlertQueue] Alert already sent (idempotent), skipping');
+    return;
+  }
+  
+  // Queue with idempotency key
+  this.queue.set(id, { id, idempotencyKey, ... });
+}
+11. File System Operations Without fsync
+Risk: Power loss during writeFile → corrupted temp files, failed captures
+Impact: Capture run returns error, no detection logs
+Code: server/scheduler.ts line 625 await fs.writeFile(inputFile, ...)
+Fix:
+
+// server/scheduler.ts
+import { open } from 'fs/promises';
+
+const fd = await open(inputFile, 'w');
+await fd.writeFile(JSON.stringify(inputData), 'utf-8');
+await fd.sync(); // Force write to disk
+await fd.close();
+🟡 MEDIUM-RISK ISSUES
+12. No Structured Logging
+Risk: Impossible to trace errors across microservices (Node + Python)
+Impact: Debugging in production takes hours instead of minutes
+Fix: Use Winston with correlation IDs:
+
+// server/logger.ts
+import winston from 'winston';
+
+export const logger = winston.createLogger({
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({ filename: 'logs/shelfeye.log' }),
+  ],
+});
+
+// Middleware: Add correlation ID to all requests
+app.use((req, res, next) => {
+  req.correlationId = crypto.randomUUID();
+  res.setHeader('X-Correlation-ID', req.correlationId);
+  logger.info('Request', { correlationId: req.correlationId, method: req.method, path: req.path });
+  next();
+});
+13. No Metrics/Observability
+Risk: Can't detect gradual degradation (memory leaks, slow queries)
+Impact: Production dies mysteriously, no early warning
+Fix: Add Prometheus metrics:
+
+// server/metrics.ts
+import promClient from 'prom-client';
+
+const register = new promClient.Registry();
+
+export const captureCounter = new promClient.Counter({
+  name: 'shelfeye_captures_total',
+  help: 'Total number of capture runs',
+  labelNames: ['status', 'trigger_type'],
+  registers: [register],
+});
+
+export const captureDuration = new promClient.Histogram({
+  name: 'shelfeye_capture_duration_seconds',
+  help: 'Capture execution time',
+  buckets: [10, 30, 60, 120, 300, 600],
+  registers: [register],
+});
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+14. Zero Test Coverage
+Risk: Regressions go undetected, every deploy is a gamble
+Impact: Production breaks unexpectedly
+Current: tests/ directory has bash scripts, no unit/integration tests
+Fix: Add Jest tests for critical paths:
+
+// tests/camera-session-manager.test.ts
+describe('CameraSessionManager', () => {
+  it('should prevent preview during calibration', async () => {
+    await manager.acquireExclusiveLock('cam1', 'calibration');
+    const canPreview = manager.acquirePreviewLock('cam1');
+    expect(canPreview).toBe(false);
+  });
+  
+  it('should release lock on timeout', async () => {
+    // ... test timeout scenarios
+  });
+});
+15. Insufficient Input Validation
+Risk: Malformed camera configs cause crashes
+Impact: Server exits, systemd restarts, brief downtime
+Issue: Some routes use .parse() (throws), others don't validate at all
+Fix: Use .safeParse() everywhere:
+
+// server/routes.ts
+app.post('/api/cameras', async (req, res) => {
+  const result = insertCameraSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ 
+      error: 'Invalid camera data', 
+      details: result.error.flatten() 
+    });
+  }
+  
+  const camera = await storage.createCamera(result.data);
+  res.json(camera);
+});
+16. No Dead Letter Queue for Failed Alerts
+Risk: Alerts retry forever, never manually reviewed
+Impact: Critical alerts lost in noise
+Fix:
+
+// server/services/alert-queue.ts
+const MAX_RETRIES = 10; // After 7 days
+const DLQ_THRESHOLD = 5;
+
+if (alert.retryCount >= MAX_RETRIES) {
+  console.error(`[AlertQueue] Alert ${alert.id} exceeded max retries - moving to DLQ`);
+  await storage.createDeadLetterAlert(alert);
+  this.queue.delete(alert.id);
+}
+🟢 NICE-TO-HAVE HARDENING IMPROVEMENTS
+17. Add Health Check Dependencies
+Current: /api/health only checks database
+Improvement: Check camera availability, disk space, GPIO access
+
+app.get('/api/health', async (req, res) => {
+  const checks = {
+    database: await checkDatabase(),
+    cameras: await checkCameras(),
+    diskSpace: await maintenanceService.getDiskUsage(),
+    gpio: await checkGPIOAccess(),
+  };
+  
+  const healthy = Object.values(checks).every(c => c.status === 'ok');
+  res.status(healthy ? 200 : 503).json(checks);
+});
+18. Add Request Size Limits
+Risk: Large file uploads exhaust memory
+Fix:
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+19. Add Graceful Degradation for Sheets/Gmail
+Current: Sheets failure blocks capture run
+Improvement: Log locally if Sheets unavailable
+
+try {
+  await sheetsLogger.logCapture(...);
+} catch (error) {
+  console.error('[Scheduler] Sheets unavailable - logging to file');
+  await fs.appendFile('logs/capture-fallback.jsonl', JSON.stringify(log) + '\n');
+}
+20. Improve Memory Leak Detection
+Current: Hourly memory logging
+Improvement: Alert if heap grows >10% per hour
+
+let lastHeapUsed = 0;
+
+setInterval(() => {
+  const currentHeap = process.memoryUsage().heapUsed;
+  const growth = (currentHeap - lastHeapUsed) / lastHeapUsed;
+  
+  if (growth > 0.1) {
+    console.warn(`[Memory] Heap grew ${(growth * 100).toFixed(1)}% in 1 hour - possible leak`);
+    // Trigger heap snapshot
+  }
+  
+  lastHeapUsed = currentHeap;
+}, 3600000);
+📊 DEPLOYMENT & OPERATIONAL RISKS (Replit-Specific)
+21. Replit Autoscale Limitations
+Risk: Multiple instances compete for camera access
+Impact: Capture runs fail with "device busy" errors
+Mitigation: Ensure only ONE instance runs scheduled captures (use distributed lock in DB)
+Fix:
+
+// server/scheduler.ts
+async executeCapture() {
+  const lockAcquired = await storage.acquireDistributedLock('global_capture', 600); // 10 min TTL
+  if (!lockAcquired) {
+    console.log('[Scheduler] Another instance is capturing - skipping');
+    return { status: 'skipped', reason: 'Another instance running' };
+  }
+  
+  try {
+    // ... existing capture logic
+  } finally {
+    await storage.releaseDistributedLock('global_capture');
+  }
+}
+22. Raspberry Pi 4 2GB RAM Constraints
+Risk: Memory exhaustion during high-res capture + calibration
+Impact: OOM killer terminates process
+Current Mitigations:
+
+--max-old-space-size=768 (Node heap limit)
+MemoryMax=1.4G (systemd limit)
+Global calibration lock (one camera at a time)
+Additional Fix: Monitor swap usage, alert if >50%
+# Add to cron
+*/5 * * * * /usr/local/bin/check-swap.sh
+#!/bin/bash
+# check-swap.sh
+SWAP_USED=$(free | awk '/Swap:/ {print ($3/$2) * 100}')
+if (( $(echo "$SWAP_USED > 50" | bc -l) )); then
+  echo "CRITICAL: Swap usage at ${SWAP_USED}%" | mail -s "ShelfEye Memory Alert" alerts@example.com
+fi
+23. File System Persistence
+Risk: Replit ephemeral storage loses data on restart
+Impact: Calibration data lost
+Current: Uses Neon PostgreSQL (persistent) ✅
+Issue: Local files in data/ directory ARE ephemeral
+Fix: Store all critical data in database, use data/ only for temp files
+
+// Store calibration images in database as base64
+await storage.updateCamera(id, {
+  calibrationImage: Buffer.from(imageData).toString('base64'),
+});
+✅ GO / NO-GO RECOMMENDATION
+NO-GO - Critical Blockers Must Be Resolved
+Rationale:
+
+No database backups = single point of total data loss
+No API rate limiting = Gmail/Sheets quota exhaustion will cause alert blackout
+No circuit breaker = cascading failures during Google API outages
+No request timeouts = resource exhaustion under slow client attacks
+Missing security headers = XSS/clickjacking vulnerabilities
+Minimum Viable Production Checklist:
+
+ Configure automated database backups (daily)
+ Implement API rate limiting for Gmail/Sheets
+ Add circuit breaker for external APIs
+ Configure HTTP request timeouts (30s)
+ Add Helmet + CORS security headers
+ Fix transaction isolation for concurrent updates
+ Add idempotency keys to alert queue
+ Use .safeParse() for all input validation
+ Implement structured logging with correlation IDs
+ Add Prometheus metrics for observability
+Timeline Estimate: 2-3 weeks to resolve critical blockers + high-risk issues.
+
+Post-Launch Priorities:
+
+Add unit/integration tests (aim for 60% coverage)
+Implement dead letter queue for failed alerts
+Set up monitoring dashboards (Grafana + Prometheus)
+Document runbook for common failure scenarios
+Conduct load testing (100 concurrent users, 10 cameras)

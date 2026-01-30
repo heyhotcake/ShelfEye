@@ -1,5 +1,34 @@
 import { getGmailClient } from './gmail-client-oauth.js';
 import { storage } from '../storage';
+import { rateLimitedGmail } from './api-rate-limiter';
+import { createCircuitBreaker, queueForFallback, setupCircuitBreakerQueueDrain } from './circuit-breaker';
+import type CircuitBreaker from 'opossum';
+
+let gmailCircuitBreaker: CircuitBreaker<any[], any> | null = null;
+
+function getGmailCircuitBreaker() {
+  if (!gmailCircuitBreaker) {
+    gmailCircuitBreaker = createCircuitBreaker(
+      async (gmail: any, encodedMessage: string) => {
+        return gmail.users.messages.send({
+          userId: 'me',
+          requestBody: {
+            raw: encodedMessage,
+          },
+        });
+      },
+      'gmail-send',
+      {
+        timeout: 15000, // 15 second timeout for email send
+        errorThresholdPercentage: 50,
+        resetTimeout: 60000, // 1 minute recovery time
+      }
+    );
+    // Set up automatic queue drain when circuit closes
+    setupCircuitBreakerQueueDrain(gmailCircuitBreaker, 'gmail');
+  }
+  return gmailCircuitBreaker;
+}
 
 interface AlertEmailData {
   type: 'diagnostic_failure' | 'capture_failure' | 'camera_offline' | 'test_alert' | 'missing_tool';
@@ -90,14 +119,28 @@ export async function sendAlertEmail(alertData: AlertEmailData): Promise<boolean
         .replace(/\//g, '_')
         .replace(/=+$/, '');
 
-      await gmail.users.messages.send({
-        userId: 'me',
-        requestBody: {
-          raw: encodedMessage,
-        },
-      });
-
-      console.log(`[Email Alert] Sent ${alertData.type} alert to ${recipient}`);
+      // Use rate limiter + circuit breaker for Gmail API calls
+      const breaker = getGmailCircuitBreaker();
+      
+      try {
+        await rateLimitedGmail(async () => {
+          return breaker.fire(gmail, encodedMessage);
+        }, `email-${alertData.type}-${Date.now()}`);
+        
+        console.log(`[Email Alert] Sent ${alertData.type} alert to ${recipient}`);
+      } catch (circuitError: any) {
+        if (circuitError.message?.includes('circuit') || circuitError.name === 'OpenCircuitError') {
+          console.warn(`[Email Alert] Circuit breaker open for Gmail, queueing for retry`);
+          queueForFallback('gmail', async () => {
+            const freshGmail = await getGmailClient();
+            return freshGmail.users.messages.send({
+              userId: 'me',
+              requestBody: { raw: encodedMessage },
+            });
+          });
+        }
+        throw circuitError;
+      }
     }
 
     return true;

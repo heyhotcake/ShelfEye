@@ -622,8 +622,16 @@ export class CaptureScheduler {
     };
     
     try {
-      await fs.writeFile(inputFile, JSON.stringify(inputData), 'utf-8');
-      console.log(`[Scheduler] Wrote input data to ${inputFile}`);
+      // Use fsync to ensure data is written to disk (power failure protection)
+      const { open } = await import('fs/promises');
+      const fd = await open(inputFile, 'w');
+      try {
+        await fd.writeFile(JSON.stringify(inputData), 'utf-8');
+        await fd.sync(); // Force write to disk - critical for power failure scenarios
+      } finally {
+        await fd.close();
+      }
+      console.log(`[Scheduler] Wrote input data to ${inputFile} (fsync'd)`);
     } catch (writeError) {
       // Cleanup if file was partially created
       await cleanupFile();
@@ -707,6 +715,15 @@ export class CaptureScheduler {
         // If promise already settled (timeout or error), don't try to settle again
         if (isSettled) {
           console.log(`[Scheduler] Process completed after timeout/error - ignoring close event`);
+          return;
+        }
+
+        // FIX: Timeout should always reject, even if close event fires after timeout
+        // This prevents the race condition where close fires shortly after timeout
+        if (isTimedOut) {
+          console.log(`[Scheduler] Process close event after timeout - rejecting with timeout error`);
+          isSettled = true;
+          reject(new Error(`Process killed by timeout after ${elapsed}ms`));
           return;
         }
 

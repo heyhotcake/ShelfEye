@@ -1,0 +1,203 @@
+🟡 MEDIUM-RISK ISSUES
+12. No Structured Logging
+Risk: Impossible to trace errors across microservices (Node + Python)
+Impact: Debugging in production takes hours instead of minutes
+Fix: Use Winston with correlation IDs:
+
+// server/logger.ts
+import winston from 'winston';
+
+export const logger = winston.createLogger({
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({ filename: 'logs/shelfeye.log' }),
+  ],
+});
+
+// Middleware: Add correlation ID to all requests
+app.use((req, res, next) => {
+  req.correlationId = crypto.randomUUID();
+  res.setHeader('X-Correlation-ID', req.correlationId);
+  logger.info('Request', { correlationId: req.correlationId, method: req.method, path: req.path });
+  next();
+});
+13. No Metrics/Observability
+Risk: Can't detect gradual degradation (memory leaks, slow queries)
+Impact: Production dies mysteriously, no early warning
+Fix: Add Prometheus metrics:
+
+// server/metrics.ts
+import promClient from 'prom-client';
+
+const register = new promClient.Registry();
+
+export const captureCounter = new promClient.Counter({
+  name: 'shelfeye_captures_total',
+  help: 'Total number of capture runs',
+  labelNames: ['status', 'trigger_type'],
+  registers: [register],
+});
+
+export const captureDuration = new promClient.Histogram({
+  name: 'shelfeye_capture_duration_seconds',
+  help: 'Capture execution time',
+  buckets: [10, 30, 60, 120, 300, 600],
+  registers: [register],
+});
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+14. Zero Test Coverage
+Risk: Regressions go undetected, every deploy is a gamble
+Impact: Production breaks unexpectedly
+Current: tests/ directory has bash scripts, no unit/integration tests
+Fix: Add Jest tests for critical paths:
+
+// tests/camera-session-manager.test.ts
+describe('CameraSessionManager', () => {
+  it('should prevent preview during calibration', async () => {
+    await manager.acquireExclusiveLock('cam1', 'calibration');
+    const canPreview = manager.acquirePreviewLock('cam1');
+    expect(canPreview).toBe(false);
+  });
+  
+  it('should release lock on timeout', async () => {
+    // ... test timeout scenarios
+  });
+});
+15. Insufficient Input Validation
+Risk: Malformed camera configs cause crashes
+Impact: Server exits, systemd restarts, brief downtime
+Issue: Some routes use .parse() (throws), others don't validate at all
+Fix: Use .safeParse() everywhere:
+
+// server/routes.ts
+app.post('/api/cameras', async (req, res) => {
+  const result = insertCameraSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ 
+      error: 'Invalid camera data', 
+      details: result.error.flatten() 
+    });
+  }
+  
+  const camera = await storage.createCamera(result.data);
+  res.json(camera);
+});
+16. No Dead Letter Queue for Failed Alerts
+Risk: Alerts retry forever, never manually reviewed
+Impact: Critical alerts lost in noise
+Fix:
+
+// server/services/alert-queue.ts
+const MAX_RETRIES = 10; // After 7 days
+const DLQ_THRESHOLD = 5;
+
+if (alert.retryCount >= MAX_RETRIES) {
+  console.error(`[AlertQueue] Alert ${alert.id} exceeded max retries - moving to DLQ`);
+  await storage.createDeadLetterAlert(alert);
+  this.queue.delete(alert.id);
+}
+🟢 NICE-TO-HAVE HARDENING IMPROVEMENTS
+17. Add Health Check Dependencies
+Current: /api/health only checks database
+Improvement: Check camera availability, disk space, GPIO access
+
+app.get('/api/health', async (req, res) => {
+  const checks = {
+    database: await checkDatabase(),
+    cameras: await checkCameras(),
+    diskSpace: await maintenanceService.getDiskUsage(),
+    gpio: await checkGPIOAccess(),
+  };
+  
+  const healthy = Object.values(checks).every(c => c.status === 'ok');
+  res.status(healthy ? 200 : 503).json(checks);
+});
+18. Add Request Size Limits
+Risk: Large file uploads exhaust memory
+Fix:
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+19. Add Graceful Degradation for Sheets/Gmail
+Current: Sheets failure blocks capture run
+Improvement: Log locally if Sheets unavailable
+
+try {
+  await sheetsLogger.logCapture(...);
+} catch (error) {
+  console.error('[Scheduler] Sheets unavailable - logging to file');
+  await fs.appendFile('logs/capture-fallback.jsonl', JSON.stringify(log) + '\n');
+}
+20. Improve Memory Leak Detection
+Current: Hourly memory logging
+Improvement: Alert if heap grows >10% per hour
+
+let lastHeapUsed = 0;
+
+setInterval(() => {
+  const currentHeap = process.memoryUsage().heapUsed;
+  const growth = (currentHeap - lastHeapUsed) / lastHeapUsed;
+  
+  if (growth > 0.1) {
+    console.warn(`[Memory] Heap grew ${(growth * 100).toFixed(1)}% in 1 hour - possible leak`);
+    // Trigger heap snapshot
+  }
+  
+  lastHeapUsed = currentHeap;
+}, 3600000);
+📊 DEPLOYMENT & OPERATIONAL RISKS (Replit-Specific)
+21. Replit Autoscale Limitations
+Risk: Multiple instances compete for camera access
+Impact: Capture runs fail with "device busy" errors
+Mitigation: Ensure only ONE instance runs scheduled captures (use distributed lock in DB)
+Fix:
+
+// server/scheduler.ts
+async executeCapture() {
+  const lockAcquired = await storage.acquireDistributedLock('global_capture', 600); // 10 min TTL
+  if (!lockAcquired) {
+    console.log('[Scheduler] Another instance is capturing - skipping');
+    return { status: 'skipped', reason: 'Another instance running' };
+  }
+  
+  try {
+    // ... existing capture logic
+  } finally {
+    await storage.releaseDistributedLock('global_capture');
+  }
+}
+22. Raspberry Pi 4 2GB RAM Constraints
+Risk: Memory exhaustion during high-res capture + calibration
+Impact: OOM killer terminates process
+Current Mitigations:
+
+--max-old-space-size=768 (Node heap limit)
+MemoryMax=1.4G (systemd limit)
+Global calibration lock (one camera at a time)
+Additional Fix: Monitor swap usage, alert if >50%
+# Add to cron
+*/5 * * * * /usr/local/bin/check-swap.sh
+#!/bin/bash
+# check-swap.sh
+SWAP_USED=$(free | awk '/Swap:/ {print ($3/$2) * 100}')
+if (( $(echo "$SWAP_USED > 50" | bc -l) )); then
+  echo "CRITICAL: Swap usage at ${SWAP_USED}%" | mail -s "ShelfEye Memory Alert" alerts@example.com
+fi
+23. File System Persistence
+Risk: Replit ephemeral storage loses data on restart
+Impact: Calibration data lost
+Current: Uses Neon PostgreSQL (persistent) ✅
+Issue: Local files in data/ directory ARE ephemeral
+Fix: Store all critical data in database, use data/ only for temp files
+
+// Store calibration images in database as base64
+await storage.updateCamera(id, {
+  calibrationImage: Buffer.from(imageData).toString('base64'),
+});

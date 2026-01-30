@@ -1,0 +1,22 @@
+tartup.sh[63999]: ✓ 3350 modules transformed.
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo journalctl -u shelfeye -n 20 --no-pager
+Jan 29 18:12:00 NaniwaTanaCheck sudo[64255]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl enable led-manager.service
+Jan 29 18:12:00 NaniwaTanaCheck sudo[64255]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 29 18:12:01 NaniwaTanaCheck sudo[64255]: pam_unix(sudo:session): session closed for user root
+Jan 29 18:12:01 NaniwaTanaCheck sudo[64348]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl is-active --quiet led-manager.service
+Jan 29 18:12:01 NaniwaTanaCheck sudo[64348]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 29 18:12:01 NaniwaTanaCheck sudo[64348]: pam_unix(sudo:session): session closed for user root
+Jan 29 18:12:01 NaniwaTanaCheck pi-startup.sh[64352]: [2026-01-29 18:12:01] ✅ LED Manager Daemon is already running
+Jan 29 18:12:01 NaniwaTanaCheck pi-startup.sh[64355]: [2026-01-29 18:12:01] Skipping database schema sync (managed from Replit)
+Jan 29 18:12:01 NaniwaTanaCheck pi-startup.sh[64359]: [2026-01-29 18:12:01] ⏱️  Phase 'db-push-skipped' completed in 3s (cumulative)
+Jan 29 18:12:01 NaniwaTanaCheck pi-startup.sh[64364]: [2026-01-29 18:12:01] ⏱️  Phase 'pre-app-complete' completed in 3s (cumulative)
+Jan 29 18:12:01 NaniwaTanaCheck pi-startup.sh[64372]: [2026-01-29 18:12:01] 📊 Total pre-app startup: 3s
+Jan 29 18:12:01 NaniwaTanaCheck pi-startup.sh[64375]: [2026-01-29 18:12:01]    Timing details saved to: /home/naniwa/ShelfEye/state/startup-timing.json
+Jan 29 18:12:01 NaniwaTanaCheck pi-startup.sh[64378]: [2026-01-29 18:12:01] 🔨 Building production assets...
+Jan 29 18:12:01 NaniwaTanaCheck pi-startup.sh[64381]: > rest-express@1.0.0 build
+Jan 29 18:12:01 NaniwaTanaCheck pi-startup.sh[64381]: > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+Jan 29 18:12:02 NaniwaTanaCheck pi-startup.sh[64381]: vite v5.4.20 building for production...
+Jan 29 18:12:04 NaniwaTanaCheck pi-startup.sh[64381]: transforming...
+Jan 29 18:12:05 NaniwaTanaCheck pi-startup.sh[64381]: Browserslist: browsers data (caniuse-lite) is 15 months old. Please run:
+Jan 29 18:12:05 NaniwaTanaCheck pi-startup.sh[64381]:   npx update-browserslist-db@latest
+Jan 29 18:12:05 NaniwaTanaCheck pi-startup.sh[64381]:   Why you should do it regularly: https://github.com/browserslist/update-db#readme

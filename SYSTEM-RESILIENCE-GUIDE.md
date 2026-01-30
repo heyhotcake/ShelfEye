@@ -419,7 +419,7 @@ You can schedule the health check to run periodically and send alerts if issues 
 
 ---
 
-## 5. Troubleshooting Guide
+## 5. Troubleshooting Guide?
 
 ### Reboot Loop (System Keeps Rebooting)
 
