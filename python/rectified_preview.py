@@ -156,6 +156,35 @@ def generate_rectified_image_from_frame(
     logger.info(f"[RECTIFY DEBUG] Input[0,0] = {input_corner.tolist()}, Output[0,0] = {output_corner.tolist()}")
     logger.info(f"[RECTIFY DEBUG] Input at mapped center = {input_center.tolist()}, Output center = {output_center.tolist()}")
     
+    # CRITICAL: Verify that warpPerspective is actually using our matrix
+    # Manually sample from the expected input location for output[0,0]
+    expected_input_y, expected_input_x = 227, 142  # Where output[0,0] should sample from
+    if 0 <= expected_input_y < frame.shape[0] and 0 <= expected_input_x < frame.shape[1]:
+        expected_pixel = frame[expected_input_y, expected_input_x, :]
+        logger.info(f"[RECTIFY DEBUG] Manual check: frame[{expected_input_y}, {expected_input_x}] = {expected_pixel.tolist()}")
+        logger.info(f"[RECTIFY DEBUG] If Output[0,0] matched, it should be: {expected_pixel.tolist()}, but got: {output_corner.tolist()}")
+    
+    # Also verify at a few more sample points
+    test_points = [(0, 0), (100, 100), (500, 300)]
+    for out_x, out_y in test_points:
+        # Calculate expected input location
+        pt_homo = M_float64 @ np.array([out_x, out_y, 1])
+        in_x, in_y = pt_homo[0]/pt_homo[2], pt_homo[1]/pt_homo[2]
+        in_xi, in_yi = int(round(in_x)), int(round(in_y))
+        
+        if 0 <= in_yi < frame.shape[0] and 0 <= in_xi < frame.shape[1]:
+            expected_val = frame[in_yi, in_xi, :]
+        else:
+            expected_val = np.array([0, 0, 0])
+        
+        if 0 <= out_y < rectified.shape[0] and 0 <= out_x < rectified.shape[1]:
+            actual_val = rectified[out_y, out_x, :]
+        else:
+            actual_val = np.array([0, 0, 0])
+        
+        match_status = "MATCH" if np.allclose(expected_val, actual_val, atol=5) else "MISMATCH"
+        logger.info(f"[RECTIFY DEBUG] Point ({out_x},{out_y})->({in_xi},{in_yi}): expected {expected_val.tolist()}, got {actual_val.tolist()} [{match_status}]")
+    
     # Draw grid overlay for visual reference
     for x in range(0, output_size[0], 50):
         cv2.line(rectified, (x, 0), (x, output_size[1]), (0, 255, 0), 1)

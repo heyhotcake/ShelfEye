@@ -1,0 +1,130 @@
+sudo journalctl -u shelfeye -f
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [SubprocessManager] Process PID 75383 exited after 58393ms (code: 0, signal: null)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] Received 1939409 bytes of JSON from Python
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] First 200 chars: {"ok": true, "homography_matrix": [29.889516867968275, -0.11099412270274439, 141.89329569526063, -0.0380455821720279, 29.222529047695822, 227.06634638545944, -0.00028238815618048283, -1.39581562003657
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] Last 200 chars: rys9yfCRyPFNSqaU5/wDL6q/svo5nz/GfCWVU+D8xmqle6oVnrisU1/DlunWafo1Z9Rmq+KdLsY47tPhtob7nGVFzfce//HzzVe98a6X5oaH4YaAwKg5Mt91/C5psd2b+/FpcW8RQp2TpVN4Y0kZAvAY4ru/sbB/zVP8AwdW/+TPWq8J5XF6VMR/4VYr/AOXH/9k="}
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] JSON parsed successfully
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] Has rectified_preview field: true
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] Preview field length: 1896723 chars
+Jan 30 17:29:09 NaniwaTanaCheck pi-startup.sh[75262]: [Database] ✅ Client connected to pool
+Jan 30 17:29:16 NaniwaTanaCheck pi-startup.sh[75262]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 30 17:30:16 NaniwaTanaCheck pi-startup.sh[75262]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 30 17:30:28 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] Deleted 273 existing slots
+Jan 30 17:30:28 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] Creating slots for 29 templates by paper size 8-page-4x2 (legacy mode)
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] Saved paper size format to config: 8-page-4x2
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] Measured pixel density: 29.26 px/cm
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: [Calibration] Including slot validation in response: 0/296 markers detected
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: [CameraSessionManager] Released exclusive lock for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: [CameraSessionManager] Global calibration lock released for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: 5:30:50 PM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 277018ms :: {"o…
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: [SubprocessManager] Tracking led process PID 75411: LED: turnOffLED
+Jan 30 17:30:50 NaniwaTanaCheck sudo[75411]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py off --num-leds 99
+Jan 30 17:30:50 NaniwaTanaCheck sudo[75411]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 30 17:30:50 NaniwaTanaCheck sudo[75411]: pam_unix(sudo:session): session closed for user root
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: [SubprocessManager] Process PID 75411 exited after 186ms (code: 1, signal: null)
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: [LED] turnOffLED failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Jan 30 17:30:50 NaniwaTanaCheck pi-startup.sh[75262]: [LED] LED off response: { success: false }
+Jan 30 17:30:51 NaniwaTanaCheck pi-startup.sh[75262]: 5:30:51 PM [express] GET /api/cameras 200 in 191ms :: [{"id":"a91d43f1-47bf-4d75-8a7d-d2faf0503f81",…
+Jan 30 17:30:51 NaniwaTanaCheck pi-startup.sh[75262]: [Database] ✅ Client connected to pool
+Jan 30 17:30:51 NaniwaTanaCheck pi-startup.sh[75262]: [Database] ✅ Client connected to pool
+Jan 30 17:30:51 NaniwaTanaCheck pi-startup.sh[75262]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Jan 30 17:30:51 NaniwaTanaCheck pi-startup.sh[75262]: [SubprocessManager] Tracking python process PID 75414: Camera preview: Wide Shelf
+Jan 30 17:30:51 NaniwaTanaCheck pi-startup.sh[75262]: 5:30:51 PM [express] GET /api/template-rectangles 200 in 906ms :: [{"id":"0ff5325a-a64f-4a46-98e0-f8…
+Jan 30 17:30:51 NaniwaTanaCheck pi-startup.sh[75262]: 5:30:51 PM [express] GET /api/template-rectangles 200 in 1014ms :: [{"id":"37fa40a3-a9e3-4ed8-bb01-8…
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: [192:33:43.081877178] [75414]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: [192:33:43.117120391] [75417]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: [192:33:43.123915475] [75417]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: [192:33:43.230231603] [75414]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Jan 30 17:30:53 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+^Z
+[3]+  Stopped                 sudo journalctl -u shelfeye -f
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo journalctl -u shelfeye -n 200 --no-pager | grep "RECTIFY DEBUG"
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3476, 1229)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=29.2593, y=29.2619 px/cm
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Homography H:
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] S_inv matrix: [0.03417721390724182, 0.0, 0.0, 0.0, 0.034174125641584396, 0.0, 0.0, 0.0, 1.0]
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] H matrix (row-major): [29.889516867968275, -0.11099412270274439, 141.89329569526063, -0.0380455821720279, 29.222529047695822, 227.06634638545944, -0.00028238815618048283, -1.3958156200365723e-05, 1.0]
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M = H @ S_inv: [1.0215404115806643, -0.0037931270947210217, 141.89329569526063, -0.0013002920001189435, 0.9986543792408067, 227.06634638545944, -9.651240418651973e-06, -4.770077837161584e-07, 1.0]
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M dtype: float64, shape: (3, 3)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M third row [2,:]: [-9.651240418651973e-06, -4.770077837161584e-07, 1.0]
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M @ [0,0,1] = [141.89329569526063, 227.06634638545944, 1.0]
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Normalized: (141.9, 227.1)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M @ [3476,0,1] -> (3821.0, 230.3)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (141.9, 227.1)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3476, 0) → Input pixel (3821.0, 230.3)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3476, 1229) → Input pixel (3818.4, 1501.1)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1229) → Input pixel (137.3, 1455.3)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Calling warpPerspective with:
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   frame shape: (2160, 3840, 3)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG]   M: [1.0215404115806643, -0.0037931270947210217, 141.89329569526063, -0.0013002920001189435, 0.9986543792408067, 227.06634638545944]... (first 6 values)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG]   output_size: (3476, 1229)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output rectified shape: (1229, 3476, 3)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output center (1738, 614) samples from input (1948.3, 852.5)
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Input[0,0] = [58, 54, 30], Output[0,0] = [0, 0, 0]
+Jan 30 17:28:42 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Input at mapped center = [194, 189, 190], Output center = [141, 87, 32]
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3476, 1229)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=29.2593, y=29.2619 px/cm
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Homography H:
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] S_inv matrix: [0.03417721390724182, 0.0, 0.0, 0.0, 0.034174125641584396, 0.0, 0.0, 0.0, 1.0]
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] H matrix (row-major): [29.889516867968275, -0.11099412270274439, 141.89329569526063, -0.0380455821720279, 29.222529047695822, 227.06634638545944, -0.00028238815618048283, -1.3958156200365723e-05, 1.0]
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M = H @ S_inv: [1.0215404115806643, -0.0037931270947210217, 141.89329569526063, -0.0013002920001189435, 0.9986543792408067, 227.06634638545944, -9.651240418651973e-06, -4.770077837161584e-07, 1.0]
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] M dtype: float64, shape: (3, 3)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M third row [2,:]: [-9.651240418651973e-06, -4.770077837161584e-07, 1.0]
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] M @ [0,0,1] = [141.89329569526063, 227.06634638545944, 1.0]
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Normalized: (141.9, 227.1)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M @ [3476,0,1] -> (3821.0, 230.3)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (141.9, 227.1)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3476, 0) → Input pixel (3821.0, 230.3)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3476, 1229) → Input pixel (3818.4, 1501.1)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1229) → Input pixel (137.3, 1455.3)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Calling warpPerspective with:
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG]   frame shape: (2160, 3840, 3)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   M: [1.0215404115806643, -0.0037931270947210217, 141.89329569526063, -0.0013002920001189435, 0.9986543792408067, 227.06634638545944]... (first 6 values)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG]   output_size: (3476, 1229)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output rectified shape: (1229, 3476, 3)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output center (1738, 614) samples from input (1948.3, 852.5)
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Input[0,0] = [58, 54, 30], Output[0,0] = [0, 0, 0]
+Jan 30 17:28:43 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Input at mapped center = [194, 189, 190], Output center = [142, 88, 33]
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3564, 1260)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=30.0000, y=30.0000 px/cm
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Homography H:
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] S_inv matrix: [0.03333333507180214, 0.0, 0.0, 0.0, 0.03333333507180214, 0.0, 0.0, 0.0, 1.0]
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] H matrix (row-major): [29.889516867968275, -0.11099412270274439, 141.89329569526063, -0.0380455821720279, 29.222529047695822, 227.06634638545944, -0.00028238815618048283, -1.3958156200365723e-05, 1.0]
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] M = H @ S_inv: [0.9963172808942685, -0.0036998042830512995, 141.89329569526063, -0.001268186138541988, 0.9740843523923159, 227.06634638545944, -9.412939030272428e-06, -4.652718976113432e-07, 1.0]
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M dtype: float64, shape: (3, 3)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] M third row [2,:]: [-9.412939030272428e-06, -4.652718976113432e-07, 1.0]
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M @ [0,0,1] = [141.89329569526063, 227.06634638545944, 1.0]
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Normalized: (141.9, 227.1)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M @ [3564,0,1] -> (3821.0, 230.3)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (141.9, 227.1)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3564, 0) → Input pixel (3821.0, 230.3)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3564, 1260) → Input pixel (3818.4, 1501.1)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1260) → Input pixel (137.3, 1455.3)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Calling warpPerspective with:
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG]   frame shape: (2160, 3840, 3)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG]   M: [0.9963172808942685, -0.0036998042830512995, 141.89329569526063, -0.001268186138541988, 0.9740843523923159, 227.06634638545944]... (first 6 values)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   output_size: (3564, 1260)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output rectified shape: (1260, 3564, 3)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output center (1782, 630) samples from input (1948.3, 853.0)
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Input[0,0] = [58, 54, 30], Output[0,0] = [0, 0, 0]
+Jan 30 17:28:45 NaniwaTanaCheck pi-startup.sh[75262]: INFO:rectified_preview:[RECTIFY DEBUG] Input at mapped center = [189, 184, 185], Output center = [124, 107, 128]
+naniwa@NaniwaTanaCheck:~/ShelfEye $
