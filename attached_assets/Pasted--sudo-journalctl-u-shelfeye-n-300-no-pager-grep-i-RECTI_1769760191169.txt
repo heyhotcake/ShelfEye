@@ -1,0 +1,32 @@
+ sudo journalctl -u shelfeye -n 300 --no-pager | grep -i "RECTIFY DEBUG"
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3484, 1231)
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=29.3266, y=29.3095 px/cm
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Homography H:
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Combined matrix M = H @ S_inv:
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (140.3, 224.6)
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3484, 0) → Input pixel (3822.6, 228.7)
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3484, 1231) → Input pixel (3818.3, 1501.5)
+Jan 30 17:01:38 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1231) → Input pixel (134.9, 1455.7)
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3484, 1231)
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=29.3266, y=29.3095 px/cm
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Homography H:
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Combined matrix M = H @ S_inv:
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (140.3, 224.6)
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3484, 0) → Input pixel (3822.6, 228.7)
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3484, 1231) → Input pixel (3818.3, 1501.5)
+Jan 30 17:01:39 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1231) → Input pixel (134.9, 1455.7)
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3564, 1260)
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=30.0000, y=30.0000 px/cm
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Homography H:
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Combined matrix M = H @ S_inv:
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (140.3, 224.6)
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3564, 0) → Input pixel (3822.6, 228.7)
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3564, 1260) → Input pixel (3818.3, 1501.5)
+Jan 30 17:01:41 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1260) → Input pixel (134.9, 1455.7)
+naniwa@NaniwaTanaCheck:~/ShelfEye $
