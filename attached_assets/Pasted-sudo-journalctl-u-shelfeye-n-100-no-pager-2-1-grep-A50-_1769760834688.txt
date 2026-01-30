@@ -1,0 +1,64 @@
+sudo journalctl -u shelfeye -n 100 --no-pager 2>&1 | grep -A50 "RECTIFY DEBUG"
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3564, 0) → Input pixel (3821.4, 229.0)
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3564, 1260) → Input pixel (3819.1, 1500.9)
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1260) → Input pixel (136.0, 1455.2)
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Calling warpPerspective with:
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG]   frame shape: (2160, 3840, 3)
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG]   M: [0.998576434006841, -0.0029965783891087836, 139.68111163942496, -0.0006959341184868082, 0.9765544152715185, 224.10201671738827]... (first 6 values)
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG]   output_size: (3564, 1260)
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output rectified shape: (1260, 3564, 3)
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output center (1782, 630) samples from input (1949.0, 852.0)
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Input[0,0] = [60, 56, 51], Output[0,0] = [0, 0, 0]
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: INFO:rectified_preview:[RECTIFY DEBUG] Input at mapped center = [201, 196, 197], Output center = [157, 146, 140]
+Jan 30 17:12:12 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Jan 30 17:12:13 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Jan 30 17:12:13 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Jan 30 17:12:13 NaniwaTanaCheck pi-startup.sh[72894]: [SubprocessManager] Process PID 74764 exited after 57781ms (code: 0, signal: null)
+Jan 30 17:12:13 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] Received 1940081 bytes of JSON from Python
+Jan 30 17:12:13 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] First 200 chars: {"ok": true, "homography_matrix": [29.95729145781073, -0.0898973469847515, 139.68111163942496, -0.020878022465730523, 29.296630930207186, 224.10201671738827, -0.0002704312439903563, -1.004070660919487
+Jan 30 17:12:13 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] Last 200 chars: HIX/pwnNeXnuTYSGSYqSlU0pz/wCX1V/ZfeZ8rxjwrllPhHMZKpXuqFZ64rEtfw5bp1mn6PRjn8SeH2Xz4/hrooPUBrm+HH/gTWnpniHQ57NZIvBWigHpiS9/rc1y8qLdz2omHDRcgcdqg82S1JggchVPAr1f7Hwv89X/AMHVv/kz6n/VDKf+fmI/8K8V/wDLj//Z"}
+Jan 30 17:12:13 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] JSON parsed successfully
+Jan 30 17:12:13 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] Has rectified_preview field: true
+Jan 30 17:12:13 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] Preview field length: 1897363 chars
+Jan 30 17:12:25 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] Deleted 29 existing slots
+Jan 30 17:12:25 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] Creating slots for 29 templates by paper size 8-page-4x2 (legacy mode)
+Jan 30 17:12:40 NaniwaTanaCheck pi-startup.sh[72894]: [Database] ✅ Client connected to pool
+Jan 30 17:12:47 NaniwaTanaCheck pi-startup.sh[72894]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 30 17:12:47 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] Saved paper size format to config: 8-page-4x2
+Jan 30 17:12:47 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] Measured pixel density: 29.33 px/cm
+Jan 30 17:12:47 NaniwaTanaCheck pi-startup.sh[72894]: [Calibration] Including slot validation in response: 0/296 markers detected
+Jan 30 17:12:47 NaniwaTanaCheck pi-startup.sh[72894]: [CameraSessionManager] Released exclusive lock for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Jan 30 17:12:47 NaniwaTanaCheck pi-startup.sh[72894]: [CameraSessionManager] Global calibration lock released for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Jan 30 17:12:47 NaniwaTanaCheck pi-startup.sh[72894]: [SubprocessManager] Tracking led process PID 74783: LED: turnOffLED
+Jan 30 17:12:47 NaniwaTanaCheck sudo[74783]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py off --num-leds 99
+Jan 30 17:12:47 NaniwaTanaCheck sudo[74783]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 30 17:12:47 NaniwaTanaCheck pi-startup.sh[72894]: 5:12:47 PM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 186620ms :: {"o…
+Jan 30 17:12:48 NaniwaTanaCheck sudo[74783]: pam_unix(sudo:session): session closed for user root
+Jan 30 17:12:48 NaniwaTanaCheck pi-startup.sh[72894]: [SubprocessManager] Process PID 74783 exited after 232ms (code: 1, signal: null)
+Jan 30 17:12:48 NaniwaTanaCheck pi-startup.sh[72894]: [LED] turnOffLED failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Jan 30 17:12:48 NaniwaTanaCheck pi-startup.sh[72894]: [LED] LED off response: { success: false }
+Jan 30 17:12:48 NaniwaTanaCheck pi-startup.sh[72894]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Jan 30 17:12:48 NaniwaTanaCheck pi-startup.sh[72894]: [SubprocessManager] Tracking python process PID 74786: Camera preview: Wide Shelf
+Jan 30 17:12:48 NaniwaTanaCheck pi-startup.sh[72894]: [Database] ✅ Client connected to pool
+Jan 30 17:12:48 NaniwaTanaCheck pi-startup.sh[72894]: 5:12:48 PM [express] GET /api/cameras 200 in 759ms :: [{"id":"a91d43f1-47bf-4d75-8a7d-d2faf0503f81",…
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: 5:12:49 PM [express] GET /api/template-rectangles 200 in 1530ms :: [{"id":"5fbdbcb1-58eb-435b-859f-a…
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: [192:15:39.913094098] [74786]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: [192:15:39.948405529] [74789]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: [192:15:39.955198028] [74789]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Jan 30 17:12:49 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: [192:15:40.061597573] [74786]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Jan 30 17:12:50 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Jan 30 17:12:50 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Jan 30 17:12:50 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Jan 30 17:12:50 NaniwaTanaCheck pi-startup.sh[72894]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Jan 30 17:12:50 NaniwaTanaCheck pi-startup.sh[72894]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Jan 30 17:12:50 NaniwaTanaCheck pi-startup.sh[72894]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Jan 30 17:12:50 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Jan 30 17:12:50 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Jan 30 17:13:00 NaniwaTanaCheck pi-startup.sh[72894]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+naniwa@NaniwaTanaCheck:~/ShelfEye $ sudo journalctl -u shelfeye -n 100 --no-pager 2>&1 | grep -A50 "RECTIFY DEBUG"
+naniwa@NaniwaTanaCheck:~/ShelfEye $

@@ -78,10 +78,30 @@ def generate_rectified_image_from_frame(
     # This correctly samples from camera pixels corresponding to each output position
     M = H @ S_inv
     
-    logger.info(f"[RECTIFY DEBUG] S_inv matrix:\n{S_inv}")
-    logger.info(f"[RECTIFY DEBUG] Combined matrix M = H @ S_inv:\n{M}")
+    logger.info(f"[RECTIFY DEBUG] S_inv matrix: {S_inv.flatten().tolist()}")
+    logger.info(f"[RECTIFY DEBUG] H matrix (row-major): {H.flatten().tolist()}")
+    logger.info(f"[RECTIFY DEBUG] M = H @ S_inv: {M.flatten().tolist()}")
     logger.info(f"[RECTIFY DEBUG] M dtype: {M.dtype}, shape: {M.shape}")
-    logger.info(f"[RECTIFY DEBUG] M flattened: {M.flatten().tolist()}")
+    
+    # Critical: verify the third row of M
+    logger.info(f"[RECTIFY DEBUG] M third row [2,:]: {M[2,:].tolist()}")
+    
+    # Manual verification: what does M actually compute for (0,0)?
+    test_point = np.array([0, 0, 1], dtype=np.float64)
+    result = M @ test_point
+    logger.info(f"[RECTIFY DEBUG] M @ [0,0,1] = {result.tolist()}")
+    if result[2] != 0:
+        normalized = result[:2] / result[2]
+        logger.info(f"[RECTIFY DEBUG] Normalized: ({normalized[0]:.1f}, {normalized[1]:.1f})")
+    else:
+        logger.info(f"[RECTIFY DEBUG] WARNING: result[2] is zero, cannot normalize!")
+    
+    # Test what happens for the top-right corner
+    test_point_tr = np.array([output_size[0], 0, 1], dtype=np.float64)
+    result_tr = M @ test_point_tr
+    if result_tr[2] != 0:
+        normalized_tr = result_tr[:2] / result_tr[2]
+        logger.info(f"[RECTIFY DEBUG] M @ [{output_size[0]},0,1] -> ({normalized_tr[0]:.1f}, {normalized_tr[1]:.1f})")
     
     # Test transformation of corner points
     test_corners_output = np.array([
