@@ -59,19 +59,17 @@ def generate_rectified_image_from_frame(
     scale_x = output_size[0] / paper_width_cm
     scale_y = output_size[1] / paper_height_cm
     
-    # Scaling matrix: cm → output pixels
-    S = np.array([
-        [scale_x, 0, 0],
-        [0, scale_y, 0],
+    # Inverse scaling matrix: output pixels → cm
+    S_inv = np.array([
+        [1/scale_x, 0, 0],
+        [0, 1/scale_y, 0],
         [0, 0, 1]
     ], dtype=np.float32)
     
-    # For warpPerspective backward mapping: camera_pixels → cm → output_pixels
-    # Invert homography: camera pixels → cm
-    H_inv = np.linalg.inv(H)
-    
-    # Combined warp for warpPerspective: camera_pixel → cm → output_pixel
-    M = S @ H_inv
+    # For warpPerspective backward mapping: output_pixels → cm → camera_pixels
+    # H maps cm → camera pixels, so the full transform is H @ S_inv
+    # This correctly samples from camera pixels corresponding to each output position
+    M = H @ S_inv
     
     # Choose interpolation method based on use case:
     # - INTER_NEAREST: Preserves sharp ArUco marker edges (required for marker detection)
