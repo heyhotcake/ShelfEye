@@ -90,10 +90,12 @@ def configure_camera_for_aruco(device_path: str) -> bool:
     Configure camera settings optimized for ArUco marker detection.
     
     For Streamplify Cam Pro 4K and similar cameras:
-    - Disable backlight_compensation (causes dynamic brightness changes)
-    - Disable power_line_frequency flickering compensation if causing issues
-    - Keep auto exposure/focus/white balance enabled but stable
+    - Enable backlight_compensation (Auto Light Enhancement) for bright, natural images
+    - Enable auto exposure/focus/white balance for consistent quality
     - Set optimal sharpness (not too high to avoid halos around markers)
+    - Set brightness slightly above default for well-lit images
+    - Keep gain low to minimize noise
+    - Reset zoom/pan/tilt to defaults if available
     
     Args:
         device_path: Camera device path like '/dev/video0' or index like '0'
@@ -113,12 +115,14 @@ def configure_camera_for_aruco(device_path: str) -> bool:
         
         settings = []
         
+        # Log all available controls for debugging
+        logger.info(f"Available camera controls: {list(controls.keys())}")
+        
         # === Enable firmware auto-enhancement features for optimal image quality ===
         
         # Backlight compensation / Auto Light Enhancement - ENABLE it
         # This is the main brightness enhancement feature on Streamplify Cam Pro 4K
-        # Previously disabled to prevent "dynamic brightness changes" but this made images too dark
-        # The camera firmware handles this better than software post-processing
+        # The camera firmware handles brightness better than software post-processing
         if 'backlight_compensation' in controls:
             settings.append('backlight_compensation=1')
             logger.info("Enabling backlight_compensation (camera firmware brightness enhancement)")
@@ -133,13 +137,19 @@ def configure_camera_for_aruco(device_path: str) -> bool:
             settings.append('focus_auto=1')
             logger.info("Enabling auto focus")
         
-        # Auto exposure - use aperture priority mode (3)
+        # Auto exposure - use aperture priority mode (3 = auto, 1 = manual)
         if 'auto_exposure' in controls:
             settings.append('auto_exposure=3')
             logger.info("Enabling auto exposure (aperture priority)")
         elif 'exposure_auto' in controls:
             settings.append('exposure_auto=3')
             logger.info("Enabling auto exposure")
+        
+        # Dynamic framerate - allows camera to use slower shutter in low light
+        # This helps get brighter images when lighting is dim
+        if 'exposure_dynamic_framerate' in controls:
+            settings.append('exposure_dynamic_framerate=1')
+            logger.info("Enabling dynamic framerate for better low-light exposure")
         
         # Auto white balance - keep enabled for consistent color
         if 'white_balance_automatic' in controls:
@@ -150,6 +160,17 @@ def configure_camera_for_aruco(device_path: str) -> bool:
             logger.info("Enabling auto white balance temperature")
         
         # === Set optimal fixed values for ArUco detection ===
+        
+        # Brightness - set slightly above default for well-lit images
+        # This is critical for ArUco detection - markers need good contrast
+        if 'brightness' in controls:
+            ctrl = controls['brightness']
+            default_brightness = ctrl.get('default', 128)
+            max_brightness = ctrl.get('max', 255)
+            # Boost by ~15% for brighter images (but don't exceed max)
+            optimal_brightness = min(int(default_brightness * 1.15), max_brightness)
+            settings.append(f'brightness={optimal_brightness}')
+            logger.info(f"Setting brightness to {optimal_brightness} (default was {default_brightness})")
         
         # Sharpness - moderate value to avoid halos around marker edges
         # Too high sharpness creates bright/dark halos that corrupt marker detection
@@ -167,18 +188,51 @@ def configure_camera_for_aruco(device_path: str) -> bool:
             # Boost by ~10% for clearer black/white distinction
             optimal_contrast = min(int(default_contrast * 1.1), ctrl.get('max', 255))
             settings.append(f'contrast={optimal_contrast}')
-            logger.info(f"Setting contrast to {optimal_contrast}")
+            logger.info(f"Setting contrast to {optimal_contrast} (default was {default_contrast})")
         
         # Saturation - keep at default (ArUco is black/white, saturation doesn't matter much)
-        # But avoid oversaturation which can bleed colors
         if 'saturation' in controls:
             ctrl = controls['saturation']
             default_sat = ctrl.get('default', 128)
             settings.append(f'saturation={default_sat}')
+            logger.info(f"Setting saturation to {default_sat} (keeping default)")
         
-        # Power line frequency - leave at default unless user has configured it
-        # Changing this can cause flicker issues depending on region (50Hz vs 60Hz)
-        # Only log what's currently set for debugging
+        # Gain - keep low to minimize noise (high gain = more ISO = more noise)
+        if 'gain' in controls:
+            ctrl = controls['gain']
+            # Use default or 0, whichever is lower to minimize noise
+            default_gain = ctrl.get('default', 0)
+            min_gain = ctrl.get('min', 0)
+            optimal_gain = max(default_gain, min_gain)
+            settings.append(f'gain={optimal_gain}')
+            logger.info(f"Setting gain to {optimal_gain} (keeping low to minimize noise)")
+        
+        # === Reset zoom/pan/tilt to defaults ===
+        
+        # Zoom - reset to default (no zoom) for consistent field of view
+        if 'zoom_absolute' in controls:
+            ctrl = controls['zoom_absolute']
+            default_zoom = ctrl.get('default', ctrl.get('min', 100))
+            settings.append(f'zoom_absolute={default_zoom}')
+            logger.info(f"Setting zoom to {default_zoom} (default)")
+        
+        # Pan - reset to center
+        if 'pan_absolute' in controls:
+            ctrl = controls['pan_absolute']
+            default_pan = ctrl.get('default', 0)
+            settings.append(f'pan_absolute={default_pan}')
+            logger.info(f"Setting pan to {default_pan} (centered)")
+        
+        # Tilt - reset to center
+        if 'tilt_absolute' in controls:
+            ctrl = controls['tilt_absolute']
+            default_tilt = ctrl.get('default', 0)
+            settings.append(f'tilt_absolute={default_tilt}')
+            logger.info(f"Setting tilt to {default_tilt} (centered)")
+        
+        # === Region-specific settings (log only, don't change) ===
+        
+        # Power line frequency - leave at current value (50Hz vs 60Hz depends on region)
         if 'power_line_frequency' in controls:
             current_val = controls['power_line_frequency'].get('value', 'unknown')
             logger.info(f"Power line frequency: current={current_val} (not changing - region-specific)")
@@ -195,7 +249,12 @@ def configure_camera_for_aruco(device_path: str) -> bool:
             logger.warning(f"v4l2-ctl failed: {result.stderr}")
             return False
         
-        logger.info(f"✓ Camera configured for ArUco detection: {', '.join(settings)}")
+        logger.info(f"✓ Camera configured for ArUco detection: {len(settings)} settings applied")
+        logger.info(f"  Settings: {', '.join(settings)}")
+        
+        # Log final camera state to verify settings were applied
+        log_camera_settings(device_path)
+        
         return True
         
     except subprocess.TimeoutExpired:
@@ -268,6 +327,11 @@ def enable_camera_auto_modes(device_path: str) -> bool:
         # Build the settings command based on available controls
         settings = []
         
+        # Backlight compensation / Auto Light Enhancement
+        if 'backlight_compensation' in controls:
+            settings.append('backlight_compensation=1')
+            logger.info(f"Enabling backlight compensation on {device_path}")
+        
         # Auto focus
         if 'focus_automatic_continuous' in controls:
             settings.append('focus_automatic_continuous=1')
@@ -284,6 +348,11 @@ def enable_camera_auto_modes(device_path: str) -> bool:
         elif 'exposure_auto' in controls:
             settings.append('exposure_auto=3')
             logger.info(f"Enabling auto exposure on {device_path}")
+        
+        # Dynamic framerate for better low-light exposure
+        if 'exposure_dynamic_framerate' in controls:
+            settings.append('exposure_dynamic_framerate=1')
+            logger.info(f"Enabling dynamic framerate on {device_path}")
         
         # Auto white balance
         if 'white_balance_automatic' in controls:
