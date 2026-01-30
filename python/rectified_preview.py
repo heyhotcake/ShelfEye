@@ -59,6 +59,13 @@ def generate_rectified_image_from_frame(
     scale_x = output_size[0] / paper_width_cm
     scale_y = output_size[1] / paper_height_cm
     
+    # DIAGNOSTIC: Log the transformation parameters
+    logger.info(f"[RECTIFY DEBUG] Input frame shape: {frame.shape}")
+    logger.info(f"[RECTIFY DEBUG] Output size: {output_size}")
+    logger.info(f"[RECTIFY DEBUG] Paper size cm: {paper_size_cm}")
+    logger.info(f"[RECTIFY DEBUG] Scale: x={scale_x:.4f}, y={scale_y:.4f} px/cm")
+    logger.info(f"[RECTIFY DEBUG] Homography H:\n{H}")
+    
     # Inverse scaling matrix: output pixels → cm
     S_inv = np.array([
         [1/scale_x, 0, 0],
@@ -70,6 +77,25 @@ def generate_rectified_image_from_frame(
     # H maps cm → camera pixels, so the full transform is H @ S_inv
     # This correctly samples from camera pixels corresponding to each output position
     M = H @ S_inv
+    
+    logger.info(f"[RECTIFY DEBUG] Combined matrix M = H @ S_inv:\n{M}")
+    
+    # Test transformation of corner points
+    test_corners_output = np.array([
+        [0, 0, 1],                                      # Top-left output
+        [output_size[0], 0, 1],                         # Top-right output  
+        [output_size[0], output_size[1], 1],            # Bottom-right output
+        [0, output_size[1], 1]                          # Bottom-left output
+    ], dtype=np.float32)
+    
+    for i, corner in enumerate(test_corners_output):
+        # Where does this output pixel sample from in the input frame?
+        mapped = M @ corner
+        if mapped[2] != 0:
+            mapped_px = mapped[:2] / mapped[2]
+        else:
+            mapped_px = [float('inf'), float('inf')]
+        logger.info(f"[RECTIFY DEBUG] Output corner {i} ({corner[0]:.0f}, {corner[1]:.0f}) → Input pixel ({mapped_px[0]:.1f}, {mapped_px[1]:.1f})")
     
     # Choose interpolation method based on use case:
     # - INTER_NEAREST: Preserves sharp ArUco marker edges (required for marker detection)
