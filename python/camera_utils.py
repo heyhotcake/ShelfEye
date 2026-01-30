@@ -113,13 +113,15 @@ def configure_camera_for_aruco(device_path: str) -> bool:
         
         settings = []
         
-        # === Disable firmware auto-enhancement features that conflict with ArUco detection ===
+        # === Enable firmware auto-enhancement features for optimal image quality ===
         
-        # Backlight compensation causes dynamic brightness adjustment - disable it
-        # This is the main "Auto Light Enhancement" feature on Streamplify Cam Pro
+        # Backlight compensation / Auto Light Enhancement - ENABLE it
+        # This is the main brightness enhancement feature on Streamplify Cam Pro 4K
+        # Previously disabled to prevent "dynamic brightness changes" but this made images too dark
+        # The camera firmware handles this better than software post-processing
         if 'backlight_compensation' in controls:
-            settings.append('backlight_compensation=0')
-            logger.info("Disabling backlight_compensation (prevents dynamic brightness)")
+            settings.append('backlight_compensation=1')
+            logger.info("Enabling backlight_compensation (camera firmware brightness enhancement)")
         
         # === Enable stable auto modes ===
         
@@ -527,26 +529,14 @@ def capture_frame_for_aruco(cap, num_frames=50, device_path: Optional[str] = Non
     if best_frame is None:
         return None
     
-    # For ArUco detection, we apply MINIMAL post-processing
-    # The camera's auto exposure/white balance handles most image quality
-    # We only apply light contrast enhancement for better marker edge detection
+    # Let camera firmware handle image enhancement
+    # Previously we applied CLAHE contrast enhancement, but this caused issues:
+    # - Made images too dark when combined with disabled backlight_compensation
+    # - The camera's built-in Auto Light Enhancement works better
+    # 
+    # The Streamplify Cam Pro 4K produces laptop-quality images when firmware
+    # enhancements are enabled. ArUco detection works fine with natural images.
     
-    # Light contrast boost for better black/white marker distinction
-    # Uses CLAHE (Contrast Limited Adaptive Histogram Equalization)
-    # This is gentler than full auto brightness/contrast and preserves local detail
-    gray = cv2.cvtColor(best_frame, cv2.COLOR_BGR2GRAY)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    enhanced_gray = clahe.apply(gray)
+    logger.info("[ArUco Mode] Using frame as-is (camera firmware handles enhancement)")
     
-    # Convert back to BGR for consistency with rest of pipeline
-    enhanced_frame = cv2.cvtColor(enhanced_gray, cv2.COLOR_GRAY2BGR)
-    
-    # Copy original color info back (CLAHE only on luminance)
-    # This preserves color information while enhancing contrast
-    hsv = cv2.cvtColor(best_frame, cv2.COLOR_BGR2HSV)
-    hsv[:, :, 2] = enhanced_gray  # Replace V channel with CLAHE-enhanced version
-    enhanced_frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-    
-    logger.info("[ArUco Mode] Applied CLAHE contrast enhancement (no sharpening)")
-    
-    return enhanced_frame
+    return best_frame

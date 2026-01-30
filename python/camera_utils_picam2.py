@@ -276,32 +276,14 @@ def capture_frame_for_aruco_picam2(picam2, num_frames=50, grayscale_mode=False):
     if best_frame is None:
         return None
     
-    # For ArUco detection, we apply MINIMAL post-processing
-    # The camera's auto exposure/white balance handles most image quality
-    # We only apply light contrast enhancement for better marker edge detection
+    # Let camera firmware handle image enhancement
+    # Previously we applied CLAHE contrast enhancement, but this caused issues:
+    # - Made images too dark when combined with disabled backlight_compensation
+    # - The camera's built-in Auto Light Enhancement works better
+    # 
+    # The Streamplify Cam Pro 4K produces laptop-quality images when firmware
+    # enhancements are enabled. ArUco detection works fine with natural images.
     
-    # Light contrast boost using CLAHE (Contrast Limited Adaptive Histogram Equalization)
-    # This is gentler than full auto brightness/contrast and preserves local detail
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    logger.info("[ArUco Mode] Using frame as-is (camera firmware handles enhancement)")
     
-    if grayscale_mode:
-        # GRAYSCALE MODE: More efficient for ArUco-only detection
-        # ArUco detection only uses grayscale anyway, so this saves:
-        # - 2/3 memory (1 channel vs 3 channels)
-        # - Color conversion overhead
-        gray = cv2.cvtColor(best_frame, cv2.COLOR_BGR2GRAY)
-        enhanced_gray = clahe.apply(gray)
-        # Convert back to 3-channel for compatibility with rest of pipeline
-        enhanced_frame = cv2.cvtColor(enhanced_gray, cv2.COLOR_GRAY2BGR)
-        logger.info("[ArUco Mode] Applied CLAHE in grayscale mode (memory efficient)")
-    else:
-        # COLOR MODE: Preserve color for scanner_grid yellow detection
-        gray = cv2.cvtColor(best_frame, cv2.COLOR_BGR2GRAY)
-        enhanced_gray = clahe.apply(gray)
-        # Copy original color info back (CLAHE only on luminance)
-        hsv = cv2.cvtColor(best_frame, cv2.COLOR_BGR2HSV)
-        hsv[:, :, 2] = enhanced_gray  # Replace V channel with CLAHE-enhanced version
-        enhanced_frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-        logger.info("[ArUco Mode] Applied CLAHE in color mode (preserving color)")
-    
-    return enhanced_frame
+    return best_frame
