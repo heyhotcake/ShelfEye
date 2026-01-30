@@ -932,6 +932,17 @@ class CameraProcessor:
             picam2.close()
             picam2 = None
             
+            # Apply CLAHE contrast enhancement for better ArUco marker detection
+            # This improves black/white edge definition without aggressive sharpening
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            enhanced_gray = clahe.apply(gray)
+            # Apply CLAHE to V channel (luminance) while preserving color
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            hsv[:, :, 2] = enhanced_gray
+            frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+            logger.info(f"Camera {camera_id}: Applied CLAHE contrast enhancement for ArUco detection")
+            
             if frame is None:
                 result['status'] = 'failed'
                 result['errors'].append('Failed to capture frame')

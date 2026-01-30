@@ -18,7 +18,7 @@ from rectified_preview import generate_rectified_image_from_frame
 
 # Import camera utilities for consistent settings with preview
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from camera_utils_picam2 import setup_camera_picam2, warmup_camera_picam2, capture_optimal_frame_picam2
+from camera_utils_picam2 import setup_camera_picam2, warmup_camera_picam2, capture_optimal_frame_picam2, capture_frame_for_aruco_picam2
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -346,9 +346,10 @@ class ArucoCornerCalibrator:
             # At 4K MJPEG (~7fps), this is 140+ frames for autofocus to converge
             warmup_camera_picam2(picam2, duration_seconds=20)
             
-            # Use multi-frame sharpness selection for best focus
+            # Use ArUco-optimized capture for marker detection
+            # This uses CLAHE instead of aggressive sharpening to avoid halos around markers
             # Takes 50 frames and keeps the sharpest one - maximum reliability
-            frame = capture_optimal_frame_picam2(picam2, num_frames=50)
+            frame = capture_frame_for_aruco_picam2(picam2, num_frames=50)
             
             # CRITICAL: Verify actual captured resolution matches requested resolution
             if frame is not None:

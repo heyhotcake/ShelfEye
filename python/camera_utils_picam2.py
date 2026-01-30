@@ -188,7 +188,7 @@ def warmup_camera_picam2(picam2, duration_seconds=5):
     
     logger.info(f"Warmup complete: {metadata_count} metadata polls over {duration_seconds}s")
 
-def capture_optimal_frame_picam2(picam2, num_frames=50):
+def capture_optimal_frame_picam2(picam2, num_frames=50, apply_post_processing=True):
     """
     Capture frame with full quality pipeline (produces CRISP images)
     Takes multiple frames and picks the sharpest one for best autofocus quality
@@ -196,6 +196,8 @@ def capture_optimal_frame_picam2(picam2, num_frames=50):
     Args:
         picam2: Picamera2 instance (must be started)
         num_frames: Number of frames to sample (default 50)
+        apply_post_processing: Whether to apply brightness/gamma/sharpening (default True)
+                              Set False when camera firmware handles enhancement
     """
     best_frame = None
     best_sharpness = 0
@@ -220,9 +222,74 @@ def capture_optimal_frame_picam2(picam2, num_frames=50):
     if best_frame is None:
         return None
     
+    if not apply_post_processing:
+        logger.info("Skipping post-processing (camera firmware handles enhancement)")
+        return best_frame
+    
     # Apply post-processing pipeline (ESSENTIAL for CRISP quality)
     enhanced = apply_auto_brightness_contrast(best_frame)
     brightened = apply_gamma_correction(enhanced, gamma=1.15)
     sharpened = apply_sharpening(brightened)
     
     return sharpened
+
+
+def capture_frame_for_aruco_picam2(picam2, num_frames=50):
+    """
+    Capture frame optimized for ArUco marker detection using Picamera2.
+    
+    This function:
+    1. Takes multiple frames and selects the sharpest
+    2. Applies MINIMAL post-processing to avoid conflicts with camera firmware
+    
+    For Streamplify Cam Pro 4K and similar cameras with built-in Auto Light Enhancement,
+    we skip aggressive post-processing that creates artifacts (halos, noise amplification).
+    
+    Args:
+        picam2: Picamera2 instance (must be started)
+        num_frames: Number of frames to sample (default 50)
+    
+    Returns:
+        Captured frame optimized for ArUco detection, or None if failed
+    """
+    best_frame = None
+    best_sharpness = 0
+    
+    logger.info(f"[ArUco Mode] Capturing {num_frames} frames for marker detection...")
+    
+    for i in range(num_frames):
+        # Capture from 'main' stream and convert RGB to BGR for OpenCV
+        frame_rgb = picam2.capture_array("main")
+        frame = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+        
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
+        if sharpness > best_sharpness:
+            best_sharpness = sharpness
+            best_frame = frame
+        time.sleep(0.033)  # 30fps pace
+    
+    logger.info(f"[ArUco Mode] Selected frame with sharpness = {best_sharpness:.1f}")
+    
+    if best_frame is None:
+        return None
+    
+    # For ArUco detection, we apply MINIMAL post-processing
+    # The camera's auto exposure/white balance handles most image quality
+    # We only apply light contrast enhancement for better marker edge detection
+    
+    # Light contrast boost using CLAHE (Contrast Limited Adaptive Histogram Equalization)
+    # This is gentler than full auto brightness/contrast and preserves local detail
+    gray = cv2.cvtColor(best_frame, cv2.COLOR_BGR2GRAY)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced_gray = clahe.apply(gray)
+    
+    # Copy original color info back (CLAHE only on luminance)
+    # This preserves color information while enhancing contrast
+    hsv = cv2.cvtColor(best_frame, cv2.COLOR_BGR2HSV)
+    hsv[:, :, 2] = enhanced_gray  # Replace V channel with CLAHE-enhanced version
+    enhanced_frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    
+    logger.info("[ArUco Mode] Applied CLAHE contrast enhancement (no sharpening)")
+    
+    return enhanced_frame
