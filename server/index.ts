@@ -73,6 +73,12 @@ app.use(cors({
       }
     }
     
+    // Allow local network access (192.168.x.x, 10.x.x.x, 172.16-31.x.x) for secure LAN deployments
+    const localNetworkPattern = /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|naniwatanacheck\.local)(:\d+)?$/;
+    if (localNetworkPattern.test(origin)) {
+      return callback(null, true);
+    }
+    
     // Production: only allow explicitly configured origins
     console.warn(`[CORS] Blocked request from origin: ${origin}`);
     callback(new Error('Not allowed by CORS'));
