@@ -234,7 +234,7 @@ def capture_optimal_frame_picam2(picam2, num_frames=50, apply_post_processing=Tr
     return sharpened
 
 
-def capture_frame_for_aruco_picam2(picam2, num_frames=50):
+def capture_frame_for_aruco_picam2(picam2, num_frames=50, grayscale_mode=False):
     """
     Capture frame optimized for ArUco marker detection using Picamera2.
     
@@ -248,6 +248,8 @@ def capture_frame_for_aruco_picam2(picam2, num_frames=50):
     Args:
         picam2: Picamera2 instance (must be started)
         num_frames: Number of frames to sample (default 50)
+        grayscale_mode: If True, process entirely in grayscale for efficiency (default False)
+                       Use True when template has no scanner_grid slots (ArUco-only)
     
     Returns:
         Captured frame optimized for ArUco detection, or None if failed
@@ -280,16 +282,26 @@ def capture_frame_for_aruco_picam2(picam2, num_frames=50):
     
     # Light contrast boost using CLAHE (Contrast Limited Adaptive Histogram Equalization)
     # This is gentler than full auto brightness/contrast and preserves local detail
-    gray = cv2.cvtColor(best_frame, cv2.COLOR_BGR2GRAY)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    enhanced_gray = clahe.apply(gray)
     
-    # Copy original color info back (CLAHE only on luminance)
-    # This preserves color information while enhancing contrast
-    hsv = cv2.cvtColor(best_frame, cv2.COLOR_BGR2HSV)
-    hsv[:, :, 2] = enhanced_gray  # Replace V channel with CLAHE-enhanced version
-    enhanced_frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-    
-    logger.info("[ArUco Mode] Applied CLAHE contrast enhancement (no sharpening)")
+    if grayscale_mode:
+        # GRAYSCALE MODE: More efficient for ArUco-only detection
+        # ArUco detection only uses grayscale anyway, so this saves:
+        # - 2/3 memory (1 channel vs 3 channels)
+        # - Color conversion overhead
+        gray = cv2.cvtColor(best_frame, cv2.COLOR_BGR2GRAY)
+        enhanced_gray = clahe.apply(gray)
+        # Convert back to 3-channel for compatibility with rest of pipeline
+        enhanced_frame = cv2.cvtColor(enhanced_gray, cv2.COLOR_GRAY2BGR)
+        logger.info("[ArUco Mode] Applied CLAHE in grayscale mode (memory efficient)")
+    else:
+        # COLOR MODE: Preserve color for scanner_grid yellow detection
+        gray = cv2.cvtColor(best_frame, cv2.COLOR_BGR2GRAY)
+        enhanced_gray = clahe.apply(gray)
+        # Copy original color info back (CLAHE only on luminance)
+        hsv = cv2.cvtColor(best_frame, cv2.COLOR_BGR2HSV)
+        hsv[:, :, 2] = enhanced_gray  # Replace V channel with CLAHE-enhanced version
+        enhanced_frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        logger.info("[ArUco Mode] Applied CLAHE in color mode (preserving color)")
     
     return enhanced_frame

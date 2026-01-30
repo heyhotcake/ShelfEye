@@ -893,6 +893,16 @@ class CameraProcessor:
         
         logger.info(f"Processing camera: {camera_id} (device {device_index})")
         
+        # Determine if we need color (for scanner_grid yellow detection) or can use grayscale
+        # Grayscale is faster and uses 1/3 memory - better for ArUco-only templates
+        has_scanner_grid = any(s.get('slotType') == 'scanner_grid' for s in slots)
+        use_grayscale_mode = not has_scanner_grid
+        
+        if use_grayscale_mode:
+            logger.info(f"Camera {camera_id}: Using GRAYSCALE mode (no scanner grids, ArUco-only)")
+        else:
+            logger.info(f"Camera {camera_id}: Using COLOR mode (scanner grids require yellow detection)")
+        
         result = {
             'cameraId': camera_id,
             'status': 'success',
@@ -934,14 +944,29 @@ class CameraProcessor:
             
             # Apply CLAHE contrast enhancement for better ArUco marker detection
             # This improves black/white edge definition without aggressive sharpening
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-            enhanced_gray = clahe.apply(gray)
-            # Apply CLAHE to V channel (luminance) while preserving color
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            hsv[:, :, 2] = enhanced_gray
-            frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-            logger.info(f"Camera {camera_id}: Applied CLAHE contrast enhancement for ArUco detection")
+            
+            if use_grayscale_mode:
+                # GRAYSCALE MODE: Convert to grayscale immediately for efficiency
+                # ArUco detection only uses grayscale anyway, so this saves:
+                # - 2/3 memory (1 channel vs 3 channels)
+                # - Color conversion overhead in ArUco detection
+                # - HSV conversion overhead in CLAHE application
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                frame = clahe.apply(frame)
+                # Convert back to 3-channel for compatibility with rest of pipeline
+                # (rectification, ROI extraction expect 3 channels)
+                frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+                logger.info(f"Camera {camera_id}: Applied CLAHE in grayscale mode (memory efficient)")
+            else:
+                # COLOR MODE: Preserve color for scanner_grid yellow detection
+                # Apply CLAHE to V channel (luminance) while preserving color
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                enhanced_gray = clahe.apply(gray)
+                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                hsv[:, :, 2] = enhanced_gray
+                frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+                logger.info(f"Camera {camera_id}: Applied CLAHE in color mode (preserving for yellow detection)")
             
             if frame is None:
                 result['status'] = 'failed'
