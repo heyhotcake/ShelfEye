@@ -1,0 +1,36 @@
+[Calibration] ArUco calibration SUCCESS
+index-B8ln10AG.js:407 [Calibration] Full response data: {
+  "ok": true,
+  "homographyMatrix": [
+    29.759795291488466,
+    -0.14314698889685054,
+    143.0205744133225,
+    -0.06767521082456532,
+    29.10425878489612,
+    229.89682455231267,
+    -0.00030748801225178793,
+    -0.000038297635983372346,
+    1
+  ],
+  "reprojectionError": 9.84325726165804e-13,
+  "markersDetected": 4,
+  "slotsCreated": 29,
+  "rectifiedPreview": "data:image/jpeg;base64,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
+index-B8ln10AG.js:407 [Calibration] Rectified preview included: true
+index-B8ln10AG.js:407 [Calibration] Slot validation included: true
+index-B8ln10AG.js:407 [Calibration] Slot validation data: Object
+index-B8ln10AG.js:407 [Calibration] Invalidated template rectangles cache to refetch updated coordinates
+index-B8ln10AG.js:407 [Calibration] Checking slot validation: Object
+index-B8ln10AG.js:407 [Calibration] Slot counts: Object
+index-B8ln10AG.js:407 [CalibrationOverlay] Paper & template data: Object
+index-B8ln10AG.js:407 [CalibrationOverlay] Fetching templates for design ID: 9936faf0-2184-4518-9750-b68bf589862f
+index-B8ln10AG.js:407 [CalibrationOverlay] Paper & template data: Object
+index-B8ln10AG.js:407 [CalibrationOverlay] Paper & template data: Object
+index-B8ln10AG.js:407 [CalibrationOverlay] DB templates loaded: 26 templates for selected design
+index-B8ln10AG.js:407 [CalibrationOverlay] Paper & template data: Object
+index-B8ln10AG.js:407 [RectifiedPreviewCanvas] Image loaded: Object
+index-B8ln10AG.js:407 [CalibrationOverlay] Paper & template data: Object
+index-B8ln10AG.js:407 [CalibrationOverlay] Paper & template data: Object
+index-B8ln10AG.js:407 [CalibrationOverlay] Paper & template data: Object
+index-B8ln10AG.js:407 [CalibrationOverlay] Paper & template data: Object
+index-B8ln10AG.js:407 [CalibrationOverlay] Paper & template data: {selectedPaperSize: '8-page-4x2', paperDimensionsCm: '118.8×42', aspectRatio: '2.8286', templateCoun

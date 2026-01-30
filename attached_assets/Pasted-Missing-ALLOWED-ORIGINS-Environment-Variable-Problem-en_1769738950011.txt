@@ -1,0 +1,64 @@
+Missing ALLOWED_ORIGINS Environment Variable
+Problem: .env.example doesn't document ALLOWED_ORIGINS, but your Pi deployment requires it.
+
+FIX: Add to .env.example:
+
+# Security: Allowed CORS origins (comma-separated)
+# Local network example: http://naniwatanacheck.local:5000,http://192.168.1.100:5000
+# Production: Set this to your actual domain(s)
+ALLOWED_ORIGINS=http://localhost:5000
+On the Raspberry Pi, create .env.pi with:
+
+ALLOWED_ORIGINS=http://naniwatanacheck.local:5000
+🟡 Recommended: Add Concurrent Camera Operation Limit
+Issue: No explicit limit preventing multiple calibrations/captures from running simultaneously (could exhaust 2GB RAM).
+
+FIX: Add to server/camera-session-manager.ts:
+
+// Top of file
+const MAX_CONCURRENT_EXCLUSIVE_OPERATIONS = 1; // Raspberry Pi 4 2GB: Only 1 calibration at a time
+
+async acquireExclusiveLock(cameraId: string, reason: ExclusiveReason): Promise<void> {
+  // NEW: Check global concurrent exclusive operations
+  const exclusiveCount = Array.from(this.locks.values())
+    .filter(l => l.type === 'exclusive').length;
+  
+  if (exclusiveCount >= MAX_CONCURRENT_EXCLUSIVE_OPERATIONS) {
+    throw new Error(
+      `Cannot start ${reason} for camera ${cameraId}: ` +
+      `${exclusiveCount} exclusive operation(s) already running ` +
+      `(limit: ${MAX_CONCURRENT_EXCLUSIVE_OPERATIONS} on Raspberry Pi 4 2GB)`
+    );
+  }
+  
+  // ... rest of existing lock logic
+}
+This prevents memory exhaustion from concurrent calibrations.
+
+📋 Final Production Deployment Checklist
+On the Raspberry Pi, run these commands:
+
+1. Set Up Database Backups (5 minutes)
+# Make backup directory
+sudo mkdir -p /home/naniwa/backups
+sudo chown naniwa:naniwa /home/naniwa/backups
+
+# Test backup script manually
+cd /home/naniwa/ShelfEye
+./scripts/backup-database.sh
+
+# Schedule daily backups (2 AM JST)
+crontab -e
+# Add this line:
+0 2 * * * /home/naniwa/ShelfEye/scripts/backup-database.sh >> /home/naniwa/backups/backup.log 2>&1
+
+# Verify cron is scheduled
+crontab -l
+2. Configure Environment Variables
+cd /home/naniwa/ShelfEye
+
+# Add ALLOWED_ORIGINS to .env.pi
+echo "ALLOWED_ORIGINS=http://naniwatanacheck.local:5000" >> .env.pi
+
+# Verify all required variables are set
+cat .env.pi | grep -E "DATABASE_URL|ALLOWED_ORIGINS|GMAIL_CLIENT_ID|SHEET_ID"
