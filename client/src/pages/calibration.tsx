@@ -19,6 +19,8 @@ interface CalibrationResult {
   reprojectionError: number;
   markersDetected: number;
   rectifiedPreview?: string; // base64 encoded image from calibration
+  measuredPxPerCm?: number;  // measured pixel density from actual marker detection
+  paperSizeCm?: [number, number]; // [width, height] from calibration
 }
 
 interface CameraPreview {
@@ -931,6 +933,7 @@ export default function Calibration() {
                         templates={adjustedTemplates.length > 0 ? adjustedTemplates : templatesWithCategories}
                         paperWidthCm={paperDimensions.width}
                         paperHeightCm={paperDimensions.height}
+                        measuredPxPerCm={calibrationResult.measuredPxPerCm}
                         onTemplatesAdjusted={(templates) => {
                           setAdjustedTemplates(templates);
                           setHasTemplateAdjustments(true);

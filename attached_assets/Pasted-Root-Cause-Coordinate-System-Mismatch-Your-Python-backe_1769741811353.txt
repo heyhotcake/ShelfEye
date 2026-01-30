@@ -1,0 +1,114 @@
+Root Cause: Coordinate System Mismatch
+Your Python backend generates the rectified preview at 30 px/cm (line 619 in server/routes.ts), which creates an image that's 891×630 pixels for A4 landscape (29.7cm × 21.0cm).
+
+However, your frontend RectifiedPreviewCanvas component converts template coordinates using the canvas display size, not the rectified image's actual pixel density. Here's the problem:
+
+Python generates:
+
+// routes.ts line 619-621
+const previewScale = 30; // 30 px/cm
+const previewWidth = Math.round(29.7 * 30) = 891px
+const previewHeight = Math.round(21.0 * 30) = 630px
+Frontend displays:
+
+// RectifiedPreviewCanvas.tsx lines 67-75
+const aspectRatio = img.width / img.height; // 891/630 = 1.414
+const width = containerWidth; // e.g., 700px (container size)
+const height = width / aspectRatio; // 495px
+setCanvasSize({ width: 700, height: 495 }); // ❌ Display size, not image size
+Frontend converts coordinates WRONGLY:
+
+// RectifiedPreviewCanvas.tsx lines 76-87
+const cmToPixels = (cm: number, axis: 'x' | 'y'): number => {
+  if (axis === 'x') {
+    return (cm / paperWidthCm) * canvasSize.width; // ❌ Uses display size (700px)
+  } else {
+    return (cm / paperHeightCm) * canvasSize.height; // ❌ Uses display size (495px)
+  }
+};
+Result: Template at 10cm from left edge:
+
+Should be: 10cm × 30 px/cm = 300px in rectified image
+Actually drawn at: (10cm / 29.7cm) × 700px = 236px on canvas
+Scale mismatch: 236/300 = 78% (overlays appear ~22% smaller)
+✅ Fix: Use Rectified Image Pixel Density
+You need to convert coordinates using the rectified image's pixel density (30 px/cm), not the canvas display size.
+
+Option 1: Pass Pixel Density from Backend (Recommended)
+Backend change (server/routes.ts):
+
+// Around line 630, add pixel density to response
+const calibrationResponse = {
+  ...existingFields,
+  rectified_preview: result.rectified_preview,
+  rectified_pixel_density: previewScale, // Add this: 30 px/cm
+  rectified_dimensions: { // Add this for validation
+    widthPx: previewWidth,
+    heightPx: previewHeight
+  }
+};
+Frontend change (client/src/components/canvas/rectified-preview-canvas.tsx):
+
+interface RectifiedPreviewCanvasProps {
+  baseImage: string;
+  templates: TemplateRect[];
+  paperWidthCm: number;
+  paperHeightCm: number;
+  pixelDensity: number; // ADD THIS: e.g., 30 px/cm from backend
+  onTemplatesAdjusted: (adjustedTemplates: TemplateRect[]) => void;
+  className?: string;
+}
+
+export function RectifiedPreviewCanvas({
+  baseImage,
+  templates,
+  paperWidthCm,
+  paperHeightCm,
+  pixelDensity, // ADD THIS
+  onTemplatesAdjusted,
+  className
+}: RectifiedPreviewCanvasProps) {
+  // ... existing state ...
+
+  // REPLACE cmToPixels with correct calculation:
+  const cmToPixels = (cm: number, axis: 'x' | 'y'): number => {
+    // Convert cm → rectified image pixels using pixel density
+    const rectifiedPixels = cm * pixelDensity;
+    
+    // Scale to canvas display size
+    if (axis === 'x') {
+      const imageWidthPx = paperWidthCm * pixelDensity;
+      return (rectifiedPixels / imageWidthPx) * canvasSize.width;
+    } else {
+      const imageHeightPx = paperHeightCm * pixelDensity;
+      return (rectifiedPixels / imageHeightPx) * canvasSize.height;
+    }
+  };
+
+  const pixelsToCm = (pixels: number, axis: 'x' | 'y'): number => {
+    // Reverse: canvas pixels → rectified image pixels → cm
+    if (axis === 'x') {
+      const imageWidthPx = paperWidthCm * pixelDensity;
+      const rectifiedPixels = (pixels / canvasSize.width) * imageWidthPx;
+      return rectifiedPixels / pixelDensity;
+    } else {
+      const imageHeightPx = paperHeightCm * pixelDensity;
+      const rectifiedPixels = (pixels / canvasSize.height) * imageHeightPx;
+      return rectifiedPixels / pixelDensity;
+    }
+  };
+
+  // ... rest of component unchanged ...
+}
+Update calibration page (client/src/pages/calibration.tsx):
+
+// Pass pixelDensity prop to RectifiedPreviewCanvas
+<RectifiedPreviewCanvas
+  baseImage={rectifiedPreview.image!}
+  templates={templatesForCanvas}
+  paperWidthCm={paperDims.widthCm}
+  paperHeightCm={paperDims.heightCm}
+  pixelDensity={30} // Hardcoded for now, or get from calibration response
+  onTemplatesAdjusted={handleTemplatesAdjusted}
+  className="w-full"
+/>

@@ -382,7 +382,10 @@ class ArucoCornerCalibrator:
                         'marker_positions': {
                             f"marker_{id}": center.tolist() 
                             for id, center in marker_centers.items()
-                        }
+                        },
+                        # Include measured pixel density for frontend coordinate mapping
+                        'measured_px_per_cm': self.measured_px_per_cm,
+                        'paper_size_cm': list(paper_size_cm),  # [width, height]
                     }
                     
                     # INTEGRATED SLOT VALIDATION on raw camera frame

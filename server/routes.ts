@@ -873,6 +873,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 response.rectifiedPreview = calibrationData.rectified_preview;
               }
               
+              // Include measured pixel density for accurate frontend overlay rendering
+              if (calibrationData.measured_px_per_cm) {
+                response.measuredPxPerCm = calibrationData.measured_px_per_cm;
+                console.log(`[Calibration] Measured pixel density: ${calibrationData.measured_px_per_cm.toFixed(2)} px/cm`);
+              }
+              if (calibrationData.paper_size_cm) {
+                response.paperSizeCm = calibrationData.paper_size_cm;
+              }
+              
               // CRITICAL: Include slot validation results for smart calibration flow
               // This allows frontend to auto-advance to Step 2 when all slots detected
               if (calibrationData.slot_validation) {

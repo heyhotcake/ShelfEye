@@ -26,6 +26,7 @@ interface RectifiedPreviewCanvasProps {
   templates: TemplateRect[];
   paperWidthCm: number;
   paperHeightCm: number;
+  measuredPxPerCm?: number;  // actual pixel density from ArUco marker detection
   onTemplatesAdjusted: (adjustedTemplates: TemplateRect[]) => void;
   className?: string;
 }
@@ -35,6 +36,7 @@ export function RectifiedPreviewCanvas({
   templates,
   paperWidthCm,
   paperHeightCm,
+  measuredPxPerCm,
   onTemplatesAdjusted,
   className
 }: RectifiedPreviewCanvasProps) {
@@ -67,17 +69,28 @@ export function RectifiedPreviewCanvas({
         
         // Diagnostic logging for scale mismatch debugging
         const expectedAspectRatio = paperWidthCm / paperHeightCm;
-        const actualPxPerCmX = img.width / paperWidthCm;
-        const actualPxPerCmY = img.height / paperHeightCm;
+        const imagePxPerCmX = img.width / paperWidthCm;
+        const imagePxPerCmY = img.height / paperHeightCm;
+        const assumedPxPerCm = 30; // Server generates preview at 30 px/cm
+        
         console.log('[RectifiedPreviewCanvas] Image loaded:', {
           imageDimensions: `${img.width}×${img.height}px`,
           paperDimensions: `${paperWidthCm}×${paperHeightCm}cm`,
           imageAspectRatio: aspectRatio.toFixed(4),
           expectedAspectRatio: expectedAspectRatio.toFixed(4),
           aspectRatioMatch: Math.abs(aspectRatio - expectedAspectRatio) < 0.01,
-          calculatedPxPerCm: `${actualPxPerCmX.toFixed(1)} (X), ${actualPxPerCmY.toFixed(1)} (Y)`,
+          imagePxPerCm: `${imagePxPerCmX.toFixed(2)} (X), ${imagePxPerCmY.toFixed(2)} (Y)`,
+          measuredPxPerCm: measuredPxPerCm?.toFixed(2) ?? 'N/A',
+          assumedPxPerCm,
           canvasSize: `${width.toFixed(0)}×${height.toFixed(0)}px`,
+          scaleFactor: `${(width / img.width).toFixed(4)} (canvas/image)`,
         });
+        
+        // Check for pixel density mismatch
+        if (measuredPxPerCm && Math.abs(imagePxPerCmX - measuredPxPerCm) > 0.5) {
+          const scaleDiff = ((imagePxPerCmX - measuredPxPerCm) / measuredPxPerCm * 100).toFixed(2);
+          console.warn(`[RectifiedPreviewCanvas] PIXEL DENSITY MISMATCH: Image uses ${imagePxPerCmX.toFixed(2)} px/cm but measured is ${measuredPxPerCm.toFixed(2)} px/cm (${scaleDiff}% difference)`);
+        }
         
         if (Math.abs(aspectRatio - expectedAspectRatio) > 0.01) {
           console.warn('[RectifiedPreviewCanvas] ASPECT RATIO MISMATCH! Image may not match paper dimensions.');
@@ -85,7 +98,7 @@ export function RectifiedPreviewCanvas({
       }
     };
     img.src = baseImage;
-  }, [baseImage, paperWidthCm, paperHeightCm]);
+  }, [baseImage, paperWidthCm, paperHeightCm, measuredPxPerCm]);
 
   const cmToPixels = (cm: number, axis: 'x' | 'y'): number => {
     if (axis === 'x') {
