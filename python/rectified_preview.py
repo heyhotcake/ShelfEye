@@ -78,7 +78,10 @@ def generate_rectified_image_from_frame(
     # This correctly samples from camera pixels corresponding to each output position
     M = H @ S_inv
     
+    logger.info(f"[RECTIFY DEBUG] S_inv matrix:\n{S_inv}")
     logger.info(f"[RECTIFY DEBUG] Combined matrix M = H @ S_inv:\n{M}")
+    logger.info(f"[RECTIFY DEBUG] M dtype: {M.dtype}, shape: {M.shape}")
+    logger.info(f"[RECTIFY DEBUG] M flattened: {M.flatten().tolist()}")
     
     # Test transformation of corner points
     test_corners_output = np.array([
@@ -97,11 +100,41 @@ def generate_rectified_image_from_frame(
             mapped_px = [float('inf'), float('inf')]
         logger.info(f"[RECTIFY DEBUG] Output corner {i} ({corner[0]:.0f}, {corner[1]:.0f}) → Input pixel ({mapped_px[0]:.1f}, {mapped_px[1]:.1f})")
     
+    # CRITICAL DEBUG: Verify what warpPerspective actually receives
+    logger.info(f"[RECTIFY DEBUG] Calling warpPerspective with:")
+    logger.info(f"[RECTIFY DEBUG]   frame shape: {frame.shape}")
+    logger.info(f"[RECTIFY DEBUG]   M: {M.flatten()[:6].tolist()}... (first 6 values)")
+    logger.info(f"[RECTIFY DEBUG]   output_size: {output_size}")
+    
     # Choose interpolation method based on use case:
     # - INTER_NEAREST: Preserves sharp ArUco marker edges (required for marker detection)
     # - INTER_LINEAR: Smoother visual quality (better for calibration previews)
     interp_flag = cv2.INTER_LINEAR if use_linear_interpolation else cv2.INTER_NEAREST
-    rectified = cv2.warpPerspective(frame, M, output_size, flags=interp_flag)
+    
+    # Ensure M is in proper format for warpPerspective (float64)
+    M_float64 = M.astype(np.float64)
+    
+    rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
+    
+    # VERIFY: Check that rectification actually transformed the image
+    logger.info(f"[RECTIFY DEBUG] Output rectified shape: {rectified.shape}")
+    
+    # Sample pixels at known locations to verify transformation
+    # Check center of output - should map to center of paper in input
+    center_out_x, center_out_y = output_size[0] // 2, output_size[1] // 2
+    center_in = M_float64 @ np.array([center_out_x, center_out_y, 1])
+    center_in_px = center_in[:2] / center_in[2]
+    logger.info(f"[RECTIFY DEBUG] Output center ({center_out_x}, {center_out_y}) samples from input ({center_in_px[0]:.1f}, {center_in_px[1]:.1f})")
+    
+    # Compare a few pixel values between input and output
+    # If transformation works, output[0,0] should NOT equal input[0,0]
+    input_corner = frame[0, 0, :] if len(frame.shape) == 3 else frame[0, 0]
+    output_corner = rectified[0, 0, :] if len(rectified.shape) == 3 else rectified[0, 0]
+    input_center = frame[int(center_in_px[1]), int(center_in_px[0]), :] if len(frame.shape) == 3 else frame[int(center_in_px[1]), int(center_in_px[0])]
+    output_center = rectified[center_out_y, center_out_x, :] if len(rectified.shape) == 3 else rectified[center_out_y, center_out_x]
+    
+    logger.info(f"[RECTIFY DEBUG] Input[0,0] = {input_corner.tolist()}, Output[0,0] = {output_corner.tolist()}")
+    logger.info(f"[RECTIFY DEBUG] Input at mapped center = {input_center.tolist()}, Output center = {output_center.tolist()}")
     
     # Draw grid overlay for visual reference
     for x in range(0, output_size[0], 50):
