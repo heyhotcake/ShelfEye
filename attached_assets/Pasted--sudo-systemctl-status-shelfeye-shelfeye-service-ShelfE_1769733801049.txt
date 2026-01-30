@@ -1,0 +1,60 @@
+ sudo systemctl status shelfeye
+● shelfeye.service - ShelfEye Tool Monitoring System
+     Loaded: loaded (/etc/systemd/system/shelfeye.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2026-01-30 09:42:04 JST; 1min 3s ago
+ Invocation: 31ac341095ae4e8c94fa8d40cb8a530e
+   Main PID: 65716 (pi-startup.sh)
+      Tasks: 35 (limit: 1579)
+        CPU: 1min 30.115s
+     CGroup: /system.slice/shelfeye.service
+             ├─65716 /bin/bash /home/naniwa/ShelfEye/pi-startup.sh
+             ├─66049 timeout --foreground 900 npm run build
+             ├─66050 tee -a /home/naniwa/ShelfEye/logs/startup.log
+             ├─66051 "npm run build"
+             ├─66062 sh -c "vite build && esbuild server/index.ts --platform=node --packages=external>
+             ├─66063 node /home/naniwa/ShelfEye/node_modules/.bin/vite build
+             └─66074 /home/naniwa/ShelfEye/node_modules/vite/node_modules/@esbuild/linux-arm64/bin/es>
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66041]: [2026-01-30 09:42:17] 📊 Total pre-app startup:>
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66044]: [2026-01-30 09:42:17]    Timing details saved t>
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66047]: [2026-01-30 09:42:17] 🔨 Building production as>
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66050]: > rest-express@1.0.0 build
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66050]: > vite build && esbuild server/index.ts --platf>
+Jan 30 09:42:18 NaniwaTanaCheck pi-startup.sh[66050]: vite v5.4.20 building for production...
+Jan 30 09:42:20 NaniwaTanaCheck pi-startup.sh[66050]: transforming...
+Jan 30 09:42:21 NaniwaTanaCheck pi-startup.sh[66050]: Browserslist: browsers data (caniuse-lite) is 1>
+Jan 30 09:42:21 NaniwaTanaCheck pi-startup.sh[66050]:   npx update-browserslist-db@latest
+Jan 30 09:42:21 NaniwaTanaCheck pi-startup.sh[66050]:   Why you should do it regularly: https://githu>
+lines 1-26/26 (END)
+[1]+  Stopped                 sudo systemctl status shelfeye
+naniwa@NaniwaTanaCheck:~ $ sudo journalctl -u shelfeye -n 30 --no-pager
+Jan 30 09:42:15 NaniwaTanaCheck pi-startup.sh[65815]: [2026-01-30 09:42:15] ✓ WS2812B LED library already installed
+Jan 30 09:42:15 NaniwaTanaCheck pi-startup.sh[65818]: [2026-01-30 09:42:15] Configuring LED Manager Daemon...
+Jan 30 09:42:15 NaniwaTanaCheck pi-startup.sh[65823]: [2026-01-30 09:42:15] ✓ LED daemon config generated
+Jan 30 09:42:15 NaniwaTanaCheck pi-startup.sh[65826]: [2026-01-30 09:42:15] Installing LED Manager Daemon service...
+Jan 30 09:42:15 NaniwaTanaCheck sudo[65828]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/cp /home/naniwa/ShelfEye/led-manager.service /etc/systemd/system/
+Jan 30 09:42:15 NaniwaTanaCheck sudo[65828]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 30 09:42:15 NaniwaTanaCheck sudo[65828]: pam_unix(sudo:session): session closed for user root
+Jan 30 09:42:15 NaniwaTanaCheck sudo[65831]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl daemon-reload
+Jan 30 09:42:15 NaniwaTanaCheck sudo[65831]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 30 09:42:16 NaniwaTanaCheck sudo[65831]: pam_unix(sudo:session): session closed for user root
+Jan 30 09:42:16 NaniwaTanaCheck sudo[65924]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl enable led-manager.service
+Jan 30 09:42:16 NaniwaTanaCheck sudo[65924]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 30 09:42:17 NaniwaTanaCheck sudo[65924]: pam_unix(sudo:session): session closed for user root
+Jan 30 09:42:17 NaniwaTanaCheck sudo[66017]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/systemctl is-active --quiet led-manager.service
+Jan 30 09:42:17 NaniwaTanaCheck sudo[66017]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 30 09:42:17 NaniwaTanaCheck sudo[66017]: pam_unix(sudo:session): session closed for user root
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66021]: [2026-01-30 09:42:17] ✅ LED Manager Daemon is already running
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66024]: [2026-01-30 09:42:17] Skipping database schema sync (managed from Replit)
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66028]: [2026-01-30 09:42:17] ⏱️  Phase 'db-push-skipped' completed in 13s (cumulative)
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66033]: [2026-01-30 09:42:17] ⏱️  Phase 'pre-app-complete' completed in 13s (cumulative)
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66041]: [2026-01-30 09:42:17] 📊 Total pre-app startup: 13s
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66044]: [2026-01-30 09:42:17]    Timing details saved to: /home/naniwa/ShelfEye/state/startup-timing.json
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66047]: [2026-01-30 09:42:17] 🔨 Building production assets...
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66050]: > rest-express@1.0.0 build
+Jan 30 09:42:17 NaniwaTanaCheck pi-startup.sh[66050]: > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+Jan 30 09:42:18 NaniwaTanaCheck pi-startup.sh[66050]: vite v5.4.20 building for production...
+Jan 30 09:42:20 NaniwaTanaCheck pi-startup.sh[66050]: transforming...
+Jan 30 09:42:21 NaniwaTanaCheck pi-startup.sh[66050]: Browserslist: browsers data (caniuse-lite) is 15 months old. Please run:
+Jan 30 09:42:21 NaniwaTanaCheck pi-startup.sh[66050]:   npx update-browserslist-db@latest
+Jan 30 09:42:21 NaniwaTanaCheck pi-startup.sh[66050]:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+naniwa@NaniwaTanaCheck:~ $
