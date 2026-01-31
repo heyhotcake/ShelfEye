@@ -134,7 +134,28 @@ def generate_rectified_image_from_frame(
     # Ensure M is in proper format for warpPerspective (float64)
     M_float64 = M.astype(np.float64)
     
-    rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
+    # DEBUG: OpenCV warpPerspective behavior:
+    # - Without WARP_INVERSE_MAP: dst(p) = src(M @ p) - M maps output→input
+    # - With WARP_INVERSE_MAP: dst(p) = src(inv(M) @ p) - M maps input→output
+    #
+    # Our M = H @ S_inv maps output_pixels → camera_pixels
+    # So WITHOUT the flag should be correct... BUT we're getting black pixels!
+    #
+    # Let's try: maybe the homography H was computed as pixels→cm (inverse of what we think)?
+    # In that case, we need to INVERT M to get correct mapping
+    try:
+        M_inv = np.linalg.inv(M_float64)
+        logger.info(f"[RECTIFY DEBUG] Trying INVERTED matrix approach")
+        logger.info(f"[RECTIFY DEBUG] Original M[0,2]={M_float64[0,2]:.1f}, M[1,2]={M_float64[1,2]:.1f}")
+        logger.info(f"[RECTIFY DEBUG] Inverted M_inv[0,2]={M_inv[0,2]:.1f}, M_inv[1,2]={M_inv[1,2]:.1f}")
+        
+        # Test with inverted matrix - if H maps pixels→cm, then M maps input→output
+        # and we need M_inv for warpPerspective
+        rectified = cv2.warpPerspective(frame, M_inv, output_size, flags=interp_flag)
+        logger.info(f"[RECTIFY DEBUG] Used INVERTED matrix M_inv")
+    except Exception as e:
+        logger.warning(f"[RECTIFY DEBUG] Inverse failed: {e}, using original M")
+        rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
     
     # VERIFY: Check that rectification actually transformed the image
     logger.info(f"[RECTIFY DEBUG] Output rectified shape: {rectified.shape}")
