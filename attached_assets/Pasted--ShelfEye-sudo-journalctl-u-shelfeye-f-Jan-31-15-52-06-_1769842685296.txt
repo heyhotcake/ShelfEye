@@ -1,0 +1,561 @@
+~/ShelfEye $ sudo journalctl -u shelfeye -f
+Jan 31 15:52:06 NaniwaTanaCheck pi-startup.sh[89617]: [Database] Client removed from pool
+Jan 31 15:52:16 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Jan 31 15:52:16 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Jan 31 15:52:17 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 54.5
+Jan 31 15:52:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 37/50: New best sharpness = 54.6
+Jan 31 15:52:26 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 54.6
+Jan 31 15:52:27 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Jan 31 15:52:27 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Jan 31 15:52:27 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Process PID 89811 exited after 22721ms (code: 0, signal: null)
+Jan 31 15:52:27 NaniwaTanaCheck pi-startup.sh[89617]: 3:52:27 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 22935ms :: …
+Jan 31 15:52:30 NaniwaTanaCheck pi-startup.sh[89617]: [CameraSessionManager] Global calibration lock acquired for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Jan 31 15:52:30 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Acquiring exclusive camera lock to prevent preview race condition...
+Jan 31 15:52:30 NaniwaTanaCheck pi-startup.sh[89617]: [CameraSessionManager] Exclusive lock (calibration) set for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81 - blocking new previews
+Jan 31 15:52:30 NaniwaTanaCheck pi-startup.sh[89617]: [CameraSessionManager] Waiting for in-flight previews to complete...
+Jan 31 15:52:40 NaniwaTanaCheck pi-startup.sh[89617]: [CameraSessionManager] Camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81 should now be available for exclusive use (calibration)
+Jan 31 15:52:40 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Both global and camera-specific locks acquired. No new operations can interfere.
+Jan 31 15:52:40 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Waiting 25 seconds for any in-flight preview requests to complete...
+Jan 31 15:52:59 NaniwaTanaCheck pi-startup.sh[89617]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 31 15:53:05 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Wait complete. Now killing any stuck camera processes...
+Jan 31 15:53:05 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Killing all camera-related Python processes...
+Jan 31 15:53:05 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Killed 0 tracked process(es)
+Jan 31 15:53:08 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Camera process cleanup complete
+Jan 31 15:53:08 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Killed existing camera processes via SubprocessManager
+Jan 31 15:53:08 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Turning on white LED light (killing stuck processes first)...
+Jan 31 15:53:08 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Tracking led process PID 89842: LED: setWhiteLight
+Jan 31 15:53:08 NaniwaTanaCheck sudo[89842]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py white --num-leds 99 --brightness 100
+Jan 31 15:53:08 NaniwaTanaCheck sudo[89842]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 31 15:53:08 NaniwaTanaCheck sudo[89842]: pam_unix(sudo:session): session closed for user root
+Jan 31 15:53:08 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Process PID 89842 exited after 189ms (code: 1, signal: null)
+Jan 31 15:53:08 NaniwaTanaCheck pi-startup.sh[89617]: [LED] setWhiteLight failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Jan 31 15:53:08 NaniwaTanaCheck pi-startup.sh[89617]: [LED] Unexpected response: { success: false }
+Jan 31 15:53:08 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] LED white light result: false
+Jan 31 15:53:08 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] No template design found for timestamp: 2026-01-06T05:33:34.429Z, falling back to paper size filter
+Jan 31 15:53:23 NaniwaTanaCheck pi-startup.sh[89617]: [Database] ✅ Client connected to pool
+Jan 31 15:53:58 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Built 296 templates with dimensions for preview overlay
+Jan 31 15:53:58 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Preview output size: 3564x1260 px (maintains 2.83:1 aspect ratio)
+Jan 31 15:53:58 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Using device path: /dev/video0
+Jan 31 15:53:58 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Tracking python process PID 89849: Calibration: Wide Shelf
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Parsed 296 templates for preview overlay
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:56:49.879992070] [89849]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:56:49.915265512] [89852]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:56:49.921888312] [89852]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:56:50.028817097] [89849]  INFO Camera camera.cpp:1215 configuring streams: (0) 3840x2160-MJPEG/Rec709/Rec709/Rec601/Limited
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 31 15:53:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Jan 31 15:54:00 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 3840x2160 RGB888, ACTUAL 3840x2160 MJPEG
+Jan 31 15:54:00 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 3840x2160
+Jan 31 15:54:00 NaniwaTanaCheck pi-startup.sh[89617]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Jan 31 15:54:00 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Camera configured: 3840x2160, format: RGB888 (no auto-controls)
+Jan 31 15:54:00 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Jan 31 15:54:00 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Jan 31 15:54:00 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 20 seconds (metadata polling)...
+Jan 31 15:54:20 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 134 metadata polls over 20s
+Jan 31 15:54:20 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Capturing 50 frames for marker detection...
+Jan 31 15:54:23 NaniwaTanaCheck pi-startup.sh[89617]: [Database] Client removed from pool
+Jan 31 15:54:51 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Selected frame with sharpness = 73.2
+Jan 31 15:54:51 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:[ArUco Mode] Using frame as-is (camera firmware handles enhancement)
+Jan 31 15:54:51 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:✓ Captured frame resolution: 3840x2160 (requested: 3840x2160)
+Jan 31 15:54:51 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Saved CLAHE-enhanced debug image to /tmp/aruco_clahe_enhanced.jpg
+Jan 31 15:54:54 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:CLAHE-enhanced detection found 2/4 corner markers
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Added marker 98 from original (non-enhanced) detection
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Added marker 97 from original (non-enhanced) detection
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Detected 4/4 corner markers: [np.int32(99), np.int32(96), np.int32(98), np.int32(97)]
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[3072.0, 0.0, 1920.0], [0.0, 3072.0, 1080.0], [0.0, 0.0, 1.0]]
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Using zero distortion coefficients (no distortion correction): [0.0, 0.0, 0.0, 0.0, 0.0]
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Paper size: 118.8cm × 42.0cm
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Detected points: [[215.33819580078125, 300.7405090332031], [3741.364013671875, 305.5593566894531], [3737.7763671875, 1425.6650390625], [211.54742431640625, 1383.68701171875]]
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Projected points: [[215.3381958007822, 300.74050903320284], [3741.3640136718745, 305.5593566894527], [3737.7763671875, 1425.6650390625007], [211.54742431640707, 1383.6870117187507]]
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Point-wise errors: [9.800339540542306e-13, 6.042538309847401e-13, 6.821210263296962e-13, 1.0698801261650437e-12]
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Reprojection error: mean=0.0000 px, max=0.0000 px
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:MEASURED pixel density: 31.0 px/cm (horizontal), 29.3 px/cm (vertical)
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Using 29.3 px/cm for native-resolution rectified images (no upsampling)
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Camera matrix and distortion coefficients estimated (distortion currently set to zero)
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Validating 296 slot markers on raw camera frame...
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 1: Expected 1, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 2: Expected 2, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 3: Expected 3, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 2: Expected 2, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 3: Expected 3, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 4: Expected 4, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 5: Expected 5, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 6: Expected 6, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 7: Expected 7, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 8: Expected 8, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 9: Expected 9, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 10: Expected 10, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 11: Expected 11, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 12: Expected 12, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 13: Expected 13, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 14: Expected 14, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 15: Expected 15, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 16: Expected 16, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 17: Expected 17, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 18: Expected 18, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 19: Expected 19, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 20: Expected 20, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 21: Expected 21, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 22: Expected 22, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 23: Expected 23, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 24: Expected 24, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 25: Expected 25, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 26: Expected 26, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 27: Expected 27, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 28: Expected 28, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 29: Expected 29, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 30: Expected 30, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 31: Expected 31, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 32: Expected 32, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 33: Expected 33, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 34: Expected 34, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 35: Expected 35, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 36: Expected 36, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 37: Expected 37, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 38: Expected 38, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 39: Expected 39, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 40: Expected 40, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 41: Expected 41, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 42: Expected 42, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 43: Expected 43, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 44: Expected 44, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 45: Expected 45, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 46: Expected 46, got nothing
+Jan 31 15:54:55 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 47: Expected 47, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 48: Expected 48, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 49: Expected 49, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 50: Expected 50, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 51: Expected 51, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 52: Expected 52, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 53: Expected 53, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 54: Expected 54, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 55: Expected 55, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 56: Expected 56, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 57: Expected 57, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 58: Expected 58, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 59: Expected 59, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 60: Expected 60, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 61: Expected 61, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 62: Expected 62, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 63: Expected 63, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 64: Expected 64, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 65: Expected 65, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 66: Expected 66, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 67: Expected 67, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 68: Expected 68, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 69: Expected 69, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 70: Expected 70, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 71: Expected 71, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 72: Expected 72, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 73: Expected 73, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 74: Expected 74, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 75: Expected 75, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 76: Expected 76, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 77: Expected 77, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 78: Expected 78, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 79: Expected 79, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 80: Expected 80, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 81: Expected 81, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 82: Expected 82, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 83: Expected 83, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 84: Expected 84, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 81: Expected 81, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 82: Expected 82, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 83: Expected 83, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 85: Expected 85, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 86: Expected 86, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 87: Expected 87, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 88: Expected 88, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 89: Expected 89, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 90: Expected 90, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 91: Expected 91, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 92: Expected 92, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 93: Expected 93, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 94: Expected 94, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 95: Expected 95, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 96: Expected 96, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 97: Expected 97, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 98: Expected 98, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 99: Expected 99, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 100: Expected 100, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 101: Expected 101, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 102: Expected 102, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 103: Expected 103, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 104: Expected 104, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 105: Expected 105, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 106: Expected 106, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 107: Expected 107, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 108: Expected 108, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 109: Expected 109, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 110: Expected 110, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 111: Expected 111, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 112: Expected 112, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 113: Expected 113, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 114: Expected 114, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 115: Expected 115, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 116: Expected 116, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 117: Expected 117, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 118: Expected 118, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 119: Expected 119, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 120: Expected 120, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 121: Expected 121, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 122: Expected 122, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 123: Expected 123, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 124: Expected 124, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 125: Expected 125, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 126: Expected 126, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 127: Expected 127, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 27: Expected 27, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 128: Expected 128, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 129: Expected 129, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 130: Expected 130, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 131: Expected 131, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 132: Expected 132, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 133: Expected 133, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 134: Expected 134, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 135: Expected 135, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 136: Expected 136, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 137: Expected 137, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 138: Expected 138, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 139: Expected 139, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 140: Expected 140, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: WARNING:__main__:✗ Slot 141: Expected 141, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: WARNING:__main__:✗ Slot 142: Expected 142, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 143: Expected 143, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 144: Expected 144, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 145: Expected 145, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 146: Expected 146, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 147: Expected 147, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 148: Expected 148, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 149: Expected 149, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 150: Expected 150, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 151: Expected 151, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 152: Expected 152, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 28: Expected 28, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 153: Expected 153, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 154: Expected 154, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 155: Expected 155, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 156: Expected 156, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 157: Expected 157, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 158: Expected 158, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 159: Expected 159, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 160: Expected 160, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 161: Expected 161, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 162: Expected 162, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 163: Expected 163, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 164: Expected 164, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 165: Expected 165, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 166: Expected 166, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 167: Expected 167, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 168: Expected 168, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 169: Expected 169, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 170: Expected 170, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 171: Expected 171, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 172: Expected 172, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 173: Expected 173, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 174: Expected 174, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 175: Expected 175, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 176: Expected 176, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 177: Expected 177, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 178: Expected 178, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 179: Expected 179, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 180: Expected 180, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 181: Expected 181, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 182: Expected 182, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 183: Expected 183, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 184: Expected 184, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 185: Expected 185, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 186: Expected 186, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 187: Expected 187, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 188: Expected 188, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 189: Expected 189, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 190: Expected 190, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 191: Expected 191, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 192: Expected 192, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 193: Expected 193, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 194: Expected 194, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 195: Expected 195, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 196: Expected 196, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 197: Expected 197, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 198: Expected 198, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 199: Expected 199, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 200: Expected 200, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 201: Expected 201, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 202: Expected 202, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 203: Expected 203, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 204: Expected 204, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 29: Expected 29, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 205: Expected 205, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 206: Expected 206, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 207: Expected 207, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 208: Expected 208, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 209: Expected 209, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 210: Expected 210, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 211: Expected 211, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 212: Expected 212, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 213: Expected 213, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 214: Expected 214, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 215: Expected 215, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 216: Expected 216, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 217: Expected 217, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 218: Expected 218, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 219: Expected 219, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 220: Expected 220, got 26
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 221: Expected 221, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 222: Expected 222, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 223: Expected 223, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 224: Expected 224, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 225: Expected 225, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 226: Expected 226, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 227: Expected 227, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 228: Expected 228, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 229: Expected 229, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 230: Expected 230, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 231: Expected 231, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 232: Expected 232, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 233: Expected 233, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 234: Expected 234, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 235: Expected 235, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 236: Expected 236, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 237: Expected 237, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 238: Expected 238, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 239: Expected 239, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 240: Expected 240, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 241: Expected 241, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 242: Expected 242, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 243: Expected 243, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 244: Expected 244, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 245: Expected 245, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 246: Expected 246, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 247: Expected 247, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 248: Expected 248, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 249: Expected 249, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 250: Expected 250, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 251: Expected 251, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 252: Expected 252, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 253: Expected 253, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 254: Expected 254, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 255: Expected 255, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 256: Expected 256, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 257: Expected 257, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 258: Expected 258, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 259: Expected 259, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 260: Expected 260, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 261: Expected 261, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 262: Expected 262, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 263: Expected 263, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 264: Expected 264, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 265: Expected 265, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 266: Expected 266, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 267: Expected 267, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 268: Expected 268, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 269: Expected 269, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 270: Expected 270, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 271: Expected 271, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 272: Expected 272, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 273: Expected 273, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 274: Expected 274, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 275: Expected 275, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 276: Expected 276, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 277: Expected 277, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 278: Expected 278, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 279: Expected 279, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 280: Expected 280, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 281: Expected 281, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 282: Expected 282, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 283: Expected 283, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 284: Expected 284, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 285: Expected 285, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 286: Expected 286, got 26
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 287: Expected 287, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:✗ Slot 288: Expected 288, got nothing
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Slot validation: 0/296 markers detected
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Rectified image will be 3477x1229px at uniform 29.3 px/cm
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: INFO:__main__:Saving high-resolution rectified image: 3477x1229px
+Jan 31 15:54:56 NaniwaTanaCheck pi-startup.sh[89617]: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Jan 31 15:54:58 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:✓ Saved rectified image for validation: 3477×1229 px at /home/naniwa/ShelfEye/python/../data/latest_calibration_rectified_a91d43f1-47bf-4d75-8a7d-d2faf0503f81.png
+Jan 31 15:54:58 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: WARNING:__main__:Failed to generate rectified preview: generate_rectified_image_from_frame() got an unexpected keyword argument 'use_linear_interpolation'
+Jan 31 15:54:58 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Jan 31 15:54:58 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Jan 31 15:54:59 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Process PID 89849 exited after 60723ms (code: 0, signal: null)
+Jan 31 15:54:59 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Received 42668 bytes of JSON from Python
+Jan 31 15:54:59 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] First 200 chars: {"ok": true, "homography_matrix": [29.871895155984426, -0.1028999740538916, 140.7575738688687, -0.04668755894800147, 29.243916967897675, 227.5265861970885, -0.0002912735040530602, -2.467188812111142e-
+Jan 31 15:54:59 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Last 200 chars: cm": [40.702, 10.5416155], "position_px": [1371, 540]}, {"slot_id": "288", "expected_id": 288, "detected": false, "detected_id": null, "position_cm": [78.4, 10.465846], "position_px": [2539, 542]}]}}
+Jan 31 15:54:59 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] JSON parsed successfully
+Jan 31 15:54:59 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Has rectified_preview field: false
+Jan 31 15:54:59 NaniwaTanaCheck pi-startup.sh[89617]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 31 15:55:09 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Deleted 29 existing slots
+Jan 31 15:55:09 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Creating slots for 29 templates by paper size 8-page-4x2 (legacy mode)
+Jan 31 15:55:23 NaniwaTanaCheck pi-startup.sh[89617]: [Database] ✅ Client connected to pool
+Jan 31 15:55:29 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Saved paper size format to config: 8-page-4x2
+Jan 31 15:55:29 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Measured pixel density: 29.27 px/cm
+Jan 31 15:55:29 NaniwaTanaCheck pi-startup.sh[89617]: [Calibration] Including slot validation in response: 0/296 markers detected
+Jan 31 15:55:29 NaniwaTanaCheck pi-startup.sh[89617]: [CameraSessionManager] Released exclusive lock for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Jan 31 15:55:29 NaniwaTanaCheck pi-startup.sh[89617]: [CameraSessionManager] Global calibration lock released for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Jan 31 15:55:29 NaniwaTanaCheck pi-startup.sh[89617]: 3:55:29 PM [express] POST /api/calibrate/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 178981ms :: {"o…
+Jan 31 15:55:29 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Tracking led process PID 89864: LED: turnOffLED
+Jan 31 15:55:29 NaniwaTanaCheck sudo[89864]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py off --num-leds 99
+Jan 31 15:55:29 NaniwaTanaCheck sudo[89864]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Jan 31 15:55:30 NaniwaTanaCheck sudo[89864]: pam_unix(sudo:session): session closed for user root
+Jan 31 15:55:30 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Process PID 89864 exited after 307ms (code: 1, signal: null)
+Jan 31 15:55:30 NaniwaTanaCheck pi-startup.sh[89617]: [LED] turnOffLED failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Jan 31 15:55:30 NaniwaTanaCheck pi-startup.sh[89617]: [LED] LED off response: { success: false }
+Jan 31 15:55:30 NaniwaTanaCheck pi-startup.sh[89617]: 3:55:30 PM [express] GET /api/template-rectangles 200 in 520ms :: [{"id":"2d1fe5e4-4202-4d3c-b46d-78…
+Jan 31 15:55:30 NaniwaTanaCheck pi-startup.sh[89617]: [Database] ✅ Client connected to pool
+Jan 31 15:55:30 NaniwaTanaCheck pi-startup.sh[89617]: [Database] ✅ Client connected to pool
+Jan 31 15:55:30 NaniwaTanaCheck pi-startup.sh[89617]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Jan 31 15:55:30 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Tracking python process PID 89867: Camera preview: Wide Shelf
+Jan 31 15:55:30 NaniwaTanaCheck pi-startup.sh[89617]: 3:55:30 PM [express] GET /api/cameras 200 in 710ms :: [{"id":"a91d43f1-47bf-4d75-8a7d-d2faf0503f81",…
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [214:58:21.752225098] [89867]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:58:21.787221601] [89870]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:58:21.793888567] [89870]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:58:21.900265809] [89867]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Jan 31 15:55:31 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Jan 31 15:55:41 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Jan 31 15:55:41 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Jan 31 15:55:42 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 53.7
+Jan 31 15:55:44 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 10/50: New best sharpness = 53.7
+Jan 31 15:55:45 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 19/50: New best sharpness = 53.8
+Jan 31 15:55:46 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 21/50: New best sharpness = 54.0
+Jan 31 15:55:51 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 47/50: New best sharpness = 54.1
+Jan 31 15:55:52 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 54.1
+Jan 31 15:55:52 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Jan 31 15:55:52 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Jan 31 15:55:53 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Process PID 89867 exited after 22741ms (code: 0, signal: null)
+Jan 31 15:55:53 NaniwaTanaCheck pi-startup.sh[89617]: 3:55:53 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 23507ms :: …
+Jan 31 15:55:58 NaniwaTanaCheck pi-startup.sh[89617]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Jan 31 15:55:58 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Tracking python process PID 89880: Camera preview: Wide Shelf
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Database] Client removed from pool
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:58:49.913561432] [89880]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:58:49.949351476] [89883]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:58:49.955806261] [89883]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Jan 31 15:55:59 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:58:50.062212502] [89880]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: [Database] Client removed from pool
+Jan 31 15:56:00 NaniwaTanaCheck pi-startup.sh[89617]: [Database] Client removed from pool
+Jan 31 15:56:10 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Jan 31 15:56:10 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Jan 31 15:56:10 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 54.0
+Jan 31 15:56:13 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 17/50: New best sharpness = 54.1
+Jan 31 15:56:20 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 54.1
+Jan 31 15:56:20 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Jan 31 15:56:20 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Jan 31 15:56:21 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Process PID 89880 exited after 22789ms (code: 0, signal: null)
+Jan 31 15:56:21 NaniwaTanaCheck pi-startup.sh[89617]: 3:56:21 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 23074ms :: …
+Jan 31 15:56:26 NaniwaTanaCheck pi-startup.sh[89617]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Jan 31 15:56:26 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Tracking python process PID 89890: Camera preview: Wide Shelf
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:59:18.072548026] [89890]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:59:18.107549418] [89893]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:59:18.114292994] [89893]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:59:18.220662811] [89890]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Jan 31 15:56:28 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Jan 31 15:56:38 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Jan 31 15:56:38 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Jan 31 15:56:38 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 53.6
+Jan 31 15:56:38 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 53.7
+Jan 31 15:56:39 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 3/50: New best sharpness = 53.9
+Jan 31 15:56:40 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 10/50: New best sharpness = 54.0
+Jan 31 15:56:41 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 16/50: New best sharpness = 54.1
+Jan 31 15:56:48 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 54.1
+Jan 31 15:56:48 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Jan 31 15:56:49 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Jan 31 15:56:49 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Process PID 89890 exited after 22798ms (code: 0, signal: null)
+Jan 31 15:56:49 NaniwaTanaCheck pi-startup.sh[89617]: 3:56:49 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 23011ms :: …
+Jan 31 15:56:54 NaniwaTanaCheck pi-startup.sh[89617]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Jan 31 15:56:54 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Tracking python process PID 89903: Camera preview: Wide Shelf
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:59:46.237388811] [89903]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:59:46.272638736] [89906]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:59:46.279015781] [89906]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [214:59:46.385368396] [89903]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Jan 31 15:56:56 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Jan 31 15:56:59 NaniwaTanaCheck pi-startup.sh[89617]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Jan 31 15:57:06 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Jan 31 15:57:06 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Jan 31 15:57:06 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 53.1
+Jan 31 15:57:06 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 53.2
+Jan 31 15:57:07 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 3/50: New best sharpness = 53.4
+Jan 31 15:57:08 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 8/50: New best sharpness = 53.7
+Jan 31 15:57:10 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 20/50: New best sharpness = 53.7
+Jan 31 15:57:11 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 22/50: New best sharpness = 53.7
+Jan 31 15:57:11 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 26/50: New best sharpness = 53.8
+Jan 31 15:57:16 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 53.8
+Jan 31 15:57:16 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Jan 31 15:57:17 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Jan 31 15:57:17 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Process PID 89903 exited after 22735ms (code: 0, signal: null)
+Jan 31 15:57:17 NaniwaTanaCheck pi-startup.sh[89617]: 3:57:17 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 22948ms :: …
+Jan 31 15:57:22 NaniwaTanaCheck pi-startup.sh[89617]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Jan 31 15:57:22 NaniwaTanaCheck pi-startup.sh[89617]: [SubprocessManager] Tracking python process PID 89912: Camera preview: Wide Shelf
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [215:00:14.390823570] [89912]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [215:00:14.426285935] [89915]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [215:00:14.432535539] [89915]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: [215:00:14.538161223] [89912]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Jan 31 15:57:24 NaniwaTanaCheck pi-startup.sh[89617]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Jan 3
