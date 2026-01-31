@@ -64,23 +64,50 @@ def generate_rectified_image_from_frame(
     logger.info(f"[RECTIFY DEBUG] Output size: {output_size}")
     logger.info(f"[RECTIFY DEBUG] Paper size cm: {paper_size_cm}")
     logger.info(f"[RECTIFY DEBUG] Scale: x={scale_x:.4f}, y={scale_y:.4f} px/cm")
-    logger.info(f"[RECTIFY DEBUG] Homography H:\n{H}")
     
-    # Inverse scaling matrix: output pixels → cm
-    S_inv = np.array([
-        [1/scale_x, 0, 0],
-        [0, 1/scale_y, 0],
-        [0, 0, 1]
+    # CORRECT APPROACH: Compute homography directly from output pixels to camera pixels
+    # This ensures output (0,0) maps to camera position of paper corner (0,0) cm
+    # And output (width_px, height_px) maps to paper corner (width_cm, height_cm)
+    
+    # Define the 4 corners in OUTPUT pixel coordinates (where we want the paper corners to appear)
+    output_corners = np.array([
+        [0, 0],                                    # Top-left: paper (0, 0) cm
+        [output_size[0] - 1, 0],                   # Top-right: paper (width_cm, 0)
+        [output_size[0] - 1, output_size[1] - 1],  # Bottom-right: paper (width_cm, height_cm)
+        [0, output_size[1] - 1]                    # Bottom-left: paper (0, height_cm)
     ], dtype=np.float32)
     
-    # For warpPerspective backward mapping: output_pixels → cm → camera_pixels
-    # H maps cm → camera pixels, so the full transform is H @ S_inv
-    # This correctly samples from camera pixels corresponding to each output position
-    M = H @ S_inv
+    # Define the 4 corners in CM coordinates (paper space)
+    cm_corners = np.array([
+        [0, 0],
+        [paper_width_cm, 0],
+        [paper_width_cm, paper_height_cm],
+        [0, paper_height_cm]
+    ], dtype=np.float32)
     
-    logger.info(f"[RECTIFY DEBUG] S_inv matrix: {S_inv.flatten().tolist()}")
-    logger.info(f"[RECTIFY DEBUG] H matrix (row-major): {H.flatten().tolist()}")
-    logger.info(f"[RECTIFY DEBUG] M = H @ S_inv: {M.flatten().tolist()}")
+    # Transform CM corners to camera pixel coordinates using the calibration homography H
+    # H maps cm → camera_pixels
+    camera_corners = cv2.perspectiveTransform(cm_corners.reshape(-1, 1, 2), H).reshape(-1, 2)
+    
+    logger.info(f"[RECTIFY DEBUG] Output corners (px): {output_corners.tolist()}")
+    logger.info(f"[RECTIFY DEBUG] CM corners: {cm_corners.tolist()}")
+    logger.info(f"[RECTIFY DEBUG] Camera corners (px): {camera_corners.tolist()}")
+    
+    # Compute homography from OUTPUT pixels → CAMERA pixels
+    # This is what warpPerspective needs: for each output pixel, where to sample from input
+    M, _ = cv2.findHomography(output_corners, camera_corners)
+    
+    if M is None:
+        logger.error("[RECTIFY DEBUG] Failed to compute output→camera homography!")
+        # Fallback to old method
+        S_inv = np.array([
+            [1/scale_x, 0, 0],
+            [0, 1/scale_y, 0],
+            [0, 0, 1]
+        ], dtype=np.float32)
+        M = H @ S_inv
+    
+    logger.info(f"[RECTIFY DEBUG] M (output→camera): {M.flatten().tolist()}")
     logger.info(f"[RECTIFY DEBUG] M dtype: {M.dtype}, shape: {M.shape}")
     
     # Critical: verify the third row of M
@@ -134,28 +161,11 @@ def generate_rectified_image_from_frame(
     # Ensure M is in proper format for warpPerspective (float64)
     M_float64 = M.astype(np.float64)
     
-    # DEBUG: OpenCV warpPerspective behavior:
-    # - Without WARP_INVERSE_MAP: dst(p) = src(M @ p) - M maps output→input
-    # - With WARP_INVERSE_MAP: dst(p) = src(inv(M) @ p) - M maps input→output
-    #
-    # Our M = H @ S_inv maps output_pixels → camera_pixels
-    # So WITHOUT the flag should be correct... BUT we're getting black pixels!
-    #
-    # Let's try: maybe the homography H was computed as pixels→cm (inverse of what we think)?
-    # In that case, we need to INVERT M to get correct mapping
-    try:
-        M_inv = np.linalg.inv(M_float64)
-        logger.info(f"[RECTIFY DEBUG] Trying INVERTED matrix approach")
-        logger.info(f"[RECTIFY DEBUG] Original M[0,2]={M_float64[0,2]:.1f}, M[1,2]={M_float64[1,2]:.1f}")
-        logger.info(f"[RECTIFY DEBUG] Inverted M_inv[0,2]={M_inv[0,2]:.1f}, M_inv[1,2]={M_inv[1,2]:.1f}")
-        
-        # Test with inverted matrix - if H maps pixels→cm, then M maps input→output
-        # and we need M_inv for warpPerspective
-        rectified = cv2.warpPerspective(frame, M_inv, output_size, flags=interp_flag)
-        logger.info(f"[RECTIFY DEBUG] Used INVERTED matrix M_inv")
-    except Exception as e:
-        logger.warning(f"[RECTIFY DEBUG] Inverse failed: {e}, using original M")
-        rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
+    # Apply warpPerspective with M (output_pixels → camera_pixels)
+    # M was computed directly using findHomography from output corners to camera corners
+    # This ensures the paper fills the output image exactly from (0,0) to (width-1, height-1)
+    rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
+    logger.info(f"[RECTIFY DEBUG] Applied warpPerspective with output→camera homography")
     
     # VERIFY: Check that rectification actually transformed the image
     logger.info(f"[RECTIFY DEBUG] Output rectified shape: {rectified.shape}")
@@ -177,13 +187,15 @@ def generate_rectified_image_from_frame(
     logger.info(f"[RECTIFY DEBUG] Input[0,0] = {input_corner.tolist()}, Output[0,0] = {output_corner.tolist()}")
     logger.info(f"[RECTIFY DEBUG] Input at mapped center = {input_center.tolist()}, Output center = {output_center.tolist()}")
     
-    # CRITICAL: Verify that warpPerspective is actually using our matrix
-    # Manually sample from the expected input location for output[0,0]
-    expected_input_y, expected_input_x = 227, 142  # Where output[0,0] should sample from
+    # Verify that warpPerspective sampled correctly for output[0,0]
+    # Calculate where output[0,0] should sample from using M
+    corner_homo = M_float64 @ np.array([0, 0, 1])
+    expected_input_x = int(round(corner_homo[0] / corner_homo[2]))
+    expected_input_y = int(round(corner_homo[1] / corner_homo[2]))
     if 0 <= expected_input_y < frame.shape[0] and 0 <= expected_input_x < frame.shape[1]:
         expected_pixel = frame[expected_input_y, expected_input_x, :]
         logger.info(f"[RECTIFY DEBUG] Manual check: frame[{expected_input_y}, {expected_input_x}] = {expected_pixel.tolist()}")
-        logger.info(f"[RECTIFY DEBUG] If Output[0,0] matched, it should be: {expected_pixel.tolist()}, but got: {output_corner.tolist()}")
+        logger.info(f"[RECTIFY DEBUG] Output[0,0] expected: {expected_pixel.tolist()}, got: {output_corner.tolist()}")
     
     # Also verify at a few more sample points
     test_points = [(0, 0), (100, 100), (500, 300)]

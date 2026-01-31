@@ -1,0 +1,104 @@
+/ShelfEye $ sudo journalctl -u shelfeye --since "5 minutes ago" --no-pager | grep -i "RECTIFY\|INVERTED\|M_inv"
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3483, 1231)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=29.3182, y=29.3095 px/cm
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Homography H:
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] S_inv matrix: [0.03410852700471878, 0.0, 0.0, 0.0, 0.03411860391497612, 0.0, 0.0, 0.0, 1.0]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] H matrix (row-major): [29.967377646194464, -0.1145151009744088, 140.25592576090352, -0.020737101031070973, 29.28226384471608, 225.30103189897548, -0.00026684889515341155, -1.2206902866208698e-05, 1.0]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M = H @ S_inv: [1.0221431097058298, -0.00390709537242935, 140.25592576090352, -0.0007073119705178659, 0.9990699618516937, 225.30103189897548, -9.101822746519508e-06, -4.164824839207613e-07, 1.0]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M dtype: float64, shape: (3, 3)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M third row [2,:]: [-9.101822746519508e-06, -4.164824839207613e-07, 1.0]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M @ [0,0,1] = [140.25592576090352, 225.30103189897548, 1.0]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Normalized: (140.3, 225.3)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M @ [3483,0,1] -> (3821.5, 230.1)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (140.3, 225.3)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3483, 0) → Input pixel (3821.5, 230.1)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3483, 1231) → Input pixel (3818.6, 1501.0)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1231) → Input pixel (135.5, 1455.9)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Calling warpPerspective with:
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   frame shape: (2160, 3840, 3)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   M: [1.0221431097058298, -0.00390709537242935, 140.25592576090352, -0.0007073119705178659, 0.9990699618516937, 225.30103189897548]... (first 6 values)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   output_size: (3483, 1231)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Trying INVERTED matrix approach
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Original M[0,2]=140.3, M[1,2]=225.3
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] InvertedM_inv[0,2]=-137.9, M_inv[1,2]=-225.3
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Used INVERTED matrix M_inv
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output rectified shape: (1231, 3483, 3)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output center (1741, 615) samples from input (1948.8, 852.2)
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Input[0,0] = [54, 49, 40], Output[0,0] = [92, 91, 81]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Input at mapped center = [192, 189, 185], Output center = [192, 189, 185]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Manual check: frame[227, 142] = [78, 80, 68]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] If Output[0,0] matched, it should be: [78, 80, 68], but got: [92, 91, 81]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (0,0)->(140,225): expected [92, 91, 81], got [92, 91, 81] [MATCH]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (100,100)->(242,325): expected [27, 28, 24], got [27, 28, 24] [MATCH]
+Jan 31 11:36:08 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (500,300)->(653,527): expected [97, 98, 82], got [97, 98, 82] [MATCH]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3483, 1231)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=29.3182, y=29.3095 px/cm
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Homography H:
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] S_inv matrix: [0.03410852700471878, 0.0, 0.0, 0.0, 0.03411860391497612, 0.0, 0.0, 0.0, 1.0]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] H matrix (row-major): [29.967377646194464, -0.1145151009744088, 140.25592576090352, -0.020737101031070973, 29.28226384471608, 225.30103189897548, -0.00026684889515341155, -1.2206902866208698e-05, 1.0]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M = H @ S_inv: [1.0221431097058298, -0.00390709537242935, 140.25592576090352, -0.0007073119705178659, 0.9990699618516937, 225.30103189897548, -9.101822746519508e-06, -4.164824839207613e-07, 1.0]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] M dtype: float64, shape: (3, 3)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M third row [2,:]: [-9.101822746519508e-06, -4.164824839207613e-07, 1.0]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] M @ [0,0,1] = [140.25592576090352, 225.30103189897548, 1.0]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Normalized: (140.3, 225.3)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] M @ [3483,0,1] -> (3821.5, 230.1)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (140.3, 225.3)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3483, 0) → Input pixel (3821.5, 230.1)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3483, 1231) → Input pixel (3818.6, 1501.0)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1231) → Input pixel (135.5, 1455.9)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Calling warpPerspective with:
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   frame shape: (2160, 3840, 3)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   M: [1.0221431097058298, -0.00390709537242935, 140.25592576090352, -0.0007073119705178659, 0.9990699618516937, 225.30103189897548]... (first 6 values)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   output_size: (3483, 1231)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Trying INVERTED matrix approach
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Original M[0,2]=140.3, M[1,2]=225.3
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] InvertedM_inv[0,2]=-137.9, M_inv[1,2]=-225.3
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Used INVERTED matrix M_inv
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output rectified shape: (1231, 3483, 3)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Output center (1741, 615) samples from input (1948.8, 852.2)
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Input[0,0] = [54, 49, 40], Output[0,0] = [92, 91, 81]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Input at mapped center = [192, 189, 185], Output center = [192, 189, 185]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Manual check: frame[227, 142] = [78, 80, 68]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] If Output[0,0] matched, it should be: [78, 80, 68], but got: [92, 91, 81]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (0,0)->(140,225): expected [92, 91, 81], got [92, 91, 81] [MATCH]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (100,100)->(242,325): expected [27, 28, 24], got [29, 30, 26] [MATCH]
+Jan 31 11:36:09 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Point (500,300)->(653,527): expected [97, 98, 82], got [89, 91, 74] [MISMATCH]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3564, 1260)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=30.0000, y=30.0000 px/cm
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Homography H:
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] S_inv matrix: [0.03333333507180214, 0.0, 0.0, 0.0, 0.03333333507180214, 0.0, 0.0, 0.0, 1.0]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] H matrix (row-major): [29.967377646194464, -0.1145151009744088, 140.25592576090352, -0.020737101031070973, 29.28226384471608, 225.30103189897548, -0.00026684889515341155, -1.2206902866208698e-05, 1.0]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] M = H @ S_inv: [0.9989126403038334, -0.003817170231561224, 140.25592576090352, -0.0006912367370865024, 0.9760755123968383, 225.30103189897548, -8.894963635688865e-06, -4.0689678342827643e-07, 1.0]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] M dtype: float64, shape: (3, 3)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] M third row [2,:]: [-8.894963635688865e-06, -4.0689678342827643e-07, 1.0]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] M @ [0,0,1] = [140.25592576090352, 225.30103189897548, 1.0]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Normalized: (140.3, 225.3)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] M @ [3564,0,1] -> (3821.5, 230.1)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (140.3, 225.3)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3564, 0) → Input pixel (3821.5, 230.1)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3564, 1260) → Input pixel (3818.6, 1501.0)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1260) → Input pixel (135.5, 1455.9)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Calling warpPerspective with:
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   frame shape: (2160, 3840, 3)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG]   M: [0.9989126403038334, -0.003817170231561224, 140.25592576090352, -0.0006912367370865024, 0.9760755123968383, 225.30103189897548]... (first 6 values)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG]   output_size: (3564, 1260)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Trying INVERTED matrix approach
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Original M[0,2]=140.3, M[1,2]=225.3
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] InvertedM_inv[0,2]=-141.1, M_inv[1,2]=-230.6
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Used INVERTED matrix M_inv
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output rectified shape: (1260, 3564, 3)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Output center (1782, 630) samples from input (1949.3, 852.7)
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Input[0,0] = [54, 49, 40], Output[0,0] = [92, 91, 81]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Input at mapped center = [192, 189, 185], Output center = [192, 189, 185]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Manual check: frame[227, 142] = [78, 80, 68]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] If Output[0,0] matched, it should be: [78, 80, 68], but got: [92, 91, 81]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (0,0)->(140,225): expected [92, 91, 81], got [92, 91, 81] [MATCH]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (100,100)->(240,323): expected [78, 79, 77], got [75, 76, 74] [MATCH]
+Jan 31 11:36:11 NaniwaTanaCheck pi-startup.sh[82964]: INFO:rectified_preview:[RECTIFY DEBUG] Point (500,300)->(641,520): expected [125, 122, 117], got [123, 121, 114] [MATCH]
+naniwa@NaniwaTanaCheck:~/ShelfEye $
