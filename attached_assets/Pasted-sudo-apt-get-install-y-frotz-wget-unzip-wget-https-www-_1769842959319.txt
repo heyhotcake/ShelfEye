@@ -1,0 +1,51 @@
+sudo apt-get install -y frotz wget unzip
+wget https://www.infocom-if.org/downloads/zork1.zip
+unzip zork1.zip
+frotz ZORK1.DAT
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+wget is already the newest version (1.25.0-2).
+wget set to manually installed.
+unzip is already the newest version (6.0-29).
+The following additional packages will be installed:
+  libao-common libao4 libmodplug1
+Suggested packages:
+  libaudio2 libsndio6.1
+The following NEW packages will be installed:
+  frotz libao-common libao4 libmodplug1
+0 upgraded, 4 newly installed, 0 to remove and 35 not upgraded.
+Need to get 298 kB of archives.
+After this operation, 1,219 kB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian trixie/main arm64 libao-common all 1.2.2+20180113-1.2 [7,912 B]
+Get:2 http://deb.debian.org/debian trixie/main arm64 libao4 arm64 1.2.2+20180113-1.2 [32.6 kB]
+Get:3 http://deb.debian.org/debian trixie/main arm64 libmodplug1 arm64 1:0.8.9.0-3+b2 [148 kB]
+Get:4 http://deb.debian.org/debian trixie/main arm64 frotz arm64 2.55+dfsg-2 [109 kB]
+Fetched 298 kB in 0s (608 kB/s)
+Selecting previously unselected package libao-common.
+(Reading database ... 93231 files and directories currently installed.)
+Preparing to unpack .../libao-common_1.2.2+20180113-1.2_all.deb ...
+Unpacking libao-common (1.2.2+20180113-1.2) ...
+Selecting previously unselected package libao4:arm64.
+Preparing to unpack .../libao4_1.2.2+20180113-1.2_arm64.deb ...
+Unpacking libao4:arm64 (1.2.2+20180113-1.2) ...
+Selecting previously unselected package libmodplug1:arm64.
+Preparing to unpack .../libmodplug1_1%3a0.8.9.0-3+b2_arm64.deb ...
+Unpacking libmodplug1:arm64 (1:0.8.9.0-3+b2) ...
+Selecting previously unselected package frotz.
+Preparing to unpack .../frotz_2.55+dfsg-2_arm64.deb ...
+Unpacking frotz (2.55+dfsg-2) ...
+Setting up libmodplug1:arm64 (1:0.8.9.0-3+b2) ...
+Setting up libao-common (1.2.2+20180113-1.2) ...
+Setting up libao4:arm64 (1.2.2+20180113-1.2) ...
+Setting up frotz (2.55+dfsg-2) ...
+update-alternatives: using /usr/games/frotz-launcher to provide /usr/games/zcode-interpreter (zcode-interpreter) in auto mode
+Processing triggers for libc-bin (2.41-12+rpt1) ...
+Processing triggers for man-db (2.13.1-1) ...
+--2026-01-31 16:00:52--  https://www.infocom-if.org/downloads/zork1.zip
+Resolving www.infocom-if.org (www.infocom-if.org)... 85.13.135.150
+Connecting to www.infocom-if.org (www.infocom-if.org)|85.13.135.150|:443... connected.
+The certificate's owner does not match hostname ‘www.infocom-if.org’
+unzip:  cannot find or open zork1.zip, zork1.zip.zip or zork1.zip.ZIP.
+
+Fatal error: Cannot open story file
