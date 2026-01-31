@@ -64,24 +64,23 @@ def generate_rectified_image_from_frame(
     logger.info(f"[RECTIFY DEBUG] Paper size cm: {paper_size_cm}")
     logger.info(f"[RECTIFY DEBUG] Scale: x={scale_x:.4f}, y={scale_y:.4f} px/cm")
     
-    # WORKING APPROACH: Use M_inv for warpPerspective
-    # The stored homography H maps cm→pixels (from aruco_calibrator line 218-219)
-    # But empirically, using M = H @ S_inv then inverting works correctly
-    # 
-    # This produces correct rectified content, though overlay alignment may have ~2-3% offset
-    # which is better than completely broken overlay alignment
+    # ORIGINAL WORKING APPROACH (from commit 792199c)
+    # This was the version where rectification and overlay alignment worked perfectly
     
-    # Inverse scaling matrix: output pixels → cm
-    S_inv = np.array([
-        [1/scale_x, 0, 0],
-        [0, 1/scale_y, 0],
+    # Scaling matrix: cm → output pixels
+    S = np.array([
+        [scale_x, 0, 0],
+        [0, scale_y, 0],
         [0, 0, 1]
     ], dtype=np.float32)
     
-    # M = H @ S_inv
-    M = H @ S_inv
+    # Invert homography: camera pixels → cm
+    H_inv = np.linalg.inv(H)
     
-    logger.info(f"[RECTIFY DEBUG] Using M_inv approach (H @ S_inv, then invert)")
+    # Combined warp for warpPerspective: camera_pixel → cm → output_pixel
+    M = S @ H_inv
+    
+    logger.info(f"[RECTIFY DEBUG] Using ORIGINAL approach: M = S @ H_inv")
     logger.info(f"[RECTIFY DEBUG] M dtype: {M.dtype}, shape: {M.shape}")
     
     # Critical: verify the third row of M
@@ -135,14 +134,9 @@ def generate_rectified_image_from_frame(
     # Ensure M is in proper format for warpPerspective (float64)
     M_float64 = M.astype(np.float64)
     
-    # Invert M for warpPerspective (this empirically works correctly)
-    try:
-        M_inv = np.linalg.inv(M_float64)
-        rectified = cv2.warpPerspective(frame, M_inv, output_size, flags=interp_flag)
-        logger.info(f"[RECTIFY DEBUG] Applied warpPerspective with INVERTED M")
-    except np.linalg.LinAlgError as e:
-        logger.error(f"[RECTIFY DEBUG] Failed to invert M: {e}, using M directly")
-        rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
+    # Apply warpPerspective with M directly (original working approach)
+    rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
+    logger.info(f"[RECTIFY DEBUG] Applied warpPerspective with M directly (original approach)")
     
     # VERIFY: Check that rectification actually transformed the image
     logger.info(f"[RECTIFY DEBUG] Output rectified shape: {rectified.shape}")
