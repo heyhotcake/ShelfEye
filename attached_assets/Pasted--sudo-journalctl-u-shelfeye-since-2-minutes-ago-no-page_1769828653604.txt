@@ -1,0 +1,33 @@
+ sudo journalctl -u shelfeye --since "2 minutes ago" --no-pager | grep -i "RECTIFY\|Output corners\|Camera corners"
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Input frame shape: (2160, 3840, 3)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Output size: (3564, 1260)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Paper size cm: (118.8, 42.0)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Scale: x=30.0000, y=30.0000 px/cm
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Output corners (px): [[0.0, 0.0], [3563.0, 0.0], [3563.0, 1259.0], [0.0, 1259.0]]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] CM corners: [[0.0, 0.0], [118.80000305175781, 0.0], [118.80000305175781, 42.0], [0.0, 42.0]]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Camera corners (px): [[146.3007354736328, 230.90542602539062], [3811.809326171875, 234.6722412109375], [3808.70361328125, 1500.1922607421875], [144.2530059814453, 1453.85693359375]]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] M (output→camera): [0.9927740101343043, -0.00159666004996704, 146.3007354736323, -0.001158891540192133, 0.9716678313760814, 230.90542602539125, -9.443361432028655e-06, 2.0667117516770105e-07, 1.0]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M dtype: float64, shape: (3, 3)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] M third row [2,:]: [-9.443361432028655e-06, 2.0667117516770105e-07, 1.0]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] M @ [0,0,1] = [146.3007354736323, 230.90542602539125, 1.0]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Normalized: (146.3, 230.9)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] M @ [3564,0,1] -> (3812.9, 234.7)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 0 (0, 0) → Input pixel (146.3, 230.9)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 1 (3564, 0) → Input pixel (3812.9, 234.7)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 2 (3564, 1260) → Input pixel (3809.8, 1501.2)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Output corner 3 (0, 1260) → Input pixel (144.3, 1454.8)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Calling warpPerspective with:
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG]   frame shape: (2160, 3840, 3)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   M: [0.9927740101343043, -0.00159666004996704, 146.3007354736323, -0.001158891540192133, 0.9716678313760814, 230.90542602539125]... (first 6 values)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG]   output_size: (3564, 1260)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Applied warpPerspective with output→camera homography
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Output rectified shape: (1260, 3564, 3)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Output center (1782, 630) samples from input (1946.9, 855.3)
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Input[0,0] = [72, 62, 45], Output[0,0] = [0, 0, 0]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Input at mapped center = [191, 183, 184], Output center = [139, 90, 37]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Manual check: frame[231, 146] = [86, 84, 66]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: INFO:rectified_preview:[RECTIFY DEBUG] Output[0,0] expected: [86, 84, 66], got: [0, 0, 0]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (0,0)->(146,231): expected [86, 84, 66], got [0, 0, 0] [MISMATCH]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (100,100)->(246,328): expected [61, 69, 59], got [0, 0, 0] [MISMATCH]
+Jan 31 12:02:06 NaniwaTanaCheck pi-startup.sh[83801]: [Validation] Python stderr: INFO:rectified_preview:[RECTIFY DEBUG] Point (500,300)->(645,524): expected [127, 124, 120], got [51, 48, 44] [MISMATCH]
+naniwa@NaniwaTanaCheck:~/ShelfEye $

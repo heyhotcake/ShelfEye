@@ -85,9 +85,16 @@ def generate_rectified_image_from_frame(
         [0, paper_height_cm]
     ], dtype=np.float32)
     
-    # Transform CM corners to camera pixel coordinates using the calibration homography H
-    # H maps cm → camera_pixels
-    camera_corners = cv2.perspectiveTransform(cm_corners.reshape(-1, 1, 2), H).reshape(-1, 2)
+    # Transform CM corners to camera pixel coordinates
+    # IMPORTANT: The stored homography H actually maps pixels→cm (not cm→pixels)
+    # So we need to INVERT it to go from cm → camera_pixels
+    try:
+        H_inv = np.linalg.inv(H)
+        camera_corners = cv2.perspectiveTransform(cm_corners.reshape(-1, 1, 2), H_inv).reshape(-1, 2)
+        logger.info(f"[RECTIFY DEBUG] Using inverted H to transform cm → camera_pixels")
+    except np.linalg.LinAlgError:
+        logger.error("[RECTIFY DEBUG] Failed to invert H, using H directly")
+        camera_corners = cv2.perspectiveTransform(cm_corners.reshape(-1, 1, 2), H).reshape(-1, 2)
     
     logger.info(f"[RECTIFY DEBUG] Output corners (px): {output_corners.tolist()}")
     logger.info(f"[RECTIFY DEBUG] CM corners: {cm_corners.tolist()}")
