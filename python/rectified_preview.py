@@ -150,7 +150,7 @@ def generate_rectified_preview(
     homography_matrix: list,
     output_size: Tuple[int, int] = (800, 600),
     templates: Optional[List[dict]] = None,
-    paper_size_cm: Tuple[float, float] = (88.8, 42.0),  # Default for 6-page-3x2
+    paper_size_cm: Tuple[float, float] = (89.1, 42.0),  # Default for 6-page-3x2 (3×2 A4 landscape = 89.1cm × 42.0cm)
     device_path: Optional[str] = None,
     led_pin: int = 18,
     camera_matrix: Optional[list] = None,
@@ -251,7 +251,7 @@ def main():
     parser.add_argument('--homography', type=str, required=True, help='Homography matrix as comma-separated values')
     parser.add_argument('--output-size', type=str, default=None, help='Output image size (WxH). If not provided, calculates from homography to match camera resolution')
     parser.add_argument('--templates', type=str, default=None, help='Template rectangles as JSON string')
-    parser.add_argument('--paper-size', type=str, default='88.8x42.0', help='Paper size in cm (WxH)')
+    parser.add_argument('--paper-size', type=str, default='89.1x42.0', help='Paper size in cm (WxH)')
     parser.add_argument('--camera-matrix', type=str, default=None, help='Camera intrinsic matrix as comma-separated values (9 values)')
     parser.add_argument('--dist-coeffs', type=str, default=None, help='Distortion coefficients as comma-separated values (5 values)')
     
