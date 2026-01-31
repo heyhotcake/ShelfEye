@@ -624,14 +624,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Calibration] Preview output size: ${previewWidth}x${previewHeight} px (maintains ${(paperDims.widthCm/paperDims.heightCm).toFixed(2)}:1 aspect ratio)`);
       
       const deviceSource = getCameraDeviceSource(camera);
+      // IMPORTANT: Do NOT pass --templates to Python - the frontend RectifiedPreviewCanvas
+      // draws the template overlays. Passing templates here would cause DOUBLE overlays.
       const calibrationArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
         '--camera-id', cameraId,
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
         '--generate-preview',
-        '--preview-output-size', `${previewWidth}x${previewHeight}`,
-        '--templates', JSON.stringify(templatesWithDimensions)
+        '--preview-output-size', `${previewWidth}x${previewHeight}`
+        // NO --templates here - frontend canvas draws adjustable overlays
       ];
       
       // Use device path if available (for Raspberry Pi), otherwise use index
