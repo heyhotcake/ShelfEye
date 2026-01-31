@@ -1011,9 +1011,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await new Promise(resolve => setTimeout(resolve, 25000));
       console.log('[VerifyPositions] Wait complete. Lock acquired.');
       
-      // Let Python calculate output size from measured pixel density (~100 px/cm for 4K)
-      // Python aruco_calibrator measured the actual pixel density from marker spacing
-      console.log(`[VerifyPositions] Using measured pixel density from ArUco calibration (no output-size override)`);
+      // CRITICAL: Force 30 px/cm to match calibration endpoint
+      // Frontend overlays assume image dimensions = paper_cm * 30, so all endpoints MUST use same scale
+      const previewScale = 30;
+      const previewWidth = Math.round(paperDims.widthCm * previewScale);
+      const previewHeight = Math.round(paperDims.heightCm * previewScale);
+      console.log(`[VerifyPositions] Preview output size: ${previewWidth}x${previewHeight} px (fixed 30 px/cm to match calibration)`);
       
       // Generate clean preview WITHOUT templates - frontend RectifiedPreviewCanvas will draw adjustable overlays
       // This prevents dual overlays (Python-drawn + canvas-drawn) that make fine adjustments difficult
@@ -1025,7 +1028,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         path.join(process.cwd(), 'python', 'rectified_preview.py'),
         `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
         `--homography=${homographyString}`,  // Use --key=value syntax for negative numbers
-        // NO --output-size parameter - let Python use measured pixel density
+        `--output-size=${previewWidth}x${previewHeight}`,  // Force 30 px/cm for consistent overlay alignment
         // NO --templates parameter - frontend canvas will draw adjustable overlays
         `--paper-size=${paperDims.widthCm}x${paperDims.heightCm}`,
       ];
@@ -1650,16 +1653,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Call Python rectified preview script
       const homographyStr = camera.homographyMatrix.join(',');
       
-      // Let Python calculate output size from measured pixel density (~100 px/cm for 4K)
-      // Python aruco_calibrator measured the actual pixel density from marker spacing
+      // CRITICAL: Force 30 px/cm to match calibration endpoint
+      // Frontend overlays assume image dimensions = paper_cm * 30, so all endpoints MUST use same scale
+      const previewScale = 30;
+      const previewWidth = Math.round(paperDimensions.widthCm * previewScale);
+      const previewHeight = Math.round(paperDimensions.heightCm * previewScale);
       console.log(`[Rectified Preview] Paper: ${paperDimensions.widthCm}x${paperDimensions.heightCm} cm`);
-      console.log(`[Rectified Preview] Using measured pixel density from ArUco calibration (no output-size override)`);
+      console.log(`[Rectified Preview] Preview output size: ${previewWidth}x${previewHeight} px (fixed 30 px/cm to match calibration)`);
       
       const args = [
         path.join(process.cwd(), 'python/rectified_preview.py'),
         `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
         `--homography=${homographyStr}`,  // Use --key=value syntax for negative numbers
-        // NO --output-size parameter - let Python use measured pixel density
+        `--output-size=${previewWidth}x${previewHeight}`,  // Force 30 px/cm for consistent overlay alignment
         `--paper-size=${paperDimensions.widthCm}x${paperDimensions.heightCm}`
       ];
       
