@@ -23,8 +23,7 @@ def generate_rectified_image_from_frame(
     paper_size_cm: Tuple[float, float],
     templates: Optional[List[dict]] = None,
     camera_matrix: Optional[np.ndarray] = None,
-    dist_coeffs: Optional[np.ndarray] = None,
-    use_linear_interpolation: bool = False
+    dist_coeffs: Optional[np.ndarray] = None
 ) -> np.ndarray:
     """
     Generate rectified image from an existing frame using homography
@@ -59,14 +58,6 @@ def generate_rectified_image_from_frame(
     scale_x = output_size[0] / paper_width_cm
     scale_y = output_size[1] / paper_height_cm
     
-    logger.info(f"[RECTIFY DEBUG] Input frame shape: {frame.shape}")
-    logger.info(f"[RECTIFY DEBUG] Output size: {output_size}")
-    logger.info(f"[RECTIFY DEBUG] Paper size cm: {paper_size_cm}")
-    logger.info(f"[RECTIFY DEBUG] Scale: x={scale_x:.4f}, y={scale_y:.4f} px/cm")
-    
-    # ORIGINAL WORKING APPROACH (from commit 792199c)
-    # This was the version where rectification and overlay alignment worked perfectly
-    
     # Scaling matrix: cm → output pixels
     S = np.array([
         [scale_x, 0, 0],
@@ -74,120 +65,17 @@ def generate_rectified_image_from_frame(
         [0, 0, 1]
     ], dtype=np.float32)
     
+    # For warpPerspective backward mapping: camera_pixels → cm → output_pixels
     # Invert homography: camera pixels → cm
     H_inv = np.linalg.inv(H)
     
     # Combined warp for warpPerspective: camera_pixel → cm → output_pixel
     M = S @ H_inv
     
-    logger.info(f"[RECTIFY DEBUG] Using ORIGINAL approach: M = S @ H_inv")
-    logger.info(f"[RECTIFY DEBUG] M dtype: {M.dtype}, shape: {M.shape}")
-    
-    # Critical: verify the third row of M
-    logger.info(f"[RECTIFY DEBUG] M third row [2,:]: {M[2,:].tolist()}")
-    
-    # Manual verification: what does M actually compute for (0,0)?
-    test_point = np.array([0, 0, 1], dtype=np.float64)
-    result = M @ test_point
-    logger.info(f"[RECTIFY DEBUG] M @ [0,0,1] = {result.tolist()}")
-    if result[2] != 0:
-        normalized = result[:2] / result[2]
-        logger.info(f"[RECTIFY DEBUG] Normalized: ({normalized[0]:.1f}, {normalized[1]:.1f})")
-    else:
-        logger.info(f"[RECTIFY DEBUG] WARNING: result[2] is zero, cannot normalize!")
-    
-    # Test what happens for the top-right corner
-    test_point_tr = np.array([output_size[0], 0, 1], dtype=np.float64)
-    result_tr = M @ test_point_tr
-    if result_tr[2] != 0:
-        normalized_tr = result_tr[:2] / result_tr[2]
-        logger.info(f"[RECTIFY DEBUG] M @ [{output_size[0]},0,1] -> ({normalized_tr[0]:.1f}, {normalized_tr[1]:.1f})")
-    
-    # Test transformation of corner points
-    test_corners_output = np.array([
-        [0, 0, 1],                                      # Top-left output
-        [output_size[0], 0, 1],                         # Top-right output  
-        [output_size[0], output_size[1], 1],            # Bottom-right output
-        [0, output_size[1], 1]                          # Bottom-left output
-    ], dtype=np.float32)
-    
-    for i, corner in enumerate(test_corners_output):
-        # Where does this output pixel sample from in the input frame?
-        mapped = M @ corner
-        if mapped[2] != 0:
-            mapped_px = mapped[:2] / mapped[2]
-        else:
-            mapped_px = [float('inf'), float('inf')]
-        logger.info(f"[RECTIFY DEBUG] Output corner {i} ({corner[0]:.0f}, {corner[1]:.0f}) → Input pixel ({mapped_px[0]:.1f}, {mapped_px[1]:.1f})")
-    
-    # CRITICAL DEBUG: Verify what warpPerspective actually receives
-    logger.info(f"[RECTIFY DEBUG] Calling warpPerspective with:")
-    logger.info(f"[RECTIFY DEBUG]   frame shape: {frame.shape}")
-    logger.info(f"[RECTIFY DEBUG]   M: {M.flatten()[:6].tolist()}... (first 6 values)")
-    logger.info(f"[RECTIFY DEBUG]   output_size: {output_size}")
-    
-    # Choose interpolation method based on use case:
-    # - INTER_NEAREST: Preserves sharp ArUco marker edges (required for marker detection)
-    # - INTER_LINEAR: Smoother visual quality (better for calibration previews)
-    interp_flag = cv2.INTER_LINEAR if use_linear_interpolation else cv2.INTER_NEAREST
-    
-    # Ensure M is in proper format for warpPerspective (float64)
-    M_float64 = M.astype(np.float64)
-    
-    # Apply warpPerspective with M directly (original working approach)
-    rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
-    logger.info(f"[RECTIFY DEBUG] Applied warpPerspective with M directly (original approach)")
-    
-    # VERIFY: Check that rectification actually transformed the image
-    logger.info(f"[RECTIFY DEBUG] Output rectified shape: {rectified.shape}")
-    
-    # Sample pixels at known locations to verify transformation
-    # Check center of output - should map to center of paper in input
-    center_out_x, center_out_y = output_size[0] // 2, output_size[1] // 2
-    center_in = M_float64 @ np.array([center_out_x, center_out_y, 1])
-    center_in_px = center_in[:2] / center_in[2]
-    logger.info(f"[RECTIFY DEBUG] Output center ({center_out_x}, {center_out_y}) samples from input ({center_in_px[0]:.1f}, {center_in_px[1]:.1f})")
-    
-    # Compare a few pixel values between input and output
-    # If transformation works, output[0,0] should NOT equal input[0,0]
-    input_corner = frame[0, 0, :] if len(frame.shape) == 3 else frame[0, 0]
-    output_corner = rectified[0, 0, :] if len(rectified.shape) == 3 else rectified[0, 0]
-    input_center = frame[int(center_in_px[1]), int(center_in_px[0]), :] if len(frame.shape) == 3 else frame[int(center_in_px[1]), int(center_in_px[0])]
-    output_center = rectified[center_out_y, center_out_x, :] if len(rectified.shape) == 3 else rectified[center_out_y, center_out_x]
-    
-    logger.info(f"[RECTIFY DEBUG] Input[0,0] = {input_corner.tolist()}, Output[0,0] = {output_corner.tolist()}")
-    logger.info(f"[RECTIFY DEBUG] Input at mapped center = {input_center.tolist()}, Output center = {output_center.tolist()}")
-    
-    # Verify that warpPerspective sampled correctly for output[0,0]
-    # Calculate where output[0,0] should sample from using M
-    corner_homo = M_float64 @ np.array([0, 0, 1])
-    expected_input_x = int(round(corner_homo[0] / corner_homo[2]))
-    expected_input_y = int(round(corner_homo[1] / corner_homo[2]))
-    if 0 <= expected_input_y < frame.shape[0] and 0 <= expected_input_x < frame.shape[1]:
-        expected_pixel = frame[expected_input_y, expected_input_x, :]
-        logger.info(f"[RECTIFY DEBUG] Manual check: frame[{expected_input_y}, {expected_input_x}] = {expected_pixel.tolist()}")
-        logger.info(f"[RECTIFY DEBUG] Output[0,0] expected: {expected_pixel.tolist()}, got: {output_corner.tolist()}")
-    
-    # Also verify at a few more sample points
-    test_points = [(0, 0), (100, 100), (500, 300)]
-    for out_x, out_y in test_points:
-        # Calculate expected input location
-        pt_homo = M_float64 @ np.array([out_x, out_y, 1])
-        in_x, in_y = pt_homo[0]/pt_homo[2], pt_homo[1]/pt_homo[2]
-        in_xi, in_yi = int(round(in_x)), int(round(in_y))
-        
-        if 0 <= in_yi < frame.shape[0] and 0 <= in_xi < frame.shape[1]:
-            expected_val = frame[in_yi, in_xi, :]
-        else:
-            expected_val = np.array([0, 0, 0])
-        
-        if 0 <= out_y < rectified.shape[0] and 0 <= out_x < rectified.shape[1]:
-            actual_val = rectified[out_y, out_x, :]
-        else:
-            actual_val = np.array([0, 0, 0])
-        
-        match_status = "MATCH" if np.allclose(expected_val, actual_val, atol=5) else "MISMATCH"
-        logger.info(f"[RECTIFY DEBUG] Point ({out_x},{out_y})->({in_xi},{in_yi}): expected {expected_val.tolist()}, got {actual_val.tolist()} [{match_status}]")
+    # Warp the image using NEAREST NEIGHBOR interpolation
+    # CRITICAL: INTER_NEAREST preserves sharp ArUco marker edges (no blur from interpolation)
+    # Default INTER_LINEAR blurs edges and breaks ArUco bit decoding
+    rectified = cv2.warpPerspective(frame, M, output_size, flags=cv2.INTER_NEAREST)
     
     # Draw grid overlay for visual reference
     for x in range(0, output_size[0], 50):
@@ -198,6 +86,7 @@ def generate_rectified_image_from_frame(
     # Draw template slot overlays if provided
     if templates:
         logger.info(f"Drawing {len(templates)} template overlays")
+        logger.info(f"Templates data: {templates}")
         for template in templates:
             x_cm = template.get('x', 0)
             y_cm = template.get('y', 0)
@@ -385,8 +274,8 @@ def main():
             paper_w, paper_h = map(float, args.paper_size.split('x'))
             
             # Sample points at paper corners to measure pixel density
-            # Markers are 5cm x 5cm, so marker CENTERS are 2.5cm from edges
-            marker_offset = 2.5
+            # Markers are 5cm from edges, so paper area is between markers
+            marker_offset = 5.0
             test_points_cm = np.array([
                 [marker_offset, marker_offset],
                 [paper_w - marker_offset, marker_offset],
@@ -400,14 +289,13 @@ def main():
             pixels = pixels_h[:, :2] / pixels_h[:, 2:3]
             
             # Measure pixel density from horizontal and vertical spans
-            # Distance between marker centers = paper dimension - 2 * offset (2.5cm each side)
             horizontal_px = np.linalg.norm(pixels[1] - pixels[0])
             vertical_px = np.linalg.norm(pixels[3] - pixels[0])
-            horizontal_cm = paper_w - 2 * marker_offset  # e.g., 89.1 - 5 = 84.1cm for 6-page
-            vertical_cm = paper_h - 2 * marker_offset    # e.g., 42 - 5 = 37cm for 6-page
+            horizontal_cm = paper_w - 2 * marker_offset
+            vertical_cm = paper_h - 2 * marker_offset
             
-            px_per_cm_h = float(horizontal_px / horizontal_cm)
-            px_per_cm_v = float(vertical_px / vertical_cm)
+            px_per_cm_h = horizontal_px / horizontal_cm
+            px_per_cm_v = vertical_px / vertical_cm
             px_per_cm = min(px_per_cm_h, px_per_cm_v)
             
             out_width = int(paper_w * px_per_cm)
