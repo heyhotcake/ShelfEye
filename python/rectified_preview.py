@@ -64,21 +64,47 @@ def generate_rectified_image_from_frame(
     logger.info(f"[RECTIFY DEBUG] Paper size cm: {paper_size_cm}")
     logger.info(f"[RECTIFY DEBUG] Scale: x={scale_x:.4f}, y={scale_y:.4f} px/cm")
     
-    # WORKING APPROACH: Use M_inv for warpPerspective
-    # The stored homography H maps pixels→cm (not cm→pixels as comments might suggest)
-    # So M = H @ S_inv, then we INVERT M for warpPerspective
+    # CORRECT APPROACH: Compute output→camera homography ensuring paper fills output exactly
+    # The stored homography H maps cm→pixels (from aruco_calibrator)
+    # We need M that maps output_pixels → camera_pixels for warpPerspective
+    #
+    # Steps:
+    # 1. Define paper corners in cm: (0,0), (W,0), (W,H), (0,H)
+    # 2. Transform to camera pixels using H: camera_corners = H @ paper_cm
+    # 3. Define output corners: (0,0), (output_W,0), (output_W,output_H), (0,output_H)
+    # 4. Compute M = getPerspectiveTransform(output_corners, camera_corners)
+    # 5. Use M for warpPerspective (maps output → camera, so paper fills output exactly)
     
-    # Inverse scaling matrix: output pixels → cm
-    S_inv = np.array([
-        [1/scale_x, 0, 0],
-        [0, 1/scale_y, 0],
-        [0, 0, 1]
+    # Paper corners in cm (homogeneous coordinates)
+    paper_corners_cm = np.array([
+        [0, 0, 1],
+        [paper_width_cm, 0, 1],
+        [paper_width_cm, paper_height_cm, 1],
+        [0, paper_height_cm, 1]
+    ], dtype=np.float64)
+    
+    # Transform to camera pixels using H (cm → pixels)
+    camera_corners_h = (H @ paper_corners_cm.T).T  # Shape: (4, 3)
+    camera_corners = camera_corners_h[:, :2] / camera_corners_h[:, 2:3]  # Normalize homogeneous
+    
+    logger.info(f"[RECTIFY DEBUG] Paper corners (cm): [[0,0], [{paper_width_cm},{0}], [{paper_width_cm},{paper_height_cm}], [0,{paper_height_cm}]]")
+    logger.info(f"[RECTIFY DEBUG] Camera corners (px): {camera_corners.tolist()}")
+    
+    # Output corners (where paper corners should appear in output)
+    output_corners = np.array([
+        [0, 0],
+        [output_size[0] - 1, 0],
+        [output_size[0] - 1, output_size[1] - 1],
+        [0, output_size[1] - 1]
     ], dtype=np.float32)
     
-    # M = H @ S_inv (this maps output_px → something, but needs inversion for warpPerspective)
-    M = H @ S_inv
+    logger.info(f"[RECTIFY DEBUG] Output corners (px): {output_corners.tolist()}")
     
-    logger.info(f"[RECTIFY DEBUG] H @ S_inv = M")
+    # Compute perspective transform from output → camera
+    # getPerspectiveTransform needs float32 source and destination points
+    M = cv2.getPerspectiveTransform(output_corners, camera_corners.astype(np.float32))
+    
+    logger.info(f"[RECTIFY DEBUG] Computed M via getPerspectiveTransform")
     logger.info(f"[RECTIFY DEBUG] M dtype: {M.dtype}, shape: {M.shape}")
     
     # Critical: verify the third row of M
@@ -132,16 +158,11 @@ def generate_rectified_image_from_frame(
     # Ensure M is in proper format for warpPerspective (float64)
     M_float64 = M.astype(np.float64)
     
-    # WORKING APPROACH: Invert M for warpPerspective
-    # Since H maps pixels→cm, M = H @ S_inv doesn't directly give output→camera mapping
-    # But M_inv works empirically - the rectified image is correct with this approach
-    try:
-        M_inv = np.linalg.inv(M_float64)
-        rectified = cv2.warpPerspective(frame, M_inv, output_size, flags=interp_flag)
-        logger.info(f"[RECTIFY DEBUG] Applied warpPerspective with INVERTED M")
-    except np.linalg.LinAlgError as e:
-        logger.error(f"[RECTIFY DEBUG] Failed to invert M: {e}, using M directly")
-        rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
+    # Use M directly for warpPerspective
+    # M was computed via getPerspectiveTransform to map output_corners → camera_corners
+    # This ensures paper fills output exactly with paper (0,0) at output (0,0)
+    rectified = cv2.warpPerspective(frame, M_float64, output_size, flags=interp_flag)
+    logger.info(f"[RECTIFY DEBUG] Applied warpPerspective with M (output→camera)")
     
     # VERIFY: Check that rectification actually transformed the image
     logger.info(f"[RECTIFY DEBUG] Output rectified shape: {rectified.shape}")
