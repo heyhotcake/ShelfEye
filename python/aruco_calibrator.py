@@ -36,6 +36,16 @@ class ArucoCornerCalibrator:
         self.detector_params = cv2.aruco.DetectorParameters()
         self.detector_params.perspectiveRemovePixelPerCell = 16  # CRITICAL: Increased from 8 to preserve 95px slot markers
         
+        # Lenient parameters for low-contrast/dark corner detection
+        self.detector_params.adaptiveThreshWinSizeMin = 3
+        self.detector_params.adaptiveThreshWinSizeMax = 53  # Larger window for uneven lighting
+        self.detector_params.adaptiveThreshWinSizeStep = 4  # More steps for better detection
+        self.detector_params.adaptiveThreshConstant = 7     # Standard value
+        self.detector_params.minMarkerPerimeterRate = 0.02  # Allow smaller markers
+        self.detector_params.maxMarkerPerimeterRate = 4.0   # Allow larger markers
+        self.detector_params.polygonalApproxAccuracyRate = 0.05  # More lenient polygon approximation
+        self.detector_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX  # Better corner accuracy
+        
         # Expected corner marker IDs: 96-99 (reserved high IDs to avoid conflict with slot markers 1-50)
         # A=96 (top-left), B=97 (top-right), C=98 (bottom-right), D=99 (bottom-left)
         self.corner_ids = [96, 97, 98, 99]
@@ -52,10 +62,43 @@ class ArucoCornerCalibrator:
             # Convert to grayscale if needed
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
             
-            # Detect all markers
+            # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to improve
+            # detection in dark corners where lighting is uneven
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+            gray_enhanced = clahe.apply(gray)
+            
+            # Save debug image showing enhanced version
+            try:
+                debug_path = '/tmp/aruco_clahe_enhanced.jpg'
+                cv2.imwrite(debug_path, gray_enhanced)
+                logger.info(f"Saved CLAHE-enhanced debug image to {debug_path}")
+            except Exception as e:
+                logger.warning(f"Could not save debug image: {e}")
+            
+            # First try detection on enhanced image
             corners, ids, rejected = cv2.aruco.detectMarkers(
-                gray, self.aruco_dict, parameters=self.detector_params
+                gray_enhanced, self.aruco_dict, parameters=self.detector_params
             )
+            enhanced_corner_count = len([i for i in ids.flatten() if i in self.corner_ids]) if ids is not None else 0
+            logger.info(f"CLAHE-enhanced detection found {enhanced_corner_count}/4 corner markers")
+            
+            # If we didn't find all 4 corner markers, try original image too
+            if ids is None or len([i for i in ids.flatten() if i in self.corner_ids]) < 4:
+                corners_orig, ids_orig, _ = cv2.aruco.detectMarkers(
+                    gray, self.aruco_dict, parameters=self.detector_params
+                )
+                # Merge results, preferring enhanced detection
+                if ids_orig is not None:
+                    if ids is None:
+                        corners, ids = corners_orig, ids_orig
+                    else:
+                        # Add any markers from original that weren't in enhanced
+                        enhanced_ids = set(ids.flatten())
+                        for i, marker_id in enumerate(ids_orig.flatten()):
+                            if marker_id not in enhanced_ids:
+                                corners = list(corners) + [corners_orig[i]]
+                                ids = np.vstack([ids, [[marker_id]]])
+                                logger.info(f"Added marker {marker_id} from original (non-enhanced) detection")
             
             if ids is None or len(corners) == 0:
                 logger.warning("No markers detected")
