@@ -243,6 +243,124 @@ export function RectifiedPreviewCanvas({
       ctx.restore();
     });
 
+    // DEBUG: Draw paper boundary markers to verify coordinate system alignment
+    const debugBoundary = true; // Enable visual debugging
+    if (debugBoundary) {
+      ctx.save();
+      
+      // Draw corner markers at paper boundaries (0,0), (width,0), (0,height), (width,height)
+      const corners = [
+        { x: 0, y: 0, label: '(0,0)' },
+        { x: paperWidthCm, y: 0, label: `(${paperWidthCm},0)` },
+        { x: 0, y: paperHeightCm, label: `(0,${paperHeightCm})` },
+        { x: paperWidthCm, y: paperHeightCm, label: `(${paperWidthCm},${paperHeightCm})` },
+      ];
+      
+      ctx.fillStyle = 'lime';
+      ctx.strokeStyle = 'lime';
+      ctx.lineWidth = 2;
+      ctx.font = 'bold 12px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      corners.forEach(corner => {
+        const px = cmToPixels(corner.x, 'x');
+        const py = cmToPixels(corner.y, 'y');
+        
+        // Draw cross marker
+        const size = 15;
+        ctx.beginPath();
+        ctx.moveTo(px - size, py);
+        ctx.lineTo(px + size, py);
+        ctx.moveTo(px, py - size);
+        ctx.lineTo(px, py + size);
+        ctx.stroke();
+        
+        // Draw circle at corner
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw label
+        const labelOffsetX = corner.x === 0 ? 40 : -40;
+        const labelOffsetY = corner.y === 0 ? 15 : -15;
+        ctx.fillText(corner.label, px + labelOffsetX, py + labelOffsetY);
+      });
+      
+      // Draw expected ArUco corner marker positions (2.5cm inset from corners)
+      // These should align with the actual ArUco markers visible in the rectified image
+      const markerOffset = 2.5; // ArUco markers are 5cm, so center is 2.5cm from edge
+      const arucoPositions = [
+        { x: markerOffset, y: markerOffset, id: 'A(96)' },
+        { x: paperWidthCm - markerOffset, y: markerOffset, id: 'B(97)' },
+        { x: paperWidthCm - markerOffset, y: paperHeightCm - markerOffset, id: 'C(98)' },
+        { x: markerOffset, y: paperHeightCm - markerOffset, id: 'D(99)' },
+      ];
+      
+      ctx.fillStyle = 'orange';
+      ctx.strokeStyle = 'orange';
+      ctx.lineWidth = 2;
+      ctx.font = 'bold 11px monospace';
+      
+      arucoPositions.forEach(pos => {
+        const px = cmToPixels(pos.x, 'x');
+        const py = cmToPixels(pos.y, 'y');
+        
+        // Draw 5cm square representing the ArUco marker (2.5cm from center each way)
+        const markerHalfSize = cmToPixels(2.5, 'x');
+        ctx.strokeRect(px - markerHalfSize, py - markerHalfSize, markerHalfSize * 2, markerHalfSize * 2);
+        
+        // Draw crosshair at center
+        const crossSize = 8;
+        ctx.beginPath();
+        ctx.moveTo(px - crossSize, py);
+        ctx.lineTo(px + crossSize, py);
+        ctx.moveTo(px, py - crossSize);
+        ctx.lineTo(px, py + crossSize);
+        ctx.stroke();
+        
+        // Label
+        ctx.fillText(pos.id, px, py - markerHalfSize - 8);
+      });
+      
+      // Draw intermediate markers at 10cm intervals along edges
+      ctx.fillStyle = 'cyan';
+      ctx.strokeStyle = 'cyan';
+      ctx.lineWidth = 1;
+      ctx.font = '10px monospace';
+      
+      // Top edge markers
+      for (let x = 10; x < paperWidthCm; x += 10) {
+        const px = cmToPixels(x, 'x');
+        const py = cmToPixels(0, 'y');
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px, py + 10);
+        ctx.stroke();
+        ctx.fillText(`${x}`, px, py + 18);
+      }
+      
+      // Left edge markers
+      for (let y = 10; y < paperHeightCm; y += 10) {
+        const px = cmToPixels(0, 'x');
+        const py = cmToPixels(y, 'y');
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + 10, py);
+        ctx.stroke();
+        ctx.fillText(`${y}`, px + 18, py);
+      }
+      
+      // Draw paper boundary rectangle
+      ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(0, 0, canvasSize.width, canvasSize.height);
+      ctx.setLineDash([]);
+      
+      ctx.restore();
+    }
+
     if (hoveredTemplate || draggedTemplate) {
       canvas.style.cursor = 'move';
     } else {
