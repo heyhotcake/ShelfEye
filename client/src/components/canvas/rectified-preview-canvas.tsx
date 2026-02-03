@@ -438,11 +438,6 @@ export function RectifiedPreviewCanvas({
         ctx.fillText(pos.id, px, py - markerHalfSize - 8);
       });
       
-      // DEBUG: Draw paperSize info on canvas for troubleshooting
-      ctx.fillStyle = 'magenta';
-      ctx.font = 'bold 14px monospace';
-      ctx.fillText(`paperSize: ${paperSize} | is8Page: ${is8Page} | isMultiSheet: ${isMultiSheet}`, 10, 20);
-      
       // Draw intermediate markers at 10cm intervals along edges
       ctx.fillStyle = 'cyan';
       ctx.strokeStyle = 'cyan';

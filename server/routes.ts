@@ -647,6 +647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--camera-id', cameraId,
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
+        '--paper-size-name', paperSizeFormat,
         '--generate-preview',
         '--preview-output-size', `${previewWidth}x${previewHeight}`
         // NO --templates here - frontend canvas draws adjustable overlays

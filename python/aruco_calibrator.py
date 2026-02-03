@@ -150,7 +150,8 @@ class ArucoCornerCalibrator:
 
     def calculate_homography(self, marker_centers: Dict[int, np.ndarray], 
                             image_shape: Tuple[int, int],
-                            paper_size_cm: Tuple[float, float] = (29.7, 21.0)) -> Tuple[bool, Optional[np.ndarray], float, Optional[np.ndarray], Optional[np.ndarray]]:
+                            paper_size_cm: Tuple[float, float] = (29.7, 21.0),
+                            paper_size_name: str = 'A4-landscape') -> Tuple[bool, Optional[np.ndarray], float, Optional[np.ndarray], Optional[np.ndarray]]:
         """
         Calculate homography matrix from 4 corner markers with lens distortion correction
         Maps real-world paper coordinates (cm) to camera pixels
@@ -159,6 +160,7 @@ class ArucoCornerCalibrator:
             marker_centers: Dictionary of marker ID -> center point (pixels)
             image_shape: (height, width) of the image
             paper_size_cm: (width_cm, height_cm) of the paper (default A4 landscape)
+            paper_size_name: Paper format name (e.g., '8-page-4x2', '6-page-3x2', 'A4-landscape')
             
         Returns:
             success: Whether calculation was successful
@@ -201,19 +203,68 @@ class ArucoCornerCalibrator:
                 marker_centers[99],  # D: bottom-left
             ], dtype=np.float32)
             
-            # Source points: paper corners in cm (real-world coordinates)
-            # Markers are 5cm × 5cm and positioned at paper corners (0cm from edges)
-            # So marker centers are at 2.5cm from each edge
+            # Source points: marker centers in cm (real-world coordinates)
+            # For multi-sheet layouts, markers are at SHEET corners with 1cm inset
+            # For single-sheet layouts, markers are at PAPER corners with 1cm inset
             paper_width_cm, paper_height_cm = paper_size_cm
             marker_size_cm = 5.0
-            marker_center_offset = marker_size_cm / 2.0  # 2.5cm
+            marker_inset_cm = 1.0  # 10mm safe zone from sheet/paper edge
+            half_marker_cm = marker_size_cm / 2.0  # 2.5cm
             
-            src_points = np.array([
-                [marker_center_offset, marker_center_offset],  # A: top-left center
-                [paper_width_cm - marker_center_offset, marker_center_offset],  # B: top-right center
-                [paper_width_cm - marker_center_offset, paper_height_cm - marker_center_offset],  # C: bottom-right center
-                [marker_center_offset, paper_height_cm - marker_center_offset],  # D: bottom-left center
-            ], dtype=np.float32)
+            # Check if this is a multi-sheet layout
+            is_8_page = paper_size_name == '8-page-4x2'
+            is_6_page = paper_size_name == '6-page-3x2'
+            is_multi_sheet = is_8_page or is_6_page
+            
+            logger.info(f"Paper size name: {paper_size_name}, is_multi_sheet: {is_multi_sheet}")
+            
+            if is_multi_sheet:
+                # Multi-sheet layouts: markers at sheet corners with 1cm inset
+                a4_width_cm = 29.7
+                a4_height_cm = 21.0
+                grid_cols = 4 if is_8_page else 3
+                grid_rows = 2
+                
+                # Top-left (Sheet 1): marker corner at (inset, inset), center at (inset + half, inset + half)
+                top_left_x = marker_inset_cm + half_marker_cm
+                top_left_y = marker_inset_cm + half_marker_cm
+                
+                # Top-right (Sheet 4 or 3): marker corner at (sheetX + sheetWidth - inset - markerSize, inset)
+                # Global X = (gridCols-1) * sheetWidth + (sheetWidth - markerSize - inset) + halfMarker
+                top_right_x = (grid_cols - 1) * a4_width_cm + (a4_width_cm - marker_size_cm - marker_inset_cm) + half_marker_cm
+                top_right_y = marker_inset_cm + half_marker_cm
+                
+                # Bottom-left (Sheet 5 or 4): marker at sheet's bottom-left corner
+                bottom_left_x = marker_inset_cm + half_marker_cm
+                bottom_left_y = (grid_rows - 1) * a4_height_cm + (a4_height_cm - marker_size_cm - marker_inset_cm) + half_marker_cm
+                
+                # Bottom-right (Sheet 8 or 6): marker at sheet's bottom-right corner
+                bottom_right_x = (grid_cols - 1) * a4_width_cm + (a4_width_cm - marker_size_cm - marker_inset_cm) + half_marker_cm
+                bottom_right_y = (grid_rows - 1) * a4_height_cm + (a4_height_cm - marker_size_cm - marker_inset_cm) + half_marker_cm
+                
+                src_points = np.array([
+                    [top_left_x, top_left_y],      # A (96): top-left
+                    [top_right_x, top_right_y],    # B (97): top-right
+                    [bottom_right_x, bottom_right_y],  # C (98): bottom-right
+                    [bottom_left_x, bottom_left_y],    # D (99): bottom-left
+                ], dtype=np.float32)
+                
+                logger.info(f"Multi-sheet marker positions (cm): TL=({top_left_x:.1f},{top_left_y:.1f}), "
+                           f"TR=({top_right_x:.1f},{top_right_y:.1f}), BR=({bottom_right_x:.1f},{bottom_right_y:.1f}), "
+                           f"BL=({bottom_left_x:.1f},{bottom_left_y:.1f})")
+            else:
+                # Single-sheet layouts: markers at paper corners with 1cm inset
+                # Marker center = inset + half_marker = 1 + 2.5 = 3.5cm from each edge
+                marker_center_offset = marker_inset_cm + half_marker_cm
+                
+                src_points = np.array([
+                    [marker_center_offset, marker_center_offset],  # A: top-left center
+                    [paper_width_cm - marker_center_offset, marker_center_offset],  # B: top-right center
+                    [paper_width_cm - marker_center_offset, paper_height_cm - marker_center_offset],  # C: bottom-right center
+                    [marker_center_offset, paper_height_cm - marker_center_offset],  # D: bottom-left center
+                ], dtype=np.float32)
+                
+                logger.info(f"Single-sheet marker positions with 1cm inset (cm): offset={marker_center_offset:.1f}")
             
             # Calculate homography matrix: cm → pixels
             homography, mask = cv2.findHomography(src_points, dst_points, cv2.RANSAC, 5.0)
@@ -348,6 +399,7 @@ class ArucoCornerCalibrator:
     
     def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int], 
                              paper_size_cm: Tuple[float, float] = (29.7, 21.0),
+                             paper_size_name: str = 'A4-landscape',
                              camera_id: str = 'default',
                              device_path: Optional[str] = None,
                              generate_preview: bool = False,
@@ -360,6 +412,7 @@ class ArucoCornerCalibrator:
             camera_index: Camera device index (0, 1, 2, etc.) - used if device_path not provided
             resolution: (width, height) tuple
             paper_size_cm: (width_cm, height_cm) of the paper template
+            paper_size_name: Paper format name (e.g., '8-page-4x2', '6-page-3x2', 'A4-landscape')
             camera_id: Camera ID for file namespacing (multi-camera support)
             device_path: Device path for Raspberry Pi (/dev/video0, /dev/video1, etc.)
             generate_preview: Whether to generate rectified preview from calibration frame
@@ -411,7 +464,7 @@ class ArucoCornerCalibrator:
             # Calculate homography if all markers found
             if num_detected == 4:
                 success, homography, error, camera_matrix, dist_coeffs = self.calculate_homography(
-                    marker_centers, frame.shape[:2], paper_size_cm
+                    marker_centers, frame.shape[:2], paper_size_cm, paper_size_name
                 )
                 
                 if success and homography is not None:
@@ -543,6 +596,7 @@ def main():
     parser.add_argument('--camera-id', type=str, required=True, help='Camera ID for file namespacing (multi-camera support)')
     parser.add_argument('--resolution', type=str, default='3840x2160', help='Camera resolution (WxH) - 4K for best quality')
     parser.add_argument('--paper-size', type=str, default='29.7x21.0', help='Paper size in cm (WidthxHeight)')
+    parser.add_argument('--paper-size-name', type=str, default='A4-landscape', help='Paper size format name (e.g., 8-page-4x2, 6-page-3x2, A4-landscape)')
     parser.add_argument('--generate-preview', action='store_true', help='Generate rectified preview from calibration frame')
     parser.add_argument('--preview-output-size', type=str, help='Preview output size (WxH)')
     parser.add_argument('--templates', type=str, help='Template rectangles as JSON string')
@@ -574,8 +628,10 @@ def main():
         calibrator = ArucoCornerCalibrator()
         
         # Run calibration
+        paper_size_name = getattr(args, 'paper_size_name', 'A4-landscape')
         result = calibrator.calibrate_from_camera(
-            args.camera, resolution, paper_size_cm, 
+            args.camera, resolution, paper_size_cm,
+            paper_size_name=paper_size_name,
             camera_id=args.camera_id,
             device_path=args.device_path,
             generate_preview=args.generate_preview,

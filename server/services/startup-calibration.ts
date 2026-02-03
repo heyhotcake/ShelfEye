@@ -116,7 +116,8 @@ export class StartupCalibrationService {
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
         '--camera-id', camera.id,
         '--resolution', `${camera.resolution[0]}x${camera.resolution[1]}`,
-        '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`
+        '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
+        '--paper-size-name', paperSizeFormat
       ];
 
       // Use device path if available (for Raspberry Pi), otherwise use index
