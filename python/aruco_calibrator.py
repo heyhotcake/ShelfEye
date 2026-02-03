@@ -288,8 +288,9 @@ class ArucoCornerCalibrator:
             # Measure horizontal and vertical pixel distances between markers
             horizontal_pixels = np.linalg.norm(dst_points[1] - dst_points[0])  # Top-left to top-right
             vertical_pixels = np.linalg.norm(dst_points[3] - dst_points[0])  # Top-left to bottom-left
-            horizontal_cm = paper_width_cm - 2 * marker_center_offset  # Distance between marker centers
-            vertical_cm = paper_height_cm - 2 * marker_center_offset
+            # Use source points to calculate distances between marker centers
+            horizontal_cm = float(src_points[1][0] - src_points[0][0])  # Distance between marker centers
+            vertical_cm = float(src_points[3][1] - src_points[0][1])
             measured_px_per_cm_h = float(horizontal_pixels / horizontal_cm)
             measured_px_per_cm_v = float(vertical_pixels / vertical_cm)
             
