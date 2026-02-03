@@ -362,6 +362,15 @@ export function RectifiedPreviewCanvas({
       const gridCols = is8Page ? 4 : is6Page ? 3 : 1;
       const gridRows = isMultiSheet ? 2 : 1;
       
+      console.log('[RectifiedPreviewCanvas] ArUco position calculation:', {
+        paperSize,
+        is8Page,
+        is6Page,
+        isMultiSheet,
+        gridCols,
+        gridRows,
+      });
+      
       let arucoPositions;
       
       if (isMultiSheet) {
@@ -472,7 +481,7 @@ export function RectifiedPreviewCanvas({
     } else {
       canvas.style.cursor = 'default';
     }
-  }, [adjustedTemplates, canvasSize, hoveredTemplate, draggedTemplate, paperWidthCm, paperHeightCm]);
+  }, [adjustedTemplates, canvasSize, hoveredTemplate, draggedTemplate, paperWidthCm, paperHeightCm, paperSize]);
 
   const isPointInRect = (px: number, py: number, template: TemplateRect): boolean => {
     const centerX = cmToPixels(template.xCm, 'x');
