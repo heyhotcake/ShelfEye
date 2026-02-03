@@ -735,9 +735,12 @@ export default function Calibration() {
                                   }
                                 }
                                 
-                                // Invalidate queries to refetch updated templates from database
+                                // Invalidate ALL template-related queries to refetch updated positions
+                                // These must match the actual queryKeys used in the component
                                 await queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
-                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
+                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles/by-design'] }); // Design-only templates
+                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles/by-design-camera'] }); // Camera+design templates
+                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles/by-camera-paper'] }); // Camera+paper templates
                                 
                                 console.log(`[RecalibrateButton] Successfully saved ${savedCount} templates to database (${skippedCount} skipped)`);
                                 toast({
