@@ -717,51 +717,38 @@ export default function Calibration() {
                             if (hasTemplateAdjustments && adjustedTemplates.length > 0) {
                               console.log('[RecalibrateButton] Saving adjusted templates to database...');
                               try {
-                                const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
-                                if (selectedDesign) {
-                                  // Fetch actual database template rectangles by paper size
-                                  const paperSize = selectedDesign.paperSize;
-                                  console.log('[RecalibrateButton] Fetching DB templates for paper size:', paperSize);
-                                  const dbRectsResponse = await fetch(`/api/template-rectangles?paperSize=${paperSize}`);
-                                  if (dbRectsResponse.ok) {
-                                    const dbRects = await dbRectsResponse.json();
-                                    console.log('[RecalibrateButton] Found DB templates:', dbRects.length);
-                                    
-                                    // Match adjusted templates to database rectangles by autoQrId and update DB
-                                    for (const adjusted of adjustedTemplates) {
-                                      const dbRect = dbRects.find((r: any) => r.autoQrId === adjusted.autoQrId);
-                                      if (dbRect) {
-                                        console.log(`[RecalibrateButton] Updating ${dbRect.autoQrId}: (${adjusted.xCm}, ${adjusted.yCm}) for camera: ${selectedCamera?.id}`);
-                                        await apiRequest('PUT', `/api/template-rectangles/${dbRect.id}`, {
-                                          xCm: adjusted.xCm,
-                                          yCm: adjusted.yCm,
-                                          cameraId: selectedCamera?.id,
-                                        });
-                                      } else {
-                                        console.warn(`[RecalibrateButton] No DB match for autoQrId: ${adjusted.autoQrId}`);
-                                      }
-                                    }
-                                    
-                                    // Invalidate queries to refetch updated templates from database
-                                    await queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
-                                    await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
-                                    
-                                    console.log('[RecalibrateButton] Successfully saved to database');
-                                    toast({
-                                      title: "位置を保存しました",
-                                      description: `${adjustedTemplates.length}個のテンプレート位置を更新しました。調整された座標で再キャリブレーションを実行中...`,
+                                let savedCount = 0;
+                                let skippedCount = 0;
+                                
+                                // Update each adjusted template directly by its ID
+                                for (const adjusted of adjustedTemplates) {
+                                  if (adjusted.id) {
+                                    console.log(`[RecalibrateButton] Updating template ${adjusted.id} (${adjusted.autoQrId || 'no-aruco'}): (${adjusted.xCm.toFixed(2)}, ${adjusted.yCm.toFixed(2)})`);
+                                    await apiRequest('PUT', `/api/template-rectangles/${adjusted.id}`, {
+                                      xCm: adjusted.xCm,
+                                      yCm: adjusted.yCm,
                                     });
+                                    savedCount++;
                                   } else {
-                                    throw new Error('データベースからテンプレート矩形の取得に失敗しました');
+                                    console.warn(`[RecalibrateButton] Skipping template without ID:`, adjusted);
+                                    skippedCount++;
                                   }
-                                } else {
-                                  console.error('[RecalibrateButton] Selected design not found');
                                 }
+                                
+                                // Invalidate queries to refetch updated templates from database
+                                await queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
+                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles'] });
+                                
+                                console.log(`[RecalibrateButton] Successfully saved ${savedCount} templates to database (${skippedCount} skipped)`);
+                                toast({
+                                  title: "位置を保存しました",
+                                  description: `${savedCount}個のスロット位置を更新しました。${skippedCount > 0 ? `(${skippedCount}個スキップ)` : ''}`,
+                                });
                               } catch (error) {
                                 console.error('[RecalibrateButton] Failed to save adjusted positions:', error);
                                 toast({
                                   title: "保存に失敗しました",
-                                  description: "調整された位置の保存に失敗しました。一貫性を保つため、ローカルストレージは更新されませんでした。",
+                                  description: "調整された位置の保存に失敗しました。",
                                   variant: "destructive",
                                 });
                                 // Don't proceed if save failed
