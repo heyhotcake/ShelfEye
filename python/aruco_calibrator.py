@@ -50,12 +50,38 @@ class ArucoCornerCalibrator:
         # A=96 (top-left), B=97 (top-right), C=98 (bottom-right), D=99 (bottom-left)
         self.corner_ids = [96, 97, 98, 99]
         
-    def detect_corner_markers(self, image: np.ndarray) -> Tuple[Dict[int, np.ndarray], int]:
+    def get_outer_corner_index(self, marker_id: int) -> int:
+        """
+        Get the corner index for the outermost point of each corner marker.
+        
+        ArUco marker corners are returned in order: [top-left=0, top-right=1, bottom-right=2, bottom-left=3]
+        For each corner marker, we want the corner that points toward the paper edge:
+        - Marker 96 (top-left of paper): use corner 0 (its top-left corner)
+        - Marker 97 (top-right of paper): use corner 1 (its top-right corner)
+        - Marker 98 (bottom-right of paper): use corner 2 (its bottom-right corner)
+        - Marker 99 (bottom-left of paper): use corner 3 (its bottom-left corner)
+        
+        Args:
+            marker_id: The ArUco marker ID (96, 97, 98, or 99)
+            
+        Returns:
+            Corner index (0, 1, 2, or 3)
+        """
+        corner_mapping = {
+            96: 0,  # top-left marker → use its top-left corner
+            97: 1,  # top-right marker → use its top-right corner
+            98: 2,  # bottom-right marker → use its bottom-right corner
+            99: 3,  # bottom-left marker → use its bottom-left corner
+        }
+        return corner_mapping.get(marker_id, 0)
+    
+    def detect_corner_markers(self, image: np.ndarray) -> Tuple[Dict[int, np.ndarray], Dict[int, np.ndarray], int]:
         """
         Detect the 4 corner ArUco markers in the image
         
         Returns:
             marker_centers: Dictionary mapping marker ID to center point (x, y)
+            marker_outer_corners: Dictionary mapping marker ID to outer corner point (x, y)
             num_detected: Number of corner markers detected
         """
         try:
@@ -102,26 +128,37 @@ class ArucoCornerCalibrator:
             
             if ids is None or len(corners) == 0:
                 logger.warning("No markers detected")
-                return {}, 0
+                return {}, {}, 0
             
-            # Extract center points for our corner markers
+            # Extract center points AND outer corner points for our corner markers
             marker_centers = {}
+            marker_outer_corners = {}
             for i, marker_id in enumerate(ids.flatten()):
                 if marker_id in self.corner_ids:
-                    # Calculate center of the marker (average of 4 corners)
+                    # Get all 4 corners of the marker
                     corner_points = corners[i][0]
+                    
+                    # Calculate center of the marker (average of 4 corners)
                     center_x = np.mean(corner_points[:, 0])
                     center_y = np.mean(corner_points[:, 1])
                     marker_centers[marker_id] = np.array([center_x, center_y], dtype=np.float32)
+                    
+                    # Get the outermost corner for this marker
+                    outer_corner_idx = self.get_outer_corner_index(marker_id)
+                    outer_corner = corner_points[outer_corner_idx]
+                    marker_outer_corners[marker_id] = np.array([outer_corner[0], outer_corner[1]], dtype=np.float32)
+                    
+                    logger.info(f"Marker {marker_id}: center=({center_x:.1f}, {center_y:.1f}), "
+                               f"outer corner[{outer_corner_idx}]=({outer_corner[0]:.1f}, {outer_corner[1]:.1f})")
             
             num_detected = len(marker_centers)
             logger.info(f"Detected {num_detected}/4 corner markers: {list(marker_centers.keys())}")
             
-            return marker_centers, num_detected
+            return marker_centers, marker_outer_corners, num_detected
             
         except Exception as e:
             logger.error(f"Error detecting corner markers: {e}")
-            return {}, 0
+            return {}, {}, 0
     
     def estimate_camera_matrix(self, image_shape: Tuple[int, int]) -> np.ndarray:
         """
@@ -149,15 +186,21 @@ class ArucoCornerCalibrator:
         return camera_matrix
 
     def calculate_homography(self, marker_centers: Dict[int, np.ndarray], 
+                            marker_outer_corners: Dict[int, np.ndarray],
                             image_shape: Tuple[int, int],
                             paper_size_cm: Tuple[float, float] = (29.7, 21.0),
                             paper_size_name: str = 'A4-landscape') -> Tuple[bool, Optional[np.ndarray], float, Optional[np.ndarray], Optional[np.ndarray]]:
         """
-        Calculate homography matrix from 4 corner markers with lens distortion correction
+        Calculate homography matrix from 4 corner markers using their OUTER corners
         Maps real-world paper coordinates (cm) to camera pixels
         
+        The homography is calculated using the outermost corner of each ArUco marker,
+        which defines the exact boundary of the rectified image. This minimizes
+        distortion by cropping to only the necessary area.
+        
         Args:
-            marker_centers: Dictionary of marker ID -> center point (pixels)
+            marker_centers: Dictionary of marker ID -> center point (pixels) - for reference
+            marker_outer_corners: Dictionary of marker ID -> outer corner point (pixels) - used for homography
             image_shape: (height, width) of the image
             paper_size_cm: (width_cm, height_cm) of the paper (default A4 landscape)
             paper_size_name: Paper format name (e.g., '8-page-4x2', '6-page-3x2', 'A4-landscape')
@@ -171,12 +214,12 @@ class ArucoCornerCalibrator:
         """
         try:
             # Verify all 4 markers are detected
-            if len(marker_centers) != 4:
-                logger.warning(f"Need all 4 markers, only found {len(marker_centers)}")
+            if len(marker_outer_corners) != 4:
+                logger.warning(f"Need all 4 markers, only found {len(marker_outer_corners)}")
                 return False, None, float('inf'), None, None
             
             # Check that all required IDs are present
-            missing_ids = set(self.corner_ids) - set(marker_centers.keys())
+            missing_ids = set(self.corner_ids) - set(marker_outer_corners.keys())
             if missing_ids:
                 logger.warning(f"Missing marker IDs: {missing_ids}")
                 return False, None, float('inf'), None, None
@@ -191,25 +234,30 @@ class ArucoCornerCalibrator:
             dist_coeffs = np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
             logger.info(f"Using zero distortion coefficients (no distortion correction): {dist_coeffs.tolist()}")
             
-            # Destination points: detected marker centers in pixels (in order A, B, C, D)
-            # A (96) = top-left
-            # B (97) = top-right
-            # C (98) = bottom-right
-            # D (99) = bottom-left
+            # Destination points: OUTER CORNERS of markers in pixels (in order A, B, C, D)
+            # This defines the exact crop boundary of the rectified image
+            # A (96) = top-left marker's top-left corner
+            # B (97) = top-right marker's top-right corner
+            # C (98) = bottom-right marker's bottom-right corner
+            # D (99) = bottom-left marker's bottom-left corner
             dst_points = np.array([
-                marker_centers[96],  # A: top-left
-                marker_centers[97],  # B: top-right
-                marker_centers[98],  # C: bottom-right
-                marker_centers[99],  # D: bottom-left
+                marker_outer_corners[96],  # A: top-left outer corner
+                marker_outer_corners[97],  # B: top-right outer corner
+                marker_outer_corners[98],  # C: bottom-right outer corner
+                marker_outer_corners[99],  # D: bottom-left outer corner
             ], dtype=np.float32)
             
-            # Source points: marker centers in cm (real-world coordinates)
+            logger.info(f"Using OUTER CORNERS for homography (not marker centers)")
+            logger.info(f"Outer corners (pixels): TL={dst_points[0].tolist()}, TR={dst_points[1].tolist()}, "
+                       f"BR={dst_points[2].tolist()}, BL={dst_points[3].tolist()}")
+            
+            # Source points: OUTER CORNER positions in cm (real-world coordinates)
+            # The outer corners of the markers define the exact boundary of the paper area
             # For multi-sheet layouts, markers are at SHEET corners with 1cm inset
             # For single-sheet layouts, markers are at PAPER corners with 1cm inset
             paper_width_cm, paper_height_cm = paper_size_cm
             marker_size_cm = 5.0
             marker_inset_cm = 1.0  # 10mm safe zone from sheet/paper edge
-            half_marker_cm = marker_size_cm / 2.0  # 2.5cm
             
             # Check if this is a multi-sheet layout
             is_8_page = paper_size_name == '8-page-4x2'
@@ -225,46 +273,45 @@ class ArucoCornerCalibrator:
                 grid_cols = 4 if is_8_page else 3
                 grid_rows = 2
                 
-                # Top-left (Sheet 1): marker corner at (inset, inset), center at (inset + half, inset + half)
-                top_left_x = marker_inset_cm + half_marker_cm
-                top_left_y = marker_inset_cm + half_marker_cm
+                # OUTER CORNERS (not centers) - the corners pointing toward paper edges
+                # Top-left (Sheet 1): marker's outer corner at (inset, inset)
+                top_left_x = marker_inset_cm
+                top_left_y = marker_inset_cm
                 
-                # Top-right (Sheet 4 or 3): marker corner at (sheetX + sheetWidth - inset - markerSize, inset)
-                # Global X = (gridCols-1) * sheetWidth + (sheetWidth - markerSize - inset) + halfMarker
-                top_right_x = (grid_cols - 1) * a4_width_cm + (a4_width_cm - marker_size_cm - marker_inset_cm) + half_marker_cm
-                top_right_y = marker_inset_cm + half_marker_cm
+                # Top-right (Sheet 4 or 3): marker's outer corner at (sheet_right - inset, inset)
+                # The outer corner is at: (gridCols-1) * sheetWidth + (sheetWidth - inset)
+                top_right_x = (grid_cols - 1) * a4_width_cm + (a4_width_cm - marker_inset_cm)
+                top_right_y = marker_inset_cm
                 
-                # Bottom-left (Sheet 5 or 4): marker at sheet's bottom-left corner
-                bottom_left_x = marker_inset_cm + half_marker_cm
-                bottom_left_y = (grid_rows - 1) * a4_height_cm + (a4_height_cm - marker_size_cm - marker_inset_cm) + half_marker_cm
+                # Bottom-left (Sheet 5 or 4): marker's outer corner at (inset, sheet_bottom - inset)
+                bottom_left_x = marker_inset_cm
+                bottom_left_y = (grid_rows - 1) * a4_height_cm + (a4_height_cm - marker_inset_cm)
                 
-                # Bottom-right (Sheet 8 or 6): marker at sheet's bottom-right corner
-                bottom_right_x = (grid_cols - 1) * a4_width_cm + (a4_width_cm - marker_size_cm - marker_inset_cm) + half_marker_cm
-                bottom_right_y = (grid_rows - 1) * a4_height_cm + (a4_height_cm - marker_size_cm - marker_inset_cm) + half_marker_cm
+                # Bottom-right (Sheet 8 or 6): marker's outer corner at (sheet_right - inset, sheet_bottom - inset)
+                bottom_right_x = (grid_cols - 1) * a4_width_cm + (a4_width_cm - marker_inset_cm)
+                bottom_right_y = (grid_rows - 1) * a4_height_cm + (a4_height_cm - marker_inset_cm)
                 
                 src_points = np.array([
-                    [top_left_x, top_left_y],      # A (96): top-left
-                    [top_right_x, top_right_y],    # B (97): top-right
-                    [bottom_right_x, bottom_right_y],  # C (98): bottom-right
-                    [bottom_left_x, bottom_left_y],    # D (99): bottom-left
+                    [top_left_x, top_left_y],      # A (96): top-left outer corner
+                    [top_right_x, top_right_y],    # B (97): top-right outer corner
+                    [bottom_right_x, bottom_right_y],  # C (98): bottom-right outer corner
+                    [bottom_left_x, bottom_left_y],    # D (99): bottom-left outer corner
                 ], dtype=np.float32)
                 
-                logger.info(f"Multi-sheet marker positions (cm): TL=({top_left_x:.1f},{top_left_y:.1f}), "
+                logger.info(f"Multi-sheet OUTER CORNER positions (cm): TL=({top_left_x:.1f},{top_left_y:.1f}), "
                            f"TR=({top_right_x:.1f},{top_right_y:.1f}), BR=({bottom_right_x:.1f},{bottom_right_y:.1f}), "
                            f"BL=({bottom_left_x:.1f},{bottom_left_y:.1f})")
             else:
                 # Single-sheet layouts: markers at paper corners with 1cm inset
-                # Marker center = inset + half_marker = 1 + 2.5 = 3.5cm from each edge
-                marker_center_offset = marker_inset_cm + half_marker_cm
-                
+                # Outer corner = just the inset distance from each edge
                 src_points = np.array([
-                    [marker_center_offset, marker_center_offset],  # A: top-left center
-                    [paper_width_cm - marker_center_offset, marker_center_offset],  # B: top-right center
-                    [paper_width_cm - marker_center_offset, paper_height_cm - marker_center_offset],  # C: bottom-right center
-                    [marker_center_offset, paper_height_cm - marker_center_offset],  # D: bottom-left center
+                    [marker_inset_cm, marker_inset_cm],  # A: top-left outer corner
+                    [paper_width_cm - marker_inset_cm, marker_inset_cm],  # B: top-right outer corner
+                    [paper_width_cm - marker_inset_cm, paper_height_cm - marker_inset_cm],  # C: bottom-right outer corner
+                    [marker_inset_cm, paper_height_cm - marker_inset_cm],  # D: bottom-left outer corner
                 ], dtype=np.float32)
                 
-                logger.info(f"Single-sheet marker positions with 1cm inset (cm): offset={marker_center_offset:.1f}")
+                logger.info(f"Single-sheet OUTER CORNER positions with 1cm inset (cm)")
             
             # Calculate homography matrix: cm → pixels
             homography, mask = cv2.findHomography(src_points, dst_points, cv2.RANSAC, 5.0)
@@ -459,13 +506,13 @@ class ArucoCornerCalibrator:
             if frame is None:
                 raise Exception("Failed to capture frame from camera")
             
-            # Detect corner markers
-            marker_centers, num_detected = self.detect_corner_markers(frame)
+            # Detect corner markers (returns both centers and outer corners)
+            marker_centers, marker_outer_corners, num_detected = self.detect_corner_markers(frame)
             
             # Calculate homography if all markers found
             if num_detected == 4:
                 success, homography, error, camera_matrix, dist_coeffs = self.calculate_homography(
-                    marker_centers, frame.shape[:2], paper_size_cm, paper_size_name
+                    marker_centers, marker_outer_corners, frame.shape[:2], paper_size_cm, paper_size_name
                 )
                 
                 if success and homography is not None:
@@ -479,6 +526,10 @@ class ArucoCornerCalibrator:
                         'marker_positions': {
                             f"marker_{id}": center.tolist() 
                             for id, center in marker_centers.items()
+                        },
+                        'marker_outer_corners': {
+                            f"marker_{id}": corner.tolist() 
+                            for id, corner in marker_outer_corners.items()
                         },
                         # Include measured pixel density for frontend coordinate mapping
                         'measured_px_per_cm': self.measured_px_per_cm,
@@ -575,7 +626,15 @@ class ArucoCornerCalibrator:
                     'ok': False,
                     'error': f'Only detected {num_detected}/4 corner markers',
                     'markers_detected': num_detected,
-                    'detected_ids': [int(k) for k in marker_centers.keys()]
+                    'detected_ids': [int(k) for k in marker_centers.keys()],
+                    'marker_positions': {
+                        f"marker_{id}": center.tolist() 
+                        for id, center in marker_centers.items()
+                    },
+                    'marker_outer_corners': {
+                        f"marker_{id}": corner.tolist() 
+                        for id, corner in marker_outer_corners.items()
+                    }
                 }
                 
         except Exception as e:

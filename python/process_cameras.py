@@ -54,7 +54,27 @@ def get_paper_dimensions(paper_size: str) -> Tuple[float, float]:
         return (29.7, 21.0)
 
 
-def detect_corner_markers(frame: np.ndarray) -> Tuple[Dict[int, np.ndarray], int]:
+def get_outer_corner_index(marker_id: int) -> int:
+    """
+    Get the corner index for the outermost point of each corner marker.
+    
+    ArUco marker corners are returned in order: [top-left=0, top-right=1, bottom-right=2, bottom-left=3]
+    For each corner marker, we want the corner that points toward the paper edge:
+    - Marker 96 (top-left of paper): use corner 0 (its top-left corner)
+    - Marker 97 (top-right of paper): use corner 1 (its top-right corner)
+    - Marker 98 (bottom-right of paper): use corner 2 (its bottom-right corner)
+    - Marker 99 (bottom-left of paper): use corner 3 (its bottom-left corner)
+    """
+    corner_mapping = {
+        96: 0,
+        97: 1,
+        98: 2,
+        99: 3,
+    }
+    return corner_mapping.get(marker_id, 0)
+
+
+def detect_corner_markers(frame: np.ndarray) -> Tuple[Dict[int, np.ndarray], Dict[int, np.ndarray], int]:
     """
     Detect the 4 corner ArUco markers (IDs 96-99) in the frame.
     
@@ -63,6 +83,7 @@ def detect_corner_markers(frame: np.ndarray) -> Tuple[Dict[int, np.ndarray], int
         
     Returns:
         marker_centers: Dictionary mapping marker ID to center point (x, y)
+        marker_outer_corners: Dictionary mapping marker ID to outer corner point (x, y)
         num_detected: Number of corner markers detected
     """
     corner_ids = [96, 97, 98, 99]
@@ -74,17 +95,24 @@ def detect_corner_markers(frame: np.ndarray) -> Tuple[Dict[int, np.ndarray], int
     corners, ids, _ = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=aruco_params)
     
     if ids is None or len(corners) == 0:
-        return {}, 0
+        return {}, {}, 0
     
     marker_centers = {}
+    marker_outer_corners = {}
     for i, marker_id in enumerate(ids.flatten()):
         if marker_id in corner_ids:
             corner_points = corners[i][0]
+            # Calculate center
             center_x = np.mean(corner_points[:, 0])
             center_y = np.mean(corner_points[:, 1])
             marker_centers[int(marker_id)] = np.array([center_x, center_y], dtype=np.float32)
+            
+            # Get outer corner
+            outer_corner_idx = get_outer_corner_index(int(marker_id))
+            outer_corner = corner_points[outer_corner_idx]
+            marker_outer_corners[int(marker_id)] = np.array([outer_corner[0], outer_corner[1]], dtype=np.float32)
     
-    return marker_centers, len(marker_centers)
+    return marker_centers, marker_outer_corners, len(marker_centers)
 
 
 def validate_homography(homography: np.ndarray) -> bool:
@@ -131,40 +159,47 @@ def validate_homography(homography: np.ndarray) -> bool:
 
 
 def calculate_homography_from_corners(marker_centers: Dict[int, np.ndarray], 
+                                       marker_outer_corners: Dict[int, np.ndarray],
                                        paper_size_cm: Tuple[float, float]) -> Optional[np.ndarray]:
     """
-    Calculate homography matrix from 4 corner markers.
+    Calculate homography matrix from 4 corner markers using their OUTER corners.
     Maps real-world paper coordinates (cm) to camera pixels.
     
+    The homography is calculated using the outermost corner of each ArUco marker,
+    which defines the exact boundary of the rectified image. This minimizes
+    distortion by cropping to only the necessary area.
+    
     Args:
-        marker_centers: Dictionary of marker ID -> center point (pixels)
+        marker_centers: Dictionary of marker ID -> center point (pixels) - for validation
+        marker_outer_corners: Dictionary of marker ID -> outer corner point (pixels) - for homography
         paper_size_cm: (width_cm, height_cm) of the paper
         
     Returns:
         3x3 homography matrix or None if calculation fails
     """
-    if len(marker_centers) != 4:
+    if len(marker_outer_corners) != 4:
         return None
     
     required_ids = [96, 97, 98, 99]
-    if not all(id in marker_centers for id in required_ids):
+    if not all(id in marker_outer_corners for id in required_ids):
         return None
     
     paper_width_cm, paper_height_cm = paper_size_cm
-    marker_size_cm = 5.0
-    marker_center_offset = marker_size_cm / 2.0  # 2.5cm from edge
+    marker_inset_cm = 1.0  # 10mm safe zone from paper edge
     
-    # Destination points: detected marker centers in pixels
-    # A (96) = top-left, B (97) = top-right, C (98) = bottom-right, D (99) = bottom-left
+    # Destination points: OUTER CORNERS of markers in pixels
+    # A (96) = top-left marker's top-left corner
+    # B (97) = top-right marker's top-right corner
+    # C (98) = bottom-right marker's bottom-right corner
+    # D (99) = bottom-left marker's bottom-left corner
     dst_points = np.array([
-        marker_centers[96],
-        marker_centers[97],
-        marker_centers[98],
-        marker_centers[99],
+        marker_outer_corners[96],
+        marker_outer_corners[97],
+        marker_outer_corners[98],
+        marker_outer_corners[99],
     ], dtype=np.float32)
     
-    # Validate marker ordering: verify all 4 markers form a proper quadrilateral
-    # Expected positions: 96=TL, 97=TR, 98=BR, 99=BL
+    # Validate marker ordering using centers
     m96, m97, m98, m99 = marker_centers[96], marker_centers[97], marker_centers[98], marker_centers[99]
     
     ordering_valid = True
@@ -207,13 +242,19 @@ def calculate_homography_from_corners(marker_centers: Dict[int, np.ndarray],
         logger.error(f"Marker positions: 96={list(m96)}, 97={list(m97)}, 98={list(m98)}, 99={list(m99)}")
         return None  # Reject homography calculation if markers are in wrong positions
     
-    # Source points: paper corners in cm (marker centers are 2.5cm from edges)
+    # Source points: OUTER CORNER positions in cm (marker outer corners are at the inset distance)
     src_points = np.array([
-        [marker_center_offset, marker_center_offset],  # A: top-left
-        [paper_width_cm - marker_center_offset, marker_center_offset],  # B: top-right
-        [paper_width_cm - marker_center_offset, paper_height_cm - marker_center_offset],  # C: bottom-right
-        [marker_center_offset, paper_height_cm - marker_center_offset],  # D: bottom-left
+        [marker_inset_cm, marker_inset_cm],  # A: top-left outer corner
+        [paper_width_cm - marker_inset_cm, marker_inset_cm],  # B: top-right outer corner
+        [paper_width_cm - marker_inset_cm, paper_height_cm - marker_inset_cm],  # C: bottom-right outer corner
+        [marker_inset_cm, paper_height_cm - marker_inset_cm],  # D: bottom-left outer corner
     ], dtype=np.float32)
+    
+    logger.info(f"Using OUTER CORNERS for homography calculation")
+    logger.info(f"Outer corners (pixels): TL={dst_points[0].tolist()}, TR={dst_points[1].tolist()}, "
+               f"BR={dst_points[2].tolist()}, BL={dst_points[3].tolist()}")
+    logger.info(f"Source points (cm): TL={src_points[0].tolist()}, TR={src_points[1].tolist()}, "
+               f"BR={src_points[2].tolist()}, BL={src_points[3].tolist()}")
     
     homography, _ = cv2.findHomography(src_points, dst_points, cv2.RANSAC, 5.0)
     
@@ -975,10 +1016,10 @@ class CameraProcessor:
             
             logger.info(f"Camera {camera_id}: Frame captured ({frame.shape})")
             
-            # Detect 4 corner ArUco markers (96, 97, 98, 99) and get their centers
+            # Detect 4 corner ArUco markers (96, 97, 98, 99) and get their centers AND outer corners
             # This ensures template sheets are in place AND allows us to calculate fresh homography
             try:
-                marker_centers, num_detected = detect_corner_markers(frame)
+                marker_centers, marker_outer_corners, num_detected = detect_corner_markers(frame)
                 
                 if num_detected < 4:
                     corner_marker_ids = [96, 97, 98, 99]
@@ -992,7 +1033,9 @@ class CameraProcessor:
                     logger.error(f"Camera {camera_id}: Corner marker validation failed - only {num_detected}/4 detected, missing {missing_ids}")
                     return result
                 
-                logger.info(f"Camera {camera_id}: All 4 corner markers detected at positions: {[(id, list(pos)) for id, pos in marker_centers.items()]}")
+                logger.info(f"Camera {camera_id}: All 4 corner markers detected")
+                logger.info(f"Camera {camera_id}: Marker centers: {[(id, list(pos)) for id, pos in marker_centers.items()]}")
+                logger.info(f"Camera {camera_id}: Marker outer corners: {[(id, list(pos)) for id, pos in marker_outer_corners.items()]}")
                 
             except Exception as aruco_err:
                 result['status'] = 'failed'
@@ -1000,10 +1043,10 @@ class CameraProcessor:
                 logger.error(f"Camera {camera_id}: ArUco detection error: {aruco_err}")
                 return result
             
-            # Calculate fresh homography from detected corner positions
+            # Calculate fresh homography from detected corner positions (using outer corners)
             # This automatically adjusts for any camera/template movement since calibration
             try:
-                homography = calculate_homography_from_corners(marker_centers, paper_size_cm)
+                homography = calculate_homography_from_corners(marker_centers, marker_outer_corners, paper_size_cm)
                 if homography is None:
                     result['status'] = 'failed'
                     result['errors'].append('Failed to calculate homography from corner markers')
