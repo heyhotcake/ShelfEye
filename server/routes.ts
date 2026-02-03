@@ -571,18 +571,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Get template rectangles with category dimensions for preview overlay
-      // CRITICAL: Filter by template design timestamp to get only the selected template's slots
+      // CRITICAL: Filter by template design to get only the selected template's slots
       // Without this, it would count ALL templates with the same paper size (wrong slot count)
       let templateRectanglesForPreview: any[] = [];
-      let selectedDesignId: string | null = null; // Store designId for slot creation
       
-      if (templateTimestamp) {
-        // Look up the template design by its timestamp
+      // Priority 1: Use designId directly (most reliable)
+      // Priority 2: Look up by timestamp (fragile due to date precision issues)
+      // Priority 3: Fall back to paper size filter (legacy behavior)
+      const { designId } = req.body;
+      let selectedDesignId: string | null = designId || null;
+      
+      if (designId) {
+        // Use designId directly - most reliable method
+        const templateDesign = await storage.getTemplateDesign(designId);
+        if (templateDesign) {
+          templateRectanglesForPreview = await storage.getTemplateRectanglesByDesignId(designId);
+          console.log(`[Calibration] Found ${templateRectanglesForPreview.length} templates for design "${templateDesign.name}" (id: ${designId})`);
+        } else {
+          console.warn(`[Calibration] Design not found for ID: ${designId}, falling back to paper size filter`);
+          templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
+          selectedDesignId = null;
+        }
+      } else if (templateTimestamp) {
+        // Fallback: Look up the template design by its timestamp (fragile - may fail due to precision)
         const templateDesign = await storage.getTemplateDesignByTimestamp(templateTimestamp);
         if (templateDesign) {
           selectedDesignId = templateDesign.id;
           templateRectanglesForPreview = await storage.getTemplateRectanglesByDesignId(templateDesign.id);
-          console.log(`[Calibration] Found ${templateRectanglesForPreview.length} templates for design "${templateDesign.name}" (id: ${templateDesign.id})`);
+          console.log(`[Calibration] Found ${templateRectanglesForPreview.length} templates for design "${templateDesign.name}" (id: ${templateDesign.id}) via timestamp`);
         } else {
           console.warn(`[Calibration] No template design found for timestamp: ${templateTimestamp}, falling back to paper size filter`);
           templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
@@ -590,7 +606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Fallback: filter by paper size only (legacy behavior)
         templateRectanglesForPreview = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
-        console.log(`[Calibration] No template timestamp provided, found ${templateRectanglesForPreview.length} templates matching paper size: ${paperSizeFormat}`);
+        console.log(`[Calibration] No designId or timestamp provided, found ${templateRectanglesForPreview.length} templates matching paper size: ${paperSizeFormat}`);
       }
       
       const templatesWithDimensions = [];

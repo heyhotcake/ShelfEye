@@ -275,7 +275,7 @@ export default function Calibration() {
   });
 
   const calibrationMutation = useMutation({
-    mutationFn: async ({ cameraId, paperSize, templateTimestamp }: { cameraId: string; paperSize: string; templateTimestamp?: string }) => {
+    mutationFn: async ({ cameraId, paperSize, designId, templateTimestamp }: { cameraId: string; paperSize: string; designId?: string; templateTimestamp?: string }) => {
       // Lock camera BEFORE starting calibration to stop preview polling
       setIsCameraLocked(true);
       
@@ -283,7 +283,8 @@ export default function Calibration() {
       // This prevents "Pipeline handler in use by another" errors
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      return apiRequest('POST', `/api/calibrate/${cameraId}`, { paperSize, templateTimestamp });
+      // Pass designId directly for reliable template lookup (timestamp matching is fragile)
+      return apiRequest('POST', `/api/calibrate/${cameraId}`, { paperSize, designId, templateTimestamp });
     },
     onSuccess: async (response) => {
       const data: CalibrationResult = await response.json();
@@ -659,7 +660,7 @@ export default function Calibration() {
                                   return;
                                 }
                                 
-                                calibrationMutation.mutate({ cameraId: selectedCamera.id, paperSize, templateTimestamp: selectedTemplate });
+                                calibrationMutation.mutate({ cameraId: selectedCamera.id, paperSize, designId: selectedDesignId, templateTimestamp: selectedTemplate });
                               }
                             }}
                             disabled={
@@ -777,7 +778,8 @@ export default function Calibration() {
                                 setHasTemplateAdjustments(false);
                                 calibrationMutation.mutate({ 
                                   cameraId: selectedCamera.id, 
-                                  paperSize: selectedDesign.paperSize, 
+                                  paperSize: selectedDesign.paperSize,
+                                  designId: selectedDesignId,
                                   templateTimestamp: selectedTemplate 
                                 });
                               }
