@@ -339,18 +339,64 @@ export default function TemplatePrint() {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Render 4 corner ArUco markers at the exact corners (5cm size)
+      // Render 4 corner ArUco markers at positions matching PDF output
+      // For multi-sheet layouts, markers are placed at SHEET corners with 10mm inset (safe zone)
       if (arucoMarkers?.ok && arucoMarkers.markers) {
         const markerSizeCm = 5;
-        const paperWidthCm = canvasDimensions.realWidthMm / 10;
-        const paperHeightCm = canvasDimensions.realHeightMm / 10;
+        const markerInsetCm = 1; // 10mm safe zone inset from sheet edge
+        const a4WidthCm = 29.7;
+        const a4HeightCm = 21.0;
         
-        const cornerPositions = [
-          { id: 96, xCm: 0, yCm: 0 }, // Top-left (A)
-          { id: 97, xCm: paperWidthCm - markerSizeCm, yCm: 0 }, // Top-right (B)
-          { id: 98, xCm: paperWidthCm - markerSizeCm, yCm: paperHeightCm - markerSizeCm }, // Bottom-right (C)
-          { id: 99, xCm: 0, yCm: paperHeightCm - markerSizeCm }, // Bottom-left (D)
-        ];
+        // Determine grid layout based on paper size
+        const is8Page = paperSize === '8-page-4x2';
+        const is6Page = paperSize === '6-page-3x2';
+        const isMultiSheet = is8Page || is6Page;
+        const gridCols = is8Page ? 4 : is6Page ? 3 : 1;
+        const gridRows = isMultiSheet ? 2 : 1;
+        
+        // For multi-sheet layouts, markers are on specific corner sheets
+        // Sheet 1 = top-left, Sheet gridCols = top-right
+        // Sheet gridCols+1 = bottom-left, Sheet gridCols*2 = bottom-right
+        let cornerPositions;
+        
+        if (isMultiSheet) {
+          // Calculate global coordinates for markers on corner sheets
+          // Top-left (Sheet 1): marker at (inset, inset) in sheet space = (inset, inset) global
+          const topLeftX = markerInsetCm;
+          const topLeftY = markerInsetCm;
+          
+          // Top-right (Sheet gridCols): marker at (sheetWidth - markerSize - inset, inset)
+          // Global X = (gridCols-1) * sheetWidth + (sheetWidth - markerSize - inset)
+          const topRightX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm);
+          const topRightY = markerInsetCm;
+          
+          // Bottom-left (Sheet gridCols+1): marker at (inset, sheetHeight - markerSize - inset)
+          // Global Y = 1 * sheetHeight + (sheetHeight - markerSize - inset)
+          const bottomLeftX = markerInsetCm;
+          const bottomLeftY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm);
+          
+          // Bottom-right (Sheet gridCols*2): marker at sheet's bottom-right corner with inset
+          const bottomRightX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm);
+          const bottomRightY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm);
+          
+          cornerPositions = [
+            { id: 96, xCm: topLeftX, yCm: topLeftY }, // Top-left (A)
+            { id: 97, xCm: topRightX, yCm: topRightY }, // Top-right (B)
+            { id: 98, xCm: bottomRightX, yCm: bottomRightY }, // Bottom-right (C)
+            { id: 99, xCm: bottomLeftX, yCm: bottomLeftY }, // Bottom-left (D)
+          ];
+        } else {
+          // Single-sheet layouts: markers at paper corners with inset
+          const paperWidthCm = canvasDimensions.realWidthMm / 10;
+          const paperHeightCm = canvasDimensions.realHeightMm / 10;
+          
+          cornerPositions = [
+            { id: 96, xCm: markerInsetCm, yCm: markerInsetCm }, // Top-left (A)
+            { id: 97, xCm: paperWidthCm - markerSizeCm - markerInsetCm, yCm: markerInsetCm }, // Top-right (B)
+            { id: 98, xCm: paperWidthCm - markerSizeCm - markerInsetCm, yCm: paperHeightCm - markerSizeCm - markerInsetCm }, // Bottom-right (C)
+            { id: 99, xCm: markerInsetCm, yCm: paperHeightCm - markerSizeCm - markerInsetCm }, // Bottom-left (D)
+          ];
+        }
 
         cornerPositions.forEach((pos) => {
           const marker = arucoMarkers.markers.find((m: any) => m.id === pos.id);

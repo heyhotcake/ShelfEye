@@ -26,6 +26,7 @@ interface RectifiedPreviewCanvasProps {
   templates: TemplateRect[];
   paperWidthCm: number;
   paperHeightCm: number;
+  paperSize?: string; // Paper size string like '8-page-4x2' to determine multi-sheet layout
   measuredPxPerCm?: number;  // actual pixel density from ArUco marker detection
   onTemplatesAdjusted: (adjustedTemplates: TemplateRect[]) => void;
   className?: string;
@@ -36,6 +37,7 @@ export function RectifiedPreviewCanvas({
   templates,
   paperWidthCm,
   paperHeightCm,
+  paperSize,
   measuredPxPerCm,
   onTemplatesAdjusted,
   className
@@ -153,11 +155,30 @@ export function RectifiedPreviewCanvas({
           bottomLeft: `(${cmToPixels(0, 'x').toFixed(1)}, ${cmToPixels(paperHeightCm, 'y').toFixed(1)})`,
           bottomRight: `(${cmToPixels(paperWidthCm, 'x').toFixed(1)}, ${cmToPixels(paperHeightCm, 'y').toFixed(1)})`,
         },
-        // ArUco expected positions (at 2.5cm inset)
-        expectedArUcoPx: {
-          topLeft: `(${cmToPixels(2.5, 'x').toFixed(1)}, ${cmToPixels(2.5, 'y').toFixed(1)})`,
-          topRight: `(${cmToPixels(paperWidthCm - 2.5, 'x').toFixed(1)}, ${cmToPixels(2.5, 'y').toFixed(1)})`,
-        },
+        // ArUco expected positions (calculated based on paper layout)
+        paperSize: paperSize || 'single-sheet',
+        expectedArUcoPx: (() => {
+          const markerSizeCm = 5;
+          const markerInsetCm = 1;
+          const halfMarker = markerSizeCm / 2;
+          const a4WidthCm = 29.7;
+          const is8Page = paperSize === '8-page-4x2';
+          const is6Page = paperSize === '6-page-3x2';
+          const isMultiSheet = is8Page || is6Page;
+          const gridCols = is8Page ? 4 : is6Page ? 3 : 1;
+          
+          if (isMultiSheet) {
+            return {
+              topLeft: `(${cmToPixels(markerInsetCm + halfMarker, 'x').toFixed(1)}, ${cmToPixels(markerInsetCm + halfMarker, 'y').toFixed(1)})`,
+              topRight: `(${cmToPixels((gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm) + halfMarker, 'x').toFixed(1)}, ${cmToPixels(markerInsetCm + halfMarker, 'y').toFixed(1)})`,
+            };
+          } else {
+            return {
+              topLeft: `(${cmToPixels(markerInsetCm + halfMarker, 'x').toFixed(1)}, ${cmToPixels(markerInsetCm + halfMarker, 'y').toFixed(1)})`,
+              topRight: `(${cmToPixels(paperWidthCm - markerSizeCm - markerInsetCm + halfMarker, 'x').toFixed(1)}, ${cmToPixels(markerInsetCm + halfMarker, 'y').toFixed(1)})`,
+            };
+          }
+        })(),
         templateCount: adjustedTemplates.length,
         allTemplatePositions: adjustedTemplates.slice(0, 5).map(t => ({
           name: t.categoryName,
@@ -327,15 +348,60 @@ export function RectifiedPreviewCanvas({
         ctx.fillText(corner.label, px + labelOffsetX, py + labelOffsetY);
       });
       
-      // Draw expected ArUco corner marker positions (2.5cm inset from corners)
-      // These should align with the actual ArUco markers visible in the rectified image
-      const markerOffset = 2.5; // ArUco markers are 5cm, so center is 2.5cm from edge
-      const arucoPositions = [
-        { x: markerOffset, y: markerOffset, id: 'A(96)' },
-        { x: paperWidthCm - markerOffset, y: markerOffset, id: 'B(97)' },
-        { x: paperWidthCm - markerOffset, y: paperHeightCm - markerOffset, id: 'C(98)' },
-        { x: markerOffset, y: paperHeightCm - markerOffset, id: 'D(99)' },
-      ];
+      // Draw expected ArUco corner marker positions matching PDF output
+      // For multi-sheet layouts, markers are at SHEET corners with 10mm inset, not paper corners
+      const markerSizeCm = 5;
+      const markerInsetCm = 1; // 10mm safe zone inset from sheet edge
+      const a4WidthCm = 29.7;
+      const a4HeightCm = 21.0;
+      
+      // Determine grid layout based on paper size
+      const is8Page = paperSize === '8-page-4x2';
+      const is6Page = paperSize === '6-page-3x2';
+      const isMultiSheet = is8Page || is6Page;
+      const gridCols = is8Page ? 4 : is6Page ? 3 : 1;
+      const gridRows = isMultiSheet ? 2 : 1;
+      
+      let arucoPositions;
+      
+      if (isMultiSheet) {
+        // Calculate marker CENTER positions for multi-sheet layouts
+        // Marker top-left corner at (sheetCorner + inset), center is at (corner + inset + markerSize/2)
+        const halfMarker = markerSizeCm / 2;
+        
+        // Top-left (Sheet 1): marker corner at (inset, inset)
+        const topLeftX = markerInsetCm + halfMarker;
+        const topLeftY = markerInsetCm + halfMarker;
+        
+        // Top-right (Sheet gridCols): marker corner at (globalX, inset)
+        // Global X = (gridCols-1) * sheetWidth + (sheetWidth - markerSize - inset)
+        const topRightX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm) + halfMarker;
+        const topRightY = markerInsetCm + halfMarker;
+        
+        // Bottom-left (Sheet gridCols+1): marker corner at (inset, globalY)
+        const bottomLeftX = markerInsetCm + halfMarker;
+        const bottomLeftY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm) + halfMarker;
+        
+        // Bottom-right (Sheet gridCols*2): marker at sheet's bottom-right corner
+        const bottomRightX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm) + halfMarker;
+        const bottomRightY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm) + halfMarker;
+        
+        arucoPositions = [
+          { x: topLeftX, y: topLeftY, id: 'A(96)' },
+          { x: topRightX, y: topRightY, id: 'B(97)' },
+          { x: bottomRightX, y: bottomRightY, id: 'C(98)' },
+          { x: bottomLeftX, y: bottomLeftY, id: 'D(99)' },
+        ];
+      } else {
+        // Single-sheet layouts: markers at paper corners with inset
+        const halfMarker = markerSizeCm / 2;
+        arucoPositions = [
+          { x: markerInsetCm + halfMarker, y: markerInsetCm + halfMarker, id: 'A(96)' },
+          { x: paperWidthCm - markerSizeCm - markerInsetCm + halfMarker, y: markerInsetCm + halfMarker, id: 'B(97)' },
+          { x: paperWidthCm - markerSizeCm - markerInsetCm + halfMarker, y: paperHeightCm - markerSizeCm - markerInsetCm + halfMarker, id: 'C(98)' },
+          { x: markerInsetCm + halfMarker, y: paperHeightCm - markerSizeCm - markerInsetCm + halfMarker, id: 'D(99)' },
+        ];
+      }
       
       ctx.fillStyle = 'orange';
       ctx.strokeStyle = 'orange';

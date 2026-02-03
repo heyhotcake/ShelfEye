@@ -971,6 +971,7 @@ export default function Calibration() {
                         templates={adjustedTemplates.length > 0 ? adjustedTemplates : templatesWithCategories}
                         paperWidthCm={paperDimensions.width}
                         paperHeightCm={paperDimensions.height}
+                        paperSize={paperSize}
                         measuredPxPerCm={calibrationResult.measuredPxPerCm}
                         onTemplatesAdjusted={(templates) => {
                           setAdjustedTemplates(templates);
