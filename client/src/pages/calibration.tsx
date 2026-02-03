@@ -472,31 +472,6 @@ export default function Calibration() {
                       </div>
                     )}
                     
-                    {/* ArUco markers overlay - shown when camera is visible */}
-                    {preview?.ok && (
-                      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 600">
-                        {/* Corner markers A/B/C/D (clockwise from top-left) */}
-                        <rect x="100" y="100" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                        <text x="115" y="130" fill="white" fontSize="18" fontWeight="bold">A</text>
-                        
-                        <rect x="650" y="100" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                        <text x="665" y="130" fill="white" fontSize="18" fontWeight="bold">B</text>
-                        
-                        <rect x="650" y="450" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                        <text x="665" y="480" fill="white" fontSize="18" fontWeight="bold">C</text>
-                        
-                        <rect x="100" y="450" width="50" height="50" fill="hsl(217, 91%, 60%)" opacity="0.3"/>
-                        <text x="115" y="480" fill="white" fontSize="18" fontWeight="bold">D</text>
-                        
-                        {/* Grid outline */}
-                        <polyline 
-                          points="125,125 675,125 675,475 125,475 125,125" 
-                          fill="none" 
-                          stroke="hsl(142, 76%, 45%)" 
-                          strokeWidth="2"
-                        />
-                      </svg>
-                    )}
                   </div>
                 </div>
                 
