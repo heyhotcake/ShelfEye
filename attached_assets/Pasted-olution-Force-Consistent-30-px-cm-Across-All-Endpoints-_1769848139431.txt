@@ -1,0 +1,43 @@
+olution: Force Consistent 30 px/cm Across All Endpoints
+You need to add --output-size parameter to both the verify-positions and rectified-preview endpoints to match the calibration endpoint's fixed 30 px/cm.
+
+Recommended Changes
+1. Fix verify-positions endpoint (around line 1024-1031):
+
+// Calculate preview output size at fixed 30 px/cm (MUST match calibration endpoint)
+const previewScale = 30;
+const previewWidth = Math.round(paperDims.widthCm * previewScale);
+const previewHeight = Math.round(paperDims.heightCm * previewScale);
+
+const previewArgs = [
+  path.join(process.cwd(), 'python', 'rectified_preview.py'),
+  `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
+  `--homography=${homographyString}`,
+  `--output-size=${previewWidth}x${previewHeight}`, // ADD THIS LINE - force 30 px/cm
+  `--paper-size=${paperDims.widthCm}x${paperDims.heightCm}`,
+];
+2. Fix rectified-preview endpoint (around line 1658-1664):
+
+// Calculate preview output size at fixed 30 px/cm (MUST match calibration endpoint)
+const previewScale = 30;
+const previewWidth = Math.round(paperDimensions.widthCm * previewScale);
+const previewHeight = Math.round(paperDimensions.heightCm * previewScale);
+
+const args = [
+  path.join(process.cwd(), 'python/rectified_preview.py'),
+  `--resolution=${camera.resolution[0]}x${camera.resolution[1]}`,
+  `--homography=${homographyStr}`,
+  `--output-size=${previewWidth}x${previewHeight}`, // ADD THIS LINE - force 30 px/cm
+  `--paper-size=${paperDimensions.widthCm}x${paperDimensions.heightCm}`
+];
+Why This Fixes It
+Calibration generates image at 30 px/cm (2673×1260 for 89.1×42.0 cm paper)
+Verify positions NOW generates image at 30 px/cm (same dimensions)
+Frontend assumes 30 px/cm and uses proportional scaling (cm / paperWidthCm) * canvasSize.width
+Physical objects in both images appear at identical pixel positions
+Slot overlays align perfectly because the scale is consistent
+Verification
+After making these changes, the frontend's diagnostic logging (Line 90-94 in rectified-preview-canvas.tsx) should show:
+
+imagePxPerCm: "30.00 (X), 30.00 (Y)"
+And no warning about "PIXEL DENSITY MISMATCH".
