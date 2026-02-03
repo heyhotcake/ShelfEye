@@ -61,7 +61,7 @@ export interface IStorage {
   createTemplateRectangle(rectangle: InsertTemplateRectangle): Promise<TemplateRectangle>;
   updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined>;
   deleteTemplateRectangle(id: string): Promise<boolean>;
-  getTemplateRectanglesByDesignId(designId: string): Promise<TemplateRectangle[]>;
+  getTemplateRectanglesByDesignId(designId: string, masterOnly?: boolean): Promise<TemplateRectangle[]>;
   getTemplateRectanglesByDesignIdAndCamera(designId: string, cameraId: string): Promise<TemplateRectangle[]>;
   deleteTemplateRectanglesByDesignId(designId: string): Promise<number>;
 
@@ -555,8 +555,20 @@ export class DbStorage implements IStorage {
     return result.rowCount !== null && result.rowCount > 0;
   }
 
-  async getTemplateRectanglesByDesignId(designId: string): Promise<TemplateRectangle[]> {
+  async getTemplateRectanglesByDesignId(designId: string, masterOnly: boolean = false): Promise<TemplateRectangle[]> {
     await this.ensureInitialized();
+    
+    if (masterOnly) {
+      // Return only master templates (camera_id is NULL) - used for printing
+      return await db.select().from(schema.templateRectangles)
+        .where(and(
+          eq(schema.templateRectangles.designId, designId),
+          isNull(schema.templateRectangles.cameraId)
+        ))
+        .orderBy(schema.templateRectangles.createdAt);
+    }
+    
+    // Return all templates for this design (both master and camera-specific)
     return await db.select().from(schema.templateRectangles)
       .where(eq(schema.templateRectangles.designId, designId))
       .orderBy(schema.templateRectangles.createdAt);

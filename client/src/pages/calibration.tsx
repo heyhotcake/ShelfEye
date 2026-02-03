@@ -713,48 +713,54 @@ export default function Calibration() {
                           onClick={async () => {
                             console.log('[RecalibrateButton] Click detected', { hasTemplateAdjustments, adjustedTemplatesCount: adjustedTemplates.length });
                             
-                            // Save adjusted template positions if any
+                            // Save adjusted template positions as CAMERA-SPECIFIC copies
+                            // This preserves the master template for printing while storing
+                            // camera-specific adjustments for overlay alignment
                             if (hasTemplateAdjustments && adjustedTemplates.length > 0) {
-                              console.log('[RecalibrateButton] Saving adjusted templates to database...');
+                              console.log('[RecalibrateButton] Saving camera-specific adjustments (preserving master template)...');
                               try {
-                                let savedCount = 0;
-                                let skippedCount = 0;
-                                
-                                // Update each adjusted template directly by its ID
-                                for (const adjusted of adjustedTemplates) {
-                                  if (adjusted.id) {
-                                    console.log(`[RecalibrateButton] Updating template ${adjusted.id} (${adjusted.autoQrId || 'no-aruco'}): (${adjusted.xCm.toFixed(2)}, ${adjusted.yCm.toFixed(2)})`);
-                                    await apiRequest('PUT', `/api/template-rectangles/${adjusted.id}`, {
-                                      xCm: adjusted.xCm,
-                                      yCm: adjusted.yCm,
-                                    });
-                                    savedCount++;
-                                  } else {
-                                    console.warn(`[RecalibrateButton] Skipping template without ID:`, adjusted);
-                                    skippedCount++;
-                                  }
+                                const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+                                if (!selectedDesign || !selectedDesignId) {
+                                  throw new Error('No design selected');
                                 }
                                 
-                                // Invalidate ALL template-related queries to refetch updated positions
-                                // These must match the actual queryKeys used in the component
-                                await queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
-                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles/by-design'] }); // Design-only templates
-                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles/by-design-camera'] }); // Camera+design templates
-                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles/by-camera-paper'] }); // Camera+paper templates
+                                // Format adjustments for the API
+                                const adjustments = adjustedTemplates.map(t => ({
+                                  categoryId: t.categoryId,
+                                  autoQrId: t.autoQrId,
+                                  xCm: t.xCm,
+                                  yCm: t.yCm,
+                                  rotation: t.rotation || 0,
+                                }));
                                 
-                                console.log(`[RecalibrateButton] Successfully saved ${savedCount} templates to database (${skippedCount} skipped)`);
+                                console.log(`[RecalibrateButton] Saving ${adjustments.length} camera-specific adjustments for design ${selectedDesignId}, camera ${selectedCamera?.id}`);
+                                
+                                const response = await apiRequest('POST', '/api/template-rectangles/camera-adjustments', {
+                                  cameraId: selectedCamera?.id,
+                                  designId: selectedDesignId,
+                                  adjustments,
+                                });
+                                
+                                const result = await response.json();
+                                
+                                // Invalidate ALL template-related queries to refetch updated positions
+                                await queryClient.invalidateQueries({ queryKey: ['/api/template-designs'] });
+                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles/by-design'] });
+                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles/by-design-camera'] });
+                                await queryClient.invalidateQueries({ queryKey: ['/api/template-rectangles/by-camera-paper'] });
+                                
+                                console.log(`[RecalibrateButton] Camera adjustments saved:`, result);
                                 toast({
-                                  title: "位置を保存しました",
-                                  description: `${savedCount}個のスロット位置を更新しました。${skippedCount > 0 ? `(${skippedCount}個スキップ)` : ''}`,
+                                  title: "カメラ調整を保存しました",
+                                  description: `${result.created || 0}個作成、${result.updated || 0}個更新（マスターテンプレートは変更されません）`,
                                 });
                               } catch (error) {
-                                console.error('[RecalibrateButton] Failed to save adjusted positions:', error);
+                                console.error('[RecalibrateButton] Failed to save camera adjustments:', error);
                                 toast({
                                   title: "保存に失敗しました",
-                                  description: "調整された位置の保存に失敗しました。",
+                                  description: "カメラ調整の保存に失敗しました。",
                                   variant: "destructive",
                                 });
-                                // Don't proceed if save failed
                                 return;
                               }
                             }

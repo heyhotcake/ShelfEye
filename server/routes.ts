@@ -2761,9 +2761,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allCategories = await storage.getToolCategories();
       
       // Include rectangles and categories for each design
+      // For printing/display purposes, use master templates only (camera_id = NULL)
+      // This preserves orderly grid positions for printing while camera-specific
+      // adjustments are stored separately for calibration overlay
       const designsWithData = await Promise.all(
         designs.map(async (design) => {
-          const rectangles = await storage.getTemplateRectanglesByDesignId(design.id);
+          // Get master templates only (camera_id = NULL) for print preview
+          const masterRectangles = await storage.getTemplateRectanglesByDesignId(design.id, true);
+          
+          // If no master templates exist, fall back to all rectangles (for backwards compatibility)
+          const rectangles = masterRectangles.length > 0 
+            ? masterRectangles 
+            : await storage.getTemplateRectanglesByDesignId(design.id, false);
           
           // Get unique category IDs from rectangles
           const categoryIds = Array.from(new Set(rectangles.map(r => r.categoryId)));
@@ -2927,8 +2936,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // If only designId is provided, get templates for that specific design only
+      // Use masterOnly=true for printing (fetches templates without cameraId)
       if (designId && typeof designId === 'string') {
-        const rectangles = await storage.getTemplateRectanglesByDesignId(designId);
+        const masterOnly = req.query.masterOnly === 'true';
+        const rectangles = await storage.getTemplateRectanglesByDesignId(designId, masterOnly);
+        console.log(`[API] Templates by designId (masterOnly=${masterOnly}): ${rectangles.length} templates`);
         return res.json(rectangles);
       }
       
@@ -3017,6 +3029,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete template rectangle", error });
+    }
+  });
+
+  // Save camera-specific adjusted positions WITHOUT modifying master templates
+  // This creates camera-specific copies for overlay alignment while preserving
+  // the original master template for printing
+  app.post("/api/template-rectangles/camera-adjustments", async (req, res) => {
+    try {
+      const { cameraId, designId, adjustments } = req.body;
+      
+      if (!cameraId || !designId || !Array.isArray(adjustments)) {
+        return res.status(400).json({ 
+          message: "Missing required fields: cameraId, designId, and adjustments array" 
+        });
+      }
+      
+      console.log(`[API] POST /api/template-rectangles/camera-adjustments`, {
+        cameraId,
+        designId,
+        adjustmentCount: adjustments.length
+      });
+      
+      let createdCount = 0;
+      let updatedCount = 0;
+      let skippedCount = 0;
+      
+      for (const adj of adjustments) {
+        if (!adj.categoryId || adj.xCm === undefined || adj.yCm === undefined) {
+          console.warn('[CameraAdjustments] Skipping invalid adjustment:', adj);
+          skippedCount++;
+          continue;
+        }
+        
+        // Check if a camera-specific version already exists for this design+camera+category+autoQrId
+        const existingRects = await storage.getTemplateRectanglesByDesignIdAndCamera(designId, cameraId);
+        
+        // Find matching existing camera-specific template by autoQrId or categoryId
+        const existingRect = existingRects.find((r: any) => 
+          (adj.autoQrId && r.autoQrId === adj.autoQrId) ||
+          (!adj.autoQrId && r.categoryId === adj.categoryId && Math.abs(r.xCm - adj.originalXCm) < 0.5 && Math.abs(r.yCm - adj.originalYCm) < 0.5)
+        );
+        
+        if (existingRect) {
+          // Update existing camera-specific record
+          await storage.updateTemplateRectangle(existingRect.id, {
+            xCm: adj.xCm,
+            yCm: adj.yCm,
+          });
+          console.log(`[CameraAdjustments] Updated existing camera-specific template: ${existingRect.id} (${adj.autoQrId})`);
+          updatedCount++;
+        } else {
+          // Get the master template's paper size
+          const masterRects = await storage.getTemplateRectanglesByDesignId(designId);
+          const paperSize = masterRects[0]?.paperSize || '8-page-4x2';
+          
+          // Create new camera-specific copy
+          await storage.createTemplateRectangle({
+            designId,
+            cameraId,
+            categoryId: adj.categoryId,
+            paperSize,
+            xCm: adj.xCm,
+            yCm: adj.yCm,
+            rotation: adj.rotation || 0,
+            autoQrId: adj.autoQrId,
+          });
+          console.log(`[CameraAdjustments] Created new camera-specific template for ${adj.autoQrId}`);
+          createdCount++;
+        }
+      }
+      
+      console.log(`[CameraAdjustments] Complete: ${createdCount} created, ${updatedCount} updated, ${skippedCount} skipped`);
+      
+      res.json({ 
+        success: true, 
+        created: createdCount, 
+        updated: updatedCount,
+        skipped: skippedCount 
+      });
+    } catch (error) {
+      console.error('Error saving camera adjustments:', error);
+      res.status(500).json({ message: "Failed to save camera adjustments", error });
     }
   });
 
