@@ -127,6 +127,46 @@ export function RectifiedPreviewCanvas({
 
     ctx.drawImage(imageRef.current, 0, 0, canvas.width, canvas.height);
 
+    // DIAGNOSTIC: Log coordinate conversion details for debugging overlay alignment (once per render)
+    if (adjustedTemplates.length > 0 && !draggedTemplate) {
+      const sampleTemplate = adjustedTemplates[0];
+      const sampleCenterX = cmToPixels(sampleTemplate.xCm, 'x');
+      const sampleCenterY = cmToPixels(sampleTemplate.yCm, 'y');
+      console.log('[OverlayDebug] Coordinate conversion check:', {
+        paperDimensions: `${paperWidthCm}×${paperHeightCm} cm`,
+        canvasDimensions: `${canvasSize.width}×${canvasSize.height} px`,
+        pxPerCmX: (canvasSize.width / paperWidthCm).toFixed(2),
+        pxPerCmY: (canvasSize.height / paperHeightCm).toFixed(2),
+        sampleTemplate: {
+          name: sampleTemplate.categoryName,
+          xCm: sampleTemplate.xCm.toFixed(2),
+          yCm: sampleTemplate.yCm.toFixed(2),
+          widthCm: sampleTemplate.widthCm,
+          heightCm: sampleTemplate.heightCm,
+          xPx: sampleCenterX.toFixed(1),
+          yPx: sampleCenterY.toFixed(1),
+        },
+        // Expected positions for comparison with debug markers
+        expectedCornerPx: {
+          topLeft: `(${cmToPixels(0, 'x').toFixed(1)}, ${cmToPixels(0, 'y').toFixed(1)})`,
+          topRight: `(${cmToPixels(paperWidthCm, 'x').toFixed(1)}, ${cmToPixels(0, 'y').toFixed(1)})`,
+          bottomLeft: `(${cmToPixels(0, 'x').toFixed(1)}, ${cmToPixels(paperHeightCm, 'y').toFixed(1)})`,
+          bottomRight: `(${cmToPixels(paperWidthCm, 'x').toFixed(1)}, ${cmToPixels(paperHeightCm, 'y').toFixed(1)})`,
+        },
+        // ArUco expected positions (at 2.5cm inset)
+        expectedArUcoPx: {
+          topLeft: `(${cmToPixels(2.5, 'x').toFixed(1)}, ${cmToPixels(2.5, 'y').toFixed(1)})`,
+          topRight: `(${cmToPixels(paperWidthCm - 2.5, 'x').toFixed(1)}, ${cmToPixels(2.5, 'y').toFixed(1)})`,
+        },
+        templateCount: adjustedTemplates.length,
+        allTemplatePositions: adjustedTemplates.slice(0, 5).map(t => ({
+          name: t.categoryName,
+          cm: `(${t.xCm.toFixed(1)}, ${t.yCm.toFixed(1)})`,
+          px: `(${cmToPixels(t.xCm, 'x').toFixed(0)}, ${cmToPixels(t.yCm, 'y').toFixed(0)})`,
+        })),
+      });
+    }
+
     adjustedTemplates.forEach((template) => {
       const centerX = cmToPixels(template.xCm, 'x');
       const centerY = cmToPixels(template.yCm, 'y');
