@@ -2901,7 +2901,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { paperSize, cameraId, designId } = req.query;
       
-      // If designId is provided, get templates for that specific design only
+      // If both designId AND cameraId are provided, get camera-linked templates for that specific design
+      // This returns templates that belong to the selected design AND have been calibrated to the camera
+      if (designId && typeof designId === 'string' && cameraId && typeof cameraId === 'string') {
+        const rectangles = await storage.getTemplateRectanglesByDesignIdAndCamera(designId, cameraId);
+        console.log(`[API] Templates by designId+cameraId: ${rectangles.length} templates`);
+        return res.json(rectangles);
+      }
+      
+      // If only designId is provided, get templates for that specific design only
       if (designId && typeof designId === 'string') {
         const rectangles = await storage.getTemplateRectanglesByDesignId(designId);
         return res.json(rectangles);

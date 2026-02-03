@@ -62,6 +62,7 @@ export interface IStorage {
   updateTemplateRectangle(id: string, updates: Partial<InsertTemplateRectangle>): Promise<TemplateRectangle | undefined>;
   deleteTemplateRectangle(id: string): Promise<boolean>;
   getTemplateRectanglesByDesignId(designId: string): Promise<TemplateRectangle[]>;
+  getTemplateRectanglesByDesignIdAndCamera(designId: string, cameraId: string): Promise<TemplateRectangle[]>;
   deleteTemplateRectanglesByDesignId(designId: string): Promise<number>;
 
   // Template design methods (saved templates)
@@ -558,6 +559,18 @@ export class DbStorage implements IStorage {
     await this.ensureInitialized();
     return await db.select().from(schema.templateRectangles)
       .where(eq(schema.templateRectangles.designId, designId))
+      .orderBy(schema.templateRectangles.createdAt);
+  }
+
+  async getTemplateRectanglesByDesignIdAndCamera(designId: string, cameraId: string): Promise<TemplateRectangle[]> {
+    await this.ensureInitialized();
+    // Get templates that belong to both the specific design AND the camera
+    // These are templates that were calibrated for this camera with this design
+    return await db.select().from(schema.templateRectangles)
+      .where(and(
+        eq(schema.templateRectangles.designId, designId),
+        eq(schema.templateRectangles.cameraId, cameraId)
+      ))
       .orderBy(schema.templateRectangles.createdAt);
   }
 

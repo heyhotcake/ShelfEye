@@ -141,21 +141,22 @@ export default function Calibration() {
     },
   });
   
-  // After calibration, fetch CAMERA-LINKED templates for accurate overlay alignment
-  // These templates have positions that match the rectified image coordinates
+  // After calibration, fetch CAMERA-LINKED templates for the SPECIFIC DESIGN for accurate overlay alignment
+  // These templates have positions that match the rectified image coordinates AND are filtered to the selected design
   const selectedPaperSize = savedTemplateDesigns.find(d => d.timestamp === selectedTemplate)?.paperSize;
   const { data: cameraLinkedTemplates } = useQuery<any[]>({
-    queryKey: ['/api/template-rectangles/by-camera', selectedCamera?.id, selectedPaperSize],
-    enabled: calibrationStep >= 1 && !!selectedCamera?.id && !!selectedPaperSize && !!calibrationResult,
+    queryKey: ['/api/template-rectangles/by-design-camera', selectedDesignId, selectedCamera?.id],
+    enabled: calibrationStep >= 1 && !!selectedCamera?.id && !!selectedDesignId && !!calibrationResult,
     queryFn: async () => {
-      console.log('[CalibrationOverlay] Fetching CAMERA-LINKED templates:', {
-        cameraId: selectedCamera?.id,
-        paperSize: selectedPaperSize
+      console.log('[CalibrationOverlay] Fetching CAMERA-LINKED templates for DESIGN:', {
+        designId: selectedDesignId,
+        cameraId: selectedCamera?.id
       });
-      const response = await fetch(`/api/template-rectangles?cameraId=${selectedCamera?.id}&paperSize=${selectedPaperSize}`);
+      // Query with both designId AND cameraId to get only this design's camera-linked templates
+      const response = await fetch(`/api/template-rectangles?designId=${selectedDesignId}&cameraId=${selectedCamera?.id}`);
       const data = await response.json();
-      console.log('[CalibrationOverlay] Camera-linked templates loaded:', data.length, 
-        'templates (these should match rectified image coordinates)');
+      console.log('[CalibrationOverlay] Camera-linked templates for design loaded:', data.length, 
+        'templates (filtered to selected design only)');
       return data;
     },
   });
