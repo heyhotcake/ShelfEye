@@ -140,6 +140,25 @@ export default function Calibration() {
       return data;
     },
   });
+  
+  // After calibration, fetch CAMERA-LINKED templates for accurate overlay alignment
+  // These templates have positions that match the rectified image coordinates
+  const selectedPaperSize = savedTemplateDesigns.find(d => d.timestamp === selectedTemplate)?.paperSize;
+  const { data: cameraLinkedTemplates } = useQuery<any[]>({
+    queryKey: ['/api/template-rectangles/by-camera', selectedCamera?.id, selectedPaperSize],
+    enabled: calibrationStep >= 1 && !!selectedCamera?.id && !!selectedPaperSize && !!calibrationResult,
+    queryFn: async () => {
+      console.log('[CalibrationOverlay] Fetching CAMERA-LINKED templates:', {
+        cameraId: selectedCamera?.id,
+        paperSize: selectedPaperSize
+      });
+      const response = await fetch(`/api/template-rectangles?cameraId=${selectedCamera?.id}&paperSize=${selectedPaperSize}`);
+      const data = await response.json();
+      console.log('[CalibrationOverlay] Camera-linked templates loaded:', data.length, 
+        'templates (these should match rectified image coordinates)');
+      return data;
+    },
+  });
 
   // Show all saved template designs (universal - not camera-specific)
   const relevantDesigns = savedTemplateDesigns;
@@ -836,10 +855,17 @@ export default function Calibration() {
               const paperDimensions = getPaperDimensions(paperSize);
               const aspectRatio = paperDimensions.width / paperDimensions.height;
               
-              // Get templates with categories for the canvas - use DB data if available
-              // dbTemplateRectangles is filtered by designId to show only the selected template's slots
+              // FIX: Use CAMERA-LINKED templates for accurate overlay alignment
+              // Camera-linked templates have calibrated positions that match the rectified image
+              // Design-linked templates have pre-calibration positions that may be offset
+              const templateSource = cameraLinkedTemplates && cameraLinkedTemplates.length > 0 
+                ? cameraLinkedTemplates 
+                : dbTemplateRectangles || [];
+              
+              const usingCameraLinked = cameraLinkedTemplates && cameraLinkedTemplates.length > 0;
+              
               // Use toolCategories from database for proper name lookup (not the saved design's categories)
-              const templatesWithCategories = (dbTemplateRectangles || []).map((rect: any) => {
+              const templatesWithCategories = templateSource.map((rect: any) => {
                 // Look up category from database tool categories (more reliable than saved design's categories)
                 const category = toolCategories?.find((c: any) => c.id === rect.categoryId) ||
                                  selectedDesign?.categories?.find((c: any) => c.id === rect.categoryId);
@@ -864,6 +890,7 @@ export default function Calibration() {
                 selectedPaperSize: paperSize,
                 paperDimensionsCm: `${paperDimensions.width}×${paperDimensions.height}`,
                 aspectRatio: aspectRatio.toFixed(4),
+                templateSource: usingCameraLinked ? 'CAMERA-LINKED (calibrated)' : 'DESIGN-LINKED (pre-calibration)',
                 templateCount: templatesWithCategories.length,
                 templates: templatesWithCategories.slice(0, 3).map(t => ({
                   name: t.categoryName,
