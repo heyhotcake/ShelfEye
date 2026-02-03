@@ -304,52 +304,12 @@ export function RectifiedPreviewCanvas({
       ctx.restore();
     });
 
-    // DEBUG: Draw paper boundary markers to verify coordinate system alignment
+    // DEBUG: Draw ArUco marker outer corners and centers to verify coordinate system alignment
     const debugBoundary = true; // Enable visual debugging
     if (debugBoundary) {
       ctx.save();
       
-      // Draw corner markers at paper boundaries (0,0), (width,0), (0,height), (width,height)
-      const corners = [
-        { x: 0, y: 0, label: '(0,0)' },
-        { x: paperWidthCm, y: 0, label: `(${paperWidthCm},0)` },
-        { x: 0, y: paperHeightCm, label: `(0,${paperHeightCm})` },
-        { x: paperWidthCm, y: paperHeightCm, label: `(${paperWidthCm},${paperHeightCm})` },
-      ];
-      
-      ctx.fillStyle = 'lime';
-      ctx.strokeStyle = 'lime';
-      ctx.lineWidth = 2;
-      ctx.font = 'bold 12px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      corners.forEach(corner => {
-        const px = cmToPixels(corner.x, 'x');
-        const py = cmToPixels(corner.y, 'y');
-        
-        // Draw cross marker
-        const size = 15;
-        ctx.beginPath();
-        ctx.moveTo(px - size, py);
-        ctx.lineTo(px + size, py);
-        ctx.moveTo(px, py - size);
-        ctx.lineTo(px, py + size);
-        ctx.stroke();
-        
-        // Draw circle at corner
-        ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw label
-        const labelOffsetX = corner.x === 0 ? 40 : -40;
-        const labelOffsetY = corner.y === 0 ? 15 : -15;
-        ctx.fillText(corner.label, px + labelOffsetX, py + labelOffsetY);
-      });
-      
-      // Draw expected ArUco corner marker positions matching PDF output
-      // For multi-sheet layouts, markers are at SHEET corners with 10mm inset, not paper corners
+      // ArUco marker parameters
       const markerSizeCm = 5;
       const markerInsetCm = 1; // 10mm safe zone inset from sheet edge
       const a4WidthCm = 29.7;
@@ -371,40 +331,51 @@ export function RectifiedPreviewCanvas({
         gridRows,
       });
       
-      let arucoPositions;
+      // Calculate OUTER CORNER positions (used for homography crop boundary)
+      let outerCornerPositions;
+      let markerCenterPositions;
       
       if (isMultiSheet) {
-        // Calculate marker CENTER positions for multi-sheet layouts
-        // Marker top-left corner at (sheetCorner + inset), center is at (corner + inset + markerSize/2)
+        // OUTER CORNERS - the actual boundary points for homography
+        // These are at the inset distance from sheet edges
+        const tlOuterX = markerInsetCm;
+        const tlOuterY = markerInsetCm;
+        
+        const trOuterX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerInsetCm);
+        const trOuterY = markerInsetCm;
+        
+        const brOuterX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerInsetCm);
+        const brOuterY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerInsetCm);
+        
+        const blOuterX = markerInsetCm;
+        const blOuterY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerInsetCm);
+        
+        outerCornerPositions = [
+          { x: tlOuterX, y: tlOuterY, id: 'c(96)' },
+          { x: trOuterX, y: trOuterY, id: 'c(97)' },
+          { x: brOuterX, y: brOuterY, id: 'c(98)' },
+          { x: blOuterX, y: blOuterY, id: 'c(99)' },
+        ];
+        
+        // MARKER CENTERS - for reference
         const halfMarker = markerSizeCm / 2;
-        
-        // Top-left (Sheet 1): marker corner at (inset, inset)
-        const topLeftX = markerInsetCm + halfMarker;
-        const topLeftY = markerInsetCm + halfMarker;
-        
-        // Top-right (Sheet gridCols): marker corner at (globalX, inset)
-        // Global X = (gridCols-1) * sheetWidth + (sheetWidth - markerSize - inset)
-        const topRightX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm) + halfMarker;
-        const topRightY = markerInsetCm + halfMarker;
-        
-        // Bottom-left (Sheet gridCols+1): marker corner at (inset, globalY)
-        const bottomLeftX = markerInsetCm + halfMarker;
-        const bottomLeftY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm) + halfMarker;
-        
-        // Bottom-right (Sheet gridCols*2): marker at sheet's bottom-right corner
-        const bottomRightX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm) + halfMarker;
-        const bottomRightY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm) + halfMarker;
-        
-        arucoPositions = [
-          { x: topLeftX, y: topLeftY, id: 'A(96)' },
-          { x: topRightX, y: topRightY, id: 'B(97)' },
-          { x: bottomRightX, y: bottomRightY, id: 'C(98)' },
-          { x: bottomLeftX, y: bottomLeftY, id: 'D(99)' },
+        markerCenterPositions = [
+          { x: markerInsetCm + halfMarker, y: markerInsetCm + halfMarker, id: 'A(96)' },
+          { x: (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm) + halfMarker, y: markerInsetCm + halfMarker, id: 'B(97)' },
+          { x: (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm) + halfMarker, y: (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm) + halfMarker, id: 'C(98)' },
+          { x: markerInsetCm + halfMarker, y: (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm) + halfMarker, id: 'D(99)' },
         ];
       } else {
-        // Single-sheet layouts: markers at paper corners with inset
+        // Single-sheet layouts
+        outerCornerPositions = [
+          { x: markerInsetCm, y: markerInsetCm, id: 'c(96)' },
+          { x: paperWidthCm - markerInsetCm, y: markerInsetCm, id: 'c(97)' },
+          { x: paperWidthCm - markerInsetCm, y: paperHeightCm - markerInsetCm, id: 'c(98)' },
+          { x: markerInsetCm, y: paperHeightCm - markerInsetCm, id: 'c(99)' },
+        ];
+        
         const halfMarker = markerSizeCm / 2;
-        arucoPositions = [
+        markerCenterPositions = [
           { x: markerInsetCm + halfMarker, y: markerInsetCm + halfMarker, id: 'A(96)' },
           { x: paperWidthCm - markerSizeCm - markerInsetCm + halfMarker, y: markerInsetCm + halfMarker, id: 'B(97)' },
           { x: paperWidthCm - markerSizeCm - markerInsetCm + halfMarker, y: paperHeightCm - markerSizeCm - markerInsetCm + halfMarker, id: 'C(98)' },
@@ -412,12 +383,46 @@ export function RectifiedPreviewCanvas({
         ];
       }
       
+      // Draw GREEN markers at OUTER CORNERS (the homography boundary points)
+      // These should overlap with the detected ArUco marker outer corners
+      ctx.fillStyle = 'lime';
+      ctx.strokeStyle = 'lime';
+      ctx.lineWidth = 2;
+      ctx.font = 'bold 12px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      outerCornerPositions.forEach(corner => {
+        const px = cmToPixels(corner.x, 'x');
+        const py = cmToPixels(corner.y, 'y');
+        
+        // Draw cross marker at outer corner
+        const size = 15;
+        ctx.beginPath();
+        ctx.moveTo(px - size, py);
+        ctx.lineTo(px + size, py);
+        ctx.moveTo(px, py - size);
+        ctx.lineTo(px, py + size);
+        ctx.stroke();
+        
+        // Draw circle at corner
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw label with cm coordinates
+        const labelOffsetX = corner.x < paperWidthCm / 2 ? 45 : -45;
+        const labelOffsetY = corner.y < paperHeightCm / 2 ? 15 : -15;
+        ctx.fillText(`(${corner.x.toFixed(1)},${corner.y.toFixed(1)})`, px + labelOffsetX, py + labelOffsetY);
+      });
+      
+      // Draw ORANGE markers at marker CENTERS with 5cm square outline
       ctx.fillStyle = 'orange';
       ctx.strokeStyle = 'orange';
       ctx.lineWidth = 2;
       ctx.font = 'bold 11px monospace';
       
-      arucoPositions.forEach(pos => {
+      markerCenterPositions.forEach(pos => {
         const px = cmToPixels(pos.x, 'x');
         const py = cmToPixels(pos.y, 'y');
         
