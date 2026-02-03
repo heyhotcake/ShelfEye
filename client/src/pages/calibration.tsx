@@ -144,22 +144,45 @@ export default function Calibration() {
   // After calibration, fetch CAMERA-LINKED templates for the SPECIFIC DESIGN for accurate overlay alignment
   // These templates have positions that match the rectified image coordinates AND are filtered to the selected design
   const selectedPaperSize = savedTemplateDesigns.find(d => d.timestamp === selectedTemplate)?.paperSize;
-  const { data: cameraLinkedTemplates } = useQuery<any[]>({
+  
+  // Priority 1: Camera-linked templates for THIS EXACT DESIGN
+  const { data: cameraLinkedTemplatesExact } = useQuery<any[]>({
     queryKey: ['/api/template-rectangles/by-design-camera', selectedDesignId, selectedCamera?.id],
     enabled: calibrationStep >= 1 && !!selectedCamera?.id && !!selectedDesignId && !!calibrationResult,
     queryFn: async () => {
-      console.log('[CalibrationOverlay] Fetching CAMERA-LINKED templates for DESIGN:', {
+      console.log('[CalibrationOverlay] Fetching CAMERA-LINKED templates for EXACT DESIGN:', {
         designId: selectedDesignId,
         cameraId: selectedCamera?.id
       });
-      // Query with both designId AND cameraId to get only this design's camera-linked templates
       const response = await fetch(`/api/template-rectangles?designId=${selectedDesignId}&cameraId=${selectedCamera?.id}`);
       const data = await response.json();
-      console.log('[CalibrationOverlay] Camera-linked templates for design loaded:', data.length, 
-        'templates (filtered to selected design only)');
+      console.log('[CalibrationOverlay] Camera-linked templates (exact design):', data.length);
       return data;
     },
   });
+  
+  // Priority 2: Camera-linked templates for ANY DESIGN with same paperSize + cameraId
+  // This provides calibrated positions even if this specific design wasn't calibrated yet
+  const { data: cameraLinkedTemplatesByPaper } = useQuery<any[]>({
+    queryKey: ['/api/template-rectangles/by-camera-paper', selectedCamera?.id, selectedPaperSize],
+    enabled: calibrationStep >= 1 && !!selectedCamera?.id && !!selectedPaperSize && !!calibrationResult,
+    queryFn: async () => {
+      console.log('[CalibrationOverlay] Fetching CAMERA-LINKED templates by PAPER SIZE:', {
+        cameraId: selectedCamera?.id,
+        paperSize: selectedPaperSize
+      });
+      const response = await fetch(`/api/template-rectangles?cameraId=${selectedCamera?.id}&paperSize=${selectedPaperSize}`);
+      const data = await response.json();
+      console.log('[CalibrationOverlay] Camera-linked templates (by paper size):', data.length);
+      return data;
+    },
+  });
+  
+  // Cascading fallback: exact design > same paper size > design-only
+  const cameraLinkedTemplates = 
+    (cameraLinkedTemplatesExact && cameraLinkedTemplatesExact.length > 0) ? cameraLinkedTemplatesExact :
+    (cameraLinkedTemplatesByPaper && cameraLinkedTemplatesByPaper.length > 0) ? cameraLinkedTemplatesByPaper :
+    null;
 
   // Show all saved template designs (universal - not camera-specific)
   const relevantDesigns = savedTemplateDesigns;
@@ -857,13 +880,23 @@ export default function Calibration() {
               const aspectRatio = paperDimensions.width / paperDimensions.height;
               
               // FIX: Use CAMERA-LINKED templates for accurate overlay alignment
-              // Camera-linked templates have calibrated positions that match the rectified image
-              // Design-linked templates have pre-calibration positions that may be offset
+              // Cascading priority:
+              // 1. Camera-linked for exact design (best match)
+              // 2. Camera-linked for same paper size (calibrated positions from similar design)
+              // 3. Design-only templates (pre-calibration positions, may be offset)
               const templateSource = cameraLinkedTemplates && cameraLinkedTemplates.length > 0 
                 ? cameraLinkedTemplates 
                 : dbTemplateRectangles || [];
               
-              const usingCameraLinked = cameraLinkedTemplates && cameraLinkedTemplates.length > 0;
+              // Determine which source is being used for logging
+              const usingExactDesign = cameraLinkedTemplatesExact && cameraLinkedTemplatesExact.length > 0;
+              const usingPaperSizeFallback = !usingExactDesign && cameraLinkedTemplatesByPaper && cameraLinkedTemplatesByPaper.length > 0;
+              const usingCameraLinked = usingExactDesign || usingPaperSizeFallback;
+              const templateSourceLabel = usingExactDesign 
+                ? 'CAMERA-LINKED (exact design - calibrated)' 
+                : usingPaperSizeFallback 
+                  ? 'CAMERA-LINKED (paper-size fallback - calibrated from similar design)' 
+                  : 'DESIGN-LINKED (pre-calibration - may have position offset)';
               
               // Use toolCategories from database for proper name lookup (not the saved design's categories)
               const templatesWithCategories = templateSource.map((rect: any) => {
@@ -891,7 +924,7 @@ export default function Calibration() {
                 selectedPaperSize: paperSize,
                 paperDimensionsCm: `${paperDimensions.width}×${paperDimensions.height}`,
                 aspectRatio: aspectRatio.toFixed(4),
-                templateSource: usingCameraLinked ? 'CAMERA-LINKED (calibrated)' : 'DESIGN-LINKED (pre-calibration)',
+                templateSource: templateSourceLabel,
                 templateCount: templatesWithCategories.length,
                 templates: templatesWithCategories.slice(0, 3).map(t => ({
                   name: t.categoryName,
