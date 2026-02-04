@@ -285,19 +285,21 @@ def rectify_frame(frame: np.ndarray, homography: np.ndarray,
     output_height = int(paper_height_cm * px_per_cm)
     output_size = (output_width, output_height)
     
-    # Scaling matrix: cm -> output pixels
+    # Scaling matrix: cm → output pixels
     scale_x = output_width / paper_width_cm
     scale_y = output_height / paper_height_cm
-    # Inverse scaling matrix: output pixels → cm
-    S_inv = np.array([
-        [1/scale_x, 0, 0],
-        [0, 1/scale_y, 0],
+    S = np.array([
+        [scale_x, 0, 0],
+        [0, scale_y, 0],
         [0, 0, 1]
     ], dtype=np.float32)
     
-    # For warpPerspective backward mapping: output_pixels → cm → camera_pixels
-    # H maps cm → camera pixels, so the full transform is H @ S_inv
-    M = homography @ S_inv
+    # For warpPerspective: camera_pixels → cm → output_pixels
+    # Invert homography: camera pixels → cm
+    H_inv = np.linalg.inv(homography)
+    
+    # Combined warp: camera_pixel → cm → output_pixel
+    M = S @ H_inv
     
     # CRITICAL: Use INTER_NEAREST to preserve sharp ArUco marker edges
     rectified = cv2.warpPerspective(frame, M, output_size, flags=cv2.INTER_NEAREST)

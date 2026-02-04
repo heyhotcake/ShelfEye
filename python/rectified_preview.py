@@ -56,22 +56,22 @@ def generate_rectified_image_from_frame(
     
     H = homography_matrix
     paper_width_cm, paper_height_cm = paper_size_cm
-    
-    # Simple approach: map full paper dimensions to output
     scale_x = output_size[0] / paper_width_cm
     scale_y = output_size[1] / paper_height_cm
     
-    # Inverse scaling: output_pixels → cm
-    S_inv = np.array([
-        [1/scale_x, 0, 0],
-        [0, 1/scale_y, 0],
+    # Scaling matrix: cm → output pixels
+    S = np.array([
+        [scale_x, 0, 0],
+        [0, scale_y, 0],
         [0, 0, 1]
     ], dtype=np.float32)
     
-    # warpPerspective backward mapping: output_pixels → cm → camera_pixels
-    # S_inv: output_pixels → cm
-    # H: cm → camera_pixels
-    M = H @ S_inv
+    # For warpPerspective: camera_pixels → cm → output_pixels
+    # Invert homography: camera pixels → cm
+    H_inv = np.linalg.inv(H)
+    
+    # Combined warp: camera_pixel → cm → output_pixel
+    M = S @ H_inv
     
     logger.info(f"Rectification: paper={paper_width_cm}x{paper_height_cm}cm, "
                 f"output={output_size[0]}x{output_size[1]}px")
