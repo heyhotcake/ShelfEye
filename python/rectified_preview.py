@@ -52,7 +52,7 @@ def generate_rectified_image_from_frame(
     
     # Step 2: Apply homography transformation
     # Homography maps cm → camera pixels (from calibration)
-    # For warpPerspective, we need backward mapping: output pixels → camera pixels
+    # For warpPerspective backward mapping: output pixels → camera pixels
     
     H = homography_matrix
     paper_width_cm, paper_height_cm = paper_size_cm
@@ -60,18 +60,20 @@ def generate_rectified_image_from_frame(
     scale_y = output_size[1] / paper_height_cm
     
     # Scaling matrix: cm → output pixels
+    # S_inv maps output pixels → cm
     S = np.array([
         [scale_x, 0, 0],
         [0, scale_y, 0],
         [0, 0, 1]
     ], dtype=np.float32)
+    S_inv = np.linalg.inv(S)
     
-    # For warpPerspective backward mapping: camera_pixels → cm → output_pixels
-    # Invert homography: camera pixels → cm
-    H_inv = np.linalg.inv(H)
-    
-    # Combined warp for warpPerspective: camera_pixel → cm → output_pixel
-    M = S @ H_inv
+    # warpPerspective uses backward mapping: for each OUTPUT pixel, find the INPUT pixel
+    # Chain: output_pixels → cm → camera_pixels
+    # S_inv: output_pixels → cm
+    # H: cm → camera_pixels
+    # M = H @ S_inv: output_pixels → cm → camera_pixels
+    M = H @ S_inv
     
     # Choose interpolation method
     # INTER_NEAREST preserves sharp ArUco marker edges (for detection)
