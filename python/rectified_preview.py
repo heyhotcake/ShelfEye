@@ -56,24 +56,53 @@ def generate_rectified_image_from_frame(
     
     H = homography_matrix
     paper_width_cm, paper_height_cm = paper_size_cm
-    scale_x = output_size[0] / paper_width_cm
-    scale_y = output_size[1] / paper_height_cm
     
-    # Scaling matrix: cm → output pixels
-    # S_inv maps output pixels → cm
-    S = np.array([
-        [scale_x, 0, 0],
-        [0, scale_y, 0],
+    # Calculate the ArUco marker outer corner bounds (the actual rectified area)
+    # The homography was calculated using outer corners at inset positions
+    marker_inset_cm = 1.0  # 10mm inset from paper edge to marker outer corner
+    
+    # The rectified image should show only the area bounded by marker outer corners
+    # This puts the markers squarely at the corners of the output image
+    crop_left_cm = marker_inset_cm
+    crop_top_cm = marker_inset_cm
+    crop_right_cm = paper_width_cm - marker_inset_cm
+    crop_bottom_cm = paper_height_cm - marker_inset_cm
+    
+    # Cropped area dimensions
+    cropped_width_cm = crop_right_cm - crop_left_cm
+    cropped_height_cm = crop_bottom_cm - crop_top_cm
+    
+    # Scale based on cropped area (so output_size covers just the marker-bounded area)
+    scale_x = output_size[0] / cropped_width_cm
+    scale_y = output_size[1] / cropped_height_cm
+    
+    # Scaling matrix: cropped_cm → output pixels
+    # S_inv maps output pixels → cropped_cm (0 to cropped_width, 0 to cropped_height)
+    S_inv = np.array([
+        [1/scale_x, 0, 0],
+        [0, 1/scale_y, 0],
         [0, 0, 1]
     ], dtype=np.float32)
-    S_inv = np.linalg.inv(S)
+    
+    # Translation matrix: add offset to convert cropped_cm → full paper cm
+    # cropped_cm + (crop_left, crop_top) = full_cm
+    T = np.array([
+        [1, 0, crop_left_cm],
+        [0, 1, crop_top_cm],
+        [0, 0, 1]
+    ], dtype=np.float32)
     
     # warpPerspective uses backward mapping: for each OUTPUT pixel, find the INPUT pixel
-    # Chain: output_pixels → cm → camera_pixels
-    # S_inv: output_pixels → cm
-    # H: cm → camera_pixels
-    # M = H @ S_inv: output_pixels → cm → camera_pixels
-    M = H @ S_inv
+    # Chain: output_pixels → cropped_cm → full_cm → camera_pixels
+    # S_inv: output_pixels → cropped_cm
+    # T: cropped_cm → full_cm (add offset)
+    # H: full_cm → camera_pixels
+    # M = H @ T @ S_inv: output_pixels → cropped_cm → full_cm → camera_pixels
+    M = H @ T @ S_inv
+    
+    logger.info(f"Rectification: paper={paper_width_cm}x{paper_height_cm}cm, "
+                f"crop=({crop_left_cm},{crop_top_cm})-({crop_right_cm},{crop_bottom_cm})cm, "
+                f"output={output_size[0]}x{output_size[1]}px")
     
     # Choose interpolation method
     # INTER_NEAREST preserves sharp ArUco marker edges (for detection)
@@ -122,11 +151,13 @@ def generate_rectified_image_from_frame(
                 R = np.array([[cos_a, -sin_a], [sin_a, cos_a]])
                 corners_relative = (R @ corners_relative.T).T
             
-            # Translate to world position
+            # Translate to world position (full paper cm coordinates)
             corners_cm = corners_relative + center_cm
             
-            # Convert cm to pixels
-            corners_px = corners_cm * np.array([scale_x, scale_y])
+            # Convert to cropped coordinates (subtract crop offset, then scale to pixels)
+            # corners_cm is in full paper coords, we need to subtract crop_left/crop_top
+            corners_cropped_cm = corners_cm - np.array([crop_left_cm, crop_top_cm])
+            corners_px = corners_cropped_cm * np.array([scale_x, scale_y])
             
             # Draw rectangle (thin line so template details are visible)
             pts = corners_px.astype(np.int32).reshape((-1, 1, 2))
