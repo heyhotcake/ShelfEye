@@ -102,19 +102,30 @@ export function RectifiedPreviewCanvas({
     img.src = baseImage;
   }, [baseImage, paperWidthCm, paperHeightCm, measuredPxPerCm]);
 
+  // Marker inset from paper edges (must match Python's aruco_calibrator.py)
+  const markerInsetCm = 1.0;
+  
+  // The rectified image is cropped to the marker-bounded area (1cm inset from each edge)
+  // So template coordinates (relative to full paper) must be offset by 1cm
+  const boundedWidthCm = paperWidthCm - 2 * markerInsetCm;
+  const boundedHeightCm = paperHeightCm - 2 * markerInsetCm;
+
   const cmToPixels = (cm: number, axis: 'x' | 'y'): number => {
     if (axis === 'x') {
-      return (cm / paperWidthCm) * canvasSize.width;
+      // Offset by markerInsetCm because image is cropped to marker-bounded area
+      const adjustedCm = cm - markerInsetCm;
+      return (adjustedCm / boundedWidthCm) * canvasSize.width;
     } else {
-      return (cm / paperHeightCm) * canvasSize.height;
+      const adjustedCm = cm - markerInsetCm;
+      return (adjustedCm / boundedHeightCm) * canvasSize.height;
     }
   };
 
   const pixelsToCm = (pixels: number, axis: 'x' | 'y'): number => {
     if (axis === 'x') {
-      return (pixels / canvasSize.width) * paperWidthCm;
+      return (pixels / canvasSize.width) * boundedWidthCm + markerInsetCm;
     } else {
-      return (pixels / canvasSize.height) * paperHeightCm;
+      return (pixels / canvasSize.height) * boundedHeightCm + markerInsetCm;
     }
   };
 
@@ -304,182 +315,6 @@ export function RectifiedPreviewCanvas({
       ctx.restore();
     });
 
-    // DEBUG: Draw ArUco marker outer corners and centers to verify coordinate system alignment
-    const debugBoundary = true; // Enable visual debugging
-    if (debugBoundary) {
-      ctx.save();
-      
-      // ArUco marker parameters
-      const markerSizeCm = 5;
-      const markerInsetCm = 1; // 10mm safe zone inset from sheet edge
-      const a4WidthCm = 29.7;
-      const a4HeightCm = 21.0;
-      
-      // Determine grid layout based on paper size
-      const is8Page = paperSize === '8-page-4x2';
-      const is6Page = paperSize === '6-page-3x2';
-      const isMultiSheet = is8Page || is6Page;
-      const gridCols = is8Page ? 4 : is6Page ? 3 : 1;
-      const gridRows = isMultiSheet ? 2 : 1;
-      
-      console.log('[RectifiedPreviewCanvas] ArUco position calculation:', {
-        paperSize,
-        is8Page,
-        is6Page,
-        isMultiSheet,
-        gridCols,
-        gridRows,
-      });
-      
-      // Calculate OUTER CORNER positions (used for homography crop boundary)
-      let outerCornerPositions;
-      let markerCenterPositions;
-      
-      if (isMultiSheet) {
-        // OUTER CORNERS - the actual boundary points for homography
-        // These are at the inset distance from sheet edges
-        const tlOuterX = markerInsetCm;
-        const tlOuterY = markerInsetCm;
-        
-        const trOuterX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerInsetCm);
-        const trOuterY = markerInsetCm;
-        
-        const brOuterX = (gridCols - 1) * a4WidthCm + (a4WidthCm - markerInsetCm);
-        const brOuterY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerInsetCm);
-        
-        const blOuterX = markerInsetCm;
-        const blOuterY = (gridRows - 1) * a4HeightCm + (a4HeightCm - markerInsetCm);
-        
-        outerCornerPositions = [
-          { x: tlOuterX, y: tlOuterY, id: 'c(96)' },
-          { x: trOuterX, y: trOuterY, id: 'c(97)' },
-          { x: brOuterX, y: brOuterY, id: 'c(98)' },
-          { x: blOuterX, y: blOuterY, id: 'c(99)' },
-        ];
-        
-        // MARKER CENTERS - for reference
-        const halfMarker = markerSizeCm / 2;
-        markerCenterPositions = [
-          { x: markerInsetCm + halfMarker, y: markerInsetCm + halfMarker, id: 'A(96)' },
-          { x: (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm) + halfMarker, y: markerInsetCm + halfMarker, id: 'B(97)' },
-          { x: (gridCols - 1) * a4WidthCm + (a4WidthCm - markerSizeCm - markerInsetCm) + halfMarker, y: (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm) + halfMarker, id: 'C(98)' },
-          { x: markerInsetCm + halfMarker, y: (gridRows - 1) * a4HeightCm + (a4HeightCm - markerSizeCm - markerInsetCm) + halfMarker, id: 'D(99)' },
-        ];
-      } else {
-        // Single-sheet layouts
-        outerCornerPositions = [
-          { x: markerInsetCm, y: markerInsetCm, id: 'c(96)' },
-          { x: paperWidthCm - markerInsetCm, y: markerInsetCm, id: 'c(97)' },
-          { x: paperWidthCm - markerInsetCm, y: paperHeightCm - markerInsetCm, id: 'c(98)' },
-          { x: markerInsetCm, y: paperHeightCm - markerInsetCm, id: 'c(99)' },
-        ];
-        
-        const halfMarker = markerSizeCm / 2;
-        markerCenterPositions = [
-          { x: markerInsetCm + halfMarker, y: markerInsetCm + halfMarker, id: 'A(96)' },
-          { x: paperWidthCm - markerSizeCm - markerInsetCm + halfMarker, y: markerInsetCm + halfMarker, id: 'B(97)' },
-          { x: paperWidthCm - markerSizeCm - markerInsetCm + halfMarker, y: paperHeightCm - markerSizeCm - markerInsetCm + halfMarker, id: 'C(98)' },
-          { x: markerInsetCm + halfMarker, y: paperHeightCm - markerSizeCm - markerInsetCm + halfMarker, id: 'D(99)' },
-        ];
-      }
-      
-      // Draw GREEN markers at OUTER CORNERS (the homography boundary points)
-      // These should overlap with the detected ArUco marker outer corners
-      ctx.fillStyle = 'lime';
-      ctx.strokeStyle = 'lime';
-      ctx.lineWidth = 2;
-      ctx.font = 'bold 12px monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      outerCornerPositions.forEach(corner => {
-        const px = cmToPixels(corner.x, 'x');
-        const py = cmToPixels(corner.y, 'y');
-        
-        // Draw cross marker at outer corner
-        const size = 15;
-        ctx.beginPath();
-        ctx.moveTo(px - size, py);
-        ctx.lineTo(px + size, py);
-        ctx.moveTo(px, py - size);
-        ctx.lineTo(px, py + size);
-        ctx.stroke();
-        
-        // Draw circle at corner
-        ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw label with cm coordinates
-        const labelOffsetX = corner.x < paperWidthCm / 2 ? 45 : -45;
-        const labelOffsetY = corner.y < paperHeightCm / 2 ? 15 : -15;
-        ctx.fillText(`(${corner.x.toFixed(1)},${corner.y.toFixed(1)})`, px + labelOffsetX, py + labelOffsetY);
-      });
-      
-      // Draw ORANGE markers at marker CENTERS with 5cm square outline
-      ctx.fillStyle = 'orange';
-      ctx.strokeStyle = 'orange';
-      ctx.lineWidth = 2;
-      ctx.font = 'bold 11px monospace';
-      
-      markerCenterPositions.forEach(pos => {
-        const px = cmToPixels(pos.x, 'x');
-        const py = cmToPixels(pos.y, 'y');
-        
-        // Draw 5cm square representing the ArUco marker (2.5cm from center each way)
-        const markerHalfSize = cmToPixels(2.5, 'x');
-        ctx.strokeRect(px - markerHalfSize, py - markerHalfSize, markerHalfSize * 2, markerHalfSize * 2);
-        
-        // Draw crosshair at center
-        const crossSize = 8;
-        ctx.beginPath();
-        ctx.moveTo(px - crossSize, py);
-        ctx.lineTo(px + crossSize, py);
-        ctx.moveTo(px, py - crossSize);
-        ctx.lineTo(px, py + crossSize);
-        ctx.stroke();
-        
-        // Label
-        ctx.fillText(pos.id, px, py - markerHalfSize - 8);
-      });
-      
-      // Draw intermediate markers at 10cm intervals along edges
-      ctx.fillStyle = 'cyan';
-      ctx.strokeStyle = 'cyan';
-      ctx.lineWidth = 1;
-      ctx.font = '10px monospace';
-      
-      // Top edge markers
-      for (let x = 10; x < paperWidthCm; x += 10) {
-        const px = cmToPixels(x, 'x');
-        const py = cmToPixels(0, 'y');
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(px, py + 10);
-        ctx.stroke();
-        ctx.fillText(`${x}`, px, py + 18);
-      }
-      
-      // Left edge markers
-      for (let y = 10; y < paperHeightCm; y += 10) {
-        const px = cmToPixels(0, 'x');
-        const py = cmToPixels(y, 'y');
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(px + 10, py);
-        ctx.stroke();
-        ctx.fillText(`${y}`, px + 18, py);
-      }
-      
-      // Draw paper boundary rectangle
-      ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]);
-      ctx.strokeRect(0, 0, canvasSize.width, canvasSize.height);
-      ctx.setLineDash([]);
-      
-      ctx.restore();
-    }
 
     if (hoveredTemplate || draggedTemplate) {
       canvas.style.cursor = 'move';

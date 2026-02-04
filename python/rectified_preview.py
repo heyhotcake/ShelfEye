@@ -52,17 +52,30 @@ def generate_rectified_image_from_frame(
     
     # Step 2: Apply homography transformation
     # Homography maps cm → camera pixels (from calibration)
-    # For warpPerspective backward mapping: output pixels → camera pixels
+    # Source points in calibration are at marker OUTER CORNERS (1cm inset from paper edges)
+    # We want the output cropped to the marker-bounded area
     
     H = homography_matrix
     paper_width_cm, paper_height_cm = paper_size_cm
-    scale_x = output_size[0] / paper_width_cm
-    scale_y = output_size[1] / paper_height_cm
     
-    # Scaling matrix: cm → output pixels
+    # Marker inset from paper edges (matches aruco_calibrator.py)
+    marker_inset_cm = 1.0
+    
+    # Marker-bounded area dimensions
+    bounded_width_cm = paper_width_cm - 2 * marker_inset_cm
+    bounded_height_cm = paper_height_cm - 2 * marker_inset_cm
+    
+    # Scale to fit marker-bounded area into output size
+    scale_x = output_size[0] / bounded_width_cm
+    scale_y = output_size[1] / bounded_height_cm
+    
+    # Transformation matrix: cm → output pixels with offset for cropping
+    # Maps cm coordinate (marker_inset_cm, marker_inset_cm) to output pixel (0, 0)
+    # output_x = scale_x * (cm_x - marker_inset_cm)
+    # output_y = scale_y * (cm_y - marker_inset_cm)
     S = np.array([
-        [scale_x, 0, 0],
-        [0, scale_y, 0],
+        [scale_x, 0, -scale_x * marker_inset_cm],
+        [0, scale_y, -scale_y * marker_inset_cm],
         [0, 0, 1]
     ], dtype=np.float32)
     
@@ -70,10 +83,11 @@ def generate_rectified_image_from_frame(
     # Invert homography: camera pixels → cm
     H_inv = np.linalg.inv(H)
     
-    # Combined warp: camera_pixel → cm → output_pixel
+    # Combined warp: camera_pixel → cm → output_pixel (with cropping)
     M = S @ H_inv
     
     logger.info(f"Rectification: paper={paper_width_cm}x{paper_height_cm}cm, "
+                f"bounded area={bounded_width_cm}x{bounded_height_cm}cm, "
                 f"output={output_size[0]}x{output_size[1]}px")
     
     # Choose interpolation method

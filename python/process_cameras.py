@@ -285,20 +285,33 @@ def rectify_frame(frame: np.ndarray, homography: np.ndarray,
     output_height = int(paper_height_cm * px_per_cm)
     output_size = (output_width, output_height)
     
-    # Scaling matrix: cm → output pixels
-    scale_x = output_width / paper_width_cm
-    scale_y = output_height / paper_height_cm
+    # Marker inset from paper edges (matches aruco_calibrator.py)
+    marker_inset_cm = 1.0
+    
+    # Marker-bounded area dimensions
+    bounded_width_cm = paper_width_cm - 2 * marker_inset_cm
+    bounded_height_cm = paper_height_cm - 2 * marker_inset_cm
+    
+    # Adjust output size to match marker-bounded area aspect ratio
+    output_width = int(bounded_width_cm * px_per_cm)
+    output_height = int(bounded_height_cm * px_per_cm)
+    output_size = (output_width, output_height)
+    
+    # Scale to fit marker-bounded area into output size
+    scale_x = output_width / bounded_width_cm
+    scale_y = output_height / bounded_height_cm
+    
+    # Transformation matrix with offset for cropping to marker-bounded area
     S = np.array([
-        [scale_x, 0, 0],
-        [0, scale_y, 0],
+        [scale_x, 0, -scale_x * marker_inset_cm],
+        [0, scale_y, -scale_y * marker_inset_cm],
         [0, 0, 1]
     ], dtype=np.float32)
     
     # For warpPerspective: camera_pixels → cm → output_pixels
-    # Invert homography: camera pixels → cm
     H_inv = np.linalg.inv(homography)
     
-    # Combined warp: camera_pixel → cm → output_pixel
+    # Combined warp: camera_pixel → cm → output_pixel (with cropping)
     M = S @ H_inv
     
     # CRITICAL: Use INTER_NEAREST to preserve sharp ArUco marker edges
