@@ -330,11 +330,17 @@ def main():
             px_per_cm_v = vertical_px / vertical_cm
             px_per_cm = min(px_per_cm_h, px_per_cm_v)
             
-            out_width = int(paper_w * px_per_cm)
-            out_height = int(paper_h * px_per_cm)
+            # Output size should match the CROPPED area dimensions (marker-bounded area)
+            # The rectification crops to area from (1cm,1cm) to (paper-1cm, paper-1cm)
+            marker_inset_cm = 1.0
+            cropped_width_cm = paper_w - 2 * marker_inset_cm
+            cropped_height_cm = paper_h - 2 * marker_inset_cm
+            
+            out_width = int(cropped_width_cm * px_per_cm)
+            out_height = int(cropped_height_cm * px_per_cm)
             output_size = (out_width, out_height)
             
-            logger.info(f"Calculated output size from homography: {out_width}x{out_height} ({px_per_cm:.1f} px/cm)")
+            logger.info(f"Calculated output size from homography: {out_width}x{out_height} ({px_per_cm:.1f} px/cm) for cropped area {cropped_width_cm}x{cropped_height_cm}cm")
         
         # Parse homography matrix
         homography = [float(x) for x in args.homography.split(',')]
