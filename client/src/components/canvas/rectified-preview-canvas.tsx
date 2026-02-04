@@ -110,6 +110,7 @@ export function RectifiedPreviewCanvas({
   const boundedWidthCm = paperWidthCm - 2 * markerInsetCm;
   const boundedHeightCm = paperHeightCm - 2 * markerInsetCm;
 
+  // Convert cm POSITION to pixels (includes offset for cropped image)
   const cmToPixels = (cm: number, axis: 'x' | 'y'): number => {
     if (axis === 'x') {
       // Offset by markerInsetCm because image is cropped to marker-bounded area
@@ -118,6 +119,15 @@ export function RectifiedPreviewCanvas({
     } else {
       const adjustedCm = cm - markerInsetCm;
       return (adjustedCm / boundedHeightCm) * canvasSize.height;
+    }
+  };
+
+  // Convert cm DIMENSION to pixels (no offset, just scale)
+  const cmDimensionToPixels = (cm: number, axis: 'x' | 'y'): number => {
+    if (axis === 'x') {
+      return (cm / boundedWidthCm) * canvasSize.width;
+    } else {
+      return (cm / boundedHeightCm) * canvasSize.height;
     }
   };
 
@@ -202,8 +212,8 @@ export function RectifiedPreviewCanvas({
     adjustedTemplates.forEach((template) => {
       const centerX = cmToPixels(template.xCm, 'x');
       const centerY = cmToPixels(template.yCm, 'y');
-      const width = cmToPixels(template.widthCm, 'x');
-      const height = cmToPixels(template.heightCm, 'y');
+      const width = cmDimensionToPixels(template.widthCm, 'x');
+      const height = cmDimensionToPixels(template.heightCm, 'y');
 
       ctx.save();
       ctx.translate(centerX, centerY);
