@@ -102,31 +102,19 @@ export function RectifiedPreviewCanvas({
     img.src = baseImage;
   }, [baseImage, paperWidthCm, paperHeightCm, measuredPxPerCm]);
 
-  // The rectified image is cropped to the marker-bounded area (1cm inset from each edge)
-  // So the image shows from (markerInset, markerInset) to (paperWidth-markerInset, paperHeight-markerInset)
-  const markerInsetCm = 1.0;
-  const croppedWidthCm = paperWidthCm - 2 * markerInsetCm;
-  const croppedHeightCm = paperHeightCm - 2 * markerInsetCm;
-
   const cmToPixels = (cm: number, axis: 'x' | 'y'): number => {
-    // Convert from full paper cm to cropped cm (subtract offset), then to pixels
     if (axis === 'x') {
-      const croppedCm = cm - markerInsetCm;
-      return (croppedCm / croppedWidthCm) * canvasSize.width;
+      return (cm / paperWidthCm) * canvasSize.width;
     } else {
-      const croppedCm = cm - markerInsetCm;
-      return (croppedCm / croppedHeightCm) * canvasSize.height;
+      return (cm / paperHeightCm) * canvasSize.height;
     }
   };
 
   const pixelsToCm = (pixels: number, axis: 'x' | 'y'): number => {
-    // Convert from pixels to cropped cm, then add offset for full paper cm
     if (axis === 'x') {
-      const croppedCm = (pixels / canvasSize.width) * croppedWidthCm;
-      return croppedCm + markerInsetCm;
+      return (pixels / canvasSize.width) * paperWidthCm;
     } else {
-      const croppedCm = (pixels / canvasSize.height) * croppedHeightCm;
-      return croppedCm + markerInsetCm;
+      return (pixels / canvasSize.height) * paperHeightCm;
     }
   };
 

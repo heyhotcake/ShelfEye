@@ -631,16 +631,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Calibration] Built ${templatesWithDimensions.length} templates with dimensions for preview overlay`);
 
       // Call Python calibration script with paper size and preview generation
-      // Output size should match CROPPED dimensions (marker-bounded area: paper - 2cm on each axis)
       // INCREASED from 10 to 30 px/cm for much sharper rectified preview images
       const previewScale = 30; // 30 px/cm for preview (vs native ~31.8 px/cm for validation)
-      const markerInsetCm = 1.0;
-      const croppedWidthCm = paperDims.widthCm - 2 * markerInsetCm;
-      const croppedHeightCm = paperDims.heightCm - 2 * markerInsetCm;
-      const previewWidth = Math.round(croppedWidthCm * previewScale);
-      const previewHeight = Math.round(croppedHeightCm * previewScale);
-      console.log(`[Calibration] Paper: ${paperDims.widthCm}x${paperDims.heightCm} cm, Cropped: ${croppedWidthCm}x${croppedHeightCm} cm`);
-      console.log(`[Calibration] Preview output size: ${previewWidth}x${previewHeight} px (fixed 30 px/cm for cropped area)`);
+      const previewWidth = Math.round(paperDims.widthCm * previewScale);
+      const previewHeight = Math.round(paperDims.heightCm * previewScale);
+      console.log(`[Calibration] Paper: ${paperDims.widthCm}x${paperDims.heightCm} cm`);
+      console.log(`[Calibration] Preview output size: ${previewWidth}x${previewHeight} px (30 px/cm)`);
       
       const deviceSource = getCameraDeviceSource(camera);
       // IMPORTANT: Do NOT pass --templates to Python - the frontend RectifiedPreviewCanvas
@@ -1032,15 +1028,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[VerifyPositions] Wait complete. Lock acquired.');
       
       // CRITICAL: Force 30 px/cm to match calibration endpoint
-      // Output size should match CROPPED dimensions (marker-bounded area: paper - 2cm on each axis)
       const previewScale = 30;
-      const markerInsetCm = 1.0;
-      const croppedWidthCm = paperDims.widthCm - 2 * markerInsetCm;
-      const croppedHeightCm = paperDims.heightCm - 2 * markerInsetCm;
-      const previewWidth = Math.round(croppedWidthCm * previewScale);
-      const previewHeight = Math.round(croppedHeightCm * previewScale);
-      console.log(`[VerifyPositions] Paper: ${paperDims.widthCm}x${paperDims.heightCm} cm, Cropped: ${croppedWidthCm}x${croppedHeightCm} cm`);
-      console.log(`[VerifyPositions] Preview output size: ${previewWidth}x${previewHeight} px (fixed 30 px/cm for cropped area)`);
+      const previewWidth = Math.round(paperDims.widthCm * previewScale);
+      const previewHeight = Math.round(paperDims.heightCm * previewScale);
+      console.log(`[VerifyPositions] Paper: ${paperDims.widthCm}x${paperDims.heightCm} cm`);
+      console.log(`[VerifyPositions] Preview output size: ${previewWidth}x${previewHeight} px (30 px/cm)`);
       
       // Generate clean preview WITHOUT templates - frontend RectifiedPreviewCanvas will draw adjustable overlays
       // This prevents dual overlays (Python-drawn + canvas-drawn) that make fine adjustments difficult
@@ -1678,15 +1670,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const homographyStr = camera.homographyMatrix.join(',');
       
       // CRITICAL: Force 30 px/cm to match calibration endpoint
-      // Output size should match CROPPED dimensions (marker-bounded area: paper - 2cm on each axis)
       const previewScale = 30;
-      const markerInsetCm = 1.0;
-      const croppedWidthCm = paperDimensions.widthCm - 2 * markerInsetCm;
-      const croppedHeightCm = paperDimensions.heightCm - 2 * markerInsetCm;
-      const previewWidth = Math.round(croppedWidthCm * previewScale);
-      const previewHeight = Math.round(croppedHeightCm * previewScale);
-      console.log(`[Rectified Preview] Paper: ${paperDimensions.widthCm}x${paperDimensions.heightCm} cm, Cropped: ${croppedWidthCm}x${croppedHeightCm} cm`);
-      console.log(`[Rectified Preview] Preview output size: ${previewWidth}x${previewHeight} px (fixed 30 px/cm for cropped area)`);
+      const previewWidth = Math.round(paperDimensions.widthCm * previewScale);
+      const previewHeight = Math.round(paperDimensions.heightCm * previewScale);
+      console.log(`[Rectified Preview] Paper: ${paperDimensions.widthCm}x${paperDimensions.heightCm} cm`);
+      console.log(`[Rectified Preview] Preview output size: ${previewWidth}x${previewHeight} px (30 px/cm)`);
       
       const args = [
         path.join(process.cwd(), 'python/rectified_preview.py'),
