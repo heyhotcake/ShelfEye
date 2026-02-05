@@ -639,8 +639,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Calibration] Preview output size: ${previewWidth}x${previewHeight} px (30 px/cm)`);
       
       const deviceSource = getCameraDeviceSource(camera);
-      // IMPORTANT: Do NOT pass --templates to Python - the frontend RectifiedPreviewCanvas
-      // draws the template overlays. Passing templates here would cause DOUBLE overlays.
+      
+      // Fetch camera-adjusted template positions for slot ArUco validation
+      // Priority: camera-adjusted positions > master template positions
+      // This uses the user's visual adjustments to account for lens distortion and placement errors
+      let templatesForValidation: any[] = [];
+      
+      if (selectedDesignId) {
+        // Try to get camera-specific adjusted templates first
+        const cameraAdjusted = await storage.getTemplateRectanglesByDesignIdAndCamera(selectedDesignId, cameraId);
+        if (cameraAdjusted.length > 0) {
+          console.log(`[Calibration] Using ${cameraAdjusted.length} camera-adjusted template positions for slot validation`);
+          for (const template of cameraAdjusted) {
+            const category = await storage.getToolCategory(template.categoryId);
+            if (category) {
+              templatesForValidation.push({
+                x: template.xCm,
+                y: template.yCm,
+                width: category.widthCm,
+                height: category.heightCm,
+                rotation: template.rotation,
+                categoryName: category.name,
+                autoQrId: template.autoQrId
+              });
+            }
+          }
+        } else {
+          // Fall back to master template positions (first calibration, no adjustments yet)
+          console.log(`[Calibration] No camera adjustments found, using ${templatesWithDimensions.length} master template positions`);
+          templatesForValidation = templatesWithDimensions;
+        }
+      } else {
+        templatesForValidation = templatesWithDimensions;
+      }
+      
+      // Safeguard: if camera-adjusted templates failed to load, fall back to master templates
+      if (templatesForValidation.length === 0 && templatesWithDimensions.length > 0) {
+        console.log(`[Calibration] WARNING: Camera-adjusted templates empty, falling back to master templates`);
+        templatesForValidation = templatesWithDimensions;
+      }
+      
+      console.log(`[Calibration] Passing ${templatesForValidation.length} templates for slot ArUco validation`);
+      
+      // Pass templates to Python for slot validation (NOT for overlay drawing)
+      // Python generates clean preview WITHOUT overlays - frontend RectifiedPreviewCanvas draws adjustable overlays
       const calibrationArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
         '--camera-id', cameraId,
@@ -648,8 +690,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
         '--paper-size-name', paperSizeFormat,
         '--generate-preview',
-        '--preview-output-size', `${previewWidth}x${previewHeight}`
-        // NO --templates here - frontend canvas draws adjustable overlays
+        '--preview-output-size', `${previewWidth}x${previewHeight}`,
+        '--templates', JSON.stringify(templatesForValidation)
       ];
       
       // Use device path if available (for Raspberry Pi), otherwise use index
