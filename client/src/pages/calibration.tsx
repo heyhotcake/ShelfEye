@@ -396,6 +396,49 @@ export default function Calibration() {
     },
   });
 
+  // Validate-only mode: reuse saved raw frame instead of taking new picture
+  const validateSlotsOnlyMutation = useMutation({
+    mutationFn: ({ cameraId, paperSize, designId }: { cameraId: string; paperSize: string; designId: string }) => {
+      return apiRequest('POST', `/api/calibrate/${cameraId}/validate-slots-only`, { paperSize, designId });
+    },
+    onSuccess: async (response) => {
+      const data = await response.json();
+      console.log('[ValidateOnly] Response:', data);
+      
+      if (data.ok && data.slot_validation) {
+        const { valid_count, total_count } = data.slot_validation;
+        
+        if (valid_count === total_count) {
+          setCalibrationStep(2);
+          toast({
+            title: "スロット検証完了 ✓",
+            description: `全${valid_count}/${total_count}個のスロットArUcoマーカーが正常に検出されました。`,
+            duration: 5000,
+          });
+        } else {
+          toast({
+            title: "スロット検証に一部失敗",
+            description: `${valid_count}/${total_count}個のマーカーのみ検出。位置を調整して再試行してください。`,
+            variant: "destructive",
+          });
+        }
+      } else if (!data.ok) {
+        toast({
+          title: "検証エラー",
+          description: data.error || "スロット検証に失敗しました。",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "検証に失敗しました",
+        description: error.message || "スロット検証中にエラーが発生しました。",
+        variant: "destructive",
+      });
+    },
+  });
+
   const validateMarkersCoveredMutation = useMutation({
     mutationFn: (cameraId: string) => {
       setIsCameraLocked(true);
@@ -785,8 +828,34 @@ export default function Calibration() {
                           data-testid="button-recalibrate"
                         >
                           <Camera className="w-4 h-4 mr-2" />
-                          {calibrationMutation.isPending ? 'キャリブレーション＆スロット検証中...' : (hasTemplateAdjustments ? '調整を保存してスロットArUco検証を実行' : 'スロットArUco検証を実行')}
+                          {calibrationMutation.isPending ? 'キャリブレーション＆スロット検証中...' : (hasTemplateAdjustments ? '調整を保存して再撮影＆検証' : '再撮影＆スロットArUco検証')}
                         </Button>
+                        
+                        {/* Validate-only button - uses saved frame, no new capture */}
+                        <Button 
+                          className="w-full"
+                          variant="outline"
+                          onClick={() => {
+                            if (selectedCamera && selectedDesignId) {
+                              const selectedDesign = relevantDesigns.find(d => d.timestamp === selectedTemplate);
+                              if (selectedDesign) {
+                                validateSlotsOnlyMutation.mutate({
+                                  cameraId: selectedCamera.id,
+                                  paperSize: selectedDesign.paperSize,
+                                  designId: selectedDesignId
+                                });
+                              }
+                            }
+                          }}
+                          disabled={!selectedCamera || !selectedDesignId || validateSlotsOnlyMutation.isPending || calibrationMutation.isPending}
+                          data-testid="button-validate-slots-only"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          {validateSlotsOnlyMutation.isPending ? '検証中...' : '保存済み画像でスロット検証（高速）'}
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                          ※ 高速検証は前回撮影した画像を再利用します。位置のみ調整した場合はこちらを推奨。
+                        </p>
                       </div>
                     )}
 

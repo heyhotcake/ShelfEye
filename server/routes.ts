@@ -981,6 +981,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // VALIDATE-ONLY MODE: Run slot ArUco validation on saved raw frame (no camera capture)
+  // This avoids taking a new picture when user just wants to re-check slot positions
+  app.post("/api/calibrate/:cameraId/validate-slots-only", async (req, res) => {
+    const { cameraId } = req.params;
+    
+    try {
+      const validateSchema = z.object({
+        paperSize: z.string().optional(),
+        designId: z.string().optional(),
+      });
+      
+      const parseResult = validateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ message: "Invalid request data", errors: parseResult.error.flatten() });
+      }
+      const { paperSize, designId } = parseResult.data;
+      
+      const camera = await storage.getCamera(cameraId);
+      if (!camera) {
+        return res.status(404).json({ message: "Camera not found" });
+      }
+      
+      if (!camera.homographyMatrix || !Array.isArray(camera.homographyMatrix) || camera.homographyMatrix.length !== 9) {
+        return res.status(400).json({ message: "Camera not calibrated. Run full calibration first." });
+      }
+      
+      // Get paper dimensions
+      const { getPaperDimensions } = await import('./utils/paper-size.js');
+      const paperSizeFormat = paperSize || camera.paperSize || 'A4-landscape';
+      const paperDims = getPaperDimensions(paperSizeFormat);
+      
+      // Fetch camera-adjusted template positions for slot validation
+      let templatesForValidation: any[] = [];
+      const selectedDesignId = designId;
+      
+      if (selectedDesignId) {
+        const cameraAdjusted = await storage.getTemplateRectanglesByDesignIdAndCamera(selectedDesignId, cameraId);
+        if (cameraAdjusted.length > 0) {
+          console.log(`[ValidateOnly] Using ${cameraAdjusted.length} camera-adjusted template positions`);
+          for (const template of cameraAdjusted) {
+            const category = await storage.getToolCategory(template.categoryId);
+            if (category) {
+              templatesForValidation.push({
+                x: template.xCm,
+                y: template.yCm,
+                width: category.widthCm,
+                height: category.heightCm,
+                rotation: template.rotation,
+                categoryName: category.name,
+                autoQrId: template.autoQrId
+              });
+            }
+          }
+        } else {
+          // Fall back to master templates
+          const masterTemplates = await storage.getTemplateRectanglesByDesignId(selectedDesignId);
+          for (const template of masterTemplates) {
+            const category = await storage.getToolCategory(template.categoryId);
+            if (category) {
+              templatesForValidation.push({
+                x: template.xCm,
+                y: template.yCm,
+                width: category.widthCm,
+                height: category.heightCm,
+                rotation: template.rotation,
+                categoryName: category.name,
+                autoQrId: template.autoQrId
+              });
+            }
+          }
+        }
+      }
+      
+      if (templatesForValidation.length === 0) {
+        return res.status(400).json({ message: "No templates found for validation" });
+      }
+      
+      console.log(`[ValidateOnly] Validating ${templatesForValidation.length} slots using saved raw frame`);
+      
+      const pythonArgs = [
+        path.join(process.cwd(), 'python/aruco_calibrator.py'),
+        '--camera-id', cameraId,
+        '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
+        '--validate-only',
+        '--homography', JSON.stringify(camera.homographyMatrix),
+        '--templates', JSON.stringify(templatesForValidation)
+      ];
+      
+      const pythonProcess = spawnTracked(
+        'python3',
+        pythonArgs,
+        'aruco_calibrator.py',
+        'python',
+        `Validate-only: ${camera.name}`
+      );
+      
+      let result = '';
+      let error = '';
+      
+      pythonProcess.stdout?.on('data', (data) => {
+        result += data.toString();
+      });
+      
+      pythonProcess.stderr?.on('data', (data) => {
+        console.error(`[ValidateOnly] stderr: ${data.toString()}`);
+        error += data.toString();
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          try {
+            const validationData = JSON.parse(result);
+            res.json(validationData);
+          } catch (parseError) {
+            res.status(500).json({ message: "Failed to parse validation result", error: result.substring(0, 500) });
+          }
+        } else {
+          res.status(500).json({ message: "Validation failed", error: error.substring(0, 500) });
+        }
+      });
+      
+      pythonProcess.on('error', (err) => {
+        res.status(503).json({ message: "Python not available", error: err.message });
+      });
+      
+    } catch (error) {
+      console.error('[ValidateOnly] Error:', error);
+      res.status(500).json({ message: "Validation error", error });
+    }
+  });
+
   // Verify adjusted template positions by regenerating rectified preview
   app.post("/api/calibrate/:cameraId/verify-positions", async (req, res) => {
     // Set generous timeout for long-running verification (12 minutes)

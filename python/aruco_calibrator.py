@@ -546,6 +546,14 @@ class ArucoCornerCalibrator:
                         result['slot_validation'] = slot_validation_results
                         logger.info(f"Slot validation: {slot_validation_results['valid_count']}/{slot_validation_results['total_count']} markers detected")
                     
+                    # Save raw 4K frame for "validate only" mode (avoids re-capturing)
+                    import os
+                    data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+                    os.makedirs(data_dir, exist_ok=True)
+                    raw_frame_path = os.path.join(data_dir, f'calibration_raw_frame_{camera_id}.png')
+                    cv2.imwrite(raw_frame_path, frame, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+                    logger.info(f"✓ Saved raw 4K frame for reuse: {raw_frame_path}")
+                    
                     # ALWAYS save the high-resolution rectified image for validation
                     # (Even if preview not requested)
                     import os
@@ -660,6 +668,8 @@ def main():
     parser.add_argument('--generate-preview', action='store_true', help='Generate rectified preview from calibration frame')
     parser.add_argument('--preview-output-size', type=str, help='Preview output size (WxH)')
     parser.add_argument('--templates', type=str, help='Template rectangles as JSON string')
+    parser.add_argument('--validate-only', action='store_true', help='Skip camera capture, use saved raw frame for slot validation only')
+    parser.add_argument('--homography', type=str, help='Pre-computed homography matrix as JSON array (for validate-only mode)')
     
     args = parser.parse_args()
     
@@ -687,17 +697,72 @@ def main():
         # Initialize calibrator
         calibrator = ArucoCornerCalibrator()
         
-        # Run calibration
-        paper_size_name = getattr(args, 'paper_size_name', 'A4-landscape')
-        result = calibrator.calibrate_from_camera(
-            args.camera, resolution, paper_size_cm,
-            paper_size_name=paper_size_name,
-            camera_id=args.camera_id,
-            device_path=args.device_path,
-            generate_preview=args.generate_preview,
-            preview_output_size=preview_output_size,
-            templates=templates
-        )
+        # VALIDATE-ONLY MODE: Skip camera capture, use saved raw frame
+        if args.validate_only:
+            logger.info("=== VALIDATE-ONLY MODE: Using saved raw frame ===")
+            import os
+            data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+            raw_frame_path = os.path.join(data_dir, f'calibration_raw_frame_{args.camera_id}.png')
+            
+            if not os.path.exists(raw_frame_path):
+                result = {
+                    'ok': False,
+                    'error': f'No saved raw frame found at {raw_frame_path}. Run full calibration first.',
+                    'markers_detected': 0
+                }
+            elif not args.homography:
+                result = {
+                    'ok': False,
+                    'error': 'Homography matrix required for validate-only mode',
+                    'markers_detected': 0
+                }
+            elif not templates or len(templates) == 0:
+                result = {
+                    'ok': False,
+                    'error': 'Templates required for validate-only mode',
+                    'markers_detected': 0
+                }
+            else:
+                # Load saved raw frame
+                frame = cv2.imread(raw_frame_path)
+                if frame is None:
+                    result = {
+                        'ok': False,
+                        'error': f'Failed to load saved frame from {raw_frame_path}',
+                        'markers_detected': 0
+                    }
+                else:
+                    logger.info(f"Loaded saved raw frame: {frame.shape[1]}x{frame.shape[0]}px")
+                    
+                    # Parse homography matrix
+                    homography_flat = json.loads(args.homography)
+                    homography = np.array(homography_flat).reshape(3, 3)
+                    logger.info(f"Using provided homography matrix")
+                    
+                    # Run slot validation on saved frame
+                    slot_validation_results = calibrator.validate_slot_markers_on_raw_frame(
+                        frame, homography, paper_size_cm, templates
+                    )
+                    
+                    result = {
+                        'ok': True,
+                        'slot_validation': slot_validation_results,
+                        'validate_only': True,
+                        'frame_path': raw_frame_path
+                    }
+                    logger.info(f"Slot validation complete: {slot_validation_results['valid_count']}/{slot_validation_results['total_count']} markers detected")
+        else:
+            # Run full calibration with camera capture
+            paper_size_name = getattr(args, 'paper_size_name', 'A4-landscape')
+            result = calibrator.calibrate_from_camera(
+                args.camera, resolution, paper_size_cm,
+                paper_size_name=paper_size_name,
+                camera_id=args.camera_id,
+                device_path=args.device_path,
+                generate_preview=args.generate_preview,
+                preview_output_size=preview_output_size,
+                templates=templates
+            )
         
         # Output JSON result
         print(json.dumps(result))
