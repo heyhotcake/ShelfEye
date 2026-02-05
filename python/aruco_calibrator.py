@@ -445,6 +445,110 @@ class ArucoCornerCalibrator:
         
         return results
     
+    def validate_slot_markers_on_rectified_image(self, rectified_image: np.ndarray, 
+                                                   paper_size_cm: Tuple[float, float],
+                                                   templates: list) -> Dict:
+        """
+        Validate slot ArUco markers on RECTIFIED image (simpler, faster than raw frame validation)
+        
+        This uses the already-rectified image where:
+        - Pixel density is uniform (measured_px_per_cm)
+        - ArUco markers are already perspective-corrected (perfect squares)
+        - Simple cm → pixel conversion: x_px = x_cm * px_per_cm
+        
+        Args:
+            rectified_image: High-resolution rectified image
+            paper_size_cm: (width_cm, height_cm) of the paper
+            templates: List of template rectangles with x, y (cm), autoQrId
+            
+        Returns:
+            Dictionary with validation results
+        """
+        aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+        aruco_params = cv2.aruco.DetectorParameters()
+        aruco_params.perspectiveRemovePixelPerCell = 16
+        
+        # Calculate pixels per cm from image and paper size
+        img_height, img_width = rectified_image.shape[:2]
+        px_per_cm = img_width / paper_size_cm[0]
+        logger.info(f"Rectified validation: {img_width}x{img_height}px, {px_per_cm:.1f} px/cm")
+        
+        results = {
+            'total_count': len(templates),
+            'valid_count': 0,
+            'invalid_count': 0,
+            'slots': []
+        }
+        
+        for i, template in enumerate(templates):
+            slot_id = template.get('autoQrId', str(i + 1))
+            expected_marker_id = int(slot_id) if str(slot_id).isdigit() else None
+            x_cm = template.get('x', 0)
+            y_cm = template.get('y', 0)
+            
+            # Simple cm → pixel conversion (no homography needed)
+            x_px = int(x_cm * px_per_cm)
+            y_px = int(y_cm * px_per_cm)
+            
+            # Extract ROI around slot position
+            roi_size_cm = 4.0
+            roi_size_px = int(roi_size_cm * px_per_cm)
+            half_roi = roi_size_px // 2
+            
+            x1 = max(0, x_px - half_roi)
+            y1 = max(0, y_px - half_roi)
+            x2 = min(img_width, x1 + roi_size_px)
+            y2 = min(img_height, y1 + roi_size_px)
+            
+            roi = rectified_image[y1:y2, x1:x2]
+            
+            if roi.size == 0:
+                logger.warning(f"Empty ROI for slot {slot_id} at ({x_cm}, {y_cm}) cm")
+                results['invalid_count'] += 1
+                results['slots'].append({
+                    'slot_id': slot_id,
+                    'expected_id': expected_marker_id,
+                    'detected': False,
+                    'detected_id': None,
+                    'position_cm': (x_cm, y_cm),
+                    'position_px': (x_px, y_px)
+                })
+                continue
+            
+            # Convert to grayscale
+            if len(roi.shape) == 3:
+                roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            else:
+                roi_gray = roi
+            
+            # Detect ArUco markers
+            corners, ids, rejected = cv2.aruco.detectMarkers(roi_gray, aruco_dict, parameters=aruco_params)
+            
+            detected = False
+            detected_id = None
+            if ids is not None and len(ids) > 0:
+                detected_id = int(ids[0][0])
+                detected = (detected_id == expected_marker_id)
+            
+            slot_result = {
+                'slot_id': slot_id,
+                'expected_id': expected_marker_id,
+                'detected': detected,
+                'detected_id': detected_id,
+                'position_cm': (x_cm, y_cm),
+                'position_px': (x_px, y_px)
+            }
+            results['slots'].append(slot_result)
+            
+            if detected:
+                results['valid_count'] += 1
+                logger.info(f"✓ Slot {slot_id}: Marker {expected_marker_id} detected")
+            else:
+                results['invalid_count'] += 1
+                logger.warning(f"✗ Slot {slot_id}: Expected {expected_marker_id}, got {detected_id if detected_id else 'nothing'}")
+        
+        return results
+    
     def calibrate_from_camera(self, camera_index: int, resolution: Tuple[int, int], 
                              paper_size_cm: Tuple[float, float] = (29.7, 21.0),
                              paper_size_name: str = 'A4-landscape',
@@ -545,14 +649,6 @@ class ArucoCornerCalibrator:
                         )
                         result['slot_validation'] = slot_validation_results
                         logger.info(f"Slot validation: {slot_validation_results['valid_count']}/{slot_validation_results['total_count']} markers detected")
-                    
-                    # Save raw 4K frame for "validate only" mode (avoids re-capturing)
-                    import os
-                    data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
-                    os.makedirs(data_dir, exist_ok=True)
-                    raw_frame_path = os.path.join(data_dir, f'calibration_raw_frame_{camera_id}.png')
-                    cv2.imwrite(raw_frame_path, frame, [cv2.IMWRITE_PNG_COMPRESSION, 3])
-                    logger.info(f"✓ Saved raw 4K frame for reuse: {raw_frame_path}")
                     
                     # ALWAYS save the high-resolution rectified image for validation
                     # (Even if preview not requested)
@@ -668,8 +764,7 @@ def main():
     parser.add_argument('--generate-preview', action='store_true', help='Generate rectified preview from calibration frame')
     parser.add_argument('--preview-output-size', type=str, help='Preview output size (WxH)')
     parser.add_argument('--templates', type=str, help='Template rectangles as JSON string')
-    parser.add_argument('--validate-only', action='store_true', help='Skip camera capture, use saved raw frame for slot validation only')
-    parser.add_argument('--homography', type=str, help='Pre-computed homography matrix as JSON array (for validate-only mode)')
+    parser.add_argument('--validate-only', action='store_true', help='Skip camera capture, use saved rectified image for slot validation only')
     
     args = parser.parse_args()
     
@@ -697,23 +792,17 @@ def main():
         # Initialize calibrator
         calibrator = ArucoCornerCalibrator()
         
-        # VALIDATE-ONLY MODE: Skip camera capture, use saved raw frame
+        # VALIDATE-ONLY MODE: Use saved RECTIFIED image (faster, smaller, simpler)
         if args.validate_only:
-            logger.info("=== VALIDATE-ONLY MODE: Using saved raw frame ===")
+            logger.info("=== VALIDATE-ONLY MODE: Using saved rectified image ===")
             import os
             data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
-            raw_frame_path = os.path.join(data_dir, f'calibration_raw_frame_{args.camera_id}.png')
+            rectified_path = os.path.join(data_dir, f'latest_calibration_rectified_{args.camera_id}.png')
             
-            if not os.path.exists(raw_frame_path):
+            if not os.path.exists(rectified_path):
                 result = {
                     'ok': False,
-                    'error': f'No saved raw frame found at {raw_frame_path}. Run full calibration first.',
-                    'markers_detected': 0
-                }
-            elif not args.homography:
-                result = {
-                    'ok': False,
-                    'error': 'Homography matrix required for validate-only mode',
+                    'error': f'No saved rectified image found. Run full calibration first.',
                     'markers_detected': 0
                 }
             elif not templates or len(templates) == 0:
@@ -723,32 +812,27 @@ def main():
                     'markers_detected': 0
                 }
             else:
-                # Load saved raw frame
-                frame = cv2.imread(raw_frame_path)
-                if frame is None:
+                # Load saved rectified image
+                rectified_image = cv2.imread(rectified_path)
+                if rectified_image is None:
                     result = {
                         'ok': False,
-                        'error': f'Failed to load saved frame from {raw_frame_path}',
+                        'error': f'Failed to load rectified image from {rectified_path}',
                         'markers_detected': 0
                     }
                 else:
-                    logger.info(f"Loaded saved raw frame: {frame.shape[1]}x{frame.shape[0]}px")
+                    logger.info(f"Loaded saved rectified image: {rectified_image.shape[1]}x{rectified_image.shape[0]}px")
                     
-                    # Parse homography matrix
-                    homography_flat = json.loads(args.homography)
-                    homography = np.array(homography_flat).reshape(3, 3)
-                    logger.info(f"Using provided homography matrix")
-                    
-                    # Run slot validation on saved frame
-                    slot_validation_results = calibrator.validate_slot_markers_on_raw_frame(
-                        frame, homography, paper_size_cm, templates
+                    # Run slot validation on rectified image (no homography needed!)
+                    slot_validation_results = calibrator.validate_slot_markers_on_rectified_image(
+                        rectified_image, paper_size_cm, templates
                     )
                     
                     result = {
                         'ok': True,
                         'slot_validation': slot_validation_results,
                         'validate_only': True,
-                        'frame_path': raw_frame_path
+                        'image_path': rectified_path
                     }
                     logger.info(f"Slot validation complete: {slot_validation_results['valid_count']}/{slot_validation_results['total_count']} markers detected")
         else:

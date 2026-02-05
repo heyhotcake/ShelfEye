@@ -1003,9 +1003,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Camera not found" });
       }
       
-      if (!camera.homographyMatrix || !Array.isArray(camera.homographyMatrix) || camera.homographyMatrix.length !== 9) {
-        return res.status(400).json({ message: "Camera not calibrated. Run full calibration first." });
-      }
+      // Note: We no longer need homography for validate-only mode
+      // The saved rectified image already has the perspective correction applied
       
       // Get paper dimensions
       const { getPaperDimensions } = await import('./utils/paper-size.js');
@@ -1058,14 +1057,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No templates found for validation" });
       }
       
-      console.log(`[ValidateOnly] Validating ${templatesForValidation.length} slots using saved raw frame`);
+      console.log(`[ValidateOnly] Validating ${templatesForValidation.length} slots using saved rectified image`);
       
+      // Note: homography not needed - validate-only uses saved rectified image
       const pythonArgs = [
         path.join(process.cwd(), 'python/aruco_calibrator.py'),
         '--camera-id', cameraId,
         '--paper-size', `${paperDims.widthCm}x${paperDims.heightCm}`,
         '--validate-only',
-        '--homography', JSON.stringify(camera.homographyMatrix),
         '--templates', JSON.stringify(templatesForValidation)
       ];
       
