@@ -284,17 +284,24 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
     sys.stderr.flush()
     
     # Calculate ACTUAL scale factors from the loaded image dimensions
+    # CRITICAL: Rectified image is cropped to marker-bounded area (1cm inset on each side)
+    # So the image represents (paper_width - 2cm) x (paper_height - 2cm)
+    marker_inset_cm = 1.0  # Corner markers are 1cm inset from paper edge
     if paper_width_cm and paper_height_cm:
-        scale_x = rectified.shape[1] / paper_width_cm
-        scale_y = rectified.shape[0] / paper_height_cm
+        bounded_width_cm = paper_width_cm - (2 * marker_inset_cm)
+        bounded_height_cm = paper_height_cm - (2 * marker_inset_cm)
+        scale_x = rectified.shape[1] / bounded_width_cm
+        scale_y = rectified.shape[0] / bounded_height_cm
         # Use uniform scaling to prevent marker distortion - CRITICAL for ArUco detection
         pixels_per_cm = min(scale_x, scale_y)  # Use the smaller scale to fit within bounds
         print(f"[VALIDATION] Calculated pixel density: {scale_x:.1f} px/cm (width), {scale_y:.1f} px/cm (height)", file=sys.stderr)
+        print(f"[VALIDATION] Bounded area: {bounded_width_cm:.1f}x{bounded_height_cm:.1f}cm (paper {paper_width_cm}x{paper_height_cm} minus 2cm inset)", file=sys.stderr)
         print(f"[VALIDATION] Using uniform {pixels_per_cm:.1f} px/cm to prevent marker distortion", file=sys.stderr)
         # Override scales with uniform value to keep markers square
         scale_x = scale_y = pixels_per_cm
     else:
         scale_x = scale_y = pixels_per_cm = 1.0
+        marker_inset_cm = 0.0  # No adjustment if no paper dimensions
         print(f"[VALIDATION] No paper dimensions provided, using scale 1.0", file=sys.stderr)
     
     
@@ -339,15 +346,15 @@ def validate_slot_qrs(camera_id, mode='visible', homography_matrix=None, camera_
         print(f"[VALIDATION] Slot dimensions: {width_cm}x{height_cm} cm (slot size)", file=sys.stderr)
         
         # Convert slot center position from cm to pixels
-        center_x_px = int(x_cm * scale_x)
-        center_y_px = int(y_cm * scale_y)
+        # CRITICAL: Adjust for 1cm marker inset - the rectified image starts at (1cm, 1cm) in paper space
+        adjusted_x_cm = x_cm - marker_inset_cm
+        adjusted_y_cm = y_cm - marker_inset_cm
+        center_x_px = int(adjusted_x_cm * scale_x)
+        center_y_px = int(adjusted_y_cm * scale_y)
         
         # TIGHT ROI EXTRACTION: Extract only marker area, ignoring slot borders
-        # Adjust this based on your actual marker size:
-        # - If markers are 2x2cm, use 3.0
-        # - If markers are 3x3cm, use 4.0 
-        # - If markers are 4x4cm, use 5.0
-        marker_roi_size_cm = 4.0  # CHANGE THIS to match your marker size + 1cm margin
+        # 5cm gives ±2.5cm tolerance from slot center (matches calibration validation)
+        marker_roi_size_cm = 5.0
         roi_width_px = int(marker_roi_size_cm * scale_x)
         roi_height_px = int(marker_roi_size_cm * scale_y)
         

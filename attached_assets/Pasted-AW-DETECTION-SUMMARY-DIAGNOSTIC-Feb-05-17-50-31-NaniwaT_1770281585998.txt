@@ -1,0 +1,110 @@
+AW DETECTION SUMMARY (DIAGNOSTIC)
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] ========================================
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #1 (wide_1):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 1
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #2 (wide_2):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 2
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #3 (wide_3):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 3
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #4 (wide_4):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 4
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #5 (wide_5):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 5
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #6 (wide_6):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 6
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #7 (wide_7):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 7
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #8 (wide_8):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 8
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #9 (wide_9):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 9
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #10 (wide_10):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 10
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: 17
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: ✗ MISMATCH
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #11 (wide_11):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 11
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #12 (wide_12):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 12
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #13 (wide_13):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 13
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #14 (wide_14):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 14
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #15 (wide_15):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 15
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #16 (wide_16):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 16
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #17 (wide_17):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 17
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #18 (wide_18):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 18
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #19 (wide_19):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 19
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #20 (wide_20):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 20
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #21 (wide_21):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 21
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #22 (wide_22):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 22
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #23 (wide_23):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 23
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #24 (wide_24):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 24
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #25 (wide_25):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 25
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Slot #26 (wide_26):
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Expected ArUco ID: 26
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Detected ArUco ID: NONE
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION]   Status: - NO DETECTION
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] ========================================
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Unique ArUco IDs detected: ['17']
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] Total unique markers found: 1
+Feb 05 17:50:31 NaniwaTanaCheck pi-startup.sh[152169]: [VALIDATION] ========================================
