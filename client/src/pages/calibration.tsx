@@ -681,7 +681,7 @@ export default function Calibration() {
                       <div className="space-y-2">
                         <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-3">
                           <p className="text-xs text-muted-foreground">
-                            <strong>スロット検出に失敗しました:</strong> 全てのArUcoマーカーが検出されませんでした。下の補正プレビューでスロット位置を物理レイアウトに合わせて調整し、再キャリブレーションを行ってください。{hasTemplateAdjustments && <span className="text-green-600 font-semibold">調整が検出されました - 再キャリブレーション時に保存されます。</span>}
+                            <strong>位置調整＆スロット検証:</strong> 下の補正プレビューでスロット位置を物理レイアウトに合わせて調整してください。「スロットArUco検証を実行」をクリックすると、各スロットのArUcoマーカーIDが正しいかチェックされます。{hasTemplateAdjustments && <span className="text-green-600 font-semibold"> ✓ 調整が検出されました - 検証時に保存されます。</span>}
                           </p>
                         </div>
                         
@@ -785,7 +785,7 @@ export default function Calibration() {
                           data-testid="button-recalibrate"
                         >
                           <Camera className="w-4 h-4 mr-2" />
-                          {calibrationMutation.isPending ? '再キャリブレーション中...' : (hasTemplateAdjustments ? '調整を保存して再キャリブレーション' : '再キャリブレーション')}
+                          {calibrationMutation.isPending ? 'キャリブレーション＆スロット検証中...' : (hasTemplateAdjustments ? '調整を保存してスロットArUco検証を実行' : 'スロットArUco検証を実行')}
                         </Button>
                       </div>
                     )}
