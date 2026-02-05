@@ -1,0 +1,41 @@
+ cd ~/ShelfEye && git pull && npm run build && sudo systemctl restart shelfeye
+remote: Enumerating objects: 18, done.
+remote: Counting objects: 100% (18/18), done.
+remote: Compressing objects: 100% (5/5), done.
+remote: Total 14 (delta 9), reused 14 (delta 9), pack-reused 0 (from 0)
+Unpacking objects: 100% (14/14), 63.69 KiB | 1.27 MiB/s, done.
+From https://github.com/heyhotcake/ShelfEye
+   b3fd7f0..eb86cb6  main       -> origin/main
+   3d7cb61..c2e7cb5  RabbitV    -> origin/RabbitV
+Updating b3fd7f0..eb86cb6
+Fast-forward
+ attached_assets/Pasted-Check-the-most-recent-calibration-validation-logs-journ_1770279980242.txt | 887 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ attached_assets/image_1770279287619.png                                                          | Bin 0 -> 54944 bytes
+ python/aruco_calibrator.py                                                                       |  19 +-
+ 3 files changed, 902 insertions(+), 4 deletions(-)
+ create mode 100644 attached_assets/Pasted-Check-the-most-recent-calibration-validation-logs-journ_1770279980242.txt
+ create mode 100644 attached_assets/image_1770279287619.png
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+Browserslist: browsers data (caniuse-lite) is 16 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 3350 modules transformed.
+../dist/public/index.html                                                  3.08 kB │ gzip:     0.99 kB
+../dist/public/assets/Blue_and_white_bogo_1767655508883-C6h_V3Vx.jpg      17.79 kB
+../dist/public/assets/index-B33X5cs0.css                                  69.16 kB │ gzip:    12.21 kB
+../dist/public/assets/purify.es-DfngIMfA.js                               22.26 kB │ gzip:     8.72 kB
+../dist/public/assets/index.es-DCWHpIqm.js                               150.56 kB │ gzip:    51.51 kB
+../dist/public/assets/html2canvas.esm-CBrSDip1.js                        201.42 kB │ gzip:    48.03 kB
+../dist/public/assets/index-BkmADPZ0.js                               14,523.86 kB │ gzip: 7,624.55 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1m 29s
+
+  dist/index.js  376.3kb
