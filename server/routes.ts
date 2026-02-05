@@ -986,6 +986,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/calibrate/:cameraId/validate-slots-only", async (req, res) => {
     const { cameraId } = req.params;
     
+    // Extended timeout for validation (60 seconds) - loading high-res image + ArUco detection
+    res.setTimeout(60 * 1000);
+    
     try {
       const validateSchema = z.object({
         paperSize: z.string().optional(),

@@ -468,10 +468,21 @@ class ArucoCornerCalibrator:
         aruco_params = cv2.aruco.DetectorParameters()
         aruco_params.perspectiveRemovePixelPerCell = 16
         
-        # Calculate pixels per cm from image and paper size
+        # Calculate pixels per cm from image and BOUNDED area (not full paper!)
+        # The rectified image is cropped to marker-bounded area (1cm inset from paper edges)
+        # This matches rectified_preview.py which uses the same cropping
         img_height, img_width = rectified_image.shape[:2]
-        px_per_cm = img_width / paper_size_cm[0]
-        logger.info(f"Rectified validation: {img_width}x{img_height}px, {px_per_cm:.1f} px/cm")
+        marker_inset_cm = 1.0  # Matches aruco_calibrator.py and rectified_preview.py
+        bounded_width_cm = paper_size_cm[0] - 2 * marker_inset_cm
+        bounded_height_cm = paper_size_cm[1] - 2 * marker_inset_cm
+        px_per_cm = img_width / bounded_width_cm
+        
+        logger.info(f"Rectified validation setup:")
+        logger.info(f"  Image: {img_width}x{img_height}px")
+        logger.info(f"  Paper: {paper_size_cm[0]}x{paper_size_cm[1]} cm")
+        logger.info(f"  Bounded area: {bounded_width_cm}x{bounded_height_cm} cm (1cm inset)")
+        logger.info(f"  Scale: {px_per_cm:.2f} px/cm")
+        logger.info(f"  Templates to validate: {len(templates)}")
         
         results = {
             'total_count': len(templates),
@@ -480,38 +491,51 @@ class ArucoCornerCalibrator:
             'slots': []
         }
         
+        # Create CLAHE enhancer (matches scheduled capture settings)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        
         for i, template in enumerate(templates):
             slot_id = template.get('autoQrId', str(i + 1))
             expected_marker_id = int(slot_id) if str(slot_id).isdigit() else None
-            x_cm = template.get('x', 0)
-            y_cm = template.get('y', 0)
             
-            # Simple cm → pixel conversion (no homography needed)
-            x_px = int(x_cm * px_per_cm)
-            y_px = int(y_cm * px_per_cm)
+            # Templates store CENTER coordinates (xCm, yCm) in PAPER space
+            # This matches slot-drawing.tsx and rectified-preview-canvas.tsx
+            center_x_cm = template.get('x', 0)
+            center_y_cm = template.get('y', 0)
+            width_cm = template.get('width', 4.0)
+            height_cm = template.get('height', 4.0)
             
-            # Extract ROI around slot position
+            # Convert PAPER coordinates to CROPPED IMAGE coordinates
+            # The rectified image is cropped: pixel (0,0) = paper cm (1.0, 1.0)
+            # Formula: output_x = (cm_x - marker_inset_cm) * px_per_cm
+            adjusted_x_cm = center_x_cm - marker_inset_cm
+            adjusted_y_cm = center_y_cm - marker_inset_cm
+            center_x_px = int(adjusted_x_cm * px_per_cm)
+            center_y_px = int(adjusted_y_cm * px_per_cm)
+            
+            # Extract ROI around slot CENTER
             roi_size_cm = 4.0
             roi_size_px = int(roi_size_cm * px_per_cm)
             half_roi = roi_size_px // 2
             
-            x1 = max(0, x_px - half_roi)
-            y1 = max(0, y_px - half_roi)
+            x1 = max(0, center_x_px - half_roi)
+            y1 = max(0, center_y_px - half_roi)
             x2 = min(img_width, x1 + roi_size_px)
             y2 = min(img_height, y1 + roi_size_px)
             
             roi = rectified_image[y1:y2, x1:x2]
             
             if roi.size == 0:
-                logger.warning(f"Empty ROI for slot {slot_id} at ({x_cm}, {y_cm}) cm")
+                logger.warning(f"Empty ROI for slot {slot_id} at center ({center_x_cm:.1f}, {center_y_cm:.1f}) cm")
                 results['invalid_count'] += 1
                 results['slots'].append({
                     'slot_id': slot_id,
                     'expected_id': expected_marker_id,
                     'detected': False,
                     'detected_id': None,
-                    'position_cm': (x_cm, y_cm),
-                    'position_px': (x_px, y_px)
+                    'center_cm': (center_x_cm, center_y_cm),
+                    'slot_size_cm': (width_cm, height_cm),
+                    'position_px': (center_x_px, center_y_px)
                 })
                 continue
             
@@ -520,6 +544,9 @@ class ArucoCornerCalibrator:
                 roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
             else:
                 roi_gray = roi
+            
+            # Apply CLAHE enhancement for better ArUco detection (matches scheduled capture)
+            roi_gray = clahe.apply(roi_gray)
             
             # Detect ArUco markers
             corners, ids, rejected = cv2.aruco.detectMarkers(roi_gray, aruco_dict, parameters=aruco_params)
@@ -535,14 +562,15 @@ class ArucoCornerCalibrator:
                 'expected_id': expected_marker_id,
                 'detected': detected,
                 'detected_id': detected_id,
-                'position_cm': (x_cm, y_cm),
-                'position_px': (x_px, y_px)
+                'center_cm': (center_x_cm, center_y_cm),
+                'adjusted_cm': (adjusted_x_cm, adjusted_y_cm),
+                'position_px': (center_x_px, center_y_px)
             }
             results['slots'].append(slot_result)
             
             if detected:
                 results['valid_count'] += 1
-                logger.info(f"✓ Slot {slot_id}: Marker {expected_marker_id} detected")
+                logger.info(f"✓ Slot {slot_id}: Marker {expected_marker_id} detected at px ({center_x_px}, {center_y_px})")
             else:
                 results['invalid_count'] += 1
                 logger.warning(f"✗ Slot {slot_id}: Expected {expected_marker_id}, got {detected_id if detected_id else 'nothing'}")
