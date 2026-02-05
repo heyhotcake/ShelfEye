@@ -1,0 +1,887 @@
+Check the most recent calibration/validation logs
+journalctl -u shelfeye --since "10 minutes ago" | grep -i "slot\|aruco\|validation\|detected"
+
+# Or get full recent logs
+journalctl -u shelfeye -n 200 --no-pager | tail -100
+Feb 05 17:16:06 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3e9c70e4-6f1e-4680-9620-f7a000b30889: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:16:06 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:16:06 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_10) already exists.',
+Feb 05 17:16:06 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:16:06 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:16:07 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 700473bb-8dc4-4336-b123-d5925546543b: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:16:07 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:16:07 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_16) already exists.',
+Feb 05 17:16:07 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:16:07 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:16:08 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 6f044e65-798e-4875-a344-1b5895d7c678: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:16:08 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:16:08 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_17) already exists.',
+Feb 05 17:16:08 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:16:08 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:16:09 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 901cbb7d-4b27-4be3-b7a5-ab08e0dfcfd5: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:16:09 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:16:09 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_5) already exists.',
+Feb 05 17:16:09 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:16:09 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:16:11 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 9a8edbaa-4b62-49b8-8721-56b71ac9333e: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:16:11 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:16:11 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_1) already exists.',
+Feb 05 17:16:11 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:16:11 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:16:12 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 568fdbe5-e522-4262-b7cf-ca8eb288ad05: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:16:12 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:16:12 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_9) already exists.',
+Feb 05 17:16:12 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:16:12 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:16:13 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3b78262c-973a-4dec-954a-fb53e5cbcf32: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:16:13 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:16:13 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_18) already exists.',
+Feb 05 17:16:13 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:16:13 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:16:14 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Including slot validation in response: 7/26 markers detected
+Feb 05 17:16:47 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Using 26 camera-adjusted template positions for slot validation
+Feb 05 17:16:51 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Passing 26 templates for slot ArUco validation
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Parsed 26 templates for preview overlay
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:19:43.130295530] [151485]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:19:43.165216772] [151488]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:19:43.171902692] [151488]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:19:43.278697012] [151485]  INFO Camera camera.cpp:1215 configuring streams: (0) 3840x2160-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 3840x2160 RGB888, ACTUAL 3840x2160 MJPEG
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 3840x2160
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:16:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 20 seconds (metadata polling)...
+Feb 05 17:17:13 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 134 metadata polls over 20s
+Feb 05 17:17:13 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:[ArUco Mode] Capturing 50 frames for marker detection...
+Feb 05 17:17:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Selected frame with sharpness = 57.5
+Feb 05 17:17:45 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:[ArUco Mode] Using frame as-is (camera firmware handles enhancement)
+Feb 05 17:17:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Captured frame resolution: 3840x2160 (requested: 3840x2160)
+Feb 05 17:17:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Saved CLAHE-enhanced debug image to /tmp/aruco_clahe_enhanced.jpg
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:CLAHE-enhanced detection found 4/4 corner markers
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Marker 98: center=(3736.5, 1374.5), outer corner[2]=(3804.5, 1447.8)
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: INFO:__main__:Detected 4/4 corner markers: [np.int32(98), np.int32(97), np.int32(99), np.int32(96)]
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[3072.0, 0.0, 1920.0], [0.0, 3072.0, 1080.0], [0.0, 0.0, 1.0]]
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Paper size: 118.8cm × 42.0cm
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: INFO:__main__:Detected points: [[97.74486541748047, 363.4523010253906], [3735.0, 176.0], [3804.489501953125, 1447.7840576171875], [134.44790649414062, 1578.84033203125]]
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: INFO:__main__:Validating 26 slot markers on raw camera frame...
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 1: Marker 1 detected
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 2: Expected 2, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 3: Expected 3, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 4: Expected 4, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 5: Marker 5 detected
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 6: Marker 6 detected
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 7: Expected 7, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 8: Expected 8, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 9: Expected 9, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 10: Expected 10, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 11: Marker 11 detected
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 12: Expected 12, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 13: Expected 13, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 14: Expected 14, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 15: Expected 15, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 16: Expected 16, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 17: Expected 17, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 18: Expected 18, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 19: Expected 19, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 20: Expected 20, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 21: Expected 21, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 22: Expected 22, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 23: Expected 23, got nothing
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 24: Marker 24 detected
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 25: Marker 25 detected
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 26: Marker 26 detected
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Slot validation: 7/26 markers detected
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Rectified image will be 3611x1276px at uniform 30.4 px/cm
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Saving high-resolution rectified image: 3611x1276px
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 05 17:17:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=3611x1276px
+Feb 05 17:17:49 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Saved rectified image for validation: 3611×1276 px at /home/naniwa/ShelfEye/python/../data/latest_calibration_rectified_a91d43f1-47bf-4d75-8a7d-d2faf0503f81.png
+Feb 05 17:17:49 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 05 17:17:49 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=3611x1276px
+Feb 05 17:17:49 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Drawing 26 template overlays
+Feb 05 17:17:51 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Saved LABELED high-resolution rectified image for download
+Feb 05 17:17:51 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Generating UI preview: 3564x1260px (no template overlays)
+Feb 05 17:17:51 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=3564x1260px
+Feb 05 17:17:51 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Feb 05 17:17:51 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:17:51 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:18:01 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Deleted 26 existing slots
+Feb 05 17:18:01 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Creating slots for 52 templates from design 9936faf0-2184-4518-9750-b68bf589862f
+Feb 05 17:18:07 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:18:07 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Feb 05 17:18:07 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:20:58.058572272] [151505]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:20:58.094032427] [151508]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:20:58.100845752] [151508]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:20:58.207360919] [151505]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:18:08 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 05 17:18:18 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 05 17:18:18 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 05 17:18:18 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 47.7
+Feb 05 17:18:19 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template f5abf6b4-9433-4b32-8338-45f92ecc5dc2: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:19 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:19 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_3) already exists.',
+Feb 05 17:18:19 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:19 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:19 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 6/50: New best sharpness = 47.8
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 8/50: New best sharpness = 47.9
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 7fa9d189-ee1a-41d5-9a32-7f6a4fb05564: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_22) already exists.',
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 932fb638-e483-4de8-ab32-3dbe0e4e810e: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_25) already exists.',
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:20 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:21 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template b0b0af92-19e0-4926-8229-b5a2372afa86: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:21 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:21 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_26) already exists.',
+Feb 05 17:18:21 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:21 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 61be32cf-e759-4fc9-b986-cde060fcdcb5: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_23) already exists.',
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 4f1b777b-a5a5-4735-b9b0-20bcacd05453: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_24) already exists.',
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:22 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:23 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template c3cda098-a6fc-43bf-b691-d76c6024340f: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:23 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:23 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_14) already exists.',
+Feb 05 17:18:23 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:23 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 585cb2cf-da2d-4355-8616-1fa276cb6b0d: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_19) already exists.',
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template d052ab18-24cf-4ec5-a8c8-bb767f0e3774: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_8) already exists.',
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:24 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:25 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3f5b1bcc-efe1-4956-974d-1cc379164df0: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:25 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:25 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_7) already exists.',
+Feb 05 17:18:25 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:25 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 065e07f5-b6ec-4745-851b-9d36b0e67549: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_6) already exists.',
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 16d03dff-cad6-4cc8-b840-fbcca783f3ce: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_2) already exists.',
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:26 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:27 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 1a7a7455-4407-4bab-b583-62e897e7a394: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:27 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:27 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_20) already exists.',
+Feb 05 17:18:27 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:27 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:28 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 6e6d6bb7-8ec2-416f-82dd-4f2ffa2bbaa9: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:28 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:28 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_21) already exists.',
+Feb 05 17:18:28 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:28 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 47.9
+Feb 05 17:18:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:18:29 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:18:29 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template cb85ecda-edf8-4bad-9085-8e70256df398: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:29 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:29 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_15) already exists.',
+Feb 05 17:18:29 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:29 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:30 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 4746a79a-f777-49df-b7de-dafaffc9da9c: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:30 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:30 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_4) already exists.',
+Feb 05 17:18:30 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:30 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:31 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template c75df1b5-9a4d-403a-9b0f-5de7383437c4: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:31 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:31 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_12) already exists.',
+Feb 05 17:18:31 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:31 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:32 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template d8e534bc-a191-4f2f-a1e0-5a2c07ef4660: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:32 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:32 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_11) already exists.',
+Feb 05 17:18:32 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:32 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:34 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 913afc9e-f052-4342-90d9-a1daf7e1cf0a: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:34 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:34 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_13) already exists.',
+Feb 05 17:18:34 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:34 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3e9c70e4-6f1e-4680-9620-f7a000b30889: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_10) already exists.',
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 700473bb-8dc4-4336-b123-d5925546543b: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_16) already exists.',
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:35 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:37 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 6f044e65-798e-4875-a344-1b5895d7c678: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:37 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:37 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_17) already exists.',
+Feb 05 17:18:37 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:37 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:38 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 901cbb7d-4b27-4be3-b7a5-ab08e0dfcfd5: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:38 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:38 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_5) already exists.',
+Feb 05 17:18:38 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:38 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:39 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 9a8edbaa-4b62-49b8-8721-56b71ac9333e: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:39 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:39 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_1) already exists.',
+Feb 05 17:18:39 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:39 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:40 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 568fdbe5-e522-4262-b7cf-ca8eb288ad05: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:40 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:40 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_9) already exists.',
+Feb 05 17:18:40 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:40 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:42 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3b78262c-973a-4dec-954a-fb53e5cbcf32: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:18:42 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:18:42 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_18) already exists.',
+Feb 05 17:18:42 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:18:42 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:18:42 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Including slot validation in response: 7/26 markers detected
+Feb 05 17:19:21 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Using 26 camera-adjusted template positions for slot validation
+Feb 05 17:19:25 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Passing 26 templates for slot ArUco validation
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Parsed 26 templates for preview overlay
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:22:17.460095877] [151544]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:22:17.494884430] [151547]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:22:17.501636348] [151547]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:22:17.608528148] [151544]  INFO Camera camera.cpp:1215 configuring streams: (0) 3840x2160-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 3840x2160 RGB888, ACTUAL 3840x2160 MJPEG
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 3840x2160
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:19:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 20 seconds (metadata polling)...
+Feb 05 17:19:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 133 metadata polls over 20s
+Feb 05 17:19:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Capturing 50 frames for marker detection...
+Feb 05 17:20:19 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Selected frame with sharpness = 57.9
+Feb 05 17:20:19 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:[ArUco Mode] Using frame as-is (camera firmware handles enhancement)
+Feb 05 17:20:19 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Captured frame resolution: 3840x2160 (requested: 3840x2160)
+Feb 05 17:20:19 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Saved CLAHE-enhanced debug image to /tmp/aruco_clahe_enhanced.jpg
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:CLAHE-enhanced detection found 4/4 corner markers
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Marker 98: center=(3736.8, 1374.9), outer corner[2]=(3804.9, 1449.4)
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Marker 97: center=(3677.6, 247.5), outer corner[1]=(3742.6, 168.0)
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: INFO:__main__:Detected 4/4 corner markers: [np.int32(98), np.int32(97), np.int32(99), np.int32(96)]
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[3072.0, 0.0, 1920.0], [0.0, 3072.0, 1080.0], [0.0, 0.0, 1.0]]
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Using zero distortion coefficients (no distortion correction): [0.0, 0.0, 0.0, 0.0, 0.0]
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Outer corners (pixels): TL=[99.0, 360.0], TR=[3742.626953125, 168.0468292236328], BR=[3804.915771484375, 1449.4129638671875], BL=[133.6759490966797, 1577.3394775390625]
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: INFO:__main__:Detected points: [[99.0, 360.0], [3742.626953125, 168.0468292236328], [3804.915771484375, 1449.4129638671875], [133.6759490966797, 1577.3394775390625]]
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Reprojection error: mean=0.0000 px, max=0.0000 px
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: INFO:__main__:Validating 26 slot markers on raw camera frame...
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 1: Marker 1 detected
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 2: Expected 2, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 3: Marker 3 detected
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 4: Expected 4, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 5: Marker 5 detected
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 6: Expected 6, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 7: Marker 7 detected
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 8: Expected 8, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 9: Expected 9, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 10: Expected 10, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 11: Marker 11 detected
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 12: Expected 12, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 13: Expected 13, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 14: Expected 14, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 15: Expected 15, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 16: Expected 16, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 17: Expected 17, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 18: Expected 18, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 19: Expected 19, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 20: Expected 20, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 21: Expected 21, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 22: Expected 22, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 23: Expected 23, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 24: Expected 24, got nothing
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 25: Marker 25 detected
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 26: Marker 26 detected
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Slot validation: 7/26 markers detected
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Rectified image will be 3616x1278px at uniform 30.4 px/cm
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 05 17:20:22 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=3616x1278px
+Feb 05 17:20:23 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Saved rectified image for validation: 3616×1278 px at /home/naniwa/ShelfEye/python/../data/latest_calibration_rectified_a91d43f1-47bf-4d75-8a7d-d2faf0503f81.png
+Feb 05 17:20:23 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 05 17:20:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Drawing 26 template overlays
+Feb 05 17:20:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 9.79471, 'y': 10.2607975, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '1'}, {'x': 16.82877, 'y': 10.380399, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '2'}, {'x': 23.800238, 'y': 10.2607975, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '3'}, {'x': 32.969883, 'y': 10.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '4'}, {'x': 40.48441, 'y': 10.389725, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '5'}, {'x': 47.463818, 'y': 10.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '6'}, {'x': 54.627342, 'y': 10.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '7'}, {'x': 63.86852, 'y': 10.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '8'}, {'x': 71.27284, 'y': 10.389725, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '9'}, {'x': 78.56253, 'y': 10.380399, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '10'}, {'x': 9.9091835, 'y': 31.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '11'}, {'x': 16.822998, 'y': 31.260798, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '12'}, {'x': 23.87433, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '13'}, {'x': 33.373978, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '14'}, {'x': 40.525288, 'y': 31.260798, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '15'}, {'x': 47.457806, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '16'}, {'x': 54.6466, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '17'}, {'x': 64.12927, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '18'}, {'x': 71.28304, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '19'}, {'x': 78.45508, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '20'}, {'x': 85.85292, 'y': 10.159847, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Calculator (Small)', 'autoQrId': '21'}, {'x': 85.86742, 'y': 31.150522, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Calculator (Small)', 'autoQrId': '22'}, {'x': 98.39454, 'y': 12.353892, 'width': 13, 'height': 14.5, 'rotation': 0, 'categoryName': 'Calculator', 'autoQrId': '23'}, {'x': 112.05702, 'y': 13.017626, 'width': 13, 'height': 14.5, 'rotation': 270, 'categoryName': 'Calculator', 'autoQrId': '24'}, {'x': 98.40417, 'y': 29.360275, 'width': 13, 'height': 14.5, 'rotation': 0, 'categoryName': 'Calculator', 'autoQrId': '25'}, {'x': 111.94675, 'y': 28.617619, 'width': 13, 'height': 14.5, 'rotation': 270, 'categoryName': 'Calculator', 'autoQrId': '26'}]
+Feb 05 17:20:26 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Saved LABELED high-resolution rectified image for download
+Feb 05 17:20:26 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Generating UI preview: 3564x1260px (no template overlays)
+Feb 05 17:20:26 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Feb 05 17:20:26 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:20:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:20:36 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Deleted 26 existing slots
+Feb 05 17:20:37 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Creating slots for 52 templates from design 9936faf0-2184-4518-9750-b68bf589862f
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template f5abf6b4-9433-4b32-8338-45f92ecc5dc2: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_3) already exists.',
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 7fa9d189-ee1a-41d5-9a32-7f6a4fb05564: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_22) already exists.',
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:20:55 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:20:57 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 932fb638-e483-4de8-ab32-3dbe0e4e810e: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:20:57 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:20:57 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_25) already exists.',
+Feb 05 17:20:57 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:20:57 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:20:58 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template b0b0af92-19e0-4926-8229-b5a2372afa86: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:20:58 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:20:58 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_26) already exists.',
+Feb 05 17:20:58 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:20:58 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:20:59 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 61be32cf-e759-4fc9-b986-cde060fcdcb5: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:20:59 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:20:59 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_23) already exists.',
+Feb 05 17:20:59 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:20:59 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:00 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 4f1b777b-a5a5-4735-b9b0-20bcacd05453: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:00 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:00 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_24) already exists.',
+Feb 05 17:21:00 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:00 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:01 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template c3cda098-a6fc-43bf-b691-d76c6024340f: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:01 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:01 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_14) already exists.',
+Feb 05 17:21:01 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:01 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:02 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 585cb2cf-da2d-4355-8616-1fa276cb6b0d: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:02 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:02 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_19) already exists.',
+Feb 05 17:21:02 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:02 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:04 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template d052ab18-24cf-4ec5-a8c8-bb767f0e3774: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:04 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:04 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_8) already exists.',
+Feb 05 17:21:04 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:04 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:05 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3f5b1bcc-efe1-4956-974d-1cc379164df0: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:05 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:05 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_7) already exists.',
+Feb 05 17:21:05 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:05 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:06 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 065e07f5-b6ec-4745-851b-9d36b0e67549: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:06 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:06 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_6) already exists.',
+Feb 05 17:21:06 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:06 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:07 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 16d03dff-cad6-4cc8-b840-fbcca783f3ce: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:07 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:07 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_2) already exists.',
+Feb 05 17:21:07 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:07 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:09 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 1a7a7455-4407-4bab-b583-62e897e7a394: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:09 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:09 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_20) already exists.',
+Feb 05 17:21:09 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:09 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:10 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 6e6d6bb7-8ec2-416f-82dd-4f2ffa2bbaa9: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:10 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:10 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_21) already exists.',
+Feb 05 17:21:10 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:10 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:11 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template cb85ecda-edf8-4bad-9085-8e70256df398: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:11 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:11 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_15) already exists.',
+Feb 05 17:21:11 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:11 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:12 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 4746a79a-f777-49df-b7de-dafaffc9da9c: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:12 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:12 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_4) already exists.',
+Feb 05 17:21:12 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:12 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:14 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template c75df1b5-9a4d-403a-9b0f-5de7383437c4: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:14 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:14 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_12) already exists.',
+Feb 05 17:21:14 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:14 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:15 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template d8e534bc-a191-4f2f-a1e0-5a2c07ef4660: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:15 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:15 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_11) already exists.',
+Feb 05 17:21:15 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:15 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:16 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 913afc9e-f052-4342-90d9-a1daf7e1cf0a: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:16 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:16 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_13) already exists.',
+Feb 05 17:21:16 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:16 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:17 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3e9c70e4-6f1e-4680-9620-f7a000b30889: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:17 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:17 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_10) already exists.',
+Feb 05 17:21:17 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:17 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:18 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 700473bb-8dc4-4336-b123-d5925546543b: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:18 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:18 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_16) already exists.',
+Feb 05 17:21:18 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:18 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:19 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 6f044e65-798e-4875-a344-1b5895d7c678: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:19 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:19 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_17) already exists.',
+Feb 05 17:21:19 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:19 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:20 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 901cbb7d-4b27-4be3-b7a5-ab08e0dfcfd5: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:20 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:20 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_5) already exists.',
+Feb 05 17:21:20 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:20 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:22 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 9a8edbaa-4b62-49b8-8721-56b71ac9333e: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:22 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:22 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_1) already exists.',
+Feb 05 17:21:22 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:22 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:23 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 568fdbe5-e522-4262-b7cf-ca8eb288ad05: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:23 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:23 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_9) already exists.',
+Feb 05 17:21:23 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:23 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:24 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3b78262c-973a-4dec-954a-fb53e5cbcf32: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:21:24 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:21:24 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_18) already exists.',
+Feb 05 17:21:24 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:21:24 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:21:25 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Including slot validation in response: 7/26 markers detected
+Feb 05 17:21:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:21:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Feb 05 17:21:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:24:17.977182132] [151564]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:21:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:24:18.012364082] [151567]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:21:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:24:18.019074148] [151567]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:21:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:21:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:21:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:21:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:24:18.125436483] [151564]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:21:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:21:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 05 17:21:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 05 17:21:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:21:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 05 17:21:38 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 05 17:21:38 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 05 17:21:38 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 47.8
+Feb 05 17:21:38 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 3/50: New best sharpness = 48.2
+Feb 05 17:21:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 46/50: New best sharpness = 48.3
+Feb 05 17:21:48 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 48.3
+Feb 05 17:21:48 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:21:48 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:22:26 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Using 26 camera-adjusted template positions for slot validation
+Feb 05 17:22:31 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Passing 26 templates for slot ArUco validation
+Feb 05 17:22:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Parsed 26 templates for preview overlay
+Feb 05 17:22:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:22:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:25:22.975283780] [151592]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:22:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:25:23.010672595] [151595]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:22:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:25:23.017442752] [151595]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:22:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:22:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:22:33 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:22:33 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:25:23.124257501] [151592]  INFO Camera camera.cpp:1215 configuring streams: (0) 3840x2160-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:22:33 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:22:33 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 3840x2160 RGB888, ACTUAL 3840x2160 MJPEG
+Feb 05 17:22:33 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 3840x2160
+Feb 05 17:22:33 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:22:33 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 20 seconds (metadata polling)...
+Feb 05 17:22:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 134 metadata polls over 20s
+Feb 05 17:22:53 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Capturing 50 frames for marker detection...
+Feb 05 17:23:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Selected frame with sharpness = 58.7
+Feb 05 17:23:24 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:[ArUco Mode] Using frame as-is (camera firmware handles enhancement)
+Feb 05 17:23:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Captured frame resolution: 3840x2160 (requested: 3840x2160)
+Feb 05 17:23:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Saved CLAHE-enhanced debug image to /tmp/aruco_clahe_enhanced.jpg
+Feb 05 17:23:27 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:CLAHE-enhanced detection found 1/4 corner markers
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Added marker 98 from original (non-enhanced) detection
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Added marker 97 from original (non-enhanced) detection
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Added marker 99 from original (non-enhanced) detection
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Marker 96: center=(161.7, 428.6), outer corner[0]=(100.0, 360.9)
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Detected 4/4 corner markers: [np.int32(96), np.int32(98), np.int32(97), np.int32(99)]
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[3072.0, 0.0, 1920.0], [0.0, 3072.0, 1080.0], [0.0, 0.0, 1.0]]
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Paper size: 118.8cm × 42.0cm
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: INFO:__main__:Detected points: [[100.02365112304688, 360.9263610839844], [3733.327392578125, 171.6126708984375], [3803.9384765625, 1446.8914794921875], [134.89651489257812, 1577.3323974609375]]
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: INFO:__main__:Validating 26 slot markers on raw camera frame...
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 1: Marker 1 detected
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 2: Expected 2, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 3: Marker 3 detected
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 4: Marker 4 detected
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 5: Marker 5 detected
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 6: Expected 6, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 7: Marker 7 detected
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 8: Expected 8, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 9: Expected 9, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 10: Expected 10, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 11: Expected 11, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 12: Expected 12, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 13: Expected 13, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 14: Expected 14, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 15: Expected 15, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 16: Expected 16, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 17: Expected 17, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 18: Expected 18, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 19: Expected 19, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 20: Expected 20, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 21: Expected 21, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 22: Expected 22, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 23: Expected 23, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 24: Marker 24 detected
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:__main__:✗ Slot 25: Expected 25, got nothing
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Slot 26: Marker 26 detected
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Slot validation: 7/26 markers detected
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Rectified image will be 3614x1277px at uniform 30.4 px/cm
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 05 17:23:28 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=3614x1277px
+Feb 05 17:23:30 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Saved rectified image for validation: 3614×1277 px at /home/naniwa/ShelfEye/python/../data/latest_calibration_rectified_a91d43f1-47bf-4d75-8a7d-d2faf0503f81.png
+Feb 05 17:23:30 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 05 17:23:30 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=3614x1277px
+Feb 05 17:23:30 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Drawing 26 template overlays
+Feb 05 17:23:30 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 9.79471, 'y': 10.2607975, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '1'}, {'x': 16.82877, 'y': 10.380399, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '2'}, {'x': 23.800238, 'y': 10.2607975, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '3'}, {'x': 32.969883, 'y': 10.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '4'}, {'x': 40.48441, 'y': 10.389725, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '5'}, {'x': 47.463818, 'y': 10.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '6'}, {'x': 54.627342, 'y': 10.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '7'}, {'x': 63.86852, 'y': 10.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '8'}, {'x': 71.27284, 'y': 10.389725, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '9'}, {'x': 78.56253, 'y': 10.380399, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '10'}, {'x': 9.9091835, 'y': 31.5, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '11'}, {'x': 16.822998, 'y': 31.260798, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '12'}, {'x': 23.87433, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '13'}, {'x': 33.373978, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '14'}, {'x': 40.525288, 'y': 31.260798, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '15'}, {'x': 47.457806, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '16'}, {'x': 54.6466, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '17'}, {'x': 64.12927, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '18'}, {'x': 71.28304, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '19'}, {'x': 78.45508, 'y': 31.380398, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Box Cutters', 'autoQrId': '20'}, {'x': 85.85292, 'y': 10.159847, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Calculator (Small)', 'autoQrId': '21'}, {'x': 85.86742, 'y': 31.150522, 'width': 6.925, 'height': 19, 'rotation': 0, 'categoryName': 'Calculator (Small)', 'autoQrId': '22'}, {'x': 98.39454, 'y': 12.353892, 'width': 13, 'height': 14.5, 'rotation': 0, 'categoryName': 'Calculator', 'autoQrId': '23'}, {'x': 112.05702, 'y': 13.017626, 'width': 13, 'height': 14.5, 'rotation': 270, 'categoryName': 'Calculator', 'autoQrId': '24'}, {'x': 98.40417, 'y': 29.360275, 'width': 13, 'height': 14.5, 'rotation': 0, 'categoryName': 'Calculator', 'autoQrId': '25'}, {'x': 111.94675, 'y': 28.617619, 'width': 13, 'height': 14.5, 'rotation': 270, 'categoryName': 'Calculator', 'autoQrId': '26'}]
+Feb 05 17:23:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:✓ Saved LABELED high-resolution rectified image for download
+Feb 05 17:23:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Generating UI preview: 3564x1260px (no template overlays)
+Feb 05 17:23:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Feb 05 17:23:32 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:23:33 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:23:42 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Deleted 26 existing slots
+Feb 05 17:23:43 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Creating slots for 52 templates from design 9936faf0-2184-4518-9750-b68bf589862f
+Feb 05 17:24:02 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template f5abf6b4-9433-4b32-8338-45f92ecc5dc2: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:02 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:02 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_3) already exists.',
+Feb 05 17:24:02 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:02 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:03 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 7fa9d189-ee1a-41d5-9a32-7f6a4fb05564: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:03 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:03 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_22) already exists.',
+Feb 05 17:24:03 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:03 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:04 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 932fb638-e483-4de8-ab32-3dbe0e4e810e: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:04 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:04 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_25) already exists.',
+Feb 05 17:24:04 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:04 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:05 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template b0b0af92-19e0-4926-8229-b5a2372afa86: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:05 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:05 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_26) already exists.',
+Feb 05 17:24:05 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:05 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:06 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 61be32cf-e759-4fc9-b986-cde060fcdcb5: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:06 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:06 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_23) already exists.',
+Feb 05 17:24:06 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:06 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:08 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 4f1b777b-a5a5-4735-b9b0-20bcacd05453: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:08 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:08 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_24) already exists.',
+Feb 05 17:24:08 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:08 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:09 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template c3cda098-a6fc-43bf-b691-d76c6024340f: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:09 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:09 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_14) already exists.',
+Feb 05 17:24:09 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:09 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:10 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 585cb2cf-da2d-4355-8616-1fa276cb6b0d: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:10 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:10 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_19) already exists.',
+Feb 05 17:24:10 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:10 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:11 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template d052ab18-24cf-4ec5-a8c8-bb767f0e3774: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:11 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:11 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_8) already exists.',
+Feb 05 17:24:11 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:11 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:13 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3f5b1bcc-efe1-4956-974d-1cc379164df0: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:13 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:13 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_7) already exists.',
+Feb 05 17:24:13 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:13 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:14 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 065e07f5-b6ec-4745-851b-9d36b0e67549: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:14 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:14 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_6) already exists.',
+Feb 05 17:24:14 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:14 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:15 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 16d03dff-cad6-4cc8-b840-fbcca783f3ce: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:15 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:15 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_2) already exists.',
+Feb 05 17:24:15 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:15 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:16 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 1a7a7455-4407-4bab-b583-62e897e7a394: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:16 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:16 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_20) already exists.',
+Feb 05 17:24:16 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:16 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:17 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 6e6d6bb7-8ec2-416f-82dd-4f2ffa2bbaa9: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:17 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:17 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_21) already exists.',
+Feb 05 17:24:17 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:17 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:18 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template cb85ecda-edf8-4bad-9085-8e70256df398: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:18 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:18 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_15) already exists.',
+Feb 05 17:24:18 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:18 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:19 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 4746a79a-f777-49df-b7de-dafaffc9da9c: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:19 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:19 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_4) already exists.',
+Feb 05 17:24:19 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:19 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:20 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template c75df1b5-9a4d-403a-9b0f-5de7383437c4: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:20 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:20 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_12) already exists.',
+Feb 05 17:24:20 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:20 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:22 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template d8e534bc-a191-4f2f-a1e0-5a2c07ef4660: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:22 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:22 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_11) already exists.',
+Feb 05 17:24:22 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:22 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:23 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 913afc9e-f052-4342-90d9-a1daf7e1cf0a: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:23 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:23 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_13) already exists.',
+Feb 05 17:24:23 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:23 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:24 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3e9c70e4-6f1e-4680-9620-f7a000b30889: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:24 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:24 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_10) already exists.',
+Feb 05 17:24:24 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:24 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:25 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 700473bb-8dc4-4336-b123-d5925546543b: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:25 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:25 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_16) already exists.',
+Feb 05 17:24:25 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:25 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:26 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 6f044e65-798e-4875-a344-1b5895d7c678: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:26 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:26 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_17) already exists.',
+Feb 05 17:24:26 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:26 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:28 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 901cbb7d-4b27-4be3-b7a5-ab08e0dfcfd5: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:28 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:28 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_5) already exists.',
+Feb 05 17:24:28 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:28 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:29 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 9a8edbaa-4b62-49b8-8721-56b71ac9333e: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:29 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:29 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_1) already exists.',
+Feb 05 17:24:29 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:29 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:30 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 568fdbe5-e522-4262-b7cf-ca8eb288ad05: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:30 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:30 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_9) already exists.',
+Feb 05 17:24:30 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:30 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:31 NaniwaTanaCheck pi-startup.sh[151099]: Failed to create slot for template 3b78262c-973a-4dec-954a-fb53e5cbcf32: error: duplicate key value violates unique constraint "slots_slot_id_unique"
+Feb 05 17:24:31 NaniwaTanaCheck pi-startup.sh[151099]:     at async DbStorage.createSlot (file:///home/naniwa/ShelfEye/dist/index.js:692:24)
+Feb 05 17:24:31 NaniwaTanaCheck pi-startup.sh[151099]:   detail: 'Key (slot_id)=(wide_18) already exists.',
+Feb 05 17:24:31 NaniwaTanaCheck pi-startup.sh[151099]:   table: 'slots',
+Feb 05 17:24:31 NaniwaTanaCheck pi-startup.sh[151099]:   constraint: 'slots_slot_id_unique',
+Feb 05 17:24:32 NaniwaTanaCheck pi-startup.sh[151099]: [Calibration] Including slot validation in response: 7/26 markers detected
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:27:25.381866236] [151620]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:27:25.388556691] [151620]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:27:25.493938642] [151617]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 05 17:24:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 05 17:24:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 05 17:24:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 47.6
+Feb 05 17:24:46 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 47.9
+Feb 05 17:24:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 8/50: New best sharpness = 47.9
+Feb 05 17:24:48 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 13/50: New best sharpness = 48.0
+Feb 05 17:24:51 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 30/50: New best sharpness = 48.1
+Feb 05 17:24:52 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 32/50: New best sharpness = 48.1
+Feb 05 17:24:55 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 48/50: New best sharpness = 48.2
+Feb 05 17:24:55 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 50/50: New best sharpness = 48.3
+Feb 05 17:24:55 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 48.3
+Feb 05 17:24:55 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:24:56 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:27:53.579215880] [151629]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:27:53.585944463] [151629]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:27:53.692258841] [151626]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 05 17:25:13 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 05 17:25:14 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 47.9
+Feb 05 17:25:14 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 48.0
+Feb 05 17:25:14 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 5/50: New best sharpness = 48.2
+Feb 05 17:25:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 48.2
+Feb 05 17:25:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:25:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:21.730359943] [151640]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:21.765543481] [151643]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:21.772276916] [151643]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:21.877960285] [151640]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 05 17:25:41 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 05 17:25:41 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 05 17:25:42 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 120.6
+Feb 05 17:25:42 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 120.6
+Feb 05 17:25:42 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 3/50: New best sharpness = 120.7
+Feb 05 17:25:42 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 120.8
+Feb 05 17:25:44 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 10/50: New best sharpness = 120.9
+Feb 05 17:25:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 19/50: New best sharpness = 121.2
+Feb 05 17:25:52 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 121.2
+Feb 05 17:25:52 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:25:52 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:49.867176008] [151649]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:49.902298546] [151652]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:49.909095406] [151652]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:50.013738552] [151649]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:24:35 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 05 17:24:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 05 17:24:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 05 17:24:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 47.6
+Feb 05 17:24:46 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 47.9
+Feb 05 17:24:47 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 8/50: New best sharpness = 47.9
+Feb 05 17:24:48 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 13/50: New best sharpness = 48.0
+Feb 05 17:24:51 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 30/50: New best sharpness = 48.1
+Feb 05 17:24:52 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 32/50: New best sharpness = 48.1
+Feb 05 17:24:55 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 48/50: New best sharpness = 48.2
+Feb 05 17:24:55 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 50/50: New best sharpness = 48.3
+Feb 05 17:24:55 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 48.3
+Feb 05 17:24:55 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:24:56 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:24:56 NaniwaTanaCheck pi-startup.sh[151099]: [SubprocessManager] Process PID 151617 exited after 22731ms (code: 0, signal: null)
+Feb 05 17:24:56 NaniwaTanaCheck pi-startup.sh[151099]: 5:24:56 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 23604ms :: …
+Feb 05 17:25:01 NaniwaTanaCheck pi-startup.sh[151099]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 05 17:25:02 NaniwaTanaCheck pi-startup.sh[151099]: [SubprocessManager] Tracking python process PID 151626: Camera preview: Wide Shelf
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [336:27:53.544377206] [151626]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:27:53.579215880] [151629]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:27:53.585944463] [151629]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:27:53.692258841] [151626]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Database] Client removed from pool
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 05 17:25:03 NaniwaTanaCheck pi-startup.sh[151099]: [Database] Client removed from pool
+Feb 05 17:25:13 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 05 17:25:13 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 05 17:25:14 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 47.9
+Feb 05 17:25:14 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 48.0
+Feb 05 17:25:14 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 5/50: New best sharpness = 48.2
+Feb 05 17:25:22 NaniwaTanaCheck pi-startup.sh[151099]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Feb 05 17:25:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 48.2
+Feb 05 17:25:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:25:24 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:25:24 NaniwaTanaCheck pi-startup.sh[151099]: [SubprocessManager] Process PID 151626 exited after 22803ms (code: 0, signal: null)
+Feb 05 17:25:24 NaniwaTanaCheck pi-startup.sh[151099]: 5:25:24 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 23012ms :: …
+Feb 05 17:25:30 NaniwaTanaCheck pi-startup.sh[151099]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 05 17:25:30 NaniwaTanaCheck pi-startup.sh[151099]: [SubprocessManager] Tracking python process PID 151640: Camera preview: Wide Shelf
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:21.730359943] [151640]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:21.765543481] [151643]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:21.772276916] [151643]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:21.877960285] [151640]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:25:31 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 05 17:25:41 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 05 17:25:41 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 05 17:25:42 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 120.6
+Feb 05 17:25:42 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 120.6
+Feb 05 17:25:42 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 3/50: New best sharpness = 120.7
+Feb 05 17:25:42 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 120.8
+Feb 05 17:25:44 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 10/50: New best sharpness = 120.9
+Feb 05 17:25:45 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 19/50: New best sharpness = 121.2
+Feb 05 17:25:52 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 121.2
+Feb 05 17:25:52 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 05 17:25:52 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 05 17:25:52 NaniwaTanaCheck pi-startup.sh[151099]: [SubprocessManager] Process PID 151640 exited after 22740ms (code: 0, signal: null)
+Feb 05 17:25:52 NaniwaTanaCheck pi-startup.sh[151099]: 5:25:52 PM [express] GET /api/camera-preview/a91d43f1-47bf-4d75-8a7d-d2faf0503f81 200 in 22957ms :: …
+Feb 05 17:25:58 NaniwaTanaCheck pi-startup.sh[151099]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 05 17:25:58 NaniwaTanaCheck pi-startup.sh[151099]: [SubprocessManager] Tracking python process PID 151649: Camera preview: Wide Shelf
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:__main__:Opening camera: 0
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 0 (attempt 1/3)
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:49.867176008] [151649]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:49.902298546] [151652]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:49.909095406] [151652]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: [336:28:50.013738552] [151649]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 05 17:25:59 NaniwaTanaCheck pi-startup.sh[151099]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+naniwa@NaniwaTanaCheck:~ $

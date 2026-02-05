@@ -416,6 +416,10 @@ class ArucoCornerCalibrator:
             else:
                 roi_gray = roi
             
+            # Apply CLAHE enhancement for better ArUco detection (matches scheduled capture)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            roi_gray = clahe.apply(roi_gray)
+            
             # Detect ArUco markers in ROI
             corners, ids, rejected = cv2.aruco.detectMarkers(roi_gray, aruco_dict, parameters=aruco_params)
             
@@ -442,6 +446,13 @@ class ArucoCornerCalibrator:
             else:
                 results['invalid_count'] += 1
                 logger.warning(f"✗ Slot {slot_id}: Expected {expected_marker_id}, got {detected_id if detected_id else 'nothing'}")
+                # Save debug image for failed slots
+                try:
+                    debug_path = f"/tmp/failed_slot_{slot_id}_roi.jpg"
+                    cv2.imwrite(debug_path, roi_gray)
+                    logger.info(f"  Debug ROI saved: {debug_path} ({roi_gray.shape[1]}x{roi_gray.shape[0]} px)")
+                except Exception as e:
+                    logger.warning(f"  Failed to save debug ROI: {e}")
         
         return results
     
