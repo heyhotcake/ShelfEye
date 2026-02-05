@@ -398,8 +398,8 @@ class ArucoCornerCalibrator:
             slot_pos_cm = np.array([[x_cm, y_cm]], dtype=np.float32).reshape(-1, 1, 2)
             slot_pos_px = cv2.perspectiveTransform(slot_pos_cm, homography)[0][0]
             
-            # Extract ROI from raw frame (4cm = ~127px at 31.8 px/cm)
-            roi_size_cm = 4.0
+            # Extract ROI from raw frame (5cm = ~159px at 31.8 px/cm, ±2.5cm tolerance)
+            roi_size_cm = 5.0
             roi_size_px = int(roi_size_cm * self.measured_px_per_cm)
             half_roi = roi_size_px // 2
             
@@ -513,8 +513,8 @@ class ArucoCornerCalibrator:
             center_x_px = int(adjusted_x_cm * px_per_cm)
             center_y_px = int(adjusted_y_cm * px_per_cm)
             
-            # Extract ROI around slot CENTER
-            roi_size_cm = 4.0
+            # Extract ROI around slot CENTER (5cm gives ±2.5cm tolerance)
+            roi_size_cm = 5.0
             roi_size_px = int(roi_size_cm * px_per_cm)
             half_roi = roi_size_px // 2
             
