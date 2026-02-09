@@ -621,7 +621,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             height: category.heightCm,
             rotation: template.rotation,
             categoryName: category.name,
-            autoQrId: template.autoQrId // Include ArUco marker ID for slot validation
+            autoQrId: template.autoQrId,
+            categoryType: category.categoryType
           });
         } else {
           console.warn(`[Calibration] Template ${template.id} has missing category ${template.categoryId}`);
@@ -660,7 +661,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 height: category.heightCm,
                 rotation: template.rotation,
                 categoryName: category.name,
-                autoQrId: template.autoQrId
+                autoQrId: template.autoQrId,
+                categoryType: category.categoryType
               });
             }
           }
@@ -679,7 +681,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         templatesForValidation = templatesWithDimensions;
       }
       
-      console.log(`[Calibration] Passing ${templatesForValidation.length} templates for slot ArUco validation`);
+      // Filter out grid-type templates that don't have physical ArUco markers
+      // scanner_grid and worker_tag_grid render grid layouts, NOT ArUco slot markers
+      const gridTypesWithoutAruco = ['scanner_grid', 'worker_tag_grid'];
+      const totalBeforeFilter = templatesForValidation.length;
+      const filteredOut = templatesForValidation.filter((t: any) => gridTypesWithoutAruco.includes(t.categoryType));
+      templatesForValidation = templatesForValidation.filter((t: any) => !gridTypesWithoutAruco.includes(t.categoryType));
+      if (filteredOut.length > 0) {
+        console.log(`[Calibration] Filtered out ${filteredOut.length} grid-type templates without ArUco markers: ${filteredOut.map((t: any) => `${t.categoryName} (${t.categoryType})`).join(', ')}`);
+      }
+      console.log(`[Calibration] Passing ${templatesForValidation.length} templates for slot ArUco validation (${totalBeforeFilter} total, ${filteredOut.length} grid-type filtered)`);
       
       // Pass templates to Python for slot validation (NOT for overlay drawing)
       // Python generates clean preview WITHOUT overlays - frontend RectifiedPreviewCanvas draws adjustable overlays
@@ -1032,7 +1043,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 height: category.heightCm,
                 rotation: template.rotation,
                 categoryName: category.name,
-                autoQrId: template.autoQrId
+                autoQrId: template.autoQrId,
+                categoryType: category.categoryType
               });
             }
           }
@@ -1049,11 +1061,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 height: category.heightCm,
                 rotation: template.rotation,
                 categoryName: category.name,
-                autoQrId: template.autoQrId
+                autoQrId: template.autoQrId,
+                categoryType: category.categoryType
               });
             }
           }
         }
+      }
+      
+      // Filter out grid-type templates that don't have physical ArUco markers
+      const gridTypesNoAruco = ['scanner_grid', 'worker_tag_grid'];
+      const beforeFilterCount = templatesForValidation.length;
+      templatesForValidation = templatesForValidation.filter((t: any) => !gridTypesNoAruco.includes(t.categoryType));
+      if (beforeFilterCount !== templatesForValidation.length) {
+        console.log(`[ValidateOnly] Filtered out ${beforeFilterCount - templatesForValidation.length} grid-type templates without ArUco markers`);
       }
       
       if (templatesForValidation.length === 0) {

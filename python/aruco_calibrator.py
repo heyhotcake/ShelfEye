@@ -376,20 +376,55 @@ class ArucoCornerCalibrator:
         Returns:
             Dictionary with validation results
         """
-        # ArUco detector setup (same dictionary as corner markers)
+        # ArUco detector setup - use SAME lenient parameters as corner detection
+        # Default parameters are too strict for small markers at lower resolutions (e.g. 1080p)
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
         aruco_params = cv2.aruco.DetectorParameters()
+        aruco_params.adaptiveThreshWinSizeMin = 3
+        aruco_params.adaptiveThreshWinSizeMax = 53
+        aruco_params.adaptiveThreshWinSizeStep = 4
+        aruco_params.adaptiveThreshConstant = 7
+        aruco_params.minMarkerPerimeterRate = 0.02
+        aruco_params.maxMarkerPerimeterRate = 4.0
+        aruco_params.polygonalApproxAccuracyRate = 0.05
+        aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
         aruco_params.perspectiveRemovePixelPerCell = 16
         
+        # Filter out grid-type templates that don't have physical ArUco markers
+        grid_types_without_aruco = {'scanner_grid', 'worker_tag_grid'}
+        aruco_templates = []
+        skipped_grid_count = 0
+        for t in templates:
+            cat_type = t.get('categoryType', 'tool')
+            if cat_type in grid_types_without_aruco:
+                skipped_grid_count += 1
+                logger.info(f"Skipping grid-type template '{t.get('categoryName', '?')}' ({cat_type}) - no ArUco marker")
+            else:
+                aruco_templates.append(t)
+        
+        if skipped_grid_count > 0:
+            logger.info(f"Filtered {skipped_grid_count} grid-type templates, validating {len(aruco_templates)} ArUco slots")
+        
         results = {
-            'total_count': len(templates),
+            'total_count': len(aruco_templates),
             'valid_count': 0,
             'invalid_count': 0,
             'slots': []
         }
         
-        for i, template in enumerate(templates):
-            slot_id = template.get('autoQrId', str(i + 1))
+        marker_size_cm = 3.0
+        marker_size_px = marker_size_cm * self.measured_px_per_cm
+        logger.info(f"Raw frame slot validation: {len(aruco_templates)} slots, "
+                    f"frame={frame.shape[1]}x{frame.shape[0]}px, "
+                    f"measured_px_per_cm={self.measured_px_per_cm:.2f}, "
+                    f"3cm marker≈{marker_size_px:.0f}px")
+        if marker_size_px < 40:
+            logger.warning(f"⚠ Low marker resolution ({marker_size_px:.0f}px for 3cm marker) - detection may be unreliable")
+        
+        for i, template in enumerate(aruco_templates):
+            raw_slot_id = template.get('autoQrId', str(i + 1))
+            # Handle both "slot-X" and plain "X" formats for autoQrId
+            slot_id = str(raw_slot_id).replace('slot-', '') if raw_slot_id else str(i + 1)
             expected_marker_id = int(slot_id) if slot_id.isdigit() else None
             x_cm = template.get('x', 0)
             y_cm = template.get('y', 0)
@@ -477,6 +512,14 @@ class ArucoCornerCalibrator:
         """
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
         aruco_params = cv2.aruco.DetectorParameters()
+        aruco_params.adaptiveThreshWinSizeMin = 3
+        aruco_params.adaptiveThreshWinSizeMax = 53
+        aruco_params.adaptiveThreshWinSizeStep = 4
+        aruco_params.adaptiveThreshConstant = 7
+        aruco_params.minMarkerPerimeterRate = 0.02
+        aruco_params.maxMarkerPerimeterRate = 4.0
+        aruco_params.polygonalApproxAccuracyRate = 0.05
+        aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
         aruco_params.perspectiveRemovePixelPerCell = 16
         
         # Calculate pixels per cm from image and BOUNDED area (not full paper!)
@@ -488,15 +531,30 @@ class ArucoCornerCalibrator:
         bounded_height_cm = paper_size_cm[1] - 2 * marker_inset_cm
         px_per_cm = img_width / bounded_width_cm
         
+        # Filter out grid-type templates that don't have physical ArUco markers
+        grid_types_without_aruco = {'scanner_grid', 'worker_tag_grid'}
+        aruco_templates = []
+        skipped_grid_count = 0
+        for t in templates:
+            cat_type = t.get('categoryType', 'tool')
+            if cat_type in grid_types_without_aruco:
+                skipped_grid_count += 1
+                logger.info(f"Skipping grid-type template '{t.get('categoryName', '?')}' ({cat_type}) - no ArUco marker")
+            else:
+                aruco_templates.append(t)
+        
+        if skipped_grid_count > 0:
+            logger.info(f"Filtered {skipped_grid_count} grid-type templates, validating {len(aruco_templates)} ArUco slots")
+        
         logger.info(f"Rectified validation setup:")
         logger.info(f"  Image: {img_width}x{img_height}px")
         logger.info(f"  Paper: {paper_size_cm[0]}x{paper_size_cm[1]} cm")
         logger.info(f"  Bounded area: {bounded_width_cm}x{bounded_height_cm} cm (1cm inset)")
         logger.info(f"  Scale: {px_per_cm:.2f} px/cm")
-        logger.info(f"  Templates to validate: {len(templates)}")
+        logger.info(f"  Templates to validate: {len(aruco_templates)} (filtered from {len(templates)})")
         
         results = {
-            'total_count': len(templates),
+            'total_count': len(aruco_templates),
             'valid_count': 0,
             'invalid_count': 0,
             'slots': []
@@ -505,9 +563,11 @@ class ArucoCornerCalibrator:
         # Create CLAHE enhancer (matches scheduled capture settings)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         
-        for i, template in enumerate(templates):
-            slot_id = template.get('autoQrId', str(i + 1))
-            expected_marker_id = int(slot_id) if str(slot_id).isdigit() else None
+        for i, template in enumerate(aruco_templates):
+            raw_slot_id = template.get('autoQrId', str(i + 1))
+            # Handle both "slot-X" and plain "X" formats for autoQrId
+            slot_id = str(raw_slot_id).replace('slot-', '') if raw_slot_id else str(i + 1)
+            expected_marker_id = int(slot_id) if slot_id.isdigit() else None
             
             # Templates store CENTER coordinates (xCm, yCm) in PAPER space
             # This matches slot-drawing.tsx and rectified-preview-canvas.tsx
