@@ -1,0 +1,110 @@
+sudo journalctl -u shelfeye -f
+Feb 10 10:02:14 NaniwaTanaCheck pi-startup.sh[190374]: [2026-02-10 10:02:14] 📊 Total pre-app startup: 4s
+Feb 10 10:02:14 NaniwaTanaCheck pi-startup.sh[190377]: [2026-02-10 10:02:14]    Timing details saved to: /home/naniwa/ShelfEye/state/startup-timing.json
+Feb 10 10:02:14 NaniwaTanaCheck pi-startup.sh[190380]: [2026-02-10 10:02:14] 🔨 Building production assets...
+Feb 10 10:02:14 NaniwaTanaCheck pi-startup.sh[190383]: > rest-express@1.0.0 build
+Feb 10 10:02:14 NaniwaTanaCheck pi-startup.sh[190383]: > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+Feb 10 10:02:15 NaniwaTanaCheck pi-startup.sh[190383]: vite v5.4.20 building for production...
+Feb 10 10:02:15 NaniwaTanaCheck pi-startup.sh[190383]: transforming...
+Feb 10 10:02:17 NaniwaTanaCheck pi-startup.sh[190383]: Browserslist: browsers data (caniuse-lite) is 16 months old. Please run:
+Feb 10 10:02:17 NaniwaTanaCheck pi-startup.sh[190383]:   npx update-browserslist-db@latest
+Feb 10 10:02:17 NaniwaTanaCheck pi-startup.sh[190383]:   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Feb 10 10:03:25 NaniwaTanaCheck pi-startup.sh[190383]: ✓ 3350 modules transformed.
+Feb 10 10:03:28 NaniwaTanaCheck pi-startup.sh[190383]: rendering chunks...
+Feb 10 10:03:33 NaniwaTanaCheck pi-startup.sh[190383]: computing gzip size...
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: ../dist/public/index.html
+                            3.08 kB │ gzip:     0.99 kB
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: ../dist/public/assets/Blue_and_white_bogo_1767655508883-C6h_V3Vx.jpg      17.79 kB
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: ../dist/public/assets/index-B33X5cs0.css                                  69.16 kB │ gzip:    12.21 kB
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: ../dist/public/assets/purify.es-DfngIMfA.js                               22.26 kB │ gzip:     8.72 kB
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: ../dist/public/assets/index.es-DCWHpIqm.js                               150.56 kB │ gzip:    51.51 kB
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: ../dist/public/assets/html2canvas.esm-CBrSDip1.js                        201.42 kB │ gzip:    48.03 kB
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: ../dist/public/assets/index-BkmADPZ0.js                               14,523.86 kB │ gzip: 7,624.55 kB
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: (!) Some chunks are larger than 500 kB after minification. Consider:
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: - Using dynamic import() to code-split the application
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Feb 10 10:03:34 NaniwaTanaCheck pi-startup.sh[190383]: ✓ built in 1m 19s
+Feb 10 10:03:35 NaniwaTanaCheck pi-startup.sh[190383]:   dist/index.js  376.0kb
+Feb 10 10:03:35 NaniwaTanaCheck pi-startup.sh[190383]: ⚡ Done in 236ms
+Feb 10 10:03:35 NaniwaTanaCheck pi-startup.sh[190432]: [2026-02-10 10:03:35] ⏱️  Phase 'build' completed in 85s (cumulative)
+Feb 10 10:03:35 NaniwaTanaCheck pi-startup.sh[190435]: [2026-02-10 10:03:35] ✅ Production build completed successfully
+Feb 10 10:03:35 NaniwaTanaCheck pi-startup.sh[190438]: [2026-02-10 10:03:35] 🚀 Starting ShelfEye application (production mode)...
+Feb 10 10:03:35 NaniwaTanaCheck pi-startup.sh[190441]: [2026-02-10 10:03:35] Access at: http://naniwatanacheck.local:5000
+Feb 10 10:03:35 NaniwaTanaCheck pi-startup.sh[190444]: [2026-02-10 10:03:35] =========================================
+Feb 10 10:03:36 NaniwaTanaCheck pi-startup.sh[190446]: > rest-express@1.0.0 start
+Feb 10 10:03:36 NaniwaTanaCheck pi-startup.sh[190446]: > NODE_ENV=production node --max-old-space-size=768 dist/index.js
+Feb 10 10:03:44 NaniwaTanaCheck pi-startup.sh[190446]: [Database] Connection pool created
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [Database] Health check started (interval: 30000ms)
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [RateLimiter] Gmail and Sheets rate limiters initialized
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [CircuitBreaker] Circuit breaker service initialized
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Starting zombie detection (interval: 60000ms)
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [Startup] Environment validation...
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [Startup] ⚠️ Warnings:
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]:   - SHELFEYE_API_KEY not set - API endpoints are NOT protected. Set this for external network access.
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]:   - Google Mail integration not detected - email alerts will not work
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [Startup] ✓ Environment validation passed with warnings
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [Security] Helmet security headers ENABLED
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [Security] CORS configured for origins: http://naniwatanacheck.local:5000
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [Security] Request timeout: 30s (extended for calibration/capture routes)
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [Security] WARNING: API authentication DISABLED - set SHELFEYE_API_KEY to secure API
+Feb 10 10:03:45 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Initializing...
+Feb 10 10:03:46 NaniwaTanaCheck pi-startup.sh[190446]: [Database] ✅ Client connected to pool
+Feb 10 10:03:46 NaniwaTanaCheck pi-startup.sh[190446]: [Database] ✅ Client connected to pool
+Feb 10 10:03:51 NaniwaTanaCheck pi-startup.sh[190446]: [SheetsSummaryReport] Using default tool configuration
+Feb 10 10:03:51 NaniwaTanaCheck pi-startup.sh[190446]: [AlertQueue] Starting alert retry queue processor
+Feb 10 10:03:51 NaniwaTanaCheck pi-startup.sh[190446]: [AlertQueue] Loaded 0 queued alerts from storage
+Feb 10 10:03:51 NaniwaTanaCheck pi-startup.sh[190446]: [AlertQueue] Retry processor interval started (60s)
+Feb 10 10:03:51 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Reloading configuration...
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled capture at 08:00 JST (0 8 * * *)
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled diagnostic at 7:30 JST (30 7 * * *)
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled capture at 11:00 JST (0 11 * * *)
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled diagnostic at 10:30 JST (30 10 * * *)
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled capture at 14:00 JST (0 14 * * *)
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled diagnostic at 13:30 JST (30 13 * * *)
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled capture at 17:00 JST (0 17 * * *)
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled diagnostic at 16:30 JST (30 16 * * *)
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled daily maintenance at 3:00 AM JST
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled hourly memory monitoring
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Scheduled 4 capture times + daily maintenance + memory monitoring
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [Scheduler] Initialized successfully
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Starting startup calibration check for ALL cameras...
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Found 2 calibrated camera(s) to validate
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [CameraSessionManager] Global calibration lock acquired for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Validating camera: Camera 2 (Shelf 2) (/dev/video1)
+Feb 10 10:03:52 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Paper size: 8-page-4x2
+Feb 10 10:03:53 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Tracking led process PID 190469: LED: setWhiteLight
+Feb 10 10:03:53 NaniwaTanaCheck sudo[190469]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py white --num-leds 99 --brightness 100
+Feb 10 10:03:53 NaniwaTanaCheck sudo[190469]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Feb 10 10:03:53 NaniwaTanaCheck sudo[190469]: pam_unix(sudo:session): session closed for user root
+Feb 10 10:03:53 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Process PID 190469 exited after 380ms (code: 1, signal: null)
+Feb 10 10:03:53 NaniwaTanaCheck pi-startup.sh[190446]: [LED] setWhiteLight failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Feb 10 10:03:53 NaniwaTanaCheck pi-startup.sh[190446]: [LED] Unexpected response: { success: false }
+Feb 10 10:03:53 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Using device path: /dev/video1
+Feb 10 10:03:53 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Tracking python process PID 190472: Startup calibration: Camera 2 (Shelf 2)
+Feb 10 10:04:16 NaniwaTanaCheck pi-startup.sh[190446]: [Database] Client removed from pool
+Feb 10 10:04:51 NaniwaTanaCheck pi-startup.sh[190446]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Feb 10 10:04:55 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Process PID 190472 exited after 62075ms (code: 0, signal: null)
+Feb 10 10:04:56 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Validation completed: 4/4 markers, error: 0.00px
+Feb 10 10:04:56 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Homography updated. Existing slots preserved (no slot recreation on startup).
+Feb 10 10:04:56 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Tracking led process PID 190486: LED: turnOffLED
+Feb 10 10:04:56 NaniwaTanaCheck sudo[190486]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py off --num-leds 99
+Feb 10 10:04:56 NaniwaTanaCheck sudo[190486]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Feb 10 10:04:57 NaniwaTanaCheck sudo[190486]: pam_unix(sudo:session): session closed for user root
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Process PID 190486 exited after 305ms (code: 1, signal: null)
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [LED] turnOffLED failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [LED] LED off response: { success: false }
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] ✓ Camera Camera 2 (Shelf 2) validated successfully
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [CameraSessionManager] Global calibration lock released for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [CameraSessionManager] Global calibration lock acquired for camera a91d43f1-47bf-4d75-8a7d-d2faf0503f81
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Validating camera: Wide Shelf (/dev/video0)
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Paper size: 8-page-4x2
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Tracking led process PID 190489: LED: setWhiteLight
+Feb 10 10:04:57 NaniwaTanaCheck sudo[190489]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py white --num-leds 99 --brightness 100
+Feb 10 10:04:57 NaniwaTanaCheck sudo[190489]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Feb 10 10:04:57 NaniwaTanaCheck sudo[190489]: pam_unix(sudo:session): session closed for user root
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Process PID 190489 exited after 161ms (code: 1, signal: null)
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [LED] setWhiteLight failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [LED] Unexpected response: { success: false }
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [StartupCalibration] Using device path: /dev/video0
+Feb 10 10:04:57 NaniwaTanaCheck pi-startup.sh[190446]: [SubprocessManager] Tracking python process PID 190492: Startup calibration: Wide Shelf
