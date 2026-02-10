@@ -543,27 +543,11 @@ export class DbStorage implements IStorage {
 
   async getTemplateRectanglesByPaperSizeAndCamera(paperSize: string, cameraId: string): Promise<TemplateRectangle[]> {
     await this.ensureInitialized();
-    // First try to get camera-specific templates
-    const cameraSpecific = await db.select().from(schema.templateRectangles)
-      .where(
-        and(
-          eq(schema.templateRectangles.paperSize, paperSize),
-          eq(schema.templateRectangles.cameraId, cameraId)
-        )
-      )
-      .orderBy(schema.templateRectangles.createdAt);
-    
-    // If camera-specific templates exist, return them
-    if (cameraSpecific.length > 0) {
-      return cameraSpecific;
-    }
-    
-    // Otherwise, fall back to shared templates (cameraId is null)
     return await db.select().from(schema.templateRectangles)
       .where(
         and(
           eq(schema.templateRectangles.paperSize, paperSize),
-          isNull(schema.templateRectangles.cameraId)
+          eq(schema.templateRectangles.cameraId, cameraId)
         )
       )
       .orderBy(schema.templateRectangles.createdAt);
