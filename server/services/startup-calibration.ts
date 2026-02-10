@@ -168,87 +168,28 @@ export class StartupCalibrationService {
               return;
             }
 
-            // Update camera with new homography
             await storage.updateCamera(camera.id, {
               homographyMatrix: homographyMatrix,
               calibrationTimestamp: new Date(),
             });
 
-            // Delete existing slots for this camera
-            const existingSlots = await storage.getSlotsByCamera(camera.id);
-            for (const slot of existingSlots) {
-              // First delete all detection logs for this slot to avoid foreign key constraint
-              await storage.deleteDetectionLogsBySlotId(slot.id);
-              await storage.deleteSlot(slot.id);
-            }
-
-            // Recreate slots from templates (use the camera-specific paperSize passed to this function)
-            // paperSizeFormat parameter already contains camera.paperSize with fallback to global config
-            const templateRectangles = await storage.getTemplateRectanglesByPaperSize(paperSizeFormat);
-            const { transformTemplateToPixels } = await import('../utils/coordinate-transform.js');
-
-            for (const template of templateRectangles) {
-              try {
-                const category = await storage.getToolCategory(template.categoryId);
-                if (!category) continue;
-
-                const pixelCoords = transformTemplateToPixels({
-                  xCm: template.xCm,
-                  yCm: template.yCm,
-                  widthCm: category.widthCm,
-                  heightCm: category.heightCm,
-                  rotation: template.rotation,
-                }, homographyMatrix);
-
-                const slot = await storage.createSlot({
-                  slotId: template.autoQrId || `${category.name}_${template.id.slice(0, 4)}`,
-                  cameraId: camera.id,
-                  toolName: category.name,
-                  expectedQrId: template.autoQrId || '',
-                  priority: 'high',
-                  regionCoords: pixelCoords,
-                  xCm: template.xCm,
-                  yCm: template.yCm,
-                  widthCm: category.widthCm,
-                  heightCm: category.heightCm,
-                  rotationDeg: template.rotation || 0,
-                  allowCheckout: true,
-                  graceWindow: '08:00-17:00',
-                });
-
-                // Update template rectangle with slot ID and simplified numbered QR code
-                await storage.updateTemplateRectangle(template.id, {
-                  slotId: slot.id,
-                  autoQrId: slot.slotNumber.toString(), // Use simplified slot number for QR codes
-                });
-
-              } catch (slotError) {
-                console.warn(`[StartupCalibration] Failed to create slot for template ${template.id}:`, slotError);
-              }
-            }
-
-            // Update last calibration config
             await storage.setConfig('last_calibration_camera_id', camera.id, 'Last successfully calibrated camera ID');
             await storage.setConfig('last_calibration_timestamp', new Date().toISOString(), 'Last successful calibration timestamp');
-            await storage.setConfig('last_calibration_paper_size_format', paperSizeFormat, 'Last calibration paper size format (e.g., 6-page-3x2)');
 
-            console.log(`[StartupCalibration] Calibration completed: ${calibrationData.markers_detected}/4 markers, error: ${calibrationData.reprojection_error.toFixed(2)}px`);
+            console.log(`[StartupCalibration] Validation completed: ${calibrationData.markers_detected}/4 markers, error: ${calibrationData.reprojection_error.toFixed(2)}px`);
+            console.log(`[StartupCalibration] Homography updated. Existing slots preserved (no slot recreation on startup).`);
             
-            // Turn off LED light after SUCCESSFUL calibration
             await turnOffLED();
             
             resolve(true);
 
           } catch (parseError) {
             console.error('[StartupCalibration] Failed to parse calibration result:', parseError);
-            // Turn off LED light on error
             await turnOffLED();
             resolve(false);
           }
         } else {
           console.error('[StartupCalibration] Calibration process failed with code', code, ':', error);
-          // DON'T turn off LED on failure - red flash should continue
-          // The finally block was killing the flash process
           resolve(false);
         }
       });
