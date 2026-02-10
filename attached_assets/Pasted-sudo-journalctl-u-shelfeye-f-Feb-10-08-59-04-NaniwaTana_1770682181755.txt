@@ -1,0 +1,689 @@
+sudo journalctl -u shelfeye -f
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:04 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 08:59:12 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Global calibration lock acquired for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Feb 10 08:59:12 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Acquiring exclusive camera lock to prevent preview race condition...
+Feb 10 08:59:12 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Exclusive lock (calibration) set for camera 5e164d3c-1809-49ba-b284-a734843b32f1 - blocking new previews
+Feb 10 08:59:12 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Waiting for in-flight previews to complete...
+Feb 10 08:59:14 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 10 08:59:14 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 10 08:59:14 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 104.5
+Feb 10 08:59:15 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 104.8
+Feb 10 08:59:18 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 21/50: New best sharpness = 105.0
+Feb 10 08:59:22 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Camera 5e164d3c-1809-49ba-b284-a734843b32f1 should now be available for exclusive use (calibration)
+Feb 10 08:59:22 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Both global and camera-specific locks acquired. No new operations can interfere.
+Feb 10 08:59:22 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Waiting 25 seconds for any in-flight preview requests to complete...
+Feb 10 08:59:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 43/50: New best sharpness = 105.1
+Feb 10 08:59:24 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 105.1
+Feb 10 08:59:24 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 08:59:24 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 08:59:25 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 187979 exited after 22540ms (code: 0, signal: null)
+Feb 10 08:59:25 NaniwaTanaCheck pi-startup.sh[152169]: 8:59:25 AM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 22741ms :: …
+Feb 10 08:59:47 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Wait complete. Now killing any stuck camera processes...
+Feb 10 08:59:47 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Killing all camera-related Python processes...
+Feb 10 08:59:47 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Killed 0 tracked process(es)
+Feb 10 08:59:49 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Camera process cleanup complete
+Feb 10 08:59:49 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Killed existing camera processes via SubprocessManager
+Feb 10 08:59:49 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Turning on white LED light (killing stuck processes first)...
+Feb 10 08:59:50 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking led process PID 188004: LED: setWhiteLight
+Feb 10 08:59:50 NaniwaTanaCheck sudo[188004]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py white --num-leds 99 --brightness 100
+Feb 10 08:59:50 NaniwaTanaCheck sudo[188004]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Feb 10 08:59:50 NaniwaTanaCheck sudo[188004]: pam_unix(sudo:session): session closed for user root
+Feb 10 08:59:50 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188004 exited after 218ms (code: 1, signal: null)
+Feb 10 08:59:50 NaniwaTanaCheck pi-startup.sh[152169]: [LED] setWhiteLight failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Feb 10 08:59:50 NaniwaTanaCheck pi-startup.sh[152169]: [LED] Unexpected response: { success: false }
+Feb 10 08:59:50 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] LED white light result: false
+Feb 10 08:59:50 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Found 29 templates for design "Shelf 2 w/Scanner ver.5" (id: 33cfebe0-cdc7-4860-9f3c-8977ad0210e6)
+Feb 10 08:59:55 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Built 29 templates with dimensions for preview overlay
+Feb 10 08:59:55 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Paper: 118.8x42 cm
+Feb 10 08:59:55 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Preview output size: 3564x1260 px (30 px/cm)
+Feb 10 08:59:55 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Using 29 camera-adjusted template positions for slot validation
+Feb 10 08:59:57 NaniwaTanaCheck pi-startup.sh[152169]: [Database] ✅ Client connected to pool
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]: [Memory Monitor] Memory usage: {
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]:   rss: '179MB',
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]:   heapUsed: '83MB',
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]:   heapTotal: '89MB',
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]:   external: '5MB',
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]:   uptime: '111h 28m'
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]: }
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Passing 29 templates for slot ArUco validation
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Using device path: /dev/video1
+Feb 10 09:00:00 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188011: Calibration: Camera 2 (Shelf 2)
+Feb 10 09:00:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Parsed 29 templates for preview overlay
+Feb 10 09:00:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:00:01 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:00:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:02:51.927936001] [188011]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:00:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:02:51.963123126] [188014]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:00:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:02:51.969795589] [188014]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:00:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:00:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:00:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:02:52.076067726] [188011]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 20 seconds (metadata polling)...
+Feb 10 09:00:02 NaniwaTanaCheck pi-startup.sh[152169]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Feb 10 09:00:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 134 metadata polls over 20s
+Feb 10 09:00:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Capturing 50 frames for marker detection...
+Feb 10 09:00:28 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 09:00:32 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Selected frame with sharpness = 105.3
+Feb 10 09:00:32 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:[ArUco Mode] Using frame as-is (camera firmware handles enhancement)
+Feb 10 09:00:32 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:✓ Captured frame resolution: 1920x1080 (requested: 1920x1080)
+Feb 10 09:00:32 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Saved CLAHE-enhanced debug image to /tmp/aruco_clahe_enhanced.jpg
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:CLAHE-enhanced detection found 3/4 corner markers
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Added marker 98 from original (non-enhanced) detection
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Marker 99: center=(49.8, 775.6), outer corner[3]=(17.9, 810.5)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Marker 97: center=(1799.7, 286.6), outer corner[1]=(1829.6, 252.6)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Marker 96: center=(95.1, 248.9), outer corner[0]=(68.0, 212.7)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Marker 98: center=(1819.6, 822.5), outer corner[2]=(1850.8, 860.5)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Detected 4/4 corner markers: [np.int32(99), np.int32(97), np.int32(96), np.int32(98)]
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[1536.0, 0.0, 960.0], [0.0, 1536.0, 540.0], [0.0, 0.0, 1.0]]
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Using zero distortion coefficients (no distortion correction): [0.0, 0.0, 0.0, 0.0, 0.0]
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Using OUTER CORNERS for homography (not marker centers)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Outer corners (pixels): TL=[68.02517700195312, 212.66006469726562], TR=[1829.5556640625, 252.5812530517578], BR=[1850.801513671875, 860.4818115234375], BL=[17.906728744506836, 810.4953002929688]
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Paper size name: 8-page-4x2, is_multi_sheet: True
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Multi-sheet OUTER CORNER positions (cm): TL=(1.0,1.0), TR=(117.8,1.0), BR=(117.8,41.0), BL=(1.0,41.0)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Paper size: 118.8cm × 42.0cm
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Detected points: [[68.02517700195312, 212.66006469726562], [1829.5556640625, 252.5812530517578], [1850.801513671875, 860.4818115234375], [17.906728744506836, 810.4953002929688]]
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Projected points: [[68.02517700195358, 212.6600646972655], [1829.5556640624998, 252.5812530517577], [1850.801513671875, 860.4818115234375], [17.906728744507035, 810.4953002929689]]
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Point-wise errors: [4.687428401686771e-13, 2.5421149729252077e-13, 0.0, 2.2914314707516465e-13]
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Reprojection error: mean=0.0000 px, max=0.0000 px
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:MEASURED pixel density: 15.1 px/cm (horizontal), 15.0 px/cm (vertical)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Using 15.0 px/cm for native-resolution rectified images (no upsampling)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Camera matrix and distortion coefficients estimated (distortion currently set to zero)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Validating 29 slot markers on raw camera frame...
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 1: Expected 1, got 2
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_1_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 2: Expected 2, got nothing
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_2_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 3: Expected 3, got 7
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_3_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 4: Expected 4, got 8
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_4_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 5: Expected 5, got 9
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_5_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 6: Expected 6, got 10
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_6_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 7: Expected 7, got 11
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_7_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 8: Expected 8, got 12
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_8_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 9: Expected 9, got 13
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_9_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 10: Expected 10, got 14
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_10_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 11: Expected 11, got 15
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_11_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 12: Expected 12, got 16
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_12_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 13: Expected 13, got 17
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_13_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 14: Expected 14, got 18
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_14_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 15: Expected 15, got 19
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_15_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 16: Expected 16, got 20
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_16_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 17: Expected 17, got 18
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_17_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 18: Expected 18, got 19
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_18_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 19: Expected 19, got 20
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_19_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 20: Expected 20, got 21
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_20_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 21: Expected 21, got 22
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_21_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 22: Expected 22, got nothing
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_22_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 23: Expected 23, got 24
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_23_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 24: Expected 24, got 25
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_24_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 25: Expected 25, got 26
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_25_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 26: Expected 26, got 28
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_26_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 27: Expected 27, got nothing
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_27_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 28: Expected 28, got nothing
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_28_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 29: Expected 29, got nothing
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_29_roi.jpg (74x74 px)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Slot validation: 0/29 markers detected
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Rectified image will be 1781x629px at uniform 15.0 px/cm
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Saving high-resolution rectified image: 1781x629px
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 10 09:00:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=1781x629px
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:✓ Saved rectified image for validation: 1781×629 px at /home/naniwa/ShelfEye/python/../data/latest_calibration_rectified_5e164d3c-1809-49ba-b284-a734843b32f1.png
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=1781x629px
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Drawing 29 template overlays
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 75.399, 'y': 26.855556, 'width': 27.7, 'height': 9.5, 'rotation': 0, 'categoryName': 'Big Tape Cutter', 'autoQrId': '1'}, {'x': 117.089165, 'y': 12.963444, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '2'}, {'x': 93.447876, 'y': 12.864887, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '3'}, {'x': 96.89787, 'y': 12.864887, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '4'}, {'x': 100.55136, 'y': 13.062, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '5'}, {'x': 104.1031, 'y': 12.864887, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '6'}, {'x': 107.34962, 'y': 12.963444, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '7'}, {'x': 110.49439, 'y': 13.062, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '8'}, {'x': 93.34613, 'y': 29.319225, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '9'}, {'x': 96.99962, 'y': 29.319225, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '10'}, {'x': 100.449615, 'y': 29.122112, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '11'}, {'x': 103.797874, 'y': 29.319225, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '12'}, {'x': 107.14613, 'y': 29.220669, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '13'}, {'x': 110.39265, 'y': 29.122112, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '14'}, {'x': 113.740906, 'y': 13.062, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '15'}, {'x': 113.63916, 'y': 28.925, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '16'}, {'x': 20.045383, 'y': 5.75, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '17'}, {'x': 5.910465, 'y': 15.226541, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '18'}, {'x': 19.943642, 'y': 15.236999, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '19'}, {'x': 5.991899, 'y': 27.04567, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '20'}, {'x': 19.740088, 'y': 27.151497, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '21'}, {'x': 19.536673, 'y': 36.54567, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '22'}, {'x': 35.897385, 'y': 27.151226, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '23'}, {'x': 35.795643, 'y': 36.84134, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '24'}, {'x': 49.950867, 'y': 27.04567, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '25'}, {'x': 75.50091, 'y': 36.54567, 'width': 27.7, 'height': 9.5, 'rotation': 0, 'categoryName': 'Big Tape Cutter', 'autoQrId': '26'}, {'x': 117.089165, 'y': 28.925, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '27'}, {'x': 38.97238, 'y': 10.837285, 'width': 20, 'height': 17.5, 'rotation': 0, 'categoryName': 'Scanners (Worker Tags)', 'autoQrId': '28'}, {'x': 68.87745, 'y': 9.874507, 'width': 36, 'height': 18, 'rotation': 0, 'categoryName': 'Scanners (Scanner)', 'autoQrId': '29'}]
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:✓ Saved LABELED high-resolution rectified image for download
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Generating UI preview: 3564x1260px (no template overlays)
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=3564x1260px
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Feb 10 09:00:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:00:35 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:00:35 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188011 exited after 34852ms (code: 0, signal: null)
+Feb 10 09:00:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Received 1034987 bytes of JSON from Python
+Feb 10 09:00:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] First 200 chars: {"ok": true, "homography_matrix": [14.85608566180659, -1.2689464336763925, 54.36438062305403, 0.312542284116968, 14.14476651397673, 197.97248917825502, -0.0001143339581835294, -0.0009684585315329408,
+Feb 10 09:00:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Last 200 chars: 1L07MPT6VlIftJI6jSNJsRCCb5MjqCwpmsWNve3CoZkVV7g1R0jwrZy3cga/ugPQSj/Ct/Tvhvod4B597en/t4H+FQm0RKpJkFjpOlW4WSO/XeOmWrMvNKuNSupLmK4RhuxkD0FeoeHPgP4GurQzzvfswGR/pf/1q7nwJ8Bvh8dD+a2uWPnNy1xz0HtQmYObP/9k="}
+Feb 10 09:00:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] JSON parsed successfully
+Feb 10 09:00:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Has rectified_preview field: true
+Feb 10 09:00:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Preview field length: 1029843 chars
+Feb 10 09:00:44 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Deleted 29 existing slots
+Feb 10 09:00:45 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Creating slots for 29 templates from design 33cfebe0-cdc7-4860-9f3c-8977ad0210e6
+Feb 10 09:00:57 NaniwaTanaCheck pi-startup.sh[152169]: [Database] ✅ Client connected to pool
+Feb 10 09:01:02 NaniwaTanaCheck pi-startup.sh[152169]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Feb 10 09:01:02 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Created 2x4 grid metadata for worker_tag_grid
+Feb 10 09:01:03 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Created 2x4 grid metadata for scanner_grid
+Feb 10 09:01:04 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Linked scanner grid 4cb84755-c1d3-4483-889f-af3c9204ca39 <-> worker tag grid 39d7c8bf-ee9d-455b-bd03-28327f84b8af
+Feb 10 09:01:04 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Saved paper size format to config: 8-page-4x2
+Feb 10 09:01:04 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Measured pixel density: 15.00 px/cm
+Feb 10 09:01:04 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Including slot validation in response: 0/29 markers detected
+Feb 10 09:01:04 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Released exclusive lock for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Feb 10 09:01:04 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Global calibration lock released for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Feb 10 09:01:04 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking led process PID 188025: LED: turnOffLED
+Feb 10 09:01:04 NaniwaTanaCheck sudo[188025]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py off --num-leds 99
+Feb 10 09:01:04 NaniwaTanaCheck sudo[188025]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Feb 10 09:01:05 NaniwaTanaCheck sudo[188025]: pam_unix(sudo:session): session closed for user root
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188025 exited after 182ms (code: 1, signal: null)
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: [LED] turnOffLED failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: [LED] LED off response: { success: false }
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: 9:01:05 AM [express] POST /api/calibrate/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 112847ms :: {"o…
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: 9:01:05 AM [express] GET /api/cameras 200 in 169ms :: [{"id":"a91d43f1-47bf-4d75-8a7d-d2faf0503f81",…
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] ✅ Client connected to pool
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] ✅ Client connected to pool
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] ✅ Client connected to pool
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: [Database] ✅ Client connected to pool
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: 9:01:05 AM [express] GET /api/template-rectangles 200 in 702ms :: [{"id":"5b875172-56d4-4aa6-be85-54…
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 10 09:01:05 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188028: Camera preview: Camera 2 (Shelf 2)
+Feb 10 09:01:06 NaniwaTanaCheck pi-startup.sh[152169]: [API] Templates by designId (masterOnly=false): 29 templates
+Feb 10 09:01:06 NaniwaTanaCheck pi-startup.sh[152169]: 9:01:06 AM [express] GET /api/template-rectangles 200 in 819ms :: [{"id":"7e889927-ebcd-4fae-b354-d5…
+Feb 10 09:01:06 NaniwaTanaCheck pi-startup.sh[152169]: 9:01:06 AM [express] GET /api/template-rectangles 200 in 850ms :: [{"id":"7e889927-ebcd-4fae-b354-d5…
+Feb 10 09:01:06 NaniwaTanaCheck pi-startup.sh[152169]: [API] Templates by designId+cameraId: 29 templates
+Feb 10 09:01:06 NaniwaTanaCheck pi-startup.sh[152169]: 9:01:06 AM [express] GET /api/template-rectangles 200 in 883ms :: [{"id":"7e889927-ebcd-4fae-b354-d5…
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [448:03:57.452125972] [188028]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:03:57.487365025] [188031]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:03:57.494121283] [188031]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:03:57.601018621] [188028]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:01:07 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 10 09:01:17 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 10 09:01:17 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 10 09:01:17 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 106.0
+Feb 10 09:01:18 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 106.6
+Feb 10 09:01:18 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 107.0
+Feb 10 09:01:20 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 11/50: New best sharpness = 107.1
+Feb 10 09:01:27 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 107.1
+Feb 10 09:01:28 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:01:28 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:01:28 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188028 exited after 22693ms (code: 0, signal: null)
+Feb 10 09:01:29 NaniwaTanaCheck pi-startup.sh[152169]: 9:01:29 AM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 23900ms :: …
+Feb 10 09:01:34 NaniwaTanaCheck pi-startup.sh[152169]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 10 09:01:34 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188038: Camera preview: Camera 2 (Shelf 2)
+Feb 10 09:01:35 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 09:01:35 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 09:01:35 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:04:26.278127336] [188038]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:04:26.313454334] [188042]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:04:26.320170574] [188042]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:04:26.426245471] [188038]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:01:36 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 10 09:01:46 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 10 09:01:46 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 10 09:01:46 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 104.2
+Feb 10 09:01:47 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 5/50: New best sharpness = 104.2
+Feb 10 09:01:47 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 6/50: New best sharpness = 104.5
+Feb 10 09:01:48 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 8/50: New best sharpness = 104.7
+Feb 10 09:01:48 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 10/50: New best sharpness = 104.7
+Feb 10 09:01:50 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 20/50: New best sharpness = 104.7
+Feb 10 09:01:52 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 27/50: New best sharpness = 104.8
+Feb 10 09:01:56 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 104.8
+Feb 10 09:01:56 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:01:57 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:01:57 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188038 exited after 22760ms (code: 0, signal: null)
+Feb 10 09:01:57 NaniwaTanaCheck pi-startup.sh[152169]: 9:01:57 AM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 22973ms :: …
+Feb 10 09:02:02 NaniwaTanaCheck pi-startup.sh[152169]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Feb 10 09:02:02 NaniwaTanaCheck pi-startup.sh[152169]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 10 09:02:02 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188052: Camera preview: Camera 2 (Shelf 2)
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:04:54.422699998] [188052]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:04:54.457979664] [188055]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:04:54.464076122] [188055]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:04:54.570250836] [188052]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:02:04 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 10 09:02:12 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Global calibration lock acquired for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Feb 10 09:02:12 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Acquiring exclusive camera lock to prevent preview race condition...
+Feb 10 09:02:12 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Exclusive lock (calibration) set for camera 5e164d3c-1809-49ba-b284-a734843b32f1 - blocking new previews
+Feb 10 09:02:12 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Waiting for in-flight previews to complete...
+Feb 10 09:02:14 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 10 09:02:14 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 10 09:02:14 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 104.8
+Feb 10 09:02:15 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 105.1
+Feb 10 09:02:17 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 13/50: New best sharpness = 105.2
+Feb 10 09:02:20 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 26/50: New best sharpness = 105.6
+Feb 10 09:02:22 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Camera 5e164d3c-1809-49ba-b284-a734843b32f1 should now be available for exclusive use (calibration)
+Feb 10 09:02:22 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Both global and camera-specific locks acquired. No new operations can interfere.
+Feb 10 09:02:22 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Waiting 25 seconds for any in-flight preview requests to complete...
+Feb 10 09:02:24 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 105.6
+Feb 10 09:02:25 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:02:25 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:02:25 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188052 exited after 22798ms (code: 0, signal: null)
+Feb 10 09:02:25 NaniwaTanaCheck pi-startup.sh[152169]: 9:02:25 AM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 23009ms :: …
+Feb 10 09:02:47 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Wait complete. Now killing any stuck camera processes...
+Feb 10 09:02:47 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Killing all camera-related Python processes...
+Feb 10 09:02:47 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Killed 0 tracked process(es)
+Feb 10 09:02:49 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Camera process cleanup complete
+Feb 10 09:02:49 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Killed existing camera processes via SubprocessManager
+Feb 10 09:02:49 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Turning on white LED light (killing stuck processes first)...
+Feb 10 09:02:50 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking led process PID 188073: LED: setWhiteLight
+Feb 10 09:02:50 NaniwaTanaCheck sudo[188073]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py white --num-leds 99 --brightness 100
+Feb 10 09:02:50 NaniwaTanaCheck sudo[188073]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Feb 10 09:02:50 NaniwaTanaCheck sudo[188073]: pam_unix(sudo:session): session closed for user root
+Feb 10 09:02:50 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188073 exited after 240ms (code: 1, signal: null)
+Feb 10 09:02:50 NaniwaTanaCheck pi-startup.sh[152169]: [LED] setWhiteLight failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Feb 10 09:02:50 NaniwaTanaCheck pi-startup.sh[152169]: [LED] Unexpected response: { success: false }
+Feb 10 09:02:50 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] LED white light result: false
+Feb 10 09:02:50 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Found 29 templates for design "Shelf 2 w/Scanner ver.5" (id: 33cfebe0-cdc7-4860-9f3c-8977ad0210e6)
+Feb 10 09:02:55 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Built 29 templates with dimensions for preview overlay
+Feb 10 09:02:55 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Paper: 118.8x42 cm
+Feb 10 09:02:55 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Preview output size: 3564x1260 px (30 px/cm)
+Feb 10 09:02:56 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Using 29 camera-adjusted template positions for slot validation
+Feb 10 09:02:57 NaniwaTanaCheck pi-startup.sh[152169]: [Database] ✅ Client connected to pool
+Feb 10 09:03:01 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Passing 29 templates for slot ArUco validation
+Feb 10 09:03:01 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Using device path: /dev/video1
+Feb 10 09:03:01 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188080: Calibration: Camera 2 (Shelf 2)
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Parsed 29 templates for preview overlay
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:05:52.615787124] [188080]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:05:52.651101274] [188083]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:05:52.657708221] [188083]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:05:52.763961773] [188080]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:03:02 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 20 seconds (metadata polling)...
+Feb 10 09:03:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 134 metadata polls over 20s
+Feb 10 09:03:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Capturing 50 frames for marker detection...
+Feb 10 09:03:28 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:[ArUco Mode] Selected frame with sharpness = 103.1
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:[ArUco Mode] Using frame as-is (camera firmware handles enhancement)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:✓ Captured frame resolution: 1920x1080 (requested: 1920x1080)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Saved CLAHE-enhanced debug image to /tmp/aruco_clahe_enhanced.jpg
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:CLAHE-enhanced detection found 4/4 corner markers
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Marker 98: center=(1820.2, 822.3), outer corner[2]=(1851.7, 860.3)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Marker 99: center=(49.2, 775.6), outer corner[3]=(17.8, 810.7)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Marker 97: center=(1799.7, 287.0), outer corner[1]=(1829.4, 252.8)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Marker 96: center=(94.6, 248.4), outer corner[0]=(68.6, 213.7)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Detected 4/4 corner markers: [np.int32(98), np.int32(99), np.int32(97), np.int32(96)]
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Estimated camera matrix: [[1536.0, 0.0, 960.0], [0.0, 1536.0, 540.0], [0.0, 0.0, 1.0]]
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Using zero distortion coefficients (no distortion correction): [0.0, 0.0, 0.0, 0.0, 0.0]
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Using OUTER CORNERS for homography (not marker centers)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Outer corners (pixels): TL=[68.63866424560547, 213.67987060546875], TR=[1829.393798828125, 252.79188537597656], BR=[1851.7490234375, 860.2996215820312], BL=[17.809724807739258, 810.743408203125]
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Paper size name: 8-page-4x2, is_multi_sheet: True
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Multi-sheet OUTER CORNER positions (cm): TL=(1.0,1.0), TR=(117.8,1.0), BR=(117.8,41.0), BL=(1.0,41.0)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Homography calculated successfully (maps cm → pixels)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Paper size: 118.8cm × 42.0cm
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Detected points: [[68.63866424560547, 213.67987060546875], [1829.393798828125, 252.79188537597656], [1851.7490234375, 860.2996215820312], [17.809724807739258, 810.743408203125]]
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Projected points: [[68.63866424560517, 213.67987060546886], [1829.393798828126, 252.79188537597668], [1851.749023437501, 860.2996215820311], [17.809724807738743, 810.7434082031249]]
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Point-wise errors: [3.1934924115609293e-13, 9.165725883006586e-13, 9.165725883006586e-13, 5.275391033729059e-13]
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Reprojection error: mean=0.0000 px, max=0.0000 px
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:MEASURED pixel density: 15.1 px/cm (horizontal), 15.0 px/cm (vertical)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Using 15.0 px/cm for native-resolution rectified images (no upsampling)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Note: With 4 points, homography fits perfectly (8 DOF = 8 constraints), so error is near-zero
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Camera matrix and distortion coefficients estimated (distortion currently set to zero)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Validating 29 slot markers on raw camera frame...
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 1: Expected 1, got 2
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_1_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 2: Expected 2, got nothing
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_2_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 3: Expected 3, got 7
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_3_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 4: Expected 4, got 8
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_4_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 5: Expected 5, got 9
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_5_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 6: Expected 6, got 10
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_6_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 7: Expected 7, got 11
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_7_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 8: Expected 8, got 12
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_8_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 9: Expected 9, got 13
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_9_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 10: Expected 10, got 14
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_10_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 11: Expected 11, got 15
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_11_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 12: Expected 12, got 16
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_12_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 13: Expected 13, got 17
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_13_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 14: Expected 14, got 18
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_14_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 15: Expected 15, got 19
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_15_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 16: Expected 16, got 20
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_16_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 17: Expected 17, got 18
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_17_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 18: Expected 18, got 19
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_18_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 19: Expected 19, got 20
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_19_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 20: Expected 20, got 21
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_20_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 21: Expected 21, got 22
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_21_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 22: Expected 22, got nothing
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_22_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 23: Expected 23, got 24
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_23_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 24: Expected 24, got 25
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_24_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 25: Expected 25, got 26
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_25_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 26: Expected 26, got 28
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_26_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 27: Expected 27, got nothing
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_27_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 28: Expected 28, got nothing
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_28_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:__main__:✗ Slot 29: Expected 29, got nothing
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:  Debug ROI saved: /tmp/failed_slot_29_roi.jpg (74x74 px)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Slot validation: 0/29 markers detected
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Rectified image will be 1779x629px at uniform 15.0 px/cm
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:__main__:Saving high-resolution rectified image: 1779x629px
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 10 09:03:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=1779x629px
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:✓ Saved rectified image for validation: 1779×629 px at /home/naniwa/ShelfEye/python/../data/latest_calibration_rectified_5e164d3c-1809-49ba-b284-a734843b32f1.png
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=1779x629px
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Drawing 29 template overlays
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Templates data: [{'x': 75.399, 'y': 26.855556, 'width': 27.7, 'height': 9.5, 'rotation': 0, 'categoryName': 'Big Tape Cutter', 'autoQrId': '1'}, {'x': 117.089165, 'y': 12.963444, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '2'}, {'x': 93.447876, 'y': 12.864887, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '3'}, {'x': 96.89787, 'y': 12.864887, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '4'}, {'x': 100.55136, 'y': 13.062, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '5'}, {'x': 104.1031, 'y': 12.864887, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '6'}, {'x': 107.34962, 'y': 12.963444, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '7'}, {'x': 110.49439, 'y': 13.062, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '8'}, {'x': 93.34613, 'y': 29.319225, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '9'}, {'x': 96.99962, 'y': 29.319225, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '10'}, {'x': 100.449615, 'y': 29.122112, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '11'}, {'x': 103.797874, 'y': 29.319225, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '12'}, {'x': 107.14613, 'y': 29.220669, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '13'}, {'x': 110.39265, 'y': 29.122112, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '14'}, {'x': 113.740906, 'y': 13.062, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '15'}, {'x': 113.63916, 'y': 28.925, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '16'}, {'x': 20.045383, 'y': 5.75, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '17'}, {'x': 5.910465, 'y': 15.226541, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '18'}, {'x': 19.943642, 'y': 15.236999, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '19'}, {'x': 5.991899, 'y': 27.04567, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '20'}, {'x': 19.740088, 'y': 27.151497, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '21'}, {'x': 19.536673, 'y': 36.54567, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '22'}, {'x': 35.897385, 'y': 27.151226, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '23'}, {'x': 35.795643, 'y': 36.84134, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '24'}, {'x': 49.950867, 'y': 27.04567, 'width': 13.85, 'height': 9.5, 'rotation': 0, 'categoryName': 'Tape Cutter', 'autoQrId': '25'}, {'x': 75.50091, 'y': 36.54567, 'width': 27.7, 'height': 9.5, 'rotation': 0, 'categoryName': 'Big Tape Cutter', 'autoQrId': '26'}, {'x': 117.089165, 'y': 28.925, 'width': 3.45, 'height': 13.85, 'rotation': 0, 'categoryName': 'Red Pen', 'autoQrId': '27'}, {'x': 38.97238, 'y': 10.837285, 'width': 20, 'height': 17.5, 'rotation': 0, 'categoryName': 'Scanners (Worker Tags)', 'autoQrId': '28'}, {'x': 68.87745, 'y': 9.874507, 'width': 36, 'height': 18, 'rotation': 0, 'categoryName': 'Scanners (Scanner)', 'autoQrId': '29'}]
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:✓ Saved LABELED high-resolution rectified image for download
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Generating UI preview: 3564x1260px (no template overlays)
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: INFO:rectified_preview:Skipping undistortion (all coefficients are zero)
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:rectified_preview:Rectification: paper=118.8x42.0cm, bounded area=116.8x40.0cm, output=3564x1260px
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Rectified preview generated successfully
+Feb 10 09:03:34 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:03:35 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:03:35 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188080 exited after 34423ms (code: 0, signal: null)
+Feb 10 09:03:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Received 1028376 bytes of JSON from Python
+Feb 10 09:03:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] First 200 chars: {"ok": true, "homography_matrix": [14.839941672513495, -1.2869832094748772, 55.00940791003986, 0.3043311074652803, 14.105511309360022, 199.0325043424533, -0.00011930681346905369, -0.000992280560283967
+Feb 10 09:03:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Last 200 chars: dTXi7mVUUdA/Wrm+3mKy3FyqgdRuFY/h/w5b6igae+uQSequv+Fdpo/wl8OapCqXd7fEEc4mUf+y1DbuXGpNrczLrWNLaxaK11CJXVefnFWfh94QuNR0A3YvMhrl+Qw9a7nwb+zD8NLu4Z7ltRclRnNyv/wARX0R8KP2b/hlZ+EI4IbO52iZus49vap3JcpXP/9k="}
+Feb 10 09:03:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] JSON parsed successfully
+Feb 10 09:03:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Has rectified_preview field: true
+Feb 10 09:03:35 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Preview field length: 1023215 chars
+Feb 10 09:03:45 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Deleted 29 existing slots
+Feb 10 09:03:46 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Creating slots for 29 templates from design 33cfebe0-cdc7-4860-9f3c-8977ad0210e6
+Feb 10 09:03:58 NaniwaTanaCheck pi-startup.sh[152169]: [Database] ✅ Client connected to pool
+Feb 10 09:04:02 NaniwaTanaCheck pi-startup.sh[152169]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Feb 10 09:04:04 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Created 2x4 grid metadata for worker_tag_grid
+Feb 10 09:04:05 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Created 2x4 grid metadata for scanner_grid
+Feb 10 09:04:06 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Linked scanner grid 80b65144-3a2f-4e52-b096-2d237b3a0906 <-> worker tag grid 3602bb18-59f9-4078-90ff-cba83da26b67
+Feb 10 09:04:06 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Saved paper size format to config: 8-page-4x2
+Feb 10 09:04:06 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Measured pixel density: 14.98 px/cm
+Feb 10 09:04:06 NaniwaTanaCheck pi-startup.sh[152169]: [Calibration] Including slot validation in response: 0/29 markers detected
+Feb 10 09:04:06 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Released exclusive lock for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Feb 10 09:04:06 NaniwaTanaCheck pi-startup.sh[152169]: [CameraSessionManager] Global calibration lock released for camera 5e164d3c-1809-49ba-b284-a734843b32f1
+Feb 10 09:04:07 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking led process PID 188093: LED: turnOffLED
+Feb 10 09:04:07 NaniwaTanaCheck sudo[188093]:   naniwa : PWD=/home/naniwa/ShelfEye ; USER=root ; COMMAND=/usr/bin/python3 /home/naniwa/ShelfEye/python/led_control_client.py off --num-leds 99
+Feb 10 09:04:07 NaniwaTanaCheck sudo[188093]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Feb 10 09:04:07 NaniwaTanaCheck pi-startup.sh[152169]: 9:04:07 AM [express] POST /api/calibrate/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 114909ms :: {"o…
+Feb 10 09:04:07 NaniwaTanaCheck sudo[188093]: pam_unix(sudo:session): session closed for user root
+Feb 10 09:04:07 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188093 exited after 188ms (code: 1, signal: null)
+Feb 10 09:04:07 NaniwaTanaCheck pi-startup.sh[152169]: [LED] turnOffLED failed: {"status": "error", "message": "Failed to send command: [Errno 32] Broken pipe"}
+Feb 10 09:04:07 NaniwaTanaCheck pi-startup.sh[152169]: [LED] LED off response: { success: false }
+Feb 10 09:04:07 NaniwaTanaCheck pi-startup.sh[152169]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 10 09:04:07 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188097: Camera preview: Camera 2 (Shelf 2)
+Feb 10 09:04:07 NaniwaTanaCheck pi-startup.sh[152169]: 9:04:07 AM [express] GET /api/template-rectangles 200 in 367ms :: [{"id":"5b875172-56d4-4aa6-be85-54…
+Feb 10 09:04:07 NaniwaTanaCheck pi-startup.sh[152169]: [Database] ✅ Client connected to pool
+Feb 10 09:04:08 NaniwaTanaCheck pi-startup.sh[152169]: 9:04:08 AM [express] GET /api/cameras 200 in 726ms :: [{"id":"a91d43f1-47bf-4d75-8a7d-d2faf0503f81",…
+Feb 10 09:04:08 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:04:08 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:04:08 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:06:59.025798024] [188097]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:04:08 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:06:59.060860496] [188100]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:04:08 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:06:59.066957640] [188100]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:06:59.173072425] [188097]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:04:09 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 10 09:04:19 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 10 09:04:19 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 10 09:04:19 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 102.4
+Feb 10 09:04:19 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 102.4
+Feb 10 09:04:20 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 5/50: New best sharpness = 102.8
+Feb 10 09:04:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 14/50: New best sharpness = 102.8
+Feb 10 09:04:25 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 29/50: New best sharpness = 102.9
+Feb 10 09:04:29 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 102.9
+Feb 10 09:04:29 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:04:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:04:30 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188097 exited after 22764ms (code: 0, signal: null)
+Feb 10 09:04:30 NaniwaTanaCheck pi-startup.sh[152169]: 9:04:30 AM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 23100ms :: …
+Feb 10 09:04:35 NaniwaTanaCheck pi-startup.sh[152169]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 10 09:04:35 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188106: Camera preview: Camera 2 (Shelf 2)
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [448:07:27.230195744] [188106]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:07:27.265227922] [188109]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:07:27.271976385] [188109]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:07:27.378109302] [188106]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 09:04:37 NaniwaTanaCheck pi-startup.sh[152169]: [Database] Client removed from pool
+Feb 10 09:04:47 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 10 09:04:47 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 10 09:04:47 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 102.5
+Feb 10 09:04:47 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 2/50: New best sharpness = 102.9
+Feb 10 09:04:48 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 103.1
+Feb 10 09:04:48 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 6/50: New best sharpness = 103.5
+Feb 10 09:04:57 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 103.5
+Feb 10 09:04:57 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:04:58 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:04:58 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188106 exited after 22790ms (code: 0, signal: null)
+Feb 10 09:04:58 NaniwaTanaCheck pi-startup.sh[152169]: 9:04:58 AM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 23007ms :: …
+Feb 10 09:05:02 NaniwaTanaCheck pi-startup.sh[152169]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Feb 10 09:05:03 NaniwaTanaCheck pi-startup.sh[152169]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 10 09:05:03 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188120: Camera preview: Camera 2 (Shelf 2)
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:07:55.486373718] [188120]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:07:55.521446895] [188123]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:07:55.528046547] [188123]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:07:55.634357611] [188120]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:05:05 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 10 09:05:15 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 10 09:05:15 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 10 09:05:15 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 100.6
+Feb 10 09:05:16 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 3/50: New best sharpness = 100.7
+Feb 10 09:05:16 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 100.9
+Feb 10 09:05:16 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 5/50: New best sharpness = 101.4
+Feb 10 09:05:20 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 22/50: New best sharpness = 101.6
+Feb 10 09:05:21 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 27/50: New best sharpness = 101.8
+Feb 10 09:05:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 35/50: New best sharpness = 101.9
+Feb 10 09:05:24 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 44/50: New best sharpness = 101.9
+Feb 10 09:05:25 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 101.9
+Feb 10 09:05:26 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:05:26 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:05:26 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188120 exited after 22747ms (code: 0, signal: null)
+Feb 10 09:05:26 NaniwaTanaCheck pi-startup.sh[152169]: 9:05:26 AM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 22958ms :: …
+Feb 10 09:05:32 NaniwaTanaCheck pi-startup.sh[152169]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 10 09:05:32 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188130: Camera preview: Camera 2 (Shelf 2)
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:08:23.661714065] [188130]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:08:23.697301455] [188133]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:08:23.703573447] [188133]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:08:23.809437375] [188130]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:05:33 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 10 09:05:43 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 10 09:05:43 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 10 09:05:44 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 101.6
+Feb 10 09:05:44 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 4/50: New best sharpness = 102.3
+Feb 10 09:05:47 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 19/50: New best sharpness = 102.3
+Feb 10 09:05:50 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 33/50: New best sharpness = 102.5
+Feb 10 09:05:54 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 102.5
+Feb 10 09:05:54 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:05:54 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:05:54 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188130 exited after 22808ms (code: 0, signal: null)
+Feb 10 09:05:54 NaniwaTanaCheck pi-startup.sh[152169]: 9:05:54 AM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 23021ms :: …
+Feb 10 09:06:00 NaniwaTanaCheck pi-startup.sh[152169]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 10 09:06:00 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188143: Camera preview: Camera 2 (Shelf 2)
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [448:08:51.844258767] [188143]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:08:51.879275410] [188147]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:08:51.885703696] [188147]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:08:51.991392167] [188143]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:06:01 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...
+Feb 10 09:06:02 NaniwaTanaCheck pi-startup.sh[152169]: [AlertQueue] Retry processor tick (0 queued, 0 ready for retry)
+Feb 10 09:06:12 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Warmup complete: 67 metadata polls over 10s
+Feb 10 09:06:12 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Capturing 50 frames to select sharpest...
+Feb 10 09:06:12 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 1/50: New best sharpness = 101.2
+Feb 10 09:06:12 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 3/50: New best sharpness = 102.1
+Feb 10 09:06:17 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Frame 24/50: New best sharpness = 102.1
+Feb 10 09:06:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Selected frame with sharpness = 102.1
+Feb 10 09:06:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera stopped
+Feb 10 09:06:22 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera closed successfully.
+Feb 10 09:06:23 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Process PID 188143 exited after 22746ms (code: 0, signal: null)
+Feb 10 09:06:23 NaniwaTanaCheck pi-startup.sh[152169]: 9:06:23 AM [express] GET /api/camera-preview/5e164d3c-1809-49ba-b284-a734843b32f1 200 in 22959ms :: …
+Feb 10 09:06:28 NaniwaTanaCheck pi-startup.sh[152169]: [Preview] Using lower resolution for RAM efficiency: 1920x1080
+Feb 10 09:06:28 NaniwaTanaCheck pi-startup.sh[152169]: [SubprocessManager] Tracking python process PID 188153: Camera preview: Camera 2 (Shelf 2)
+Feb 10 09:06:29 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:__main__:Opening camera: 1
+Feb 10 09:06:29 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Initializing Picamera2 on camera 1 (attempt 1/3)
+Feb 10 09:06:29 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:09:20.029422406] [188153]  INFO Camera camera_manager.cpp:330 libcamera v0.5.2+99-bfd68f78
+Feb 10 09:06:29 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:09:20.064825245] [188156]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.3:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:09:20.071514692] [188156]  INFO Camera camera_manager.cpp:220 Adding camera '/base/scb/pcie@7d500000/pci@0,0/usb@0,0-1.4:1.0-1bcf:284c' for pipeline handler uvcvideo
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Initialization successful.
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera now open.
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera configuration has been adjusted!
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: [448:09:20.177643563] [188153]  INFO Camera camera.cpp:1215 configuring streams: (0) 1920x1080-MJPEG/Rec709/Rec709/Rec601/Limited
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Configuration successful!
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Config attempt 1: REQUESTED 1920x1080 RGB888, ACTUAL 1920x1080 MJPEG
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:✓ Camera configured successfully at 1920x1080
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: WARNING:camera_utils_picam2:Could not set auto controls: Control AwbEnable is not advertised by libcamera
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Camera configured: 1920x1080, format: RGB888 (no auto-controls)
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: INFO:camera_utils_picam2:Auto-focus not available (fixed-focus camera)
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:picamera2.picamera2:Camera started
+Feb 10 09:06:30 NaniwaTanaCheck pi-startup.sh[152169]: [Validation] Python stderr: INFO:camera_utils_picam2:Camera warmup: 10 seconds (metadata polling)...

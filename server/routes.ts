@@ -1456,16 +1456,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Small delay to ensure LED process completes and releases stdout
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Get paper dimensions from calibration config
-      const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
+      // Get paper dimensions from camera's own paper_size field (not global config)
       let paperWidthCm, paperHeightCm;
       
-      if (paperSizeConfig?.value) {
+      if (camera.paperSize) {
         const { getPaperDimensions } = await import('./utils/paper-size.js');
-        const paperDimensions = getPaperDimensions(paperSizeConfig.value as string);
+        const paperDimensions = getPaperDimensions(camera.paperSize as string);
         paperWidthCm = paperDimensions.widthCm;
         paperHeightCm = paperDimensions.heightCm;
-        console.log(`[Validation] Using paper dimensions: ${paperWidthCm}x${paperHeightCm} cm`);
+        console.log(`[Validation] Using paper dimensions from camera: ${paperWidthCm}x${paperHeightCm} cm (${camera.paperSize})`);
+      } else {
+        // Fallback to global config if camera doesn't have paper_size set
+        const paperSizeConfig = await storage.getConfigByKey('last_calibration_paper_size_format');
+        if (paperSizeConfig?.value) {
+          const { getPaperDimensions } = await import('./utils/paper-size.js');
+          const paperDimensions = getPaperDimensions(paperSizeConfig.value as string);
+          paperWidthCm = paperDimensions.widthCm;
+          paperHeightCm = paperDimensions.heightCm;
+          console.log(`[Validation] Using paper dimensions from global config (fallback): ${paperWidthCm}x${paperHeightCm} cm`);
+        }
       }
       
       // Call Python validation script with saved rectified image from calibration
@@ -1570,7 +1579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // If all 3 stages complete successfully, save calibration config
               if (validationResult.success) {
-                const paperSize = paperSizeConfig?.value as string || 'A4-landscape';
+                const paperSize = camera.paperSize || 'A4-landscape';
                 
                 await storage.setConfig('last_calibration_camera_id', cameraId, 'Last successfully calibrated camera ID');
                 await storage.setConfig('last_calibration_timestamp', new Date().toISOString(), 'Last successful calibration timestamp');
