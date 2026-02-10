@@ -449,9 +449,9 @@ export class SheetsSummaryReport {
       const column = this.getColumnForCaptureTime(mondayBasedDay, captureTimeIndex);
 
       const failureCells: { column: string; row: number }[] = [];
+      const successCells: { column: string; row: number }[] = [];
 
       for (const tool of summary) {
-        // If camera failed for this tool, show ✕ (plain X) instead of numbers
         if (tool.cameraFailed) {
           const returnRow = this.getTemplateRowForTool(tool.toolName, '返却数');
           const checkoutRow = this.getTemplateRowForTool(tool.toolName, '貸出数');
@@ -475,7 +475,6 @@ export class SheetsSummaryReport {
         }
 
         if (tool.isCheckType) {
-          // ✔点 type - just check or X (use template mapping or fallback)
           const row = this.getTemplateRowForTool(tool.toolName, '返却数');
           if (row > 0 && !SKIP_ROWS.includes(row)) {
             const value = tool.presentCount > 0 ? '✔' : 'X';
@@ -485,7 +484,6 @@ export class SheetsSummaryReport {
             });
           }
         } else {
-          // 返却数/貸出数 type - use template row mapping
           const returnRow = this.getTemplateRowForTool(tool.toolName, '返却数');
           const checkoutRow = this.getTemplateRowForTool(tool.toolName, '貸出数');
 
@@ -504,25 +502,22 @@ export class SheetsSummaryReport {
         }
       }
 
-      // Read environment sensor (DHT20) for temperature and humidity
       const envReading = await readDHT20();
       
       if (envReading.ok && envReading.temperature_c !== undefined && envReading.humidity !== undefined) {
-        // Write temperature to row 19 (format: e.g., "23.5°C")
         updates.push({
           range: `'${sheetName}'!${column}${TEMPERATURE_ROW}`,
           values: [[`${envReading.temperature_c.toFixed(1)}°C`]]
         });
-        
-        // Write humidity to row 20 (format: e.g., "65%")
         updates.push({
           range: `'${sheetName}'!${column}${HUMIDITY_ROW}`,
           values: [[`${envReading.humidity.toFixed(0)}%`]]
         });
+        successCells.push({ column, row: TEMPERATURE_ROW });
+        successCells.push({ column, row: HUMIDITY_ROW });
         
         console.log(`[SheetsSummaryReport] Environment: ${envReading.temperature_c.toFixed(1)}°C, ${envReading.humidity.toFixed(0)}%`);
       } else {
-        // Sensor failed - show ✕ with red formatting
         updates.push({
           range: `'${sheetName}'!${column}${TEMPERATURE_ROW}`,
           values: [['✕']]
@@ -537,7 +532,6 @@ export class SheetsSummaryReport {
         console.log(`[SheetsSummaryReport] Environment sensor failed: ${envReading.error || 'unknown error'}`);
       }
 
-      // Execute batch update for quantities and environment data
       if (updates.length > 0) {
         await sheets.spreadsheets.values.batchUpdate({
           spreadsheetId: this.spreadsheetId,
@@ -550,9 +544,12 @@ export class SheetsSummaryReport {
         console.log(`[SheetsSummaryReport] Synced ${updates.length} cells for ${captureTime} on ${this.dayLabels[mondayBasedDay]} to tab '${sheetName}'`);
       }
 
-      // Apply red text formatting to failure cells (camera failures + sensor failures)
       if (failureCells.length > 0) {
-        await this.applyRedTextFormatting(sheetName, failureCells);
+        await this.applyCellTextFormatting(sheetName, failureCells, { red: 1, green: 0, blue: 0 }, true);
+      }
+
+      if (successCells.length > 0) {
+        await this.applyCellTextFormatting(sheetName, successCells, { red: 0, green: 0, blue: 0 }, false);
       }
 
       // Copy N circle stamp from D22 to the time column row 22
@@ -656,16 +653,17 @@ export class SheetsSummaryReport {
     }
   }
 
-  /**
-   * Apply red text formatting to failure cells
-   */
-  private async applyRedTextFormatting(sheetName: string, cells: { column: string; row: number }[]): Promise<void> {
+  private async applyCellTextFormatting(
+    sheetName: string,
+    cells: { column: string; row: number }[],
+    color: { red: number; green: number; blue: number },
+    bold: boolean
+  ): Promise<void> {
     if (!this.spreadsheetId || cells.length === 0) return;
 
     try {
       const sheets = await getSheetsClient();
 
-      // Get the sheet ID
       const spreadsheet = await sheets.spreadsheets.get({
         spreadsheetId: this.spreadsheetId,
       });
@@ -673,16 +671,15 @@ export class SheetsSummaryReport {
       const sheetId = sheet?.properties?.sheetId;
 
       if (sheetId === undefined) {
-        console.warn(`[SheetsSummaryReport] Could not find sheetId for "${sheetName}", skipping red formatting`);
+        console.warn(`[SheetsSummaryReport] Could not find sheetId for "${sheetName}", skipping formatting`);
         return;
       }
 
-      // Build formatting requests for each cell
       const requests = cells.map(cell => ({
         repeatCell: {
           range: {
             sheetId,
-            startRowIndex: cell.row - 1, // 0-indexed
+            startRowIndex: cell.row - 1,
             endRowIndex: cell.row,
             startColumnIndex: this.columnLetterToIndex(cell.column),
             endColumnIndex: this.columnLetterToIndex(cell.column) + 1,
@@ -690,8 +687,8 @@ export class SheetsSummaryReport {
           cell: {
             userEnteredFormat: {
               textFormat: {
-                foregroundColor: { red: 1, green: 0, blue: 0 }, // Red color
-                bold: true,
+                foregroundColor: color,
+                bold,
               },
             },
           },
@@ -704,10 +701,10 @@ export class SheetsSummaryReport {
         requestBody: { requests },
       });
 
-      console.log(`[SheetsSummaryReport] Applied red text formatting to ${cells.length} failure cells`);
+      const colorName = color.red === 1 ? 'red' : 'black';
+      console.log(`[SheetsSummaryReport] Applied ${colorName} text formatting to ${cells.length} cells`);
     } catch (error) {
-      console.error('[SheetsSummaryReport] Failed to apply red formatting:', error);
-      // Don't throw - formatting is not critical
+      console.error('[SheetsSummaryReport] Failed to apply text formatting:', error);
     }
   }
 
