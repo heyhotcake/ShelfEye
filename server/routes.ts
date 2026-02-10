@@ -893,11 +893,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     workerTagGridSlots.set(template.id, slot);
                   }
 
-                  // Update template rectangle with slot ID and camera ID
-                  // Keep autoQrId unchanged - it must match the physically printed ArUco marker IDs
+                  // Update template rectangle with slot ID, QR code, and camera ID
+                  // This makes the coordinates camera-specific from first calibration
                   await storage.updateTemplateRectangle(template.id, {
                     slotId: slot.id,
-                    cameraId: cameraId,
+                    autoQrId: slot.slotNumber.toString(), // Use simplified slot number for QR codes
+                    cameraId: cameraId, // Mark these coordinates as camera-specific
                   });
 
                   createdSlots.push(slot);
