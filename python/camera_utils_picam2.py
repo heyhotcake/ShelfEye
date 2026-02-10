@@ -147,29 +147,13 @@ def setup_camera_picam2(camera_index=0, resolution=(3840, 2160), max_retries=3):
         logger.error(error_msg)
         raise RuntimeError(error_msg)
     
-    # Set automatic controls for optimal image quality (only if supported)
-    try:
-        picam2.set_controls({
-            "AwbEnable": True,  # Auto white balance
-            "AeEnable": True,  # Auto exposure
-        })
-        logger.info(f"Camera configured: {width}x{height}, format: RGB888 with AWB/AE")
-    except Exception as e:
-        logger.warning(f"Could not set auto controls: {e}")
-        logger.info(f"Camera configured: {width}x{height}, format: RGB888 (no auto-controls)")
-    
-    # Try to enable auto-focus if supported (some cameras don't have it)
-    try:
-        picam2.set_controls({"AfMode": 2})  # Auto focus continuous
-        logger.info("Auto-focus enabled")
-    except Exception as e:
-        logger.info("Auto-focus not available (fixed-focus camera)")
+    logger.info(f"Camera configured: {width}x{height}, format: RGB888 (camera firmware handles all adjustments)")
     return picam2
 
 def warmup_camera_picam2(picam2, duration_seconds=5):
     """
     Proper warmup using metadata polling (Picamera2 best practice)
-    Allows auto-exposure and auto-focus to converge without dropping frames
+    Allows camera firmware to stabilize image processing
     
     Args:
         picam2: Picamera2 instance (must be started)
