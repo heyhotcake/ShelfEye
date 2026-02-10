@@ -797,15 +797,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               console.log(`[Calibration] Deleted ${existingSlots.length} existing slots`);
 
-              // Get template rectangles for the SELECTED DESIGN only
-              // BUGFIX: Previously used paper size which included templates from OTHER designs with same paper size
-              // Now we use designId to ensure only the selected template's slots are created
+              // Get template rectangles for slot creation
+              // Priority: camera-specific adjusted > master templates
+              // Camera-specific templates have adjusted coordinates for accurate detection
+              // Master templates preserve the original design for printing
               let templateRectangles: any[];
               if (selectedDesignId) {
-                templateRectangles = await storage.getTemplateRectanglesByDesignId(selectedDesignId);
-                console.log(`[Calibration] Creating slots for ${templateRectangles.length} templates from design ${selectedDesignId}`);
+                const cameraAdjustedRects = await storage.getTemplateRectanglesByDesignIdAndCamera(selectedDesignId, cameraId);
+                if (cameraAdjustedRects.length > 0) {
+                  templateRectangles = cameraAdjustedRects;
+                  console.log(`[Calibration] Creating slots using ${templateRectangles.length} camera-adjusted templates from design ${selectedDesignId}`);
+                } else {
+                  templateRectangles = await storage.getTemplateRectanglesByDesignId(selectedDesignId, true);
+                  if (templateRectangles.length === 0) {
+                    templateRectangles = await storage.getTemplateRectanglesByDesignId(selectedDesignId, false);
+                  }
+                  console.log(`[Calibration] Creating slots using ${templateRectangles.length} master templates from design ${selectedDesignId}`);
+                }
               } else {
-                // Fallback to paper size filter if designId not available (legacy)
                 templateRectangles = await storage.getTemplateRectanglesByPaperSizeAndCamera(paperSizeFormat, cameraId);
                 console.log(`[Calibration] Creating slots for ${templateRectangles.length} templates by paper size ${paperSizeFormat} (legacy mode)`);
               }
@@ -897,7 +906,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
                   await storage.updateTemplateRectangle(template.id, {
                     slotId: slot.id,
-                    cameraId: cameraId,
                   });
 
                   createdSlots.push(slot);

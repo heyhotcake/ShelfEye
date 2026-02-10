@@ -227,6 +227,41 @@ export class DbStorage implements IStorage {
         });
       }
     }
+    
+    // Data repair: ensure master templates exist for all designs
+    // Previous calibration code incorrectly set cameraId on master templates,
+    // converting them to camera-specific records and breaking print preview
+    const designs = await db.select().from(schema.templateDesigns);
+    for (const design of designs) {
+      const masterRects = await db.select().from(schema.templateRectangles)
+        .where(and(
+          eq(schema.templateRectangles.designId, design.id),
+          isNull(schema.templateRectangles.cameraId)
+        ));
+      
+      if (masterRects.length === 0) {
+        // No master templates - check if camera-specific ones exist that should be masters
+        const allRects = await db.select().from(schema.templateRectangles)
+          .where(eq(schema.templateRectangles.designId, design.id));
+        
+        if (allRects.length > 0) {
+          // Get unique camera IDs
+          const cameraIds = Array.from(new Set(allRects.map(r => r.cameraId).filter(Boolean)));
+          
+          if (cameraIds.length === 1) {
+            // Only one camera's records exist - these are likely converted masters
+            // Clear cameraId to restore them as master templates
+            const result = await db.update(schema.templateRectangles)
+              .set({ cameraId: null } as any)
+              .where(and(
+                eq(schema.templateRectangles.designId, design.id),
+                eq(schema.templateRectangles.cameraId, cameraIds[0]!)
+              ));
+            console.log(`[DataRepair] Restored ${allRects.length} master templates for design ${design.name} (cleared cameraId)`);
+          }
+        }
+      }
+    }
   }
 
   async getCameras(): Promise<Camera[]> {
