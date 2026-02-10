@@ -349,17 +349,20 @@ export default function Calibration() {
     },
     onError: async (error: any) => {
       setIsCameraLocked(false); // Clear lock state on error
-      // Try to extract the server's detailed error message
       let errorMessage = "キャリブレーション中にエラーが発生しました";
       if (error.response) {
         try {
           const errorData = await error.response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
+          errorMessage = errorData.message || errorMessage;
         } catch {
           errorMessage = error.message || errorMessage;
         }
       } else {
         errorMessage = error.message || errorMessage;
+      }
+      
+      if (errorMessage.length > 150) {
+        errorMessage = errorMessage.substring(0, 147) + "...";
       }
       
       toast({
@@ -484,6 +487,9 @@ export default function Calibration() {
         } catch {
           errorMessage = error.message || errorMessage;
         }
+      }
+      if (errorMessage.length > 150) {
+        errorMessage = errorMessage.substring(0, 147) + "...";
       }
       toast({
         title: "検証エラー",

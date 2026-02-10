@@ -24,6 +24,57 @@ import { readDHT20 } from "./utils/dht20-sensor";
 import { parseBoolConfigValue, stringifyBoolConfigValue } from "./utils/config-utils";
 import { cameraLimiter } from "./utils/concurrency-limiter";
 
+function extractCalibrationErrorSummary(rawError: string): string {
+  if (!rawError || rawError.trim().length === 0) {
+    return "キャリブレーションに失敗しました。カメラの位置とマーカーの視認性を確認してください。";
+  }
+
+  const lower = rawError.toLowerCase();
+
+  if (lower.includes("no markers detected") || lower.includes("no aruco markers")) {
+    return "ArUcoマーカーが検出されませんでした。カメラの位置と照明を確認してください。";
+  }
+  if (lower.includes("not enough markers") || lower.includes("insufficient markers") || lower.includes("need at least")) {
+    const match = rawError.match(/(\d+)\s*(?:of|\/)\s*(\d+)/);
+    if (match) {
+      return `マーカーが不足しています（${match[1]}/${match[2]}個検出）。全てのコーナーマーカーがカメラから見えるか確認してください。`;
+    }
+    return "コーナーマーカーが不足しています。4つのコーナーマーカー（A/B/C/D）がカメラから見えるか確認してください。";
+  }
+  if (lower.includes("camera") && (lower.includes("not found") || lower.includes("unavailable") || lower.includes("busy") || lower.includes("in use"))) {
+    return "カメラに接続できません。カメラが正しく接続されているか確認してください。";
+  }
+  if (lower.includes("timeout") || lower.includes("timed out")) {
+    return "キャリブレーションがタイムアウトしました。カメラの接続を確認して再試行してください。";
+  }
+  if (lower.includes("broken pipe") || lower.includes("errno 32")) {
+    return "LED照明との通信に問題が発生しました。照明の接続を確認して再試行してください。";
+  }
+  if (lower.includes("homography") && lower.includes("fail")) {
+    return "画像の補正に失敗しました。4つのコーナーマーカーが全て見えるか確認してください。";
+  }
+  if (lower.includes("resolution") || lower.includes("configure camera")) {
+    return "カメラの設定に失敗しました。カメラを再接続して再試行してください。";
+  }
+
+  const warningLines = rawError.split('\n').filter(line => 
+    /WARNING|ERROR|✗|fail|exception/i.test(line) && 
+    !/INFO|DEBUG|Slot \d+/i.test(line)
+  );
+  
+  if (warningLines.length > 0) {
+    const firstMeaningful = warningLines[0]
+      .replace(/^.*?(WARNING|ERROR)\s*[_:]\s*/i, '')
+      .replace(/\\n/g, ' ')
+      .trim();
+    if (firstMeaningful.length > 0 && firstMeaningful.length < 200) {
+      return `キャリブレーションエラー: ${firstMeaningful}`;
+    }
+  }
+
+  return "キャリブレーションに失敗しました。カメラの位置と照明を確認して再試行してください。";
+}
+
 // Helper function to get camera device source (path or index)
 function getCameraDeviceSource(camera: { devicePath?: string | null; deviceIndex?: number | null }): string {
   if (camera.devicePath) {
@@ -972,7 +1023,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               res.status(500).json({ message: "Failed to parse calibration result", error: parseError });
             }
           } else {
-            res.status(500).json({ message: "Calibration failed", error });
+            const userFriendlyMessage = extractCalibrationErrorSummary(error);
+            res.status(500).json({ message: userFriendlyMessage, error });
           }
         } finally {
           // Always release locks when calibration completes
@@ -1128,17 +1180,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             res.status(500).json({ message: "Failed to parse validation result", error: result.substring(0, 500) });
           }
         } else {
-          res.status(500).json({ message: "Validation failed", error: error.substring(0, 500) });
+          const userFriendlyMessage = extractCalibrationErrorSummary(error);
+          res.status(500).json({ message: userFriendlyMessage, error: error.substring(0, 500) });
         }
       });
       
       pythonProcess.on('error', (err) => {
-        res.status(503).json({ message: "Python not available", error: err.message });
+        res.status(503).json({ message: "Python環境が利用できません。Raspberry Piでのハードウェア設定が必要です。", error: err.message });
       });
       
     } catch (error) {
       console.error('[ValidateOnly] Error:', error);
-      res.status(500).json({ message: "Validation error", error });
+      res.status(500).json({ message: "スロット検証中にエラーが発生しました。再試行してください。", error });
     }
   });
 
@@ -1613,10 +1666,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.error('[Validation] Failed to parse Python output. Exit code:', code);
               console.error('[Validation] Result:', result);
               console.error('[Validation] Error output:', error);
+              const userMsg = error ? extractCalibrationErrorSummary(error) : "検証スクリプトの実行に失敗しました。再試行してください。";
               res.status(500).json({ 
                 success: false,
-                error: error || "Validation script failed to return valid JSON",
-                message: "Validation failed - check server logs for details"
+                error: userMsg,
+                message: userMsg
               });
             }
           }
@@ -1639,7 +1693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       // Turn off LED on unexpected errors
       await turnOffLED();
-      res.status(500).json({ message: "Validation error", error });
+      res.status(500).json({ message: "マーカー検証中にエラーが発生しました。再試行してください。", error });
     }
   });
 
